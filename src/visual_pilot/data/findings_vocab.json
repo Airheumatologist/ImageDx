@@ -1,0 +1,499 @@
+[
+  {
+    "finding_key": "malar_rash",
+    "label": "Malar rash (nasolabial sparing)",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["butterfly rash", "malar flush", "acute cutaneous lupus erythematosus"]
+  },
+  {
+    "finding_key": "discoid_plaque",
+    "label": "Discoid plaque",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["discoid lesion", "DLE plaque", "discoid lupus lesion"]
+  },
+  {
+    "finding_key": "scarring_alopecia",
+    "label": "Scarring alopecia (DLE)",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["cicatricial alopecia", "discoid scarring alopecia"]
+  },
+  {
+    "finding_key": "non_scarring_alopecia",
+    "label": "Non-scarring alopecia",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["diffuse alopecia", "lupus hair"]
+  },
+  {
+    "finding_key": "scle_annular",
+    "label": "SCLE, annular",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["annular SCLE", "annular subacute cutaneous lupus erythematosus"]
+  },
+  {
+    "finding_key": "scle_papulosquamous",
+    "label": "SCLE, papulosquamous",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["papulosquamous SCLE", "psoriasiform SCLE", "papulosquamous subacute cutaneous lupus erythematosus"]
+  },
+  {
+    "finding_key": "oral_ulcer",
+    "label": "Oral/palatal ulcer",
+    "disease_keys": ["sle"],
+    "category": "mucosa",
+    "synonyms": ["palatal ulcer", "oral ulcer", "mucosal ulcer", "nasopharyngeal ulcer"]
+  },
+  {
+    "finding_key": "livedo_reticularis",
+    "label": "Livedo reticularis",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["livedo"]
+  },
+  {
+    "finding_key": "cutaneous_vasculitis",
+    "label": "Cutaneous vasculitis",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["lupus vasculitis", "leukocytoclastic vasculitis"]
+  },
+  {
+    "finding_key": "raynaud_phenomenon",
+    "label": "Raynaud phenomenon",
+    "disease_keys": ["sle"],
+    "category": "skin",
+    "synonyms": ["Raynaud's phenomenon", "acral cyanosis", "digital ischemia"]
+  },
+  {
+    "finding_key": "periungual_erythema",
+    "label": "Periungual erythema",
+    "disease_keys": ["sle", "dm"],
+    "category": "nail",
+    "synonyms": ["periungual telangiectasia", "nailfold erythema", "periungual redness"]
+  },
+  {
+    "finding_key": "jaccoud_arthropathy",
+    "label": "Jaccoud arthropathy",
+    "disease_keys": ["sle"],
+    "category": "clinical_msk",
+    "synonyms": ["Jaccoud's arthropathy", "non-erosive deforming arthropathy"]
+  },
+  {
+    "finding_key": "interface_dermatitis",
+    "label": "Interface dermatitis",
+    "disease_keys": ["sle"],
+    "category": "histology",
+    "synonyms": ["lichenoid dermatitis", "vacuolar interface dermatitis"]
+  },
+  {
+    "finding_key": "dermal_mucin",
+    "label": "Dermal mucin deposition",
+    "disease_keys": ["sle"],
+    "category": "histology",
+    "synonyms": ["mucin deposition", "dermal mucinosis"]
+  },
+  {
+    "finding_key": "lupus_band",
+    "label": "Lupus band (DIF)",
+    "disease_keys": ["sle"],
+    "category": "histology",
+    "synonyms": ["lupus band test", "granular basement membrane zone immunofluorescence", "DIF lupus band"]
+  },
+  {
+    "finding_key": "lupus_nephritis_class",
+    "label": "Lupus nephritis class I-VI",
+    "disease_keys": ["sle"],
+    "category": "histology",
+    "synonyms": ["lupus nephritis", "ISN/RPS lupus nephritis class", "lupus glomerulonephritis"]
+  },
+  {
+    "finding_key": "wire_loop_lesion",
+    "label": "Wire-loop lesion",
+    "disease_keys": ["sle"],
+    "category": "histology",
+    "synonyms": ["wire loop capillaries", "subendothelial deposits", "hyaline thrombi"]
+  },
+  {
+    "finding_key": "full_house_immunofluorescence",
+    "label": "Full-house immunofluorescence",
+    "disease_keys": ["sle"],
+    "category": "histology",
+    "synonyms": ["full house staining", "full-house DIF"]
+  },
+  {
+    "finding_key": "pleural_effusion",
+    "label": "Pleural effusion",
+    "disease_keys": ["sle"],
+    "category": "radiology_xray",
+    "synonyms": ["lupus pleuritis", "pleuritis"]
+  },
+  {
+    "finding_key": "pericardial_effusion",
+    "label": "Pericardial effusion",
+    "disease_keys": ["sle"],
+    "category": "echo",
+    "synonyms": ["lupus pericarditis", "pericarditis"]
+  },
+  {
+    "finding_key": "npsle_white_matter_lesions",
+    "label": "NPSLE white-matter lesions",
+    "disease_keys": ["sle"],
+    "category": "mri",
+    "synonyms": ["neuropsychiatric lupus white matter lesions", "NPSLE MRI lesions"]
+  },
+  {
+    "finding_key": "libman_sacks_vegetation",
+    "label": "Libman-Sacks vegetation",
+    "disease_keys": ["sle"],
+    "category": "echo",
+    "synonyms": ["Libman-Sacks endocarditis", "verrucous endocarditis", "nonbacterial verrucous endocarditis"]
+  },
+  {
+    "finding_key": "tortuous_capillaries",
+    "label": "Tortuous capillaries",
+    "disease_keys": ["sle"],
+    "category": "capillaroscopy",
+    "synonyms": ["tortuous nailfold capillaries", "capillary tortuosity"]
+  },
+  {
+    "finding_key": "heliotrope_rash",
+    "label": "Heliotrope rash",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["heliotrope eruption", "periorbital violaceous erythema", "heliotrope sign"]
+  },
+  {
+    "finding_key": "gottron_papules",
+    "label": "Gottron papules",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["Gottron's papules", "gottron papule"]
+  },
+  {
+    "finding_key": "gottron_sign",
+    "label": "Gottron sign",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["Gottron's sign"]
+  },
+  {
+    "finding_key": "v_sign",
+    "label": "V-sign",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["V sign", "V-neck sign"]
+  },
+  {
+    "finding_key": "shawl_sign",
+    "label": "Shawl sign",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["shawl distribution erythema"]
+  },
+  {
+    "finding_key": "holster_sign",
+    "label": "Holster sign",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["holster distribution erythema"]
+  },
+  {
+    "finding_key": "mechanics_hands",
+    "label": "Mechanic's hands",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["mechanic hands", "hyperkeratotic fissured hands"]
+  },
+  {
+    "finding_key": "ragged_cuticles",
+    "label": "Ragged cuticles (Samitz sign)",
+    "disease_keys": ["dm"],
+    "category": "nail",
+    "synonyms": ["Samitz sign", "ragged cuticles", "cuticular dystrophy"]
+  },
+  {
+    "finding_key": "poikiloderma",
+    "label": "Poikiloderma",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["poikiloderma atrophicans vasculare", "poikilodermatomyositis"]
+  },
+  {
+    "finding_key": "scalp_dermatomyositis",
+    "label": "Scalp dermatomyositis",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["scalp involvement", "psoriasiform scalp dermatitis"]
+  },
+  {
+    "finding_key": "calcinosis_cutis",
+    "label": "Calcinosis cutis",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["cutaneous calcinosis", "dystrophic calcification", "calcinosis universalis"]
+  },
+  {
+    "finding_key": "flagellate_erythema",
+    "label": "Flagellate erythema",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["flagellate dermatitis", "zebra-like erythema", "whip-like erythema"]
+  },
+  {
+    "finding_key": "mda5_palmar_papules",
+    "label": "MDA5 palmar papules",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["anti-MDA5 palmar papules", "palmar papules", "inverse Gottron papules"]
+  },
+  {
+    "finding_key": "mda5_cutaneous_ulcers",
+    "label": "MDA5 cutaneous ulcers",
+    "disease_keys": ["dm"],
+    "category": "skin",
+    "synonyms": ["anti-MDA5 skin ulcers", "cutaneous ulceration", "vasculopathic ulcers"]
+  },
+  {
+    "finding_key": "dilated_giant_capillaries",
+    "label": "Dilated/giant capillaries",
+    "disease_keys": ["dm"],
+    "category": "capillaroscopy",
+    "synonyms": ["giant capillaries", "bushy capillaries", "dilated nailfold capillaries", "megacapillaries"]
+  },
+  {
+    "finding_key": "capillary_dropout",
+    "label": "Capillary dropout",
+    "disease_keys": ["dm"],
+    "category": "capillaroscopy",
+    "synonyms": ["capillary loss", "avascular areas", "reduced capillary density"]
+  },
+  {
+    "finding_key": "capillary_hemorrhages",
+    "label": "Capillary hemorrhages",
+    "disease_keys": ["dm"],
+    "category": "capillaroscopy",
+    "synonyms": ["microhemorrhages", "nailfold hemorrhages", "capillary microhemorrhage"]
+  },
+  {
+    "finding_key": "perifascicular_atrophy",
+    "label": "Perifascicular atrophy",
+    "disease_keys": ["dm"],
+    "category": "histology",
+    "synonyms": ["perifascicular myofiber atrophy"]
+  },
+  {
+    "finding_key": "perivascular_inflammation",
+    "label": "Perivascular inflammation",
+    "disease_keys": ["dm"],
+    "category": "histology",
+    "synonyms": ["perivascular infiltrate", "perimysial inflammation"]
+  },
+  {
+    "finding_key": "mxa_expression",
+    "label": "MxA expression",
+    "disease_keys": ["dm"],
+    "category": "histology",
+    "synonyms": ["myxovirus resistance protein A expression", "MxA staining", "type I interferon signature"]
+  },
+  {
+    "finding_key": "mac_deposition",
+    "label": "MAC deposition",
+    "disease_keys": ["dm"],
+    "category": "histology",
+    "synonyms": ["membrane attack complex deposition", "C5b-9 deposition", "capillary MAC deposition"]
+  },
+  {
+    "finding_key": "muscle_edema_stir",
+    "label": "Muscle edema (STIR MRI)",
+    "disease_keys": ["dm"],
+    "category": "mri",
+    "synonyms": ["muscle oedema", "STIR hyperintensity", "myositis MRI edema", "muscle edema"]
+  },
+  {
+    "finding_key": "fascial_edema",
+    "label": "Fascial edema",
+    "disease_keys": ["dm"],
+    "category": "mri",
+    "synonyms": ["fascial oedema", "fasciitis MRI", "fascial thickening"]
+  },
+  {
+    "finding_key": "calcinosis_radiograph",
+    "label": "Calcinosis (radiograph)",
+    "disease_keys": ["dm"],
+    "category": "radiology_xray",
+    "synonyms": ["soft tissue calcification", "radiographic calcinosis"]
+  },
+  {
+    "finding_key": "ild_nsip_pattern",
+    "label": "ILD, NSIP pattern",
+    "disease_keys": ["dm"],
+    "category": "ct",
+    "synonyms": ["nonspecific interstitial pneumonia", "NSIP", "interstitial lung disease NSIP"]
+  },
+  {
+    "finding_key": "ild_organizing_pneumonia",
+    "label": "ILD, organizing pneumonia pattern",
+    "disease_keys": ["dm"],
+    "category": "ct",
+    "synonyms": ["organizing pneumonia", "OP pattern", "cryptogenic organizing pneumonia pattern"]
+  },
+  {
+    "finding_key": "rapidly_progressive_ild",
+    "label": "Rapidly progressive ILD",
+    "disease_keys": ["dm"],
+    "category": "ct",
+    "synonyms": ["RP-ILD", "acute interstitial pneumonia", "rapidly progressive interstitial lung disease"]
+  },
+  {
+    "finding_key": "sacroiliitis",
+    "label": "Sacroiliitis (radiograph grade)",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["radiographic sacroiliitis", "modified New York sacroiliitis", "sacroiliac joint changes"]
+  },
+  {
+    "finding_key": "si_erosions",
+    "label": "SI joint erosions",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["sacroiliac erosions", "SI erosions"]
+  },
+  {
+    "finding_key": "si_sclerosis",
+    "label": "SI joint sclerosis",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["sacroiliac sclerosis", "subchondral sclerosis", "SI sclerosis"]
+  },
+  {
+    "finding_key": "si_ankylosis",
+    "label": "SI joint ankylosis",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["sacroiliac ankylosis", "SI joint fusion", "SI ankylosis"]
+  },
+  {
+    "finding_key": "syndesmophytes",
+    "label": "Syndesmophytes",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["syndesmophyte", "bridging syndesmophytes", "marginal syndesmophytes"]
+  },
+  {
+    "finding_key": "bamboo_spine",
+    "label": "Bamboo spine",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["spinal ankylosis", "flowing syndesmophytes"]
+  },
+  {
+    "finding_key": "romanus_lesion",
+    "label": "Romanus lesion",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["shiny corner sign", "corner erosion", "spondylitis anterior"]
+  },
+  {
+    "finding_key": "vertebral_squaring",
+    "label": "Vertebral squaring",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["squaring of vertebral bodies", "vertebral body squaring"]
+  },
+  {
+    "finding_key": "dagger_sign",
+    "label": "Dagger sign",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["single dagger sign", "supraspinous ossification"]
+  },
+  {
+    "finding_key": "enthesophyte",
+    "label": "Enthesophyte",
+    "disease_keys": ["as"],
+    "category": "radiology_xray",
+    "synonyms": ["enthesophytes", "entheseal new bone", "entheseal ossification"]
+  },
+  {
+    "finding_key": "si_bone_marrow_edema",
+    "label": "SI bone marrow edema (STIR)",
+    "disease_keys": ["as"],
+    "category": "mri",
+    "synonyms": ["sacroiliac bone marrow oedema", "BMO", "sacroiliac osteitis", "bone marrow edema on MRI"]
+  },
+  {
+    "finding_key": "fat_metaplasia",
+    "label": "Fat metaplasia",
+    "disease_keys": ["as"],
+    "category": "mri",
+    "synonyms": ["fat lesion", "fatty deposition", "fat infiltration", "fat metaplasia in erosion"]
+  },
+  {
+    "finding_key": "backfill",
+    "label": "Backfill",
+    "disease_keys": ["as"],
+    "category": "mri",
+    "synonyms": ["erosion backfill", "SI joint backfill"]
+  },
+  {
+    "finding_key": "corner_inflammatory_lesion",
+    "label": "Corner inflammatory lesion",
+    "disease_keys": ["as"],
+    "category": "mri",
+    "synonyms": ["CIL", "active Romanus lesion", "anterior spondylitis", "corner osteitis"]
+  },
+  {
+    "finding_key": "corner_fat_lesion",
+    "label": "Corner fat lesion",
+    "disease_keys": ["as"],
+    "category": "mri",
+    "synonyms": ["corner fat metaplasia", "vertebral corner fat lesion"]
+  },
+  {
+    "finding_key": "hyperkyphosis",
+    "label": "Hyperkyphosis",
+    "disease_keys": ["as"],
+    "category": "clinical_msk",
+    "synonyms": ["thoracic hyperkyphosis", "stooped posture", "kyphotic posture"]
+  },
+  {
+    "finding_key": "loss_of_lumbar_lordosis",
+    "label": "Loss of lumbar lordosis",
+    "disease_keys": ["as"],
+    "category": "clinical_msk",
+    "synonyms": ["lumbar flattening", "flat back", "loss of lordosis"]
+  },
+  {
+    "finding_key": "anterior_uveitis",
+    "label": "Anterior uveitis",
+    "disease_keys": ["as"],
+    "category": "eye",
+    "synonyms": ["acute anterior uveitis", "iritis", "iridocyclitis"]
+  },
+  {
+    "finding_key": "hypopyon",
+    "label": "Hypopyon",
+    "disease_keys": ["as"],
+    "category": "eye",
+    "synonyms": ["anterior chamber hypopyon"]
+  },
+  {
+    "finding_key": "achilles_enthesitis",
+    "label": "Achilles enthesitis",
+    "disease_keys": ["as"],
+    "category": "clinical_msk",
+    "synonyms": ["Achilles tendon enthesitis", "heel enthesitis", "insertional Achilles tendinitis"]
+  },
+  {
+    "finding_key": "dactylitis",
+    "label": "Dactylitis",
+    "disease_keys": ["as"],
+    "category": "clinical_msk",
+    "synonyms": ["sausage digit", "sausage toe", "sausage finger"]
+  }
+]

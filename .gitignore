@@ -35,6 +35,10 @@ fix_*.py
 # Keep real unit tests under /tests tracked
 !tests/
 !tests/test_*.py
+!tests/**/test_*.py
+
+# Visual findings pilot data (SQLite, images, reports)
+data/visual_pilot/
 
 # Node modules (frontend has its own .gitignore)
 node_modules/

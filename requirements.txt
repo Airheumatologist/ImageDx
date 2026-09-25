@@ -26,5 +26,10 @@ python-dotenv>=1.2.0
 requests>=2.32.0
 httpx>=0.28.0
 
+# Visual findings pilot (src/visual_pilot): XML parsing, images, LLM schemas
+lxml>=5.0.0
+pillow>=10.0.0
+jsonschema>=4.0.0
+
 # Test runner for local CI/smoke checks
 pytest>=8.0.0

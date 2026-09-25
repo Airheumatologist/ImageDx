@@ -1,0 +1,67 @@
+{
+  "sle": {
+    "name": "Systemic lupus erythematosus",
+    "mondo_id": "MONDO:0007915",
+    "mesh_id": "D008180",
+    "synonyms": [
+      "systemic lupus erythematosus",
+      "SLE",
+      "lupus"
+    ],
+    "subtypes": [
+      {"key": "acle", "label": "ACLE (acute cutaneous lupus erythematosus)"},
+      {"key": "scle", "label": "SCLE (subacute cutaneous lupus erythematosus)"},
+      {"key": "dle", "label": "DLE (discoid lupus erythematosus)"},
+      {"key": "lupus_nephritis", "label": "Lupus nephritis"},
+      {"key": "npsle", "label": "NPSLE (neuropsychiatric SLE)"}
+    ],
+    "_source": {
+      "mondo": "https://www.ebi.ac.uk/ols4/api/search?q=systemic%20lupus%20erythematosus&ontology=mondo&exact=true",
+      "mesh": "https://id.nlm.nih.gov/mesh/lookup/descriptor?label=Lupus%20Erythematosus%2C%20Systemic&match=exact"
+    }
+  },
+  "dm": {
+    "name": "Dermatomyositis",
+    "mondo_id": "MONDO:0016367",
+    "mesh_id": "D003882",
+    "synonyms": [
+      "dermatomyositis",
+      "juvenile dermatomyositis",
+      "JDM",
+      "amyopathic dermatomyositis",
+      "CADM",
+      "anti-MDA5"
+    ],
+    "subtypes": [
+      {"key": "classic", "label": "Classic dermatomyositis"},
+      {"key": "cadm", "label": "CADM (clinically amyopathic dermatomyositis)"},
+      {"key": "jdm", "label": "JDM (juvenile dermatomyositis)"},
+      {"key": "anti_mda5", "label": "Anti-MDA5 dermatomyositis"},
+      {"key": "cancer_associated", "label": "Cancer-associated dermatomyositis"}
+    ],
+    "_source": {
+      "mondo": "https://www.ebi.ac.uk/ols4/api/search?q=dermatomyositis&ontology=mondo&exact=true",
+      "mesh": "https://id.nlm.nih.gov/mesh/lookup/descriptor?label=Dermatomyositis&match=exact"
+    }
+  },
+  "as": {
+    "name": "Ankylosing spondylitis",
+    "mondo_id": "MONDO:0005306",
+    "mesh_id": "D013167",
+    "synonyms": [
+      "ankylosing spondylitis",
+      "axial spondyloarthritis",
+      "axSpA",
+      "radiographic axial spondyloarthritis",
+      "Bechterew"
+    ],
+    "subtypes": [
+      {"key": "r_axspa", "label": "r-axSpA (radiographic axial spondyloarthritis)"},
+      {"key": "nr_axspa", "label": "nr-axSpA (non-radiographic axial spondyloarthritis)"}
+    ],
+    "_source": {
+      "mondo": "https://www.ebi.ac.uk/ols4/api/search?q=ankylosing%20spondylitis&ontology=mondo&exact=true",
+      "mesh": "https://id.nlm.nih.gov/mesh/lookup/descriptor?label=Spondylitis%2C%20Ankylosing&match=exact"
+    }
+  }
+}
