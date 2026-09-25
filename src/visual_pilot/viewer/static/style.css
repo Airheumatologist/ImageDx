@@ -1,0 +1,71 @@
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  margin: 0; color: #1c2333; background: #f6f7f9;
+}
+header { padding: 20px 28px 8px; }
+header h1 { margin: 4px 0; font-size: 1.5rem; }
+header a { color: #3b6fd4; text-decoration: none; }
+.sub { color: #667; margin: 0; }
+
+#diseases { display: flex; gap: 16px; padding: 20px 28px; flex-wrap: wrap; }
+.disease-card {
+  display: block; background: #fff; border: 1px solid #dfe3ea; border-radius: 10px;
+  padding: 18px 22px; min-width: 220px; text-decoration: none; color: inherit;
+}
+.disease-card:hover { border-color: #3b6fd4; }
+.disease-card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.disease-card p { margin: 0; color: #667; }
+.compare-link { padding: 0 28px 24px; }
+.compare-link a { color: #3b6fd4; }
+
+#tabs { display: flex; gap: 6px; padding: 0 28px; flex-wrap: wrap; border-bottom: 1px solid #dfe3ea; }
+.tab {
+  border: none; background: none; padding: 10px 14px; cursor: pointer;
+  font-size: .92rem; color: #556; border-bottom: 2px solid transparent;
+}
+.tab.active { color: #1c2333; border-bottom-color: #3b6fd4; font-weight: 600; }
+
+#filters { display: flex; gap: 10px; padding: 12px 28px; flex-wrap: wrap; }
+#filters select { padding: 6px 8px; border: 1px solid #ccd2dc; border-radius: 6px; background: #fff; }
+
+#content { padding: 8px 28px 40px; }
+.group-header { font-size: 1.05rem; margin: 22px 0 10px; text-transform: uppercase; letter-spacing: .04em; color: #445; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.panel-card { background: #fff; border: 1px solid #dfe3ea; border-radius: 10px; overflow: hidden; }
+.panel-card .thumb { width: 100%; height: 170px; object-fit: cover; cursor: zoom-in; display: block; background: #eceff3; }
+.card-body { padding: 10px 12px 12px; font-size: .82rem; }
+.badges { margin-bottom: 6px; }
+.badge {
+  display: inline-block; font-size: .7rem; padding: 2px 7px; margin: 0 4px 4px 0;
+  border-radius: 999px; background: #eceff3; color: #445;
+}
+.badge.t-classic { background: #d7ecd7; color: #205020; }
+.badge.t-variant { background: #fdf0d0; color: #7a5a00; }
+.badge.t-atypical { background: #f6dcdc; color: #803030; }
+.findings { font-weight: 600; margin-bottom: 4px; }
+.meta { color: #667; margin-bottom: 3px; }
+.caption { color: #445; font-size: .78rem; margin-top: 6px; }
+.attrib { color: #889; font-size: .74rem; margin-top: 7px; border-top: 1px solid #eef; padding-top: 6px; }
+.attrib a { color: #3b6fd4; margin-left: 6px; }
+.empty { color: #889; }
+
+#key-findings { padding: 0 28px 40px; max-width: 900px; }
+#key-findings ul { padding-left: 18px; }
+#key-findings li { margin-bottom: 10px; }
+.freq { color: #3b6fd4; }
+blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 3px solid #dfe3ea; color: #556; font-size: .85rem; }
+
+#lightbox {
+  position: fixed; inset: 0; background: rgba(10, 12, 20, .82);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
+}
+#lightbox[hidden] { display: none; }
+.lb-inner { max-width: 88vw; max-height: 88vh; text-align: center; }
+#lb-img { max-width: 88vw; max-height: 78vh; border-radius: 6px; }
+#lb-caption { color: #dde; margin-top: 10px; font-size: .85rem; white-space: pre-line; }
+
+.comparison { padding: 8px 28px 30px; }
+.comparison h2 { font-size: 1.1rem; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.side h3 { font-size: .95rem; color: #445; }

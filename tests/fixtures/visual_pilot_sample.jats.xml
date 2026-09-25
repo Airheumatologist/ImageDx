@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink" article-type="review-article">
+  <front>
+    <journal-meta>
+      <journal-title-group>
+        <journal-title>Journal of Test Rheumatology</journal-title>
+      </journal-title-group>
+      <publisher>
+        <publisher-name>Test Publisher Inc</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <contrib-group>
+        <contrib contrib-type="author" corresp="yes">
+          <name><surname>Smith</surname><given-names>Jane</given-names></name>
+          <xref ref-type="aff" rid="aff1 aff3">1,3</xref>
+          <xref ref-type="corresp" rid="cor1">*</xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <name><surname>Doe</surname><given-names>John</given-names></name>
+          <xref ref-type="aff" rid="aff2">2</xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <name><surname>Roe</surname><given-names>Pat</given-names></name>
+        </contrib>
+        <contrib contrib-type="author">
+          <name><surname>Bloggs</surname><given-names>Jo</given-names></name>
+        </contrib>
+      </contrib-group>
+      <aff id="aff2"><institution>Institute of Testing</institution>, Munich, <country>Germany</country></aff>
+      <aff id="aff1"><institution>Dept of Medicine, University of Toronto</institution>, Toronto, <country>Canada</country></aff>
+      <aff id="aff3"><institution>Dept of Rheumatology</institution>, Montreal, <country>Canada</country></aff>
+      <corresp id="cor1">Correspondence: Jane Smith, University of Toronto, Toronto, <country>Canada</country></corresp>
+      <permissions>
+        <copyright-statement>&#169; 2024 Test Publisher Inc</copyright-statement>
+        <copyright-holder>Test Publisher Inc</copyright-holder>
+        <license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/"/>
+      </permissions>
+      <abstract><p>A review of test findings.</p></abstract>
+    </article-meta>
+  </front>
+  <body>
+    <sec>
+      <title>Cutaneous findings</title>
+      <p>Cutaneous manifestations are among the most frequent findings and are
+      illustrated in <xref ref-type="fig" rid="f1 f2">Figures 1 and 2</xref>.
+      This intentionally long sentence exists so that the paragraph as a whole
+      exceeds six hundred characters of running text before and after the
+      figure reference, which lets the parser exercise its trimmed window
+      behaviour around the first matching cross-reference rather than storing
+      the entire paragraph. Additional filler text keeps going so the window
+      really does have to be applied in practice and the resulting mention is
+      meaningfully shorter than the source paragraph while still containing
+      the reference itself.</p>
+      <p>The malar rash is shown again in <xref ref-type="fig" rid="f1">Figure 1</xref> with discussion.</p>
+    </sec>
+    <sec>
+      <title>Diagnosis</title>
+      <p>Diagnostic criteria are summarized in <xref ref-type="fig" rid="f3">Figure 3</xref>.</p>
+    </sec>
+    <fig id="f1">
+      <label>Figure 1</label>
+      <caption>
+        <title>Malar rash and other cutaneous findings</title>
+        <p>First paragraph of the caption describing the panels.</p>
+        <p>Second paragraph adding histologic detail.</p>
+      </caption>
+      <graphic xlink:href="fig1.jpg"/>
+    </fig>
+    <fig id="f2">
+      <label>Figure 2</label>
+      <caption><p>Gottron papules over the knuckles.</p></caption>
+      <graphic xlink:href="fig2.jpg"/>
+    </fig>
+    <fig id="f3">
+      <label>Figure 3</label>
+      <caption><p>Classification criteria schematic.</p></caption>
+      <permissions>
+        <license-p>Reproduced with permission from Elsevier Ltd.</license-p>
+      </permissions>
+      <graphic xlink:href="fig3.jpg"/>
+    </fig>
+    <fig id="f4">
+      <label>Figure 4</label>
+      <caption><p>Radiograph borrowed from a sister journal.</p></caption>
+      <permissions>
+        <copyright-holder>International Society of Radiographers</copyright-holder>
+        <license xlink:href="https://creativecommons.org/licenses/by/4.0/"/>
+      </permissions>
+      <graphic xlink:href="fig4.jpg"/>
+    </fig>
+    <fig id="f5">
+      <label>Figure 5</label>
+      <caption><p>Imaging timeline licensed no-derivatives.</p></caption>
+      <permissions>
+        <license xlink:href="https://creativecommons.org/licenses/by-nd/4.0/"/>
+      </permissions>
+      <graphic xlink:href="fig5.jpg"/>
+    </fig>
+    <fig>
+      <label>Unnumbered figure</label>
+      <caption><p>A figure with no identifier.</p></caption>
+      <graphic xlink:href="fig6.jpg"/>
+    </fig>
+    <fig id="f7">
+      <label>Figure 7</label>
+      <caption><p>A figure with no graphic element.</p></caption>
+    </fig>
+  </body>
+</article>

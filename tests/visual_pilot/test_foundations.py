@@ -41,6 +41,8 @@ EXPECTED_COLUMNS = {
         "primary_disease_keys_json",
         "relevance_decision",
         "relevance_reason",
+        "study_region",
+        "error",
         "status",
     },
     "figures": {
@@ -284,5 +286,5 @@ def test_cli_init_and_stub(tmp_path, monkeypatch, capsys):
     assert "findings_vocab:" in out
     assert (tmp_path / "vp" / "visual_pilot.sqlite").exists()
 
-    assert cli.main(["select", "--disease", "sle", "--limit", "5"]) == 2
-    assert "not implemented yet" in capsys.readouterr().out
+    # every subcommand is now implemented
+    assert all(fn is not None for fn in cli.COMMANDS.values())

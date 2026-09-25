@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Visual Findings Library</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Visual Findings Library</h1>
+    <p class="sub">Open-access review imagery &middot; SLE &middot; dermatomyositis &middot; ankylosing spondylitis</p>
+  </header>
+  <main>
+    <section id="diseases"><p>Loading&hellip;</p></section>
+    <section class="compare-link">
+      <a href="/compare/sle-dm-skin">SLE vs DM skin comparison &rarr;</a>
+    </section>
+  </main>
+  <script>
+    fetch("/api/diseases").then(r => r.json()).then(list => {
+      const el = document.getElementById("diseases");
+      el.innerHTML = "";
+      for (const d of list) {
+        const a = document.createElement("a");
+        a.className = "disease-card";
+        a.href = "/disease/" + d.key;
+        a.innerHTML = `<h2>${d.name}</h2><p>${d.key.toUpperCase()}</p>`;
+        el.appendChild(a);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SLE vs DM — skin</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <a href="/">&larr; all diseases</a>
+    <h1>SLE vs dermatomyositis: skin</h1>
+  </header>
+  <main id="comparisons"></main>
+  <div id="lightbox" hidden>
+    <div class="lb-inner">
+      <img id="lb-img" alt="">
+      <div id="lb-caption"></div>
+    </div>
+  </div>
+  <script>
+    const lb = document.getElementById("lightbox");
+    lb.addEventListener("click", () => { lb.hidden = true; });
+    function openLightbox(src, caption) {
+      document.getElementById("lb-img").src = src;
+      document.getElementById("lb-caption").textContent = caption;
+      lb.hidden = false;
+    }
+    function card(p) {
+      const d = document.createElement("div");
+      d.className = "panel-card";
+      const img = p.thumb || p.image;
+      d.innerHTML = `
+        ${img ? `<img class="thumb" src="${img}" alt="${p.panel_label || ""}">` : ""}
+        <div class="card-body">
+          <div class="badges">
+            ${p.typicality ? `<span class="badge t-${p.typicality}">${p.typicality}</span>` : ""}
+            ${p.skin_tone ? `<span class="badge">${p.skin_tone}</span>` : ""}
+          </div>
+          <div class="findings">${(p.findings || []).map(f => (typeof f === "string" ? f : f.key)).join(", ")}</div>
+          <div class="meta">${p.subtype || ""} ${p.body_site || ""}</div>
+          ${(p.caption_variants || [p.figure_caption]).filter(Boolean).map(cap =>
+            `<div class="caption">${[p.figure_label, cap].filter(Boolean).join(" — ")}</div>`).join("")}
+          ${(p.attribution_variants || [p.attribution_text || ""]).map(a =>
+            `<div class="attrib">${a}
+              ${p.doi_url ? `<a href="${p.doi_url}" target="_blank" rel="noopener">DOI</a>` : ""}
+            </div>`).join("")}
+        </div>`;
+      if (p.image) d.querySelector(".thumb").addEventListener("click", () => {
+        const cap = [p.figure_label, p.figure_caption].filter(Boolean).join(" — ");
+        openLightbox(p.image, [cap, p.attribution_text || ""].filter(Boolean).join("\n\n"));
+      });
+      return d;
+    }
+    fetch("/api/compare/sle-dm-skin").then(r => r.json()).then(pairs => {
+      const main = document.getElementById("comparisons");
+      for (const pair of pairs) {
+        const sec = document.createElement("section");
+        sec.className = "comparison";
+        sec.innerHTML = `<h2>${pair.title}</h2><div class="pair">
+          <div class="side"><h3>${pair.left.label}</h3><div class="grid"></div></div>
+          <div class="side"><h3>${pair.right.label}</h3><div class="grid"></div></div>
+        </div>`;
+        const [lg, rg] = sec.querySelectorAll(".grid");
+        for (const p of pair.left.panels) lg.appendChild(card(p));
+        for (const p of pair.right.panels) rg.appendChild(card(p));
+        if (!pair.left.panels.length) lg.innerHTML = "<p class='empty'>no panels</p>";
+        if (!pair.right.panels.length) rg.innerHTML = "<p class='empty'>no panels</p>";
+        main.appendChild(sec);
+      }
+    });
+  </script>
+</body>
+</html>

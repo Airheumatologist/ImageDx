@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Disease library</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <a href="/">&larr; all diseases</a>
+    <h1 id="title"></h1>
+  </header>
+  <nav id="tabs"></nav>
+  <section id="filters">
+    <select id="f-subtype"><option value="">subtype: all</option></select>
+    <select id="f-modality"><option value="">modality: all</option></select>
+    <select id="f-finding"><option value="">finding: all</option></select>
+    <select id="f-typicality">
+      <option value="">typicality: all</option>
+      <option value="classic">classic</option>
+      <option value="variant">variant</option>
+      <option value="atypical">atypical</option>
+    </select>
+    <select id="f-skin-tone" hidden>
+      <option value="">skin tone: all</option>
+      <option value="light">light</option>
+      <option value="medium">medium</option>
+      <option value="dark">dark</option>
+      <option value="unknown">unknown</option>
+    </select>
+  </section>
+  <main id="content"></main>
+  <aside id="key-findings"><h2>Key findings</h2><ul></ul></aside>
+
+  <div id="lightbox" hidden>
+    <div class="lb-inner">
+      <img id="lb-img" alt="">
+      <div id="lb-caption"></div>
+    </div>
+  </div>
+
+  <script>
+    const DISEASE = location.pathname.split("/").pop();
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

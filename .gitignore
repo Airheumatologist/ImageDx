@@ -9,6 +9,9 @@ __pycache__/
 .DS_Store
 *.xml
 
+# Keep the JATS test fixture tracked
+!tests/fixtures/*.xml
+
 # macOS metadata
 ._*
 **/._*

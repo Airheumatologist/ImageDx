@@ -18,10 +18,13 @@ serve | run-all`. Every stage is idempotent and resumes from the `status`
 column. Data lives under `data/visual_pilot/` (override with `VP_DATA_DIR`):
 `visual_pilot.sqlite`, `panels/`, `thumbs/`, `figures/`, `reports/`.
 
-Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
-`VP_JUDGE_MODEL`, `VP_LLM_PROVIDER`, `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`,
+Config env vars (see `env.example`): `VP_TRIAGE_MODEL` (default
+`meta-llama/Llama-4-Scout-17B-16E-Instruct` — Qwen3-235B timed out / 429'd on
+every batched P2 call), `VP_EXTRACT_MODEL`, `VP_JUDGE_MODEL`, `VP_TRIAGE_BATCH`
+(P2 batch size, default 40), `VP_LLM_PROVIDER`, `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`,
 `VP_NCBI_API_KEY`, `VP_DATA_DIR`. Provider keys come from the existing `.env`
-(`XAI_API_KEY`, `DEEPINFRA_API_KEY`, `TURBOPUFFER_API_KEY`) via `src.config`.
+(`DEEPINFRA_API_KEY`, `OPENCODE_API_KEY`, `TURBOPUFFER_API_KEY`) via
+`src.config`; the default provider is DeepInfra (`VP_LLM_PROVIDER`).
 
 ## Stage 0 findings
 

@@ -216,7 +216,7 @@ class LLMClient:
             # max_retries=0: transient retries are handled here so that
             # budget/cache semantics stay under our control.
             self._client = openai.OpenAI(
-                api_key=self.api_key, base_url=self.base_url, timeout=180, max_retries=0
+                api_key=self.api_key, base_url=self.base_url, timeout=300, max_retries=0
             )
         return self._client
 

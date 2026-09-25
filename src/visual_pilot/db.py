@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS articles (
     primary_disease_keys_json TEXT NOT NULL DEFAULT '[]',
     relevance_decision      TEXT,
     relevance_reason        TEXT,
+    study_region            TEXT,
+    error                   TEXT,
     status                  TEXT NOT NULL DEFAULT 'candidate',
     created_at              TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
@@ -201,9 +203,10 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     # check_same_thread=False lets LLMClient.call_many share one connection
     # across its worker threads; callers must serialize writes (llm.py does
     # this with a lock).
-    conn = sqlite3.connect(path, check_same_thread=False)
+    conn = sqlite3.connect(path, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -213,8 +216,31 @@ def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
     if conn is None:
         conn = connect()
     conn.executescript(SCHEMA)
+    _migrate_articles(conn)
     conn.commit()
     return conn
+
+
+# Columns added after the first schema version. CREATE TABLE above already
+# includes them; the ALTERs only fire on databases created before they
+# existed (init stays idempotent via PRAGMA table_info).
+_ARTICLE_MIGRATIONS = (
+    "ALTER TABLE articles ADD COLUMN study_region TEXT",
+    "ALTER TABLE articles ADD COLUMN error TEXT",
+)
+
+
+def _migrate_articles(conn: sqlite3.Connection) -> None:
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(articles)")}
+    if not existing:
+        return
+    wanted = {
+        "study_region": _ARTICLE_MIGRATIONS[0],
+        "error": _ARTICLE_MIGRATIONS[1],
+    }
+    for column, statement in wanted.items():
+        if column not in existing:
+            conn.execute(statement)
 
 
 # -----------------------------------------------------------------------------

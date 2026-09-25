@@ -67,13 +67,17 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 # -----------------------------------------------------------------------------
 VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "deepinfra").strip().lower()
 # Cheap instruct model with reliable JSON output for relevance/triage/extract.
-VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "Qwen/Qwen3-235B-A22B-Instruct-2507")
+# P2 triage default is Llama-4-Scout: the 235B endpoint timed out / 429'd on
+# every batched P2 call (2026-09-25); Scout completed identical batches.
+VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct")
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "Qwen/Qwen3-235B-A22B-Instruct-2507")
 # Strongest VL model available on DeepInfra for the vision judge.
 VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "Qwen/Qwen3-VL-235B-A22B-Instruct")
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_NCBI_API_KEY = os.getenv("VP_NCBI_API_KEY") or None
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 4))
+# Figures per P2 caption-triage batch.
+VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 
 # Per-model USD per 1M tokens (input/output). Source: DeepInfra
 # `GET {DEEPINFRA_BASE_URL}/models` -> metadata.pricing, cross-checked against
