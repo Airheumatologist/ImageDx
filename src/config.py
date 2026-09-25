@@ -80,29 +80,29 @@ DEEPINFRA_RETRY_DELAY = float(os.getenv("DEEPINFRA_RETRY_DELAY", "1.0"))  # Base
 DEEPINFRA_CHAT_TIMEOUT_SECONDS = _env_float("DEEPINFRA_CHAT_TIMEOUT_SECONDS", 300.0)
 DEEPINFRA_EMBED_TIMEOUT_SECONDS = _env_float("DEEPINFRA_EMBED_TIMEOUT_SECONDS", 120.0)
 DEEPINFRA_RERANK_TIMEOUT_SECONDS = _env_float("DEEPINFRA_RERANK_TIMEOUT_SECONDS", 60.0)
-XAI_API_KEY = os.getenv("XAI_API_KEY")
-XAI_BASE_URL = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
-XAI_RETRY_COUNT = _env_int("XAI_RETRY_COUNT", 3)
-XAI_RETRY_DELAY = _env_float("XAI_RETRY_DELAY", 1.0)
-XAI_CHAT_TIMEOUT_SECONDS = _env_float("XAI_CHAT_TIMEOUT_SECONDS", 300.0)
+OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
+OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/v1")
+OPENCODE_RETRY_COUNT = _env_int("OPENCODE_RETRY_COUNT", 3)
+OPENCODE_RETRY_DELAY = _env_float("OPENCODE_RETRY_DELAY", 1.0)
+OPENCODE_CHAT_TIMEOUT_SECONDS = _env_float("OPENCODE_CHAT_TIMEOUT_SECONDS", 300.0)
 
 # LLM Generation Parameters
 LLM_TEMPERATURE = 0.7  # Controls randomness (0=deterministic, 1=creative)
 LLM_TOP_P = 0.9  # Nucleus sampling threshold
 
 # LLM Configuration (Generation)
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "xai").strip().lower()
-LLM_MODEL = os.getenv("LLM_MODEL", "grok-4-1-fast-non-reasoning")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "opencode").strip().lower()
+LLM_MODEL = os.getenv("LLM_MODEL", "space-bunny-free")
 QUERY_PREPROCESSOR_LLM_MODEL = os.getenv(
     "QUERY_PREPROCESSOR_LLM_MODEL",
-    "grok-4-1-fast-non-reasoning",
+    "space-bunny-free",
 )
 LLM_MAX_COMPLETION_TOKENS = _env_int("LLM_MAX_COMPLETION_TOKENS", 8192)
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip().lower()
-if LLM_PROVIDER == "xai":
-    LLM_RETRY_COUNT = XAI_RETRY_COUNT
-    LLM_RETRY_DELAY = XAI_RETRY_DELAY
-    LLM_CHAT_TIMEOUT_SECONDS = XAI_CHAT_TIMEOUT_SECONDS
+if LLM_PROVIDER == "opencode":
+    LLM_RETRY_COUNT = OPENCODE_RETRY_COUNT
+    LLM_RETRY_DELAY = OPENCODE_RETRY_DELAY
+    LLM_CHAT_TIMEOUT_SECONDS = OPENCODE_CHAT_TIMEOUT_SECONDS
 else:
     LLM_RETRY_COUNT = DEEPINFRA_RETRY_COUNT
     LLM_RETRY_DELAY = DEEPINFRA_RETRY_DELAY
@@ -302,12 +302,12 @@ def validate_config():
         errors.append(f"EMBEDDING_PROVIDER '{EMBEDDING_PROVIDER}' is not supported")
     if EMBEDDING_PROVIDER == "hf_inference_endpoint" and not HF_INFERENCE_ENDPOINT_API_KEY:
         errors.append("HF_INFERENCE_ENDPOINT_API_KEY not set (required when EMBEDDING_PROVIDER=hf_inference_endpoint)")
-    if LLM_PROVIDER not in {"deepinfra", "xai"}:
-        errors.append("LLM_PROVIDER must be one of: deepinfra, xai")
+    if LLM_PROVIDER not in {"deepinfra", "opencode"}:
+        errors.append("LLM_PROVIDER must be one of: deepinfra, opencode")
     if LLM_PROVIDER == "deepinfra" and not DEEPINFRA_API_KEY:
         errors.append("DEEPINFRA_API_KEY not set (required when LLM_PROVIDER=deepinfra)")
-    if LLM_PROVIDER == "xai" and not XAI_API_KEY:
-        errors.append("XAI_API_KEY not set (required when LLM_PROVIDER=xai)")
+    if LLM_PROVIDER == "opencode" and not OPENCODE_API_KEY:
+        errors.append("OPENCODE_API_KEY not set (required when LLM_PROVIDER=opencode)")
     if not (1.0 <= float(RERANK_COUNTRY_BOOST_MULTIPLIER) <= 1.2):
         errors.append("RERANK_COUNTRY_BOOST_MULTIPLIER must be between 1.0 and 1.2")
     if RERANK_COUNTRY_BOOST_POLICY not in {"us_eu27"}:
@@ -327,8 +327,8 @@ if __name__ == "__main__":
     print("=" * 50)
     try:
         validate_config()
-        llm_key = XAI_API_KEY if LLM_PROVIDER == "xai" else DEEPINFRA_API_KEY
-        llm_base_url = XAI_BASE_URL if LLM_PROVIDER == "xai" else DEEPINFRA_BASE_URL
+        llm_key = OPENCODE_API_KEY if LLM_PROVIDER == "opencode" else DEEPINFRA_API_KEY
+        llm_base_url = OPENCODE_BASE_URL if LLM_PROVIDER == "opencode" else DEEPINFRA_BASE_URL
         llm_key_display = f"{llm_key[:20]}..." if llm_key else "<missing>"
         print(f"✅ LLM API key: {llm_key_display}")
         print(f"✅ Final LLM Model: {LLM_MODEL}")

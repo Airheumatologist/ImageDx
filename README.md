@@ -335,7 +335,7 @@ Start from `env.example` and create a local `.env`.
 Minimum required secrets:
 
 ```env
-XAI_API_KEY=...
+OPENCODE_API_KEY=...
 DEEPINFRA_API_KEY=...
 TURBOPUFFER_API_KEY=...
 ```
@@ -343,9 +343,9 @@ TURBOPUFFER_API_KEY=...
 Important runtime settings:
 
 ```env
-LLM_PROVIDER=xai
-LLM_MODEL=grok-4-1-fast-non-reasoning
-QUERY_PREPROCESSOR_LLM_MODEL=grok-4-1-fast-non-reasoning
+LLM_PROVIDER=opencode
+LLM_MODEL=space-bunny-free
+QUERY_PREPROCESSOR_LLM_MODEL=space-bunny-free
 EMBEDDING_PROVIDER=deepinfra
 RERANKER_MODEL=Qwen/Qwen3-Reranker-0.6B
 
@@ -451,7 +451,7 @@ az webapp config appsettings set -g <rg> -n <app-name> --settings \
   UPSTREAM_HTTP_MAX_CONNECTIONS=200 \
   UPSTREAM_HTTP_MAX_KEEPALIVE=100 \
   UPSTREAM_HTTP_KEEPALIVE_EXPIRY=30 \
-  XAI_API_KEY=<...> \
+  OPENCODE_API_KEY=<...> \
   DEEPINFRA_API_KEY=<...> \
   TURBOPUFFER_API_KEY=<...>
 ```

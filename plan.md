@@ -65,7 +65,7 @@ Azure OpenAI is billed per token. Prices are usually the same across regions for
 2. **Quota.** Request tokens-per-minute (TPM) and requests-per-minute (RPM) quota in Central US at least equal to current South India production usage, plus headroom.
 3. **Content filter / safety settings.** Copy the same content-filter policy to the new deployment.
 4. **Data residency / compliance.** Confirm with whoever owns compliance that processing Indian users' queries in a US region is acceptable. Retrieval (DeepInfra, turbopuffer) is already in the US, but the LLM and app server currently are not.
-5. **LLM client code path.** In this repo `LLM_PROVIDER` supports `xai` and `deepinfra` (`src/config.py`, `src/rag_pipeline.py::_create_llm_client`, `src/query_preprocessor.py`). Confirm how the production build points at Azure OpenAI (the branch/config used in prod). The steps below assume it's configured through environment variables (endpoint, API key, API version, deployment name). If it's hard-coded, make the endpoint configurable first.
+5. **LLM client code path.** In this repo `LLM_PROVIDER` supports `opencode` and `deepinfra` (`src/config.py`, `src/rag_pipeline.py::_create_llm_client`, `src/query_preprocessor.py`). Confirm how the production build points at Azure OpenAI (the branch/config used in prod). The steps below assume it's configured through environment variables (endpoint, API key, API version, deployment name). If it's hard-coded, make the endpoint configurable first.
 
 ## Steps
 

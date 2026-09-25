@@ -23,8 +23,8 @@ from openai import OpenAI
 from .config import (
     DEEPINFRA_API_KEY,
     DEEPINFRA_BASE_URL,
-    XAI_API_KEY,
-    XAI_BASE_URL,
+    OPENCODE_API_KEY,
+    OPENCODE_BASE_URL,
     LLM_PROVIDER,
     LLM_CHAT_TIMEOUT_SECONDS,
     LLM_RETRY_COUNT,
@@ -110,16 +110,6 @@ class MedicalRAGPipeline:
     5. Direct LLM synthesis with ELIXIR prompt (DeepInfra)
     """
 
-    @staticmethod
-    def _conversation_id_from_thread_context(thread_context: Optional[Dict[str, Any]]) -> str:
-        if not isinstance(thread_context, dict):
-            return ""
-        for field in ("conversation_id", "thread_id", "session_id", "chat_id"):
-            value = str(thread_context.get(field, "")).strip()
-            if value:
-                return value[:120]
-        return ""
-    
     def __init__(
         self,
         model: str = LLM_MODEL,
@@ -134,8 +124,8 @@ class MedicalRAGPipeline:
 
         if LLM_PROVIDER == "deepinfra" and not DEEPINFRA_API_KEY:
             raise ValueError("DEEPINFRA_API_KEY not set")
-        if LLM_PROVIDER == "xai" and not XAI_API_KEY:
-            raise ValueError("XAI_API_KEY not set")
+        if LLM_PROVIDER == "opencode" and not OPENCODE_API_KEY:
+            raise ValueError("OPENCODE_API_KEY not set")
 
         self.model = model
         self.query_preprocessor_model = query_preprocessor_model
@@ -251,10 +241,10 @@ class MedicalRAGPipeline:
                 timeout=LLM_CHAT_TIMEOUT_SECONDS,
                 http_client=self._openai_http_client,
             )
-        if provider == "xai":
+        if provider == "opencode":
             return OpenAI(
-                api_key=XAI_API_KEY,
-                base_url=XAI_BASE_URL,
+                api_key=OPENCODE_API_KEY,
+                base_url=OPENCODE_BASE_URL,
                 timeout=LLM_CHAT_TIMEOUT_SECONDS,
                 http_client=self._openai_http_client,
             )
@@ -267,7 +257,6 @@ class MedicalRAGPipeline:
         messages: List[Dict[str, str]],
         provider: str,
         stream: bool = False,
-        conversation_id: str = "",
     ) -> Dict[str, Any]:
         """Build provider-specific request kwargs for chat completions."""
         request_kwargs: Dict[str, Any] = {
@@ -278,11 +267,12 @@ class MedicalRAGPipeline:
         }
         if stream:
             request_kwargs["stream"] = True
-        request_kwargs["max_completion_tokens"] = LLM_MAX_COMPLETION_TOKENS
-        if LLM_REASONING_EFFORT and provider != "xai":
+        if provider == "opencode":
+            request_kwargs["max_tokens"] = LLM_MAX_COMPLETION_TOKENS
+        else:
+            request_kwargs["max_completion_tokens"] = LLM_MAX_COMPLETION_TOKENS
+        if LLM_REASONING_EFFORT:
             request_kwargs["reasoning_effort"] = LLM_REASONING_EFFORT
-        if provider == "xai" and conversation_id:
-            request_kwargs["extra_headers"] = {"x-grok-conv-id": conversation_id}
         return request_kwargs
 
     @staticmethod
@@ -2231,7 +2221,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
         papers_df,
         processed_query: Optional[LLMProcessedQuery] = None,
         stream: bool = False,
-        thread_context: Optional[Dict[str, Any]] = None,
     ):
         """Generate answer directly using LLM with ELIXIR system prompt."""
         logger.info("🧠 Step 4: Direct LLM Synthesis")
@@ -2263,7 +2252,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                     system_prompt,
                     user_prompt,
                     used_papers,
-                    thread_context=thread_context,
                 )
             
             response = self._create_chat_completion(
@@ -2272,7 +2260,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                thread_context=thread_context,
             )
 
             raw_output = response.choices[0].message.content.strip()
@@ -2290,7 +2277,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
         system_prompt: str,
         user_prompt: str,
         used_papers: list,
-        thread_context: Optional[Dict[str, Any]] = None,
     ) -> Generator[Dict[str, Any], None, None]:
         """Generator for token-by-token streaming."""
         try:
@@ -2301,7 +2287,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                     {"role": "user", "content": user_prompt},
                 ],
                 stream=True,
-                thread_context=thread_context,
             )
             
             full_answer = ""
@@ -2309,6 +2294,7 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
             buffer = ""
             marker_started = False
             hold_chars = max(1, len(FOLLOW_UP_MARKER) - 1)
+            last_reasoning_emit = 0.0
             for chunk in response:
                 if chunk.choices and chunk.choices[0].delta.content:
                     token = chunk.choices[0].delta.content
@@ -2336,6 +2322,11 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                         buffer = combined[-hold_chars:]
                     else:
                         buffer = combined
+                elif chunk.choices and getattr(chunk.choices[0].delta, "reasoning_content", None):
+                    now = time.monotonic()
+                    if now - last_reasoning_emit >= 2.0:
+                        last_reasoning_emit = now
+                        yield {"step": "generation", "status": "running", "message": "Reasoning before answering..."}
 
             if buffer and not marker_started:
                 full_answer += buffer
@@ -2368,7 +2359,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
         query: str,
         processed_query: Optional[LLMProcessedQuery] = None,
         stream: bool = False,
-        thread_context: Optional[Dict[str, Any]] = None,
     ):
         """
         Generate response when no sources are found using the same LLM model.
@@ -2396,7 +2386,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                     query,
                     fallback_system_prompt,
                     user_prompt,
-                    thread_context=thread_context,
                 )
             
             response = self._create_chat_completion(
@@ -2405,7 +2394,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                     {"role": "system", "content": fallback_system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                thread_context=thread_context,
             )
             
             raw_output = response.choices[0].message.content.strip()
@@ -2422,7 +2410,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
         query: str,
         system_prompt: str,
         user_prompt: str,
-        thread_context: Optional[Dict[str, Any]] = None,
     ) -> Generator[Dict[str, Any], None, None]:
         """Stream fallback generation tokens."""
         try:
@@ -2433,7 +2420,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                     {"role": "user", "content": user_prompt},
                 ],
                 stream=True,
-                thread_context=thread_context,
             )
             
             full_answer = ""
@@ -2441,6 +2427,7 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
             buffer = ""
             marker_started = False
             hold_chars = max(1, len(FOLLOW_UP_MARKER) - 1)
+            last_reasoning_emit = 0.0
             for chunk in response:
                 if chunk.choices and chunk.choices[0].delta.content:
                     token = chunk.choices[0].delta.content
@@ -2468,6 +2455,11 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                         buffer = combined[-hold_chars:]
                     else:
                         buffer = combined
+                elif chunk.choices and getattr(chunk.choices[0].delta, "reasoning_content", None):
+                    now = time.monotonic()
+                    if now - last_reasoning_emit >= 2.0:
+                        last_reasoning_emit = now
+                        yield {"step": "generation", "status": "running", "message": "Reasoning before answering..."}
 
             if buffer and not marker_started:
                 full_answer += buffer
@@ -2496,17 +2488,12 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
         model: str,
         messages: List[Dict[str, str]],
         stream: bool = False,
-        thread_context: Optional[Dict[str, Any]] = None,
     ):
-        conversation_id = ""
-        if self.llm_provider == "xai":
-            conversation_id = self._conversation_id_from_thread_context(thread_context)
         request_kwargs = self._build_chat_completion_kwargs(
             model=model,
             messages=messages,
             provider=self.llm_provider,
             stream=stream,
-            conversation_id=conversation_id,
         )
         return retry_with_exponential_backoff(
             lambda: self.llm_client.chat.completions.create(**request_kwargs),
@@ -2960,7 +2947,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                 query,
                 processed_query=processed_query,
                 stream=False,
-                thread_context=thread_context,
             )
             result = {
                 "query": query,
@@ -3005,7 +2991,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                 query,
                 processed_query=processed_query,
                 stream=False,
-                thread_context=thread_context,
             )
             result = {
                 "query": query,
@@ -3026,7 +3011,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
             query,
             papers_df,
             processed_query=processed_query,
-            thread_context=thread_context,
         )
         
         # Handle tuple return (answer, used_papers, follow_up_questions) or error string
@@ -3133,7 +3117,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                 query,
                 processed_query=processed_query,
                 stream=True,
-                thread_context=thread_context,
             )
             final_answer = ""
             follow_up_questions: List[str] = []
@@ -3215,7 +3198,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                 query,
                 processed_query=processed_query,
                 stream=True,
-                thread_context=thread_context,
             )
             final_answer = ""
             follow_up_questions = []
@@ -3273,7 +3255,6 @@ Generate exactly 3 standalone, knowledge-expanding follow-up questions that do n
                 papers_df,
                 processed_query=processed_query,
                 stream=True,
-                thread_context=thread_context,
             )
             for event in generation_gen:
                 if event["step"] == "generation" and event["status"] == "running":

@@ -21,8 +21,8 @@ from pydantic import BaseModel, Field
 from .config import (
     DEEPINFRA_API_KEY,
     DEEPINFRA_BASE_URL,
-    XAI_API_KEY,
-    XAI_BASE_URL,
+    OPENCODE_API_KEY,
+    OPENCODE_BASE_URL,
     LLM_PROVIDER,
     LLM_RETRY_COUNT,
     LLM_RETRY_DELAY,
@@ -263,15 +263,6 @@ class QueryPreprocessor:
         "emergency department",
     )
     _USMLE_OPTION_MARKER_RE = re.compile(r"(?:\([A-E]\)|\b[A-E]\))\s*", flags=re.IGNORECASE)
-    @staticmethod
-    def _conversation_id_from_thread_context(thread_context: Optional[Dict[str, Any]]) -> str:
-        if not isinstance(thread_context, dict):
-            return ""
-        for field in ("conversation_id", "thread_id", "session_id", "chat_id"):
-            value = str(thread_context.get(field, "")).strip()
-            if value:
-                return value[:120]
-        return ""
 
     _USMLE_PATIENT_CUE_RE = re.compile(
         r"\b(?:\d{1,3}-year-old|patient|man|woman|male|female|infant|child|boy|girl|newborn|neonate)\b"
@@ -336,12 +327,12 @@ class QueryPreprocessor:
                 timeout=LLM_CHAT_TIMEOUT_SECONDS,
                 http_client=self._openai_http_client,
             )
-        if provider == "xai":
-            if not XAI_API_KEY:
-                raise ValueError("XAI_API_KEY not set")
+        if provider == "opencode":
+            if not OPENCODE_API_KEY:
+                raise ValueError("OPENCODE_API_KEY not set")
             return OpenAI(
-                api_key=XAI_API_KEY,
-                base_url=XAI_BASE_URL,
+                api_key=OPENCODE_API_KEY,
+                base_url=OPENCODE_BASE_URL,
                 timeout=LLM_CHAT_TIMEOUT_SECONDS,
                 http_client=self._openai_http_client,
             )
@@ -353,7 +344,6 @@ class QueryPreprocessor:
         model: str,
         messages: List[Dict[str, str]],
         provider: str,
-        conversation_id: str = "",
     ) -> Dict[str, Any]:
         """Build provider-specific chat completion kwargs."""
         request_kwargs: Dict[str, Any] = {
@@ -362,11 +352,12 @@ class QueryPreprocessor:
             "temperature": LLM_TEMPERATURE,
             "top_p": LLM_TOP_P,
         }
-        request_kwargs["max_completion_tokens"] = LLM_MAX_COMPLETION_TOKENS
-        if LLM_REASONING_EFFORT and provider != "xai":
+        if provider == "opencode":
+            request_kwargs["max_tokens"] = LLM_MAX_COMPLETION_TOKENS
+        else:
+            request_kwargs["max_completion_tokens"] = LLM_MAX_COMPLETION_TOKENS
+        if LLM_REASONING_EFFORT:
             request_kwargs["reasoning_effort"] = LLM_REASONING_EFFORT
-        if provider == "xai" and conversation_id:
-            request_kwargs["extra_headers"] = {"x-grok-conv-id": conversation_id}
         return request_kwargs
 
     def _normalize_response_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -601,7 +592,6 @@ class QueryPreprocessor:
                     {"role": "user", "content": user_prompt},
                 ],
                 operation_name=f"{self.llm_provider} usmle option query generation",
-                thread_context=thread_context,
             )
             content = response.choices[0].message.content.strip()
             if content.startswith("```"):
@@ -829,17 +819,12 @@ class QueryPreprocessor:
         self,
         messages: List[Dict[str, str]],
         operation_name: str,
-        thread_context: Optional[Dict[str, Any]] = None,
     ):
         """Execute chat completion with exponential-backoff retry."""
-        conversation_id = ""
-        if self.llm_provider == "xai":
-            conversation_id = self._conversation_id_from_thread_context(thread_context)
         request_kwargs = self._build_request_kwargs(
             model=self.model,
             messages=messages,
             provider=self.llm_provider,
-            conversation_id=conversation_id,
         )
         return retry_with_exponential_backoff(
             lambda: self.llm_client.chat.completions.create(**request_kwargs),
@@ -863,7 +848,6 @@ class QueryPreprocessor:
                     {"role": "user", "content": user_input},
                 ],
                 operation_name=f"{self.llm_provider} query decomposition",
-                thread_context=thread_context,
             )
             decomposed = self._parse_llm_response(response.choices[0].message.content.strip())
         except Exception as exc:
