@@ -40,6 +40,31 @@ def mock_http(fast_limiter):
     pmc.reset_caches()
 
 
+@pytest.fixture()
+def spy_http(fast_limiter):
+    """Like mock_http but also records every requested URL."""
+
+    routes: dict[str, httpx.Response] = {}
+    requests: list[str] = []
+
+    def add(substring: str, response: httpx.Response):
+        routes[substring] = response
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        requests.append(url)
+        for pat, resp in routes.items():
+            if pat in url:
+                return resp
+        return httpx.Response(404, text="not found")
+
+    pmc.set_http_client(httpx.Client(transport=httpx.MockTransport(handler)))
+    pmc.reset_caches()
+    yield add, requests
+    pmc.set_http_client(None)
+    pmc.reset_caches()
+
+
 def _json_resp(payload) -> httpx.Response:
     return httpx.Response(200, json=payload)
 
@@ -82,6 +107,47 @@ def _register_article(add):
     add("/PMC999.1/PMC999.1.json", _json_resp(META_JSON))
     add("/PMC999.1/PMC999.1.xml", _text_resp(ARTICLE_XML))
     add("/PMC999.1/fig1.jpg", httpx.Response(200, content=jpeg))
+
+
+# A second article with varied hrefs: resolvable, extensionless, absolute
+# URL, and genuinely missing (needs_bytes).
+LIST_KEYS_XML_777 = """<?xml version="1.0" encoding="UTF-8"?>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Name>pmc-oa-opendata</Name><Prefix>PMC777.</Prefix>
+  <KeyCount>5</KeyCount><MaxKeys>200</MaxKeys><IsTruncated>false</IsTruncated>
+  <Contents><Key>PMC777.2/PMC777.2.json</Key></Contents>
+  <Contents><Key>PMC777.2/PMC777.2.xml</Key></Contents>
+  <Contents><Key>PMC777.2/figA.jpg</Key></Contents>
+  <Contents><Key>PMC777.2/figB.tiff</Key></Contents>
+  <Contents><Key>PMC777.2/unused.png</Key></Contents>
+</ListBucketResult>"""
+
+META_JSON_777 = {
+    "pmcid": "PMC777",
+    "version": 2,
+    "license_code": "CC BY",
+    "is_pmc_openaccess": True,
+    "xml_url": "s3://pmc-oa-opendata/PMC777.2/PMC777.2.xml?md5=x",
+}
+
+ARTICLE_XML_777 = (
+    '<article xmlns:xlink="http://www.w3.org/1999/xlink">'
+    '<front><article-meta><permissions>'
+    '<license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/"/>'
+    "</permissions></article-meta></front>"
+    "<body>"
+    '<fig id="fa"><graphic xlink:href="figA.jpg"/></fig>'
+    '<fig id="fb"><graphic xlink:href="figB"/></fig>'
+    '<fig id="fe"><graphic xlink:href="https://cdn.example.com/ext.png"/></fig>'
+    '<fig id="fm"><graphic xlink:href="missing.png"/></fig>'
+    "</body></article>"
+)
+
+
+def _register_article_777(add):
+    add("list-type=2&prefix=PMC777", _text_resp(LIST_KEYS_XML_777))
+    add("/PMC777.2/PMC777.2.json", _json_resp(META_JSON_777))
+    add("/PMC777.2/PMC777.2.xml", _text_resp(ARTICLE_XML_777))
 
 
 # ---------------------------------------------------------------------------
@@ -245,3 +311,96 @@ def test_no_files_written_during_fetch_and_prepare(vp_data_dir, tmp_path, mock_h
     assert mime == "image/jpeg"
     after = (_tree_snapshot(vp_data_dir), _tree_snapshot(tmp_path))
     assert before == after
+
+
+# ---------------------------------------------------------------------------
+# C3: LicenseInfo hints, hinted bundles, S3 limiter, cache sizes
+# ---------------------------------------------------------------------------
+def test_license_info_carries_s3_hints(mock_http):
+    _register_article(mock_http)
+    lic = pmc.get_license("PMC999")
+    assert lic.prefix == "PMC999.1"
+    assert lic.media_files == ("fig1.jpg",)
+
+
+def test_hinted_bundle_skips_listing_and_metadata(spy_http):
+    add, requests = spy_http
+    add("/PMC999.1/PMC999.1.xml", _text_resp(ARTICLE_XML))
+    bundle = pmc.get_article_bundle(
+        "PMC999", prefix="PMC999.1", media_files=("fig1.jpg",)
+    )
+    ref = bundle.resolver("fig1.jpg")
+    assert ref.url == f"{pmc.S3_BASE}/PMC999.1/fig1.jpg"
+    assert not any("list-type=2" in url for url in requests)
+    assert not any(url.endswith(".json") for url in requests)
+    assert sum("PMC999.1/PMC999.1.xml" in url for url in requests) == 1
+
+
+def test_hinted_bundle_prefix_only_matches_unhinted(spy_http):
+    """A prefix-only hint cannot reproduce media_urls-derived file sets, so
+    it transparently falls back to the standard lookup — identical refs."""
+    add, requests = spy_http
+    _register_article(add)
+    hinted = pmc.get_article_bundle("PMC999", prefix="PMC999.1", use_cache=False)
+    hinted_requests = list(requests)
+    requests.clear()
+    plain = pmc.get_article_bundle("PMC999", use_cache=False)
+    for href in list(pmc._iter_local_hrefs(plain.xml_text)) + ["nope.gif"]:
+        assert hinted.resolver(href) == plain.resolver(href), href
+    # The hinted prefix's XML was fetched directly (exactly once).
+    assert sum("PMC999.1/PMC999.1.xml" in url for url in hinted_requests) == 1
+
+
+def test_hinted_and_unhinted_resolver_parity(spy_http):
+    """Every href in the fixture resolves to identical ImageRefs."""
+    add, _ = spy_http
+    _register_article_777(add)
+    plain = pmc.get_article_bundle("PMC777", use_cache=False)
+    hinted = pmc.get_article_bundle(
+        "PMC777",
+        use_cache=False,
+        prefix="PMC777.2",
+        media_files=("figA.jpg", "figB.tiff", "unused.png"),
+    )
+    hrefs = list(pmc._iter_local_hrefs(plain.xml_text))
+    assert {"figA.jpg", "figB", "missing.png"} <= set(hrefs)
+    hrefs += ["nope.gif", "subdir/figA.jpg"]
+    for href in hrefs:
+        assert plain.resolver(href) == hinted.resolver(href), href
+
+
+def test_incomplete_media_hint_falls_back_to_listing(spy_http):
+    add, requests = spy_http
+    _register_article(add)
+    bundle = pmc.get_article_bundle(
+        "PMC999", prefix="PMC999.1", media_files=("wrong.png",)
+    )
+    ref = bundle.resolver("fig1.jpg")
+    assert ref.url == f"{pmc.S3_BASE}/PMC999.1/fig1.jpg"
+    assert any("list-type=2" in url for url in requests)
+
+
+def test_stale_prefix_hint_recovers_unhinted(spy_http):
+    """A hint pointing at a version dir with no XML falls back cleanly."""
+    add, requests = spy_http
+    _register_article(add)
+    bundle = pmc.get_article_bundle("PMC999", prefix="PMC999.9")
+    ref = bundle.resolver("fig1.jpg")
+    assert ref.url == f"{pmc.S3_BASE}/PMC999.1/fig1.jpg"
+
+
+def test_s3_and_ncbi_host_rates(monkeypatch):
+    monkeypatch.delenv("VP_NCBI_API_KEY", raising=False)
+    rates = pmc._default_host_rps()
+    assert rates["pmc-oa-opendata.s3.amazonaws.com"] == pmc.config.VP_S3_RPS == 20.0
+    assert rates["www.ncbi.nlm.nih.gov"] == 3.0
+    assert rates["eutils.ncbi.nlm.nih.gov"] == 3.0
+    monkeypatch.setattr(pmc.config, "VP_S3_RPS", 7.5)
+    rates = pmc._default_host_rps()
+    assert rates["pmc-oa-opendata.s3.amazonaws.com"] == 7.5
+    assert rates["www.ncbi.nlm.nih.gov"] == 3.0
+
+
+def test_cache_sizes_cover_full_run():
+    assert pmc._article_metadata.cache_info().maxsize >= 2000
+    assert pmc._article_bundle_cached.cache_info().maxsize >= 256
