@@ -328,7 +328,7 @@ def test_rerun_makes_zero_llm_calls(conn, monkeypatch):
     _figure(conn, "PMC1:f0")
     content = json.dumps({"results": [_p2_item("PMC1:f0", "keep")]})
 
-    real_client = llm.LLMClient(provider="deepinfra", db_conn=conn)
+    real_client = llm.LLMClient(provider="opencode", db_conn=conn)
     fake_openai = _FakeOpenAI(content)
     real_client._client = fake_openai
     monkeypatch.setattr(llm, "LLMClient", lambda **kw: real_client)

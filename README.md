@@ -14,7 +14,7 @@ spec is `docs/visual_pilot_plan.md`.
                         Visual Findings Library pipeline
                         ================================
 
-  PREBUILT INDEXES                    LLM STAGES (DeepInfra, default)
+  PREBUILT INDEXES                    LLM STAGES (OpenCode Zen)
   +---------------------------+       P1 article relevance   (text)
   | turbopuffer PMC namespace |       P2 caption triage      (text, batched)
   |  chunk-level: title BM25, |       P3 figure judgment     (vision)
@@ -127,8 +127,9 @@ depict the target disease.
 
 ### 3. `triage` — caption triage (`triage.py`, prompt P2)
 
-`pending` figures go to a cheap text model (`VP_TRIAGE_MODEL`, default
-`Llama-4-Scout`) in batches of `VP_TRIAGE_BATCH` (40). Per figure the model
+`pending` figures go to a text model (`VP_TRIAGE_MODEL`, default
+`space-bunny-free` on OpenCode Zen) in batches of `VP_TRIAGE_BATCH` (40). Per
+figure the model
 returns a route:
 
 ```text
@@ -150,8 +151,8 @@ Figures the model omits stay `pending` with `attempts` bumped.
 metadata priority score (disease/modality/finding hits, coverage gaps,
 license, diagram penalties — order only, never rejection). Image bytes are
 fetched into memory, normalized (`prepare_for_llm`: TIFF→PNG, downscale to
-`VP_IMAGE_MAX_EDGE`) and sent as **base64 data URLs** — DeepInfra cannot
-fetch the S3 URLs (`binary/octet-stream`, stage-0 finding).
+`VP_IMAGE_MAX_EDGE`) and sent as **base64 data URLs** — the LLM provider
+cannot fetch the S3 URLs (`binary/octet-stream`, stage-0 finding).
 
 P3 returns per-panel structured output: `include`, `disease_key`,
 `subtype`, `modality`, `body_site`, `findings[]`, `bbox`, demographics

@@ -1,6 +1,7 @@
 """Configuration for the Visual Findings Library pilot.
 
-Provider settings (xAI, DeepInfra, turbopuffer) are read from the environment;
+Provider settings (OpenCode Zen, DeepInfra embeddings, turbopuffer) are read
+from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
 are read here with their spec defaults (docs/visual_pilot_plan.md §3).
 
@@ -29,11 +30,9 @@ def _env_int(name: str, default: int) -> int:
 
 
 # -----------------------------------------------------------------------------
-# Provider settings for retrieval (turbopuffer PMC namespace + DeepInfra
-# embeddings) and the LLM stages (P1-P4).
+# Provider settings: turbopuffer PMC namespace for retrieval, DeepInfra for
+# query embeddings only, and OpenCode Zen for all LLM stages (P1-P4).
 # -----------------------------------------------------------------------------
-XAI_API_KEY = os.getenv("XAI_API_KEY")
-XAI_BASE_URL = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
 DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
 DEEPINFRA_BASE_URL = os.getenv(
     "DEEPINFRA_BASE_URL", "https://api.deepinfra.com/v1/openai"
@@ -48,14 +47,13 @@ TURBOPUFFER_NAMESPACE_PMC = os.getenv(
 TURBOPUFFER_TIMEOUT_SECONDS = _env_int("TURBOPUFFER_TIMEOUT_SECONDS", 30)
 EMBEDDING_MODEL = os.getenv(
     "RUNTIME_EMBEDDING_MODEL",
-    os.getenv("EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-0.6B"),
+    os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"),
 )
 EMBEDDING_TIMEOUT_SECONDS = _env_int("DEEPINFRA_EMBED_TIMEOUT_SECONDS", 120)
 
-# Credentials for each supported VP_LLM_PROVIDER value.
+# Credentials for each supported VP_LLM_PROVIDER value. OpenCode Zen is the
+# only LLM provider; DeepInfra credentials above are for embeddings only.
 _LLM_PROVIDER_CREDENTIALS = {
-    "xai": lambda: (XAI_API_KEY, XAI_BASE_URL),
-    "deepinfra": lambda: (DEEPINFRA_API_KEY, DEEPINFRA_BASE_URL),
     "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
 }
 LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
@@ -70,16 +68,13 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*), defaults per spec §3 / repo adjustments box.
-# Provider settled in W2/W4: DeepInfra (the repo no longer provisions xAI).
+# Every LLM stage runs on OpenCode Zen; space-bunny-free is multimodal, so the
+# same model covers caption triage, extraction, and the vision judge.
 # -----------------------------------------------------------------------------
-VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "deepinfra").strip().lower()
-# Cheap instruct model with reliable JSON output for relevance/triage/extract.
-# P2 triage default is Llama-4-Scout: the 235B endpoint timed out / 429'd on
-# every batched P2 call (2026-09-25); Scout completed identical batches.
-VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct")
-VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "Qwen/Qwen3-235B-A22B-Instruct-2507")
-# Strongest VL model available on DeepInfra for the vision judge.
-VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "Qwen/Qwen3-VL-235B-A22B-Instruct")
+VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "opencode").strip().lower()
+VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "space-bunny-free")
+VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "space-bunny-free")
+VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "space-bunny-free")
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 4))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
@@ -88,17 +83,11 @@ VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 # Maximum per-disease visual finding/modality passage queries in stage 2.
 VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 12))
 
-# Per-model USD per 1M tokens (input/output). Source: DeepInfra
-# `GET {DEEPINFRA_BASE_URL}/models` -> metadata.pricing, cross-checked against
-# https://deepinfra.com/models (e.g. /Qwen/Qwen3-VL-235B-A22B-Instruct).
-# Override or extend at runtime with VP_MODEL_PRICES_JSON='{"model": {"in": x, "out": y}}'.
+# Per-model USD per 1M tokens (input/output). space-bunny-free is free for a
+# limited time on OpenCode Zen; override or extend at runtime with
+# VP_MODEL_PRICES_JSON='{"model": {"in": x, "out": y}}'.
 MODEL_PRICES = {
-    "Qwen/Qwen3-235B-A22B-Instruct-2507": {"in": 0.09, "out": 0.55},
-    "Qwen/Qwen3-VL-235B-A22B-Instruct": {"in": 0.20, "out": 0.88},
-    # Cheaper VL fallback.
-    "Qwen/Qwen3-VL-30B-A3B-Instruct": {"in": 0.15, "out": 0.60},
-    # Backup VLM.
-    "meta-llama/Llama-4-Scout-17B-16E-Instruct": {"in": 0.10, "out": 0.30},
+    "space-bunny-free": {"in": 0.0, "out": 0.0},
 }
 
 

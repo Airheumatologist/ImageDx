@@ -31,13 +31,14 @@ after two empty-yield batches. `--batch-size`, `--max-articles`,
 `--max-runtime-seconds`, and `--zero-yield-batches` set safety limits. A
 standalone `parse` invocation processes one ranked batch and can be rerun.
 
-Config env vars (see `env.example`): `VP_TRIAGE_MODEL` (default
-`meta-llama/Llama-4-Scout-17B-16E-Instruct` — Qwen3-235B timed out / 429'd on
-every batched P2 call), `VP_EXTRACT_MODEL`, `VP_JUDGE_MODEL`, `VP_TRIAGE_BATCH`
-(P2 batch size, default 40), `VP_LLM_PROVIDER`, `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`,
+Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
+`VP_JUDGE_MODEL` (all default to `space-bunny-free` on OpenCode Zen),
+`VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_LLM_PROVIDER`,
+`VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`,
 `VP_NCBI_API_KEY`, `VP_VISUAL_QUERY_CAP`, `VP_DATA_DIR`. Provider keys come from `.env`
 (`DEEPINFRA_API_KEY`, `OPENCODE_API_KEY`, `TURBOPUFFER_API_KEY`) via
-`config.py`; the default provider is DeepInfra (`VP_LLM_PROVIDER`).
+`config.py`; the LLM provider is OpenCode Zen (`VP_LLM_PROVIDER=opencode`),
+while DeepInfra is used only for query embeddings.
 
 ## Stage 0 findings
 

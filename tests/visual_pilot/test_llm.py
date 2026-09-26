@@ -17,7 +17,7 @@ SCHEMA = {
     "additionalProperties": False,
 }
 VALID = json.dumps({"ok": True})
-MODEL = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+MODEL = "test-model"
 
 
 class _FakeMessage:
@@ -64,7 +64,7 @@ class _FakeClient:
 
 
 def make_client(items, conn=None, **kwargs):
-    client = llm.LLMClient(provider="deepinfra", db_conn=conn, **kwargs)
+    client = llm.LLMClient(provider="opencode", db_conn=conn, **kwargs)
     client._client = _FakeClient(items)
     return client
 
@@ -108,7 +108,10 @@ def test_cache_hit_makes_zero_calls(conn):
     assert len(client._client.completions.calls) == 1
 
 
-def test_ledger_row_written(conn):
+def test_ledger_row_written(conn, monkeypatch):
+    monkeypatch.setenv(
+        "VP_MODEL_PRICES_JSON", '{"test-model": {"in": 0.09, "out": 0.55}}'
+    )
     client = make_client([VALID], conn)
     _, meta = _call(client)
     row = conn.execute(
@@ -117,7 +120,7 @@ def test_ledger_row_written(conn):
     assert row["stage"] == "triage"
     assert row["model"] == MODEL
     assert row["input_tokens"] == 100 and row["output_tokens"] == 50
-    # Qwen3-235B: $0.09/$0.55 per 1M -> 100*0.09e-6 + 50*0.55e-6
+    # test-model: $0.09/$0.55 per 1M -> 100*0.09e-6 + 50*0.55e-6
     assert row["cost_usd"] == pytest.approx(100 * 0.09e-6 + 50 * 0.55e-6)
 
 
@@ -138,7 +141,10 @@ def test_second_validation_failure_raises(conn):
         _call(client)
 
 
-def test_budget_guard(conn):
+def test_budget_guard(conn, monkeypatch):
+    monkeypatch.setenv(
+        "VP_MODEL_PRICES_JSON", '{"test-model": {"in": 0.09, "out": 0.55}}'
+    )
     # One call costs ~3.65e-5 USD; a budget below that allows exactly one.
     client = make_client([VALID, VALID], conn, budget_usd=1e-5)
     _call(client)

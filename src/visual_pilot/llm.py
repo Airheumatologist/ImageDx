@@ -1,12 +1,12 @@
 """LLM provider layer for the visual pilot (workstream W4).
 
-OpenAI-compatible chat calls (DeepInfra default; opencode/xai supported) with
-strict JSON-schema output, one repair retry on validation failure, an
+OpenAI-compatible chat calls on OpenCode Zen (``VP_LLM_PROVIDER=opencode``)
+with strict JSON-schema output, one repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 
-DeepInfra has no batch API (verified: ``GET /v1/openai/batches`` -> 404), so
-``call_many`` runs requests on a thread pool of ``VP_CONCURRENCY`` workers.
+There is no provider batch API, so ``call_many`` runs requests on a thread
+pool of ``VP_CONCURRENCY`` workers.
 """
 
 from __future__ import annotations
