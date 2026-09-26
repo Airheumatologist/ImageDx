@@ -45,58 +45,118 @@ _OTHER_DISEASE_CUES = (
 )
 
 
-def _contains_any(text: str, terms) -> bool:
-    low = (text or "").casefold()
-    return any(
-        term and re.search(
-            r"(?<![a-z0-9])" + re.escape(str(term).casefold()) + r"(?![a-z0-9])",
-            low,
+def _cached_pattern(patterns: dict, term) -> re.Pattern:
+    """Compile the word-boundary regex for ``term`` once per ``patterns`` dict."""
+    key = str(term).casefold()
+    pattern = patterns.get(key)
+    if pattern is None:
+        pattern = re.compile(
+            r"(?<![a-z0-9])" + re.escape(key) + r"(?![a-z0-9])"
         )
-        for term in terms
-    )
+        patterns[key] = pattern
+    return pattern
 
 
-def _explicit_target_visual(conn, row, image_category=None) -> bool:
+def _contains_any(text: str, terms, patterns: dict | None = None) -> bool:
+    low = (text or "").casefold()
+    cache = patterns if patterns is not None else {}
+    return any(term and _cached_pattern(cache, term).search(low) for term in terms)
+
+
+class _RunContext:
+    """Per-run routing caches for ``_explicit_target_visual`` (plan §5 W10, B10).
+
+    Disease names/synonyms, approved ``findings_vocab`` rows, article disease
+    keys and compiled term regexes are stable within a single ``run``/revisit
+    pass, so they are loaded or compiled once here instead of once per figure
+    row. Each property loads lazily at the same point the old code queried.
+    """
+
+    def __init__(self, conn) -> None:
+        self._conn = conn
+        self.patterns: dict[str, re.Pattern] = {}
+        self._disease_terms: dict[str, list] | None = None
+        self._vocab: list[tuple[frozenset, list]] | None = None
+        self._article_keys: dict[str, list] = {}
+
+    def contains_any(self, text: str, terms) -> bool:
+        return _contains_any(text, terms, self.patterns)
+
+    @property
+    def disease_terms(self) -> dict[str, list]:
+        """``diseases.json`` name+synonyms term lists, keyed by disease key."""
+        if self._disease_terms is None:
+            self._disease_terms = {
+                key: [data.get("name", ""), *data.get("synonyms", [])]
+                for key, data in diseases.load_diseases().items()
+            }
+        return self._disease_terms
+
+    @property
+    def vocab(self) -> list[tuple[frozenset, list]]:
+        """Approved vocab rows as ``(disease keys, [label, *synonyms])``."""
+        if self._vocab is None:
+            self._vocab = [
+                (
+                    frozenset(db.from_json(row["disease_keys_json"], [])),
+                    [row["label"], *db.from_json(row["synonyms_json"], [])],
+                )
+                for row in self._conn.execute(
+                    "SELECT disease_keys_json,label,synonyms_json "
+                    "FROM findings_vocab WHERE approved=1"
+                )
+            ]
+        return self._vocab
+
+    def article_keys(self, pmcid: str) -> list:
+        """``articles.primary_disease_keys_json`` for ``pmcid``, memoized."""
+        if pmcid not in self._article_keys:
+            article = self._conn.execute(
+                "SELECT primary_disease_keys_json FROM articles WHERE pmcid=?",
+                (pmcid,),
+            ).fetchone()
+            self._article_keys[pmcid] = (
+                db.from_json(article["primary_disease_keys_json"], [])
+                if article
+                else []
+            )
+        return self._article_keys[pmcid]
+
+
+def _explicit_target_visual(conn, row, image_category=None, ctx=None) -> bool:
     """True when the figure text names a parent disease/finding and image type."""
-    article = conn.execute(
-        "SELECT primary_disease_keys_json FROM articles WHERE pmcid=?",
-        (row["pmcid"],),
-    ).fetchone()
-    keys = db.from_json(article["primary_disease_keys_json"], []) if article else []
+    ctx = ctx or _RunContext(conn)
+    keys = ctx.article_keys(row["pmcid"])
     # Use the figure caption for disease attribution. Broad in-text mentions
     # can discuss another condition even when the parent article covers SLE/DM.
     text = row.get("caption") or ""
-    image = _contains_any(text, _IMAGE_CUES) or image_category in _PATIENT_IMAGE_CATEGORIES
+    image = ctx.contains_any(text, _IMAGE_CUES) or image_category in _PATIENT_IMAGE_CATEGORIES
     if not image:
         return False
-    disease_data = diseases.load_diseases()
     disease_match = any(
-        _contains_any(text, [disease_data.get(key, {}).get("name", ""), *disease_data.get(key, {}).get("synonyms", [])])
+        ctx.contains_any(text, ctx.disease_terms.get(key, [""]))
         for key in keys
     )
     if disease_match:
         return True
-    if _contains_any(text, _OTHER_DISEASE_CUES):
+    if ctx.contains_any(text, _OTHER_DISEASE_CUES):
         return False
-    for vocab in conn.execute(
-        "SELECT disease_keys_json,label,synonyms_json FROM findings_vocab WHERE approved=1"
-    ):
-        if not keys or not (set(db.from_json(vocab["disease_keys_json"], [])) & set(keys)):
+    for vocab_keys, terms in ctx.vocab:
+        if not keys or not (vocab_keys & set(keys)):
             continue
-        terms = [vocab["label"], *db.from_json(vocab["synonyms_json"], [])]
-        if _contains_any(text, terms):
+        if ctx.contains_any(text, terms):
             return True
     return False
 
 
-def _contradictory_drop(conn, row, item) -> bool:
+def _contradictory_drop(conn, row, item, ctx=None) -> bool:
     if item.get("route") != "drop":
         return False
     # Some historical P2 batches set reason='keep' on every drop, including
     # flowcharts and mechanisms. Require independent patient-image evidence.
     return bool(
         item.get("is_real_patient_image") is True
-        and _explicit_target_visual(conn, row, item.get("category"))
+        and _explicit_target_visual(conn, row, item.get("category"), ctx=ctx)
     )
 
 
@@ -139,7 +199,7 @@ def _bump_attempts(conn, figure_id: str, error: str | None = None) -> None:
         )
 
 
-def _apply_batch(conn, rows, result) -> str | None:
+def _apply_batch(conn, rows, result, ctx=None) -> str | None:
     """Write one batch's results. Returns 'budget' on BudgetExceeded."""
     batch_ids = {row["figure_id"] for row in rows}
     if result.error is not None:
@@ -148,6 +208,7 @@ def _apply_batch(conn, rows, result) -> str | None:
         for row in rows:
             _bump_attempts(conn, row["figure_id"], str(result.error))
         return "error"
+    ctx = ctx or _RunContext(conn)
     parsed = result.parsed or {}
     seen: set[str] = set()
     rows_by_id = {row["figure_id"]: dict(row) for row in rows}
@@ -160,7 +221,7 @@ def _apply_batch(conn, rows, result) -> str | None:
         # conflict. Ambiguous internal classifications are retained for P3.
         if item.get("third_party"):
             status = "caption_rejected"
-        elif route == "drop" and _contradictory_drop(conn, rows_by_id[figure_id], item):
+        elif route == "drop" and _contradictory_drop(conn, rows_by_id[figure_id], item, ctx):
             item = dict(item)
             item["route_adjustment"] = "uncertain_due_to_conflicting_patient_or_target_evidence"
             item["route"] = "uncertain"
@@ -199,8 +260,9 @@ def _print_summary(conn) -> None:
     print(f"caption rejections by reason: {reasons}")
 
 
-def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=False) -> int:
+def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=False, ctx=None) -> int:
     """Re-queue historical P2 contradictions for vision review, once only."""
+    ctx = ctx or _RunContext(conn)
     rows = db.rows_with_status(conn, "figures", "caption_rejected", disease=disease)
     wanted = set(pmcids) if pmcids else None
     count = 0
@@ -215,7 +277,7 @@ def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=Fals
             "SELECT license_code FROM articles WHERE pmcid=?", (row["pmcid"],)
         ).fetchone()
         license_code = row.get("effective_license") or (article["license_code"] if article else None)
-        if pmc.license_allows(license_code) is None or not _contradictory_drop(conn, row, item):
+        if pmc.license_allows(license_code) is None or not _contradictory_drop(conn, row, item, ctx):
             continue
         count += 1
         if dry_run:
@@ -234,13 +296,16 @@ def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=Fals
 
 def run(args) -> int:
     conn = db.init_db()
+    # One routing context per run: vocab rows, disease terms, article keys and
+    # compiled regexes are stable for the whole pass (plan §5 W10, B10).
+    ctx = _RunContext(conn)
     disease = None if args.disease == "all" else args.disease
     if disease is not None and disease not in diseases.DISEASE_KEYS:
         print(f"unknown disease {disease!r}")
         return 2
     revisited = revisit_conflicting_rejections(
         conn, disease=disease, pmcids=getattr(args, "pmcids", None),
-        dry_run=bool(args.dry_run),
+        dry_run=bool(args.dry_run), ctx=ctx,
     )
     if revisited:
         verb = "would revisit" if args.dry_run else "re-queued"
@@ -283,11 +348,11 @@ def run(args) -> int:
                 smaller_batches,
                 client.call_many(_p2_request(part) for part in smaller_batches),
             ):
-                if _apply_batch(conn, smaller_rows, smaller_result) == "budget":
+                if _apply_batch(conn, smaller_rows, smaller_result, ctx) == "budget":
                     budget_hit = True
                 conn.commit()
             continue
-        outcome = _apply_batch(conn, batch_rows, result)
+        outcome = _apply_batch(conn, batch_rows, result, ctx)
         if outcome == "budget":
             budget_hit = True
         conn.commit()

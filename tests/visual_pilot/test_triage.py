@@ -3,7 +3,7 @@
 import argparse
 import json
 
-from src.visual_pilot import db, llm, triage
+from src.visual_pilot import db, diseases, llm, triage
 
 
 def _args(**over):
@@ -367,3 +367,174 @@ def test_budget_exceeded_leaves_pending(conn, monkeypatch):
     ).fetchall()
     assert len(rows) == 41
     assert all(r["attempts"] == 0 for r in rows)
+
+
+# ---------------------------------------------------------------------------
+# W10: shared per-run _RunContext must not change routing (plan §5 W10, B10)
+# ---------------------------------------------------------------------------
+# (figure_id suffix, pmcid, caption, image_category, expected) for
+# _explicit_target_visual: disease-name hits, vocab hits, vocab disease-key
+# misses, other-disease misses and non-image misses.
+_EXPLICIT_FIXTURES = [
+    (
+        "PMC_DM:hit_disease",
+        "Clinical photograph of Gottron papules in a patient with dermatomyositis.",
+        "clinical_photo",
+        True,
+    ),
+    ("PMC_DM:hit_vocab", "Clinical photograph of heliotrope rash.", None, True),
+    (
+        "PMC_DM:miss_vocab_disease_mismatch",
+        "Photograph showing a butterfly rash.",
+        None,
+        False,
+    ),
+    (
+        "PMC_DM:miss_other_disease",
+        "Photograph of skin changes in systemic sclerosis.",
+        "clinical_photo",
+        False,
+    ),
+    (
+        "PMC_DM:miss_no_target",
+        "Bar chart of patient enrollment over time.",
+        "clinical_photo",
+        False,
+    ),
+    ("PMC_SLE:hit_vocab", "Photograph showing a butterfly rash.", None, True),
+    (
+        "PMC_SLE:hit_disease_synonym",
+        "Ultrasound of the hand in a patient with lupus.",
+        None,
+        True,
+    ),
+    ("PMC_SLE:miss_not_image", "Table of laboratory values.", "table", False),
+]
+
+
+def _explicit_fixture_row(conn, figure_id):
+    return dict(
+        conn.execute(
+            "SELECT * FROM figures WHERE figure_id=?", (figure_id,)
+        ).fetchone()
+    )
+
+
+def test_shared_context_routing_matches_fresh_context(conn):
+    """A shared _RunContext returns identical decisions and queries once."""
+    diseases.seed(conn)
+    _article(conn, "PMC_DM", keys=("dm",))
+    _article(conn, "PMC_SLE", keys=("sle",))
+    for figure_id, caption, _category, _expected in _EXPLICIT_FIXTURES:
+        _figure(conn, figure_id, figure_id.split(":")[0], caption=caption)
+
+    # Uncached path first: each call builds its own context, matching the old
+    # per-row reload behavior this workstream replaced.
+    fresh = {
+        figure_id: triage._explicit_target_visual(
+            conn, _explicit_fixture_row(conn, figure_id), category
+        )
+        for figure_id, _caption, category, _expected in _EXPLICIT_FIXTURES
+    }
+    for figure_id, _caption, _category, expected in _EXPLICIT_FIXTURES:
+        assert fresh[figure_id] == expected, figure_id
+
+    queries = {"vocab": 0, "articles": 0}
+
+    def trace(statement):
+        if "FROM findings_vocab" in statement:
+            queries["vocab"] += 1
+        if "FROM articles" in statement:
+            queries["articles"] += 1
+
+    shared = triage._RunContext(conn)
+    conn.set_trace_callback(trace)
+    try:
+        for figure_id, _caption, category, _expected in _EXPLICIT_FIXTURES:
+            cached = triage._explicit_target_visual(
+                conn, _explicit_fixture_row(conn, figure_id), category, ctx=shared
+            )
+            assert cached == fresh[figure_id], figure_id
+    finally:
+        conn.set_trace_callback(None)
+
+    # The cached path loads vocab once per run and article keys once per pmcid
+    # (the two fixture figures share each pmcid's row lookup).
+    assert queries["vocab"] == 1
+    assert queries["articles"] == len(
+        {figure_id.split(":")[0] for figure_id, *_ in _EXPLICIT_FIXTURES}
+    )
+
+
+def test_run_routing_outcomes_with_shared_context(conn, monkeypatch):
+    """One run covers every routing outcome; cached lookups change nothing."""
+    diseases.seed(conn)
+    _article(conn, "PMC_DM", keys=("dm",))
+    _article(conn, "PMC_SLE", keys=("sle",))
+    cases = [
+        ("PMC_DM:keep", "PMC_DM", "a caption",
+         _p2_item("PMC_DM:keep", "keep"), "caption_kept"),
+        ("PMC_DM:uncertain", "PMC_DM", "a caption",
+         _p2_item("PMC_DM:uncertain", "uncertain"), "caption_uncertain"),
+        ("PMC_DM:drop", "PMC_DM", "a caption",
+         _p2_item("PMC_DM:drop", "drop", is_real_patient_image=False),
+         "caption_rejected"),
+        ("PMC_DM:third_party", "PMC_DM", "a caption",
+         _p2_item("PMC_DM:third_party", "keep",
+                  third_party=True, third_party_quote="© X"),
+         "caption_rejected"),
+        # Contradictory drop promoted via disease-name + patient-image hit.
+        ("PMC_DM:contra_disease", "PMC_DM",
+         "Clinical photograph of Gottron papules in dermatomyositis.",
+         _p2_item("PMC_DM:contra_disease", "drop", is_real_patient_image=True),
+         "caption_uncertain"),
+        # Contradictory drop promoted via a vocab term for the article disease.
+        ("PMC_SLE:contra_vocab", "PMC_SLE",
+         "Photograph showing a butterfly rash.",
+         _p2_item("PMC_SLE:contra_vocab", "drop",
+                  is_real_patient_image=True, category=None),
+         "caption_uncertain"),
+        # Drop stays rejected: patient image but no target-disease evidence.
+        ("PMC_DM:contra_miss", "PMC_DM", "Bar chart of enrollment.",
+         _p2_item("PMC_DM:contra_miss", "drop",
+                  is_real_patient_image=True, category=None),
+         "caption_rejected"),
+        # Drop stays rejected: caption points at a non-target disease.
+        ("PMC_DM:contra_other", "PMC_DM",
+         "Photograph of skin changes in systemic sclerosis.",
+         _p2_item("PMC_DM:contra_other", "drop", is_real_patient_image=True),
+         "caption_rejected"),
+    ]
+    for figure_id, pmcid, caption, _item, _expected in cases:
+        _figure(conn, figure_id, pmcid, caption=caption)
+
+    # A historical contradiction re-queued by the shared-context revisit pass.
+    _figure(
+        conn, "PMC_DM:revisit", "PMC_DM", status="caption_rejected",
+        caption="Clinical photograph of Gottron papules in dermatomyositis",
+    )
+    conn.execute(
+        "UPDATE figures SET effective_license='cc-by', image_url=?, triage_json=? "
+        "WHERE figure_id='PMC_DM:revisit'",
+        (
+            "https://example.test/figure.jpg",
+            db.to_json(_p2_item("PMC_DM:revisit", "drop", reason="keep")),
+        ),
+    )
+    conn.commit()
+
+    _install_fake(monkeypatch, [{"results": [case[3] for case in cases]}])
+    assert triage.run(_args()) == 0
+
+    for figure_id, _pmcid, _caption, _item, expected in cases:
+        assert _status(conn, figure_id) == expected, figure_id
+    assert _status(conn, "PMC_DM:revisit") == "caption_uncertain"
+    promoted = db.from_json(
+        conn.execute(
+            "SELECT triage_json FROM figures WHERE figure_id='PMC_DM:contra_disease'"
+        ).fetchone()[0]
+    )
+    assert promoted["route"] == "uncertain"
+    assert promoted["route_adjustment"] == (
+        "uncertain_due_to_conflicting_patient_or_target_evidence"
+    )
