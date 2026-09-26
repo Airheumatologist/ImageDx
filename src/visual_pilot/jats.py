@@ -265,27 +265,32 @@ def _third_party(
     return False, None
 
 
-def _paragraph_text_and_mark(p, targets: set[int]) -> tuple[str, int | None]:
-    """Flatten paragraph text; mark the char offset of the first target xref."""
+def _paragraph_text_and_marks(p) -> tuple[str, dict[str, int]]:
+    """Flatten paragraph text; map fig-xref rids to their first char offset.
+
+    Element identity via ``id()`` on lxml proxies is not stable across GC, so
+    the mark is recorded by rid token, not by element identity.
+    """
     parts: list[str] = []
-    mark: int | None = None
+    marks: dict[str, int] = {}
     cursor = 0
 
     def walk(el):
-        nonlocal mark, cursor
+        nonlocal cursor
         if el.text:
             parts.append(el.text)
             cursor += len(el.text)
         for child in el:
-            if id(child) in targets and mark is None:
-                mark = cursor
+            if _local(child) == "xref" and (child.get("ref-type") or "") == "fig":
+                for rid in (child.get("rid") or "").split():
+                    marks.setdefault(rid, cursor)
             walk(child)
             if child.tail:
                 parts.append(child.tail)
                 cursor += len(child.tail)
 
     walk(p)
-    return "".join(parts), mark
+    return "".join(parts), marks
 
 
 def _window(text: str, mark: int | None) -> str:
@@ -306,16 +311,14 @@ def _fig_mentions(body, fig_id: str) -> list[str]:
     for p in _descendants(body, "p"):
         if len(mentions) >= MAX_MENTIONS:
             break
-        targets = {
-            id(x)
-            for x in _descendants(p, "xref")
-            if (x.get("ref-type") or "") == "fig"
+        if not any(
+            (x.get("ref-type") or "") == "fig"
             and fig_id in (x.get("rid") or "").split()
-        }
-        if not targets:
+            for x in _descendants(p, "xref")
+        ):
             continue
-        text, mark = _paragraph_text_and_mark(p, targets)
-        mention = _window(text, mark)
+        text, marks = _paragraph_text_and_marks(p)
+        mention = _window(text, marks.get(fig_id))
         if mention and mention not in seen:
             seen.add(mention)
             mentions.append(mention)

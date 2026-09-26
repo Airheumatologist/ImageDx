@@ -49,6 +49,25 @@ def test_in_text_mentions_multi_rid_and_window(parsed):
     assert f2.in_text_mentions and "Figures 1 and 2" in f2.in_text_mentions[0]
 
 
+def test_in_text_mentions_deterministic_across_parses():
+    """Regression: mention marks used to key on id() of transient lxml
+    proxies, which get recycled after GC — identical XML could yield
+    different mention windows across runs."""
+    import gc
+
+    xml = FIXTURE.read_text(encoding="utf-8")
+    baseline = {
+        f.fig_id: list(f.in_text_mentions) for f in jats.parse_article(xml).figures
+    }
+    for _ in range(3):
+        gc.collect()
+        again = {
+            f.fig_id: list(f.in_text_mentions)
+            for f in jats.parse_article(xml).figures
+        }
+        assert again == baseline
+
+
 def test_third_party_permission_wording(parsed):
     f3 = _fig(parsed, "f3")
     assert f3.third_party is True
