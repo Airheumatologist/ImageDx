@@ -1,15 +1,37 @@
 """W6 tests: judge post-validation/resume + store crops/fallbacks/dedup."""
 
+import hashlib
 import io
 import json
+import threading
+import time
 from argparse import Namespace
 from pathlib import Path
 
 import pytest
 from PIL import Image
 
-from src.visual_pilot import db, diseases, extract_findings, jats, judge, pmc, report, store
+from src.visual_pilot import (
+    config,
+    db,
+    diseases,
+    extract_findings,
+    jats,
+    judge,
+    llm,
+    originals,
+    pmc,
+    report,
+    store,
+)
 from src.visual_pilot.llm import BatchResult
+
+
+@pytest.fixture(autouse=True)
+def _clean_originals():
+    originals.clear()
+    yield
+    originals.clear()
 
 FIXTURE_XML = (
     Path(__file__).resolve().parents[1] / "fixtures" / "visual_pilot_sample.jats.xml"
@@ -557,10 +579,10 @@ def test_judge_resume_and_no_disk(conn, vp_data_dir, monkeypatch):
             self.calls = []
             self.spent_usd = 0.0
 
-        def call_many(self, requests):
-            requests = list(requests)
-            self.calls.append(requests)
-            return [BatchResult(index=i, parsed=p3) for i in range(len(requests))]
+        def iter_many(self, requests, max_in_flight=None):
+            for i, req in enumerate(requests):
+                self.calls.append([req])
+                yield BatchResult(index=i, parsed=p3)
 
     client = _Client()
     monkeypatch.setattr(judge.llm, "LLMClient", lambda **kw: client)
@@ -607,10 +629,10 @@ def test_judge_retries_vision_error_bounded(conn, vp_data_dir, monkeypatch):
             self.calls = 0
             self.spent_usd = 0.0
 
-        def call_many(self, requests):
-            requests = list(requests)
-            self.calls += len(requests)
-            return [BatchResult(index=i, parsed=p3) for i in range(len(requests))]
+        def iter_many(self, requests, max_in_flight=None):
+            for i, req in enumerate(requests):
+                self.calls += 1
+                yield BatchResult(index=i, parsed=p3)
 
     client = _Client()
     monkeypatch.setattr(judge.llm, "LLMClient", lambda **kw: client)
@@ -717,3 +739,195 @@ def test_report_funnel_cumulative(conn, vp_data_dir):
     f = report.funnel(conn)
     assert f["triage"]["kept"] == 1
     assert f["vision"]["accepted"] == 1
+
+
+# ---------------------------------------------------------------------------
+# W6: streaming judge pipeline (iter_many) + originals handoff (C5)
+# ---------------------------------------------------------------------------
+def _insert_judge_figure(conn, fid, url, status="caption_kept"):
+    conn.execute(
+        "INSERT OR REPLACE INTO figures (figure_id, pmcid, label, caption, status, "
+        "image_url, image_format, effective_license) "
+        "VALUES (?, 'PMC1', 'Figure 1', 'cap', ?, ?, 'png', 'cc-by')",
+        (fid, status, url),
+    )
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM figures WHERE figure_id=?", (fid,)).fetchone())
+
+
+def _p3_verdict(fid, include=True):
+    return {
+        "figure_id": fid,
+        "figure_is_compound": False,
+        "panels": [
+            {"panel_label": "A", "bbox": [0, 0, 1, 1], "include": include,
+             "exclusion_reason": None if include else "not_relevant",
+             "disease_key": "dm" if include else None, "subtype": "classic",
+             "modality": "clinical_photo", "body_site": "hands",
+             "findings": [{"finding_key": "gottron_papules", "evidence": "e"}] if include else [],
+             "proposed_findings": [], "typicality": "classic", "stage": None,
+             "age_group": "adult", "skin_tone": "light", "stated_ethnicity": None,
+             "stated_ethnicity_quote": None, "annotations_present": False,
+             "confidence": 0.9, "rationale": "r"}
+        ],
+    }
+
+
+def test_judge_pipeline_matches_reference(conn, vp_data_dir, monkeypatch):
+    """The streaming pipeline emits the same P3 inputs and figure rows as the
+    old fetch-4/judge-4 lockstep, across every outcome class."""
+    monkeypatch.setattr(config, "VP_JUDGE_CONCURRENCY", 2)
+    monkeypatch.setattr(config, "VP_FETCH_CONCURRENCY", 3)
+    article = dict(_article(conn))
+    urls = {
+        "PMC1:F1": "https://s3/x/f1.png",   # accepted
+        "PMC1:F2": "https://s3/x/f2.png",   # rejected
+        "PMC1:F3": "https://s3/x/f3.png",   # fetch error
+        "PMC1:F4": "https://s3/x/f4.png",   # llm error
+    }
+    blobs = {
+        "PMC1:F1": _png_bytes(color=(10, 20, 30)),
+        "PMC1:F2": _png_bytes(color=(40, 50, 60)),
+        "PMC1:F4": _png_bytes(color=(70, 80, 90)),
+    }
+    figs_before = {fid: _insert_judge_figure(conn, fid, url) for fid, url in urls.items()}
+    _insert_judge_figure(conn, "PMC1:F5", None)  # no image_url -> needs_bytes
+    url_to_fig = {u: f for f, u in urls.items()}
+
+    def _fetch(ref):
+        if ref.url == urls["PMC1:F3"]:
+            raise pmc.PmcError("503 boom")
+        return blobs[url_to_fig[ref.url]]
+
+    monkeypatch.setattr(pmc, "fetch_image_bytes", _fetch)
+
+    responses = {
+        "PMC1:F1": _p3_verdict("PMC1:F1", include=True),
+        "PMC1:F2": _p3_verdict("PMC1:F2", include=False),
+        "PMC1:F4": _p3_verdict("PMC1:F4", include=True),
+    }
+    ctor_kwargs = {}
+    in_flight = {"cur": 0, "peak": 0}
+    lock = threading.Lock()
+    seen = {}  # figure_id -> input_hash actually sent
+
+    real_client = llm.LLMClient(db_conn=None)
+
+    def _call_json(stage, model, system, user_content, schema, images=None, prompt_version=""):
+        fid = json.loads(user_content)["figure_id"]
+        input_hash = real_client._input_hash(
+            stage, model, prompt_version, system, user_content, images
+        )
+        with lock:
+            in_flight["cur"] += 1
+            in_flight["peak"] = max(in_flight["peak"], in_flight["cur"])
+            seen[fid] = input_hash
+        try:
+            time.sleep(0.01)
+            if fid == "PMC1:F4":
+                raise llm.LLMError("provider boom")
+            return responses[fid], {"cached": False, "input_hash": input_hash}
+        finally:
+            with lock:
+                in_flight["cur"] -= 1
+
+    monkeypatch.setattr(real_client, "call_json", _call_json)
+
+    def _client_factory(**kw):
+        ctor_kwargs.update(kw)
+        return real_client
+
+    monkeypatch.setattr(judge.llm, "LLMClient", _client_factory)
+    assert judge.run(_args()) == 0
+
+    # Client settings: judge uses its own concurrency/timeout, uncapped by 4.
+    assert ctor_kwargs["concurrency"] == config.VP_JUDGE_CONCURRENCY == 2
+    assert ctor_kwargs["timeout_seconds"] == config.VP_JUDGE_TIMEOUT_SECONDS
+    assert ctor_kwargs["max_retries"] == 0
+    # P3 in-flight calls never exceed the configured cap.
+    assert 1 <= in_flight["peak"] <= config.VP_JUDGE_CONCURRENCY
+
+    # Reference: the exact set of input_hash values the sequential code sends.
+    vocab = judge.vocab_for_diseases(conn, ["dm"])
+    valid_keys = {v["finding_key"] for v in vocab}
+    expected = {}
+    for fid, blob in blobs.items():
+        uc = judge.user_content(figs_before[fid], article, vocab)
+        expected[fid] = db.llm_input_hash(
+            "p3", config.VP_JUDGE_MODEL,
+            {
+                "prompt_version": judge.P3.version,
+                "system": judge.P3.system,
+                "user_content": uc,
+                "images": [f"sha256:{hashlib.sha256(blob).hexdigest()}"],
+            },
+        )
+    assert seen == expected
+
+    # Reference: final figures rows for every outcome.
+    expected_status = {
+        "PMC1:F1": "vision_accepted",
+        "PMC1:F2": "vision_rejected",
+        "PMC1:F3": "vision_error",
+        "PMC1:F4": "vision_error",
+        "PMC1:F5": "vision_error",
+    }
+    for fid, want in expected_status.items():
+        got = conn.execute(
+            "SELECT status FROM figures WHERE figure_id=?", (fid,)
+        ).fetchone()["status"]
+        assert got == want, fid
+
+    r1 = conn.execute("SELECT * FROM figures WHERE figure_id='PMC1:F1'").fetchone()
+    assert json.loads(r1["vision_json"]) == judge.post_validate(responses["PMC1:F1"], valid_keys)
+    assert r1["image_format"] == "png"
+    assert r1["sha256"] == hashlib.sha256(blobs["PMC1:F1"]).hexdigest()
+    assert r1["error"] is None
+    r2 = conn.execute("SELECT * FROM figures WHERE figure_id='PMC1:F2'").fetchone()
+    assert json.loads(r2["vision_json"]) == judge.post_validate(responses["PMC1:F2"], valid_keys)
+    assert r2["sha256"] == hashlib.sha256(blobs["PMC1:F2"]).hexdigest()
+    assert r2["error"] is None
+    r3 = conn.execute("SELECT error, attempts FROM figures WHERE figure_id='PMC1:F3'").fetchone()
+    assert r3["error"].startswith("fetch:") and r3["attempts"] == 1
+    r4 = conn.execute("SELECT error, attempts FROM figures WHERE figure_id='PMC1:F4'").fetchone()
+    assert r4["error"].startswith("llm:") and r4["attempts"] == 1
+    r5 = conn.execute("SELECT error, attempts FROM figures WHERE figure_id='PMC1:F5'").fetchone()
+    assert r5["error"] == "needs_bytes" and r5["attempts"] == 0
+
+    # C5: only the accepted figure's original bytes are parked for store.
+    sha1 = hashlib.sha256(blobs["PMC1:F1"]).hexdigest()
+    assert originals.take("PMC1:F1", sha1) == blobs["PMC1:F1"]
+    for fid in ("PMC1:F2", "PMC1:F3", "PMC1:F4", "PMC1:F5"):
+        sha = hashlib.sha256(blobs.get(fid, b"")).hexdigest()
+        assert originals.take(fid, sha) is None
+    assert originals._stats() == (0, 0)
+
+    # No image files written to disk for any outcome (invariant §1.3).
+    imgs = [
+        p for p in vp_data_dir.rglob("*")
+        if p.suffix.lower() in {".png", ".jpg", ".webp", ".tif", ".tiff"}
+    ]
+    assert imgs == []
+
+
+def test_judge_budget_stops_cleanly(conn, vp_data_dir, monkeypatch, capsys):
+    _article(conn)
+    _insert_judge_figure(conn, "PMC1:F1", "https://s3/x/f1.png")
+    _insert_judge_figure(conn, "PMC1:F2", "https://s3/x/f2.png")
+    monkeypatch.setattr(pmc, "fetch_image_bytes", lambda ref: _png_bytes())
+
+    real_client = llm.LLMClient(db_conn=None, budget_usd=0.0)
+
+    def _call_json(**kw):
+        raise llm.BudgetExceeded("budget $0.00 exhausted")
+
+    monkeypatch.setattr(real_client, "call_json", _call_json)
+    monkeypatch.setattr(judge.llm, "LLMClient", lambda **kw: real_client)
+    assert judge.run(_args(budget_usd=0.0)) == 0
+    rows = conn.execute(
+        "SELECT figure_id, status FROM figures ORDER BY figure_id"
+    ).fetchall()
+    # BudgetExceeded leaves the status untouched so a rerun resumes cleanly.
+    assert [r["status"] for r in rows] == ["caption_kept", "caption_kept"]
+    assert "budget" in capsys.readouterr().out.lower()
+    assert originals._stats() == (0, 0)
