@@ -203,6 +203,9 @@ def test_llm_429_counted(conn, monkeypatch):
     import httpx
     import openai
 
+    # Post-C4, 429s consume the independent VP_RATE_LIMIT_RETRIES budget;
+    # zero it so the single queued error propagates after one attempt.
+    monkeypatch.setattr("src.visual_pilot.config.VP_RATE_LIMIT_RETRIES", 0)
     monkeypatch.setattr(time, "sleep", lambda s: None)
     err = openai.RateLimitError(
         "rl", response=httpx.Response(429, request=httpx.Request("POST", "http://x")),
