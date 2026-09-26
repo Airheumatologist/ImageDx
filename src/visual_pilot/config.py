@@ -65,6 +65,10 @@ EMBEDDING_TIMEOUT_SECONDS = _env_int("DEEPINFRA_EMBED_TIMEOUT_SECONDS", 120)
 # only LLM provider; DeepInfra credentials above are for embeddings only.
 _LLM_PROVIDER_CREDENTIALS = {
     "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
+    # DeepInfra is primarily the embeddings/reranking provider, but the same
+    # OpenAI-compatible endpoint serves chat models (used for parity runs while
+    # space-bunny-free's upstream rejects union-type json_schema).
+    "deepinfra": lambda: (DEEPINFRA_API_KEY, DEEPINFRA_BASE_URL),
 }
 LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
 
