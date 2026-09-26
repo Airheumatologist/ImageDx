@@ -686,3 +686,184 @@ def test_p1_request_construction_unchanged():
     assert req["prompt_version"] == P1.version
     assert req["user_content"].startswith("Title: My title\nAbstract: ")
     assert req["user_content"] == "Title: My title\nAbstract: " + "A" * 4000
+
+
+# ---------------------------------------------------------------------------
+# W4b: LicenseInfo hints persisted, VP_FETCH_CONCURRENCY license pool,
+# VP_P1_CONCURRENCY P1 client
+# ---------------------------------------------------------------------------
+def _license_for(pmcid):
+    """Deterministic license lookup carrying C3 s3/media hints."""
+    if pmcid == "PMC_ERR":
+        raise RuntimeError("pmc outage")
+    code = "cc-by-nc" if pmcid == "PMC101" else "cc-by"
+    return pmc.LicenseInfo(
+        code=code,
+        url="https://creativecommons.org/licenses/by/4.0/",
+        oa_subset="oa",
+        prefix=f"{pmcid}.1",
+        media_files=("fig1.jpg", "fig2.png"),
+    )
+
+
+def test_apply_license_persists_s3_prefix_and_media_files(conn, monkeypatch):
+    conn.execute(
+        "INSERT INTO articles (pmcid, title, status) "
+        "VALUES ('PMC1', 'T1', 'candidate'), ('PMC2', 'T2', 'candidate'), "
+        "('PMC_ERR', 'T3', 'candidate')"
+    )
+    conn.commit()
+    monkeypatch.setattr(pmc, "get_license", _license_for)
+
+    # license_ok persists the hints
+    pmcid, outcome = select_articles.join_license("PMC1")
+    assert outcome["status"] == "license_ok"
+    select_articles.apply_license(conn, pmcid, outcome)
+    row = conn.execute(
+        "SELECT s3_prefix, media_files_json FROM articles WHERE pmcid='PMC1'"
+    ).fetchone()
+    assert row["s3_prefix"] == "PMC1.1"
+    assert db.from_json(row["media_files_json"]) == ["fig1.jpg", "fig2.png"]
+
+    # a rejected license still carries (and persists) the fetched hints
+    monkeypatch.setattr(
+        pmc,
+        "get_license",
+        lambda p: pmc.LicenseInfo(
+            code="cc-by-nc", url=None, oa_subset="oa",
+            prefix="PMC2.3", media_files=("supp.tif",),
+        ),
+    )
+    pmcid, outcome = select_articles.join_license("PMC2")
+    assert outcome["status"] == "license_rejected"
+    select_articles.apply_license(conn, pmcid, outcome)
+    row = conn.execute(
+        "SELECT s3_prefix, media_files_json FROM articles WHERE pmcid='PMC2'"
+    ).fetchone()
+    assert row["s3_prefix"] == "PMC2.3"
+    assert db.from_json(row["media_files_json"]) == ["supp.tif"]
+
+    # a get_license error produces no hints and leaves the columns NULL
+    monkeypatch.setattr(pmc, "get_license", _license_for)
+    pmcid, outcome = select_articles.join_license("PMC_ERR")
+    assert outcome["status"] == "license_rejected"
+    select_articles.apply_license(conn, pmcid, outcome)
+    row = conn.execute(
+        "SELECT s3_prefix, media_files_json FROM articles WHERE pmcid='PMC_ERR'"
+    ).fetchone()
+    assert row["s3_prefix"] is None
+    assert row["media_files_json"] is None
+
+
+def _articles_snapshot(conn):
+    skip = {"created_at", "updated_at"}
+    return {
+        r["pmcid"]: {k: r[k] for k in r.keys() if k not in skip}
+        for r in conn.execute("SELECT * FROM articles")
+    }
+
+
+def _reset_articles_to_candidates(conn):
+    conn.execute(
+        "UPDATE articles SET status='candidate', license_code=NULL, "
+        "license_url=NULL, oa_subset=NULL, relevance_decision=NULL, "
+        "relevance_reason=NULL, s3_prefix=NULL, media_files_json=NULL, "
+        "error=NULL, primary_disease_keys_json='[\"sle\"]'"
+    )
+    conn.commit()
+
+
+def _stub_pipeline(monkeypatch):
+    """Fake tpuf namespace + deterministic licenses + canned P1 verdicts."""
+    ns = FakeNs(_responder)
+    monkeypatch.setattr(
+        select_articles, "_make_retriever", lambda: FakeRetriever(ns)
+    )
+    monkeypatch.setattr(pmc, "get_license", _license_for)
+    monkeypatch.setattr(
+        llm,
+        "LLMClient",
+        lambda **kw: FakeLLM(parsed=lambda req: P1_IRRELEVANT, **kw),
+    )
+    return ns
+
+
+def test_license_phase_parallel_matches_sequential(conn, monkeypatch):
+    """Pool vs serial license lookup yields identical articles rows."""
+    _stub_pipeline(monkeypatch)
+
+    def run_with(workers):
+        monkeypatch.setattr(vp_config, "VP_FETCH_CONCURRENCY", workers)
+        select_articles._or_filter_supported = True
+        assert select_articles.run(_args(disease="sle")) == 0
+        return _articles_snapshot(conn)
+
+    sequential = run_with(1)
+    _reset_articles_to_candidates(conn)
+    parallel = run_with(8)
+    assert parallel == sequential
+    # LicenseInfo hints landed on the rows either way.
+    assert parallel["PMC100"]["s3_prefix"] == "PMC100.1"
+    assert db.from_json(parallel["PMC100"]["media_files_json"]) == [
+        "fig1.jpg",
+        "fig2.png",
+    ]
+    assert parallel["PMC101"]["status"] == "license_rejected"
+    assert parallel["PMC101"]["s3_prefix"] == "PMC101.1"
+
+
+def test_license_pool_uses_vp_fetch_concurrency(conn, monkeypatch):
+    """The license phase builds its pool with VP_FETCH_CONCURRENCY workers."""
+    _stub_pipeline(monkeypatch)
+    monkeypatch.setattr(vp_config, "VP_CONCURRENCY", 2)
+    monkeypatch.setattr(vp_config, "VP_FETCH_CONCURRENCY", 7)
+    monkeypatch.setattr(vp_config, "VP_P1_CONCURRENCY", 3)
+
+    real_tpe = select_articles.ThreadPoolExecutor
+    seen_workers = []
+
+    class _SpyTPE(real_tpe):
+        def __init__(self, *args, **kwargs):
+            seen_workers.append(kwargs.get("max_workers"))
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(select_articles, "ThreadPoolExecutor", _SpyTPE)
+    select_articles._or_filter_supported = True
+    assert select_articles.run(_args(disease="sle")) == 0
+    assert 7 in seen_workers  # license pool
+    assert 2 in seen_workers  # retrieval query pool keeps VP_CONCURRENCY
+
+
+def test_p1_client_uses_vp_p1_concurrency(conn, monkeypatch):
+    """Both P1 call sites pass VP_P1_CONCURRENCY into LLMClient."""
+    ns = FakeNs(_responder)
+    holder = {}
+
+    def _fake_llm_cls(**kwargs):
+        client = FakeLLM(parsed=lambda req: P1_IRRELEVANT, **kwargs)
+        holder["client"] = client
+        return client
+
+    monkeypatch.setattr(
+        select_articles, "_make_retriever", lambda: FakeRetriever(ns)
+    )
+    monkeypatch.setattr(pmc, "get_license", _license_for)
+    monkeypatch.setattr(llm, "LLMClient", _fake_llm_cls)
+    monkeypatch.setattr(vp_config, "VP_CONCURRENCY", 2)
+    monkeypatch.setattr(vp_config, "VP_P1_CONCURRENCY", 9)
+
+    # Main select run.
+    select_articles._or_filter_supported = True
+    assert select_articles.run(_args(disease="sle")) == 0
+    assert holder["client"].kwargs["concurrency"] == 9
+
+    # --recheck-title-rule path builds its own P1 client.
+    diseases.seed(conn)
+    _seed_title_rule(conn, "PMCX", "relevant")
+    monkeypatch.setattr(
+        select_articles,
+        "_make_retriever",
+        lambda: FakeRetriever(FakeNs(lambda kw: [dict(abstract="a")])),
+    )
+    assert select_articles.run(_args(recheck_title_rule=True)) == 0
+    assert holder["client"].kwargs["concurrency"] == 9
