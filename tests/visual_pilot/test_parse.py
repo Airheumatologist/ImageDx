@@ -165,13 +165,23 @@ def _insert_article(conn, pmcid, keys=("sle",), score=1.0, status="relevant", co
     conn.commit()
 
 
+@pytest.fixture(autouse=True)
+def _clear_parse_caches():
+    """parse keeps process-local caches (_JATS_CACHE/_SECTIONS_CACHE); reset
+    them per test so mocked bundles never leak across tests."""
+    parse._JATS_CACHE.clear()
+    parse._SECTIONS_CACHE.clear()
+    yield
+
+
 @pytest.fixture()
 def bundle_mock(monkeypatch):
     """Route pmc.get_article_bundle to an in-memory fixture bundle."""
     xml = FIXTURE.read_text(encoding="utf-8")
     files = {"fig1.jpg", "fig3.jpg", "fig4.jpg", "fig5.jpg"}
     monkeypatch.setattr(
-        pmc, "get_article_bundle", lambda pmcid: _Bundle(pmcid, xml, files)
+        pmc, "get_article_bundle",
+        lambda pmcid, **_kw: _Bundle(pmcid, xml, files),
     )
 
 
@@ -365,3 +375,182 @@ def test_stages_3_4_write_no_files_beyond_db_and_reports(
             continue
         unexpected.append(str(rel))
     assert unexpected == []
+
+
+# ---------------------------------------------------------------------------
+# W5: parallel parse, hinted bundles, C6 outputs
+# ---------------------------------------------------------------------------
+_ARTICLE_CMP_COLS = (
+    "status",
+    "study_region",
+    "error",
+    "s3_prefix",
+    "media_files_json",
+    "authors_json",
+    "author_count",
+    "journal_name",
+)
+
+
+def _figures_snapshot(conn) -> dict:
+    """figures rows keyed by figure_id, excluding timestamp columns."""
+    cols = [
+        c for c in db.table_columns(conn, "figures")
+        if c not in {"created_at", "updated_at"}
+    ]
+    return {
+        r["figure_id"]: {c: r[c] for c in cols}
+        for r in conn.execute("SELECT * FROM figures")
+    }
+
+
+def _articles_snapshot(conn) -> dict:
+    return {
+        r["pmcid"]: {c: r[c] for c in _ARTICLE_CMP_COLS}
+        for r in conn.execute("SELECT * FROM articles")
+    }
+
+
+def test_parallel_parse_matches_sequential_reference(
+    conn, vp_data_dir, bundle_mock, tmp_path
+):
+    """B4/C6: pooled fetch+parse must produce rows identical to sequential."""
+    pmcids = [f"PMC{i}" for i in range(5)]
+    for i, pmcid in enumerate(pmcids):
+        _insert_article(conn, pmcid, score=float(5 - i))
+    assert parse.run(_args()) == 0
+    parallel_figures = _figures_snapshot(conn)
+    parallel_articles = _articles_snapshot(conn)
+
+    conn2 = db.init_db(db.connect(tmp_path / "seq.sqlite"))
+    try:
+        for i, pmcid in enumerate(pmcids):
+            _insert_article(conn2, pmcid, score=float(5 - i))
+        stats: dict = {}
+        for row in parse.select_batch(conn2, "sle", 50):
+            parse.parse_article(conn2, row, stats)
+        sequential_figures = _figures_snapshot(conn2)
+        sequential_articles = _articles_snapshot(conn2)
+    finally:
+        conn2.close()
+
+    assert parallel_figures == sequential_figures
+    assert parallel_articles == sequential_articles
+
+
+def test_parse_error_isolation_parallel(conn, monkeypatch):
+    """One raising article must not fail the rest of the batch."""
+    xml = FIXTURE.read_text(encoding="utf-8")
+    files = {"fig1.jpg", "fig3.jpg", "fig4.jpg", "fig5.jpg"}
+
+    def fake_bundle(pmcid, **_kw):
+        if pmcid == "PMCBAD":
+            raise pmc.PmcError("boom")
+        return _Bundle(pmcid, xml, files)
+
+    monkeypatch.setattr(pmc, "get_article_bundle", fake_bundle)
+    _insert_article(conn, "PMCOK", score=2.0)
+    _insert_article(conn, "PMCBAD", score=1.0)
+    assert parse.run(_args()) == 0
+    statuses = {
+        r["pmcid"]: r["status"]
+        for r in conn.execute("SELECT pmcid, status FROM articles")
+    }
+    assert statuses == {"PMCOK": "parsed", "PMCBAD": "parse_error"}
+    assert conn.execute(
+        "SELECT COUNT(*) AS n FROM figures WHERE pmcid='PMCOK'"
+    ).fetchone()["n"] == 7
+
+
+def test_parse_uses_hinted_bundle_when_s3_prefix_present(conn, monkeypatch):
+    """C3: rows carrying s3_prefix/media_files_json fetch via the hint path."""
+    xml = FIXTURE.read_text(encoding="utf-8")
+    files = {"fig1.jpg", "fig3.jpg", "fig4.jpg", "fig5.jpg"}
+    calls = []
+
+    def spy(pmcid, **kwargs):
+        calls.append((pmcid, kwargs))
+        return _Bundle(pmcid, xml, files)
+
+    monkeypatch.setattr(pmc, "get_article_bundle", spy)
+    _insert_article(conn, "PMCHINT")
+    conn.execute(
+        "UPDATE articles SET s3_prefix='PMCHINT.2', media_files_json=? "
+        "WHERE pmcid='PMCHINT'",
+        (db.to_json(sorted(files)),),
+    )
+    conn.commit()
+    assert parse.run(_args()) == 0
+    assert calls
+    assert all(
+        call == (
+            "PMCHINT",
+            {"prefix": "PMCHINT.2", "media_files": sorted(files)},
+        )
+        for call in calls
+    )
+
+
+def test_parse_persists_c6_article_metadata(conn, bundle_mock):
+    """C6: parse fills s3_prefix/media_files/authors/journal on the row."""
+    _insert_article(conn, "PMC1")
+    assert parse.run(_args()) == 0
+    row = conn.execute(
+        "SELECT * FROM articles WHERE pmcid='PMC1'"
+    ).fetchone()
+    assert row["status"] == "parsed"
+    assert db.from_json(row["authors_json"]) == ["Smith", "Doe", "Roe"]
+    assert row["author_count"] == 4
+    assert row["journal_name"] == "Journal of Test Rheumatology"
+    # Derived from the bundle's resolved refs (mock metadata is empty):
+    # image URLs look like {S3_BASE}/PMC1.1/{file}.
+    assert row["s3_prefix"] == "PMC1.1"
+    assert db.from_json(row["media_files_json"]) == [
+        "fig1.jpg",
+        "fig3.jpg",
+        "fig4.jpg",
+        "fig5.jpg",
+    ]
+
+
+def test_parse_preserves_existing_hints(conn, bundle_mock):
+    """C6: s3_prefix/media_files_json already set (e.g. by license) are kept."""
+    _insert_article(conn, "PMC1")
+    conn.execute(
+        "UPDATE articles SET s3_prefix='PMC1.9', media_files_json='[\"x.jpg\"]' "
+        "WHERE pmcid='PMC1'"
+    )
+    conn.commit()
+    assert parse.run(_args()) == 0
+    row = conn.execute(
+        "SELECT s3_prefix, media_files_json FROM articles WHERE pmcid='PMC1'"
+    ).fetchone()
+    assert row["s3_prefix"] == "PMC1.9"
+    assert db.from_json(row["media_files_json"]) == ["x.jpg"]
+
+
+def test_sections_for_returns_sections_after_parse(conn, bundle_mock):
+    """C6: sections_for serves body_sections of in-process parsed articles."""
+    assert parse.sections_for("PMC1") is None
+    _insert_article(conn, "PMC1")
+    assert parse.run(_args()) == 0
+    sections = parse.sections_for("PMC1")
+    assert sections is not None
+    titles = [title for title, _ in sections]
+    assert "Cutaneous findings" in titles
+    assert "Diagnosis" in titles
+    assert parse.sections_for("PMC_NEVER_PARSED") is None
+
+
+def test_select_batch_keeps_peeked_unselected_bundles(conn, bundle_mock):
+    """C6: peeked-but-unselected bundles stay cached across batches; the
+    selected PMCIDs and their order are unchanged for the same DB state."""
+    for i in range(4):
+        _insert_article(conn, f"PMC{i}", score=float(4 - i))
+    first = [r["pmcid"] for r in parse.select_batch(conn, "sle", 2)]
+    assert first == ["PMC0", "PMC1"]
+    # peek_limit = min(2*2, 100) = 4: all four were peeked, the unselected
+    # pair must remain cached for the next batch instead of being dropped.
+    assert {"PMC2", "PMC3"} <= set(parse._JATS_CACHE)
+    second = [r["pmcid"] for r in parse.select_batch(conn, "sle", 2)]
+    assert second == ["PMC0", "PMC1"]

@@ -1,4 +1,4 @@
-"""Stage 3: in-memory figure parsing from PMC JATS XML (workstream W5a).
+"""Stage 3: in-memory figure parsing from PMC JATS XML (workstream W5).
 
 For each ``relevant`` article, fetch the JATS bundle into memory
 (``pmc.get_article_bundle``), parse it with ``jats.parse_article`` and write
@@ -10,12 +10,24 @@ synthetic ``triage_json``; everything else becomes ``pending`` for stage 4.
 No full text and no images are ever written to disk. ``articles.study_region``
 records which source supplied the region, and parse failures leave the
 article at ``parse_error`` with the exception in ``articles.error``.
+
+Throughput-plan changes (docs/visual_pilot_plan.md §5 W5, contracts C3/C6):
+bundle fetches and ``jats.parse_article`` run on a pool of
+``config.VP_FETCH_CONCURRENCY`` workers while all DB writes and commits stay
+on the calling thread in the same article order as the sequential path.
+Articles whose rows already carry ``s3_prefix`` (and optionally
+``media_files_json``) fetch via the hinted ``get_article_bundle`` path.
+Parse persists the C2 metadata columns and keeps ``body_sections`` in a
+bounded in-memory cache (``sections_for``) for stage 7. Peeked-but-unselected
+bundles stay in the bounded ``_JATS_CACHE`` across batches in this process.
 """
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
+from collections import OrderedDict
+from concurrent.futures import Future, ThreadPoolExecutor
 import logging
+import threading
 import time
 
 from . import article_rank, config, db, diseases, jats, pmc
@@ -25,7 +37,98 @@ logger = logging.getLogger(__name__)
 DEFAULT_BATCH_SIZE = 50
 DEFAULT_MAX_ARTICLES = 600
 DEFAULT_MAX_RUNTIME_SECONDS = 900
-_JATS_CACHE: dict[str, tuple[object, jats.ParsedArticle]] = {}
+
+# Caption-peek results (bundle + parsed article), bounded LRU. Peeked but
+# unselected bundles are kept across select_batch calls (C6) so a later batch
+# — or the parse itself — reuses them instead of refetching. Memory only.
+_JATS_CACHE_LIMIT = 256
+_JATS_CACHE: OrderedDict[str, tuple[object, jats.ParsedArticle]] = OrderedDict()
+_CACHE_LOCK = threading.Lock()
+
+# C6: parsed.body_sections for articles parsed in this process (consumed by
+# extract via sections_for). Bounded LRU, memory only — full text is never
+# written to disk or SQLite.
+_SECTIONS_CACHE_LIMIT = 256
+_SECTIONS_CACHE: OrderedDict[str, list[tuple[str, str]]] = OrderedDict()
+
+
+def _jats_get(pmcid: str) -> tuple[object, jats.ParsedArticle] | None:
+    with _CACHE_LOCK:
+        entry = _JATS_CACHE.get(pmcid)
+        if entry is not None:
+            _JATS_CACHE.move_to_end(pmcid)
+        return entry
+
+
+def _jats_put(pmcid: str, entry: tuple[object, jats.ParsedArticle]) -> None:
+    with _CACHE_LOCK:
+        _JATS_CACHE[pmcid] = entry
+        _JATS_CACHE.move_to_end(pmcid)
+        while len(_JATS_CACHE) > _JATS_CACHE_LIMIT:
+            _JATS_CACHE.popitem(last=False)
+
+
+def _jats_drop(pmcid: str) -> None:
+    with _CACHE_LOCK:
+        _JATS_CACHE.pop(pmcid, None)
+
+
+def sections_for(pmcid: str) -> list[tuple[str, str]] | None:
+    """C6: ``parsed.body_sections`` for an article parsed in this process.
+
+    Returns ``None`` on a miss (never-parsed or evicted); the consumer then
+    refetches via the hinted bundle path. Memory only, bounded LRU.
+    """
+    with _CACHE_LOCK:
+        sections = _SECTIONS_CACHE.get(pmcid)
+        if sections is not None:
+            _SECTIONS_CACHE.move_to_end(pmcid)
+        return sections
+
+
+def _sections_put(pmcid: str, sections: list[tuple[str, str]]) -> None:
+    with _CACHE_LOCK:
+        _SECTIONS_CACHE[pmcid] = sections
+        _SECTIONS_CACHE.move_to_end(pmcid)
+        while len(_SECTIONS_CACHE) > _SECTIONS_CACHE_LIMIT:
+            _SECTIONS_CACHE.popitem(last=False)
+
+
+def _row_get(row, key):
+    """``row[key]`` for dicts and sqlite3.Rows; None when absent."""
+    try:
+        return row[key]
+    except (KeyError, IndexError):
+        return None
+
+
+def _bundle_for_row(article_row):
+    """``pmc.get_article_bundle``, C3-hinted when the row has ``s3_prefix``.
+
+    ``media_files_json`` (when present, e.g. persisted by the license stage
+    or an earlier parse) is passed through as the ``media_files`` hint. The
+    hinted path produces a resolver identical to the unhinted one, so figure
+    rows are unchanged either way.
+    """
+    prefix = _row_get(article_row, "s3_prefix")
+    if not prefix:
+        return pmc.get_article_bundle(article_row["pmcid"])
+    media = db.from_json(_row_get(article_row, "media_files_json"), None)
+    if not isinstance(media, list):
+        media = None
+    return pmc.get_article_bundle(
+        article_row["pmcid"], prefix=prefix, media_files=media
+    )
+
+
+def _bundle_and_parsed(article_row) -> tuple[object, jats.ParsedArticle]:
+    """Fetch + JATS-parse one article. No DB access — safe on a pool worker."""
+    pmcid = article_row["pmcid"]
+    cached = _jats_get(pmcid)
+    if cached is not None:
+        return cached
+    bundle = _bundle_for_row(article_row)
+    return bundle, jats.parse_article(bundle.xml_text)
 
 
 def coverage_gaps(conn, disease_key: str) -> set[str]:
@@ -54,10 +157,12 @@ def _caption_candidates(article_row: dict, disease_key: str) -> list[dict] | Non
     """Cheap JATS caption peek for shortlist ranking; cached for parse_article."""
     pmcid = article_row["pmcid"]
     try:
-        if pmcid not in _JATS_CACHE:
-            bundle = pmc.get_article_bundle(pmcid)
-            _JATS_CACHE[pmcid] = (bundle, jats.parse_article(bundle.xml_text))
-        bundle, parsed = _JATS_CACHE[pmcid]
+        cached = _jats_get(pmcid)
+        if cached is None:
+            bundle = _bundle_for_row(article_row)
+            cached = (bundle, jats.parse_article(bundle.xml_text))
+            _jats_put(pmcid, cached)
+        bundle, parsed = cached
         return [
             {
                 "caption": fig.caption,
@@ -163,7 +268,7 @@ def ranked_pending_articles(
     initial = article_rank.rank_articles(rows, disease_key, coverage_gaps=current_gaps)
     shortlisted = initial[: max(0, peek_limit)]
     rescues: set[str] = set()
-    with ThreadPoolExecutor(max_workers=config.VP_CONCURRENCY) as pool:
+    with ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY) as pool:
         caption_results = list(
             pool.map(
                 lambda item: _caption_candidates(item[0], disease_key),
@@ -200,9 +305,8 @@ def select_batch(
         peek_limit=(min(max(0, batch_size * 2), 100) if peek_captions else 0),
     )
     selected = ranked[: max(0, batch_size)]
-    keep = {row["pmcid"] for row in selected}
-    for pmcid in set(_JATS_CACHE) - keep:
-        _JATS_CACHE.pop(pmcid, None)
+    # C6: peeked-but-unselected bundles stay in the bounded _JATS_CACHE so a
+    # later batch in this process reuses them (previously they were dropped).
     return selected
 
 
@@ -281,27 +385,77 @@ def study_region_for(article_row, parsed: jats.ParsedArticle) -> str | None:
     return None
 
 
-def parse_article(conn, article_row, stats: dict) -> str:
-    """Fetch + parse one article and write its figure rows. Returns status."""
+def _c6_article_fields(article_row, bundle, fig_rows) -> dict:
+    """C6: ``s3_prefix``/``media_files_json`` to persist on the article row.
+
+    Only filled when the row does not already carry them (the license stage
+    may have persisted hints first). Values come from data the bundle already
+    fetched — the S3 metadata dict, falling back to the resolved figure refs
+    (``{S3_BASE}/{prefix}/{name}``) — so this costs zero extra requests.
+    """
+    meta = getattr(bundle, "metadata", None) or {}
+    prefix = None
+    if meta.get("pmcid") and meta.get("version") is not None:
+        prefix = f"{meta['pmcid']}.{meta['version']}"
+    media_files: set[str] = set()
+    for media in meta.get("media_urls") or []:
+        parts = str(media).split("?")[0].split("/", 3)
+        if len(parts) == 4 and parts[3]:
+            media_files.add(parts[3].rsplit("/", 1)[-1])
+    if prefix is None or not media_files:
+        for row in fig_rows:
+            url = row.get("image_url") or ""
+            if not url.startswith(pmc.S3_BASE + "/"):
+                continue
+            dir_prefix, _, name = url[len(pmc.S3_BASE) + 1:].rpartition("/")
+            if prefix is None and dir_prefix:
+                prefix = dir_prefix
+            if name:
+                media_files.add(name)
+    fields: dict = {}
+    if not _row_get(article_row, "s3_prefix") and prefix:
+        fields["s3_prefix"] = prefix
+    if not _row_get(article_row, "media_files_json") and media_files:
+        fields["media_files_json"] = db.to_json(sorted(media_files))
+    return fields
+
+
+def _apply_parsed(conn, article_row, bundle, parsed, stats) -> None:
+    """Main thread only: figure inserts + article fields for one article."""
+    pmcid = article_row["pmcid"]
+    fig_rows = []
+    for fig in parsed.figures:
+        row = _figure_row(pmcid, fig, article_row["license_code"], bundle.resolver)
+        _insert_figure(conn, row)
+        fig_rows.append(row)
+        stats[row["status"]] = stats.get(row["status"], 0) + 1
+    db.set_status(
+        conn,
+        "articles",
+        pmcid,
+        "parsed",
+        study_region=study_region_for(article_row, parsed),
+        authors_json=db.to_json(parsed.authors),
+        author_count=parsed.author_count,
+        journal_name=parsed.journal_name,
+        **_c6_article_fields(article_row, bundle, fig_rows),
+    )
+    _sections_put(pmcid, parsed.body_sections)
+
+
+def _finish_article(conn, article_row, outcome, stats) -> str:
+    """Apply one fetched/parsed outcome on the calling thread.
+
+    ``outcome`` is either ``(bundle, parsed)`` or the worker's ``Exception``;
+    all DB writes and the commit happen here, so error isolation and write
+    order match the sequential path exactly.
+    """
     pmcid = article_row["pmcid"]
     try:
-        if pmcid in _JATS_CACHE:
-            bundle, parsed = _JATS_CACHE[pmcid]
-        else:
-            bundle = pmc.get_article_bundle(pmcid)
-            parsed = jats.parse_article(bundle.xml_text)
-            _JATS_CACHE[pmcid] = (bundle, parsed)
-        for fig in parsed.figures:
-            row = _figure_row(pmcid, fig, article_row["license_code"], bundle.resolver)
-            _insert_figure(conn, row)
-            stats[row["status"]] = stats.get(row["status"], 0) + 1
-        db.set_status(
-            conn,
-            "articles",
-            pmcid,
-            "parsed",
-            study_region=study_region_for(article_row, parsed),
-        )
+        if isinstance(outcome, Exception):
+            raise outcome
+        bundle, parsed = outcome
+        _apply_parsed(conn, article_row, bundle, parsed, stats)
         status = "parsed"
     except Exception as exc:  # noqa: BLE001 - one bad article must not stop the run
         logger.warning("parse failed for %s: %s", pmcid, exc)
@@ -309,9 +463,50 @@ def parse_article(conn, article_row, stats: dict) -> str:
         stats["parse_error_articles"] = stats.get("parse_error_articles", 0) + 1
         status = "parse_error"
     finally:
-        _JATS_CACHE.pop(pmcid, None)
+        _jats_drop(pmcid)
     conn.commit()
     return status
+
+
+def parse_article(conn, article_row, stats: dict) -> str:
+    """Fetch + parse one article and write its figure rows. Returns status."""
+    try:
+        outcome = _bundle_and_parsed(article_row)
+    except Exception as exc:  # noqa: BLE001 - same isolation as the pool path
+        outcome = exc
+    return _finish_article(conn, article_row, outcome, stats)
+
+
+def _prefetched(articles: list):
+    """Yield ``(article_row, outcome)`` in input order while fetching ahead.
+
+    ``get_article_bundle`` + ``jats.parse_article`` run on a pool of
+    ``config.VP_FETCH_CONCURRENCY`` workers; each outcome is either
+    ``(bundle, parsed)`` or the worker's ``Exception``. Results are keyed by
+    article position and yielded strictly in input order — only the
+    fetch/parse step is parallel; the caller applies DB writes on its own
+    thread in the same order as the sequential path. Lookahead is bounded
+    (2x workers) so a mid-run stop leaves little work in flight.
+    """
+    workers = max(1, int(getattr(config, "VP_FETCH_CONCURRENCY", 8)))
+    ahead = workers * 2
+    pending: dict[int, Future] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+
+        def submit(index: int) -> None:
+            pending[index] = pool.submit(_bundle_and_parsed, articles[index])
+
+        for index in range(min(ahead, len(articles))):
+            submit(index)
+        for index, row in enumerate(articles):
+            future = pending.pop(index)
+            try:
+                yield row, future.result()
+            except Exception as exc:  # noqa: BLE001 - per-article isolation
+                yield row, exc
+            follow = index + ahead
+            if follow < len(articles):
+                submit(follow)
 
 
 def run(args) -> int:
@@ -366,11 +561,11 @@ def run(args) -> int:
     stats: dict[str, int] = {}
     started = time.monotonic()
     processed = 0
-    for row in articles:
+    for row, outcome in _prefetched(articles):
         if processed and time.monotonic() - started >= max_runtime:
             print(f"parse stopped at runtime safety limit ({max_runtime}s); rerun to resume")
             break
-        status = parse_article(conn, row, stats)
+        status = _finish_article(conn, row, outcome, stats)
         print(f"{row['pmcid']}: {status}")
         processed += 1
 
