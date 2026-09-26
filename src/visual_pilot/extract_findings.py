@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 
@@ -173,10 +174,12 @@ def user_content(
 # ---------------------------------------------------------------------------
 # Per-article prepare / apply
 # ---------------------------------------------------------------------------
-def prepare_article(conn, article: dict) -> dict | None:
+def prepare_article(conn, article: dict, *, db_lock=None) -> dict | None:
     """Refetch + parse the bundle, pick sections, build the P4 request.
 
-    Returns None when the article yields no usable source text.
+    Returns None when the article yields no usable source text. When called
+    from a worker pool, ``db_lock`` must serialize the shared ``conn`` reads —
+    sqlite cursors are not safe to iterate concurrently.
     """
     parsed = jats.parse_article(pmc.get_article_bundle(article["pmcid"]).xml_text)
     sections = pick_sections(parsed.body_sections)
@@ -184,7 +187,11 @@ def prepare_article(conn, article: dict) -> dict | None:
     if not source_text.strip():
         return None
     disease_keys = db.from_json(article["primary_disease_keys_json"], [])
-    vocabulary = _vocabulary(conn, disease_keys)
+    if db_lock is None:
+        vocabulary = _vocabulary(conn, disease_keys)
+    else:
+        with db_lock:
+            vocabulary = _vocabulary(conn, disease_keys)
     return {
         "sections": sections,
         "source_text": source_text,
@@ -330,9 +337,11 @@ def run(args) -> int:
     }
 
     # Refetch + section-pick on a thread pool, then one call_many for P4.
+    db_lock = threading.Lock()
+
     def _prepare(article):
         try:
-            return prepare_article(conn, article)  # dict | None | "error"
+            return prepare_article(conn, article, db_lock=db_lock)
         except Exception as exc:  # noqa: BLE001 - per-article isolation
             print(f"{article['pmcid']}: fetch error {exc}")
             stats["errors"] += 1
