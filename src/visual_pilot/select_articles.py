@@ -1,7 +1,8 @@
 """Stage 2: article selection from the turbopuffer PMC namespace.
 
 Per disease, per synonym: title BM25 (top_k 200), page_content BM25
-(top_k 300) and dense ANN (top_k 300) under the review filter
+(top_k 300) and dense ANN (top_k 300), plus a bounded set of visual
+finding/modality page_content BM25 queries, under the review filter
 ``Or(publication_type Contains "Review", article_type Eq "review-article")``
 AND ``has_full_text = true``. Rows are chunk-level: each ranked list is
 collapsed to per-pmcid best rank and all lists for a disease are fused with
@@ -29,6 +30,11 @@ PILOT_KEYS = set(diseases.DISEASE_KEYS)
 TITLE_TOP_K = 200
 CONTENT_TOP_K = 300
 DENSE_TOP_K = 300
+VISUAL_QUERY_TOP_K = 150
+MAX_VISUAL_QUERIES = config.VP_VISUAL_QUERY_CAP
+MAX_EVIDENCE_PER_ARTICLE = 8
+MAX_EVIDENCE_TEXT_CHARS = 1200
+VISUAL_QUERY_RRF_WEIGHT = 12.0
 RRF_K = 60
 DEFAULT_CAP = 150
 ABSTRACT_MAX_CHARS = 4000
@@ -44,7 +50,37 @@ ATTRIBUTES = [
     "country",
     "publication_type",
     "article_type",
+    "page_content",
+    "section_title",
+    "section_type",
 ]
+
+_CATEGORY_MODALITY = {
+    "skin": "clinical photograph",
+    "mucosa": "clinical photograph",
+    "nail": "clinical photograph",
+    "clinical_msk": "clinical photograph",
+    "capillaroscopy": "capillaroscopy image",
+    "histology": "histology micrograph",
+    "radiology_xray": "radiograph",
+    "ct": "CT scan",
+    "mri": "MRI",
+    "us": "ultrasound image",
+    "echo": "echocardiogram",
+    "eye": "clinical photograph",
+}
+_VISUAL_SECTION_CUE = re.compile(
+    r"\b(clinical|physical examination|cutaneous|dermatolog|imaging|radiolog|"
+    r"mri|computed tomography|histolog|patholog|capillaroscop|photograph)\w*\b",
+    re.I,
+)
+_VISUAL_PASSAGE_CUE = re.compile(
+    r"\b(photo(?:graph)?s?|images?|figure\s+\d|radiograph|x[ -]?ray|"
+    r"mri|magnetic resonance|ct scan|computed tomography|ultrasound|"
+    r"histolog|biopsy|histopatholog|micrograph|capillaroscop|rash|papules?|"
+    r"plaques?|erythema|ulcer|erosion|lesion|sacroiliitis|bone marrow edema)\b",
+    re.I,
+)
 
 # Review articles show up under either field (verified live: publication_type
 # is a list of journal labels, article_type a JATS string).
@@ -115,18 +151,35 @@ def passes_type_filter(
 
 
 def rrf_scores(
-    ranked_lists: list[list[str]], k: int = RRF_K
+    ranked_lists: list[list[str]], k: int = RRF_K,
+    weights: list[float] | None = None,
 ) -> dict[str, float]:
-    """RRF per pmcid: each list contributes 1/(k + best_rank) once."""
+    """Weighted RRF per pmcid: each list contributes weight/(k + best_rank)."""
     scores: dict[str, float] = {}
-    for pmcids in ranked_lists:
+    for list_index, pmcids in enumerate(ranked_lists):
+        weight = weights[list_index] if weights and list_index < len(weights) else 1.0
         seen: set[str] = set()
         for rank, pmcid in enumerate(pmcids, start=1):
             if not pmcid or pmcid in seen:
                 continue
             seen.add(pmcid)
-            scores[pmcid] = scores.get(pmcid, 0.0) + 1.0 / (k + rank)
+            scores[pmcid] = scores.get(pmcid, 0.0) + weight / (k + rank)
     return scores
+
+
+def _is_visual_passage(
+    row: dict,
+) -> bool:
+    """Identify image-bearing passage evidence while leaving candidate recall broad."""
+    passage = str(row.get("page_content") or "").strip()
+    if not passage:
+        return False
+    section = " ".join(
+        str(row.get(key) or "") for key in ("section_title", "section_type")
+    )
+    return bool(
+        _VISUAL_SECTION_CUE.search(section) or _VISUAL_PASSAGE_CUE.search(passage)
+    )
 
 
 def _is_acronym(term: str) -> bool:
@@ -164,14 +217,138 @@ def title_rule_diseases(title: str, diseases_data: dict[str, dict]) -> set[str]:
     return matched
 
 
+def visual_queries_for_disease(
+    disease_key: str,
+    diseases_data: dict[str, dict] | None = None,
+    findings: list[dict] | None = None,
+    max_queries: int | None = None,
+    coverage_counts: dict[str, int] | None = None,
+) -> list[dict[str, str]]:
+    """Build a deterministic, small set of finding/modality retrieval queries.
+
+    Findings are selected round-robin across image-bearing categories so a
+    large skin vocabulary cannot crowd out imaging or pathology. Each result
+    retains its query terms for downstream evidence and ranking.
+    """
+    if max_queries is None:
+        max_queries = config.VP_VISUAL_QUERY_CAP
+    if disease_key not in PILOT_KEYS or max_queries <= 0:
+        return []
+    diseases_data = diseases_data or diseases.load_diseases()
+    findings = findings if findings is not None else diseases.load_findings_vocab()
+    disease = diseases_data[disease_key]
+    eligible = [
+        item for item in findings
+        if disease_key in item.get("disease_keys", [])
+        and item.get("category") in _CATEGORY_MODALITY
+        and item.get("approved", True)
+    ]
+    by_category: dict[str, list[dict]] = {}
+    for item in eligible:
+        by_category.setdefault(item["category"], []).append(item)
+    coverage_counts = coverage_counts or {}
+    for bucket in by_category.values():
+        bucket.sort(
+            key=lambda item: (
+                int(coverage_counts.get(str(item.get("finding_key") or ""), 0)),
+                str(item.get("finding_key") or ""),
+            )
+        )
+    # Stable category order follows the image modalities in the seed schema.
+    categories = list(_CATEGORY_MODALITY)
+    selected: list[dict] = []
+    while len(selected) < max_queries:
+        added = False
+        for category in categories:
+            bucket = by_category.get(category, [])
+            if len(bucket) > sum(x["category"] == category for x in selected):
+                selected.append(bucket[sum(x["category"] == category for x in selected)])
+                added = True
+                if len(selected) >= max_queries:
+                    break
+        if not added:
+            break
+
+    subtypes = disease.get("subtypes", [])
+    out = []
+    for item in selected:
+        finding = str(item.get("label") or item.get("finding_key") or "")
+        modality = _CATEGORY_MODALITY[item["category"]]
+        finding_text = " ".join(
+            [finding, str(item.get("finding_key") or ""), *item.get("synonyms", [])]
+        ).lower()
+        subtype = ""
+        for candidate in subtypes:
+            terms = [candidate.get("key", ""), candidate.get("label", "")]
+            if any(
+                term and re.search(r"\b" + re.escape(term.lower()) + r"\b", finding_text)
+                for term in terms
+            ):
+                subtype = candidate["label"]
+                break
+        # Axial disease imaging findings split naturally by modality: MRI is
+        # the non-radiographic/radiographic assessment query, while plain
+        # radiographs specifically retrieve radiographic axSpA.
+        if not subtype and disease_key == "as":
+            subtype_key = (
+                "r_axspa" if item["category"] == "radiology_xray" else
+                "nr_axspa" if item["category"] == "mri" else ""
+            )
+            subtype = next(
+                (s["label"] for s in subtypes if s.get("key") == subtype_key), ""
+            )
+        query = " ".join(
+            part for part in (disease["name"], subtype, finding, modality) if part
+        )
+        out.append({
+            "query": query,
+            "finding": finding,
+            "modality": modality,
+            "category": item["category"],
+        })
+    return out
+
+
+def _visual_findings_from_db(conn) -> list[dict]:
+    """Load approved vocabulary rows, including administrator-approved additions."""
+    rows = conn.execute(
+        "SELECT finding_key, disease_keys_json, label, synonyms_json, category, approved "
+        "FROM findings_vocab WHERE approved = 1"
+    )
+    return [
+        {
+            "finding_key": row["finding_key"],
+            "disease_keys": db.from_json(row["disease_keys_json"], []),
+            "label": row["label"],
+            "synonyms": db.from_json(row["synonyms_json"], []),
+            "category": row["category"],
+            "approved": bool(row["approved"]),
+        }
+        for row in rows
+    ]
+
+
+def _stored_panel_counts(conn, disease_key: str) -> dict[str, int]:
+    """Count stored panels per approved finding for coverage-aware queries."""
+    counts: dict[str, int] = {}
+    for row in conn.execute(
+        "SELECT findings_json FROM panels WHERE disease_key = ?", (disease_key,)
+    ):
+        for finding in db.from_json(row["findings_json"], []) or []:
+            key = finding.get("finding_key") if isinstance(finding, dict) else finding
+            if key:
+                counts[str(key)] = counts.get(str(key), 0) + 1
+    return counts
+
+
 # ---------------------------------------------------------------------------
 # turbopuffer access
 # ---------------------------------------------------------------------------
 def _make_retriever():
-    """Construct the retriever the way the rest of the repo does."""
-    from src.retriever_turbopuffer import TurbopufferRetriever
+    """Construct the pilot's PMC namespace handle + embedding client."""
+    from .retrieval import VisualRetriever
 
-    return TurbopufferRetriever()
+    return VisualRetriever()
 
 
 def _review_filters():
@@ -226,10 +403,18 @@ def _rank_query(ns, rank_by, top_k) -> list[dict]:
     return _merge_ranked(rows_a, rows_b)
 
 
-def retrieve_for_disease(ns, embed_fn, synonyms: list[str]) -> dict[str, dict]:
-    """All ranked lists for one disease fused to {pmcid: {score, attrs}}."""
+def retrieve_for_disease(
+    ns,
+    embed_fn,
+    synonyms: list[str],
+    visual_queries: list[dict[str, str]] | None = None,
+    disease_key: str | None = None,
+) -> dict[str, dict]:
+    """Fuse ranked lists and preserve the best passage evidence per PMC article."""
     ranked_lists: list[list[str]] = []
+    ranked_weights: list[float] = []
     attrs: dict[str, dict] = {}
+    evidence: dict[str, list[dict]] = {}
     for synonym in synonyms:
         embedding = None
         if embed_fn is not None:
@@ -248,15 +433,121 @@ def retrieve_for_disease(ns, embed_fn, synonyms: list[str]) -> dict[str, dict]:
         for rank_by, top_k in buckets:
             rows = _rank_query(ns, rank_by, top_k)
             ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
+            ranked_weights.append(1.0)
             for row in rows:
                 pmcid = str(row.get("pmcid") or "")
                 if pmcid and pmcid not in attrs:
                     attrs[pmcid] = row
-    scores = rrf_scores(ranked_lists)
-    return {
-        pmcid: {"score": score, "attrs": attrs.get(pmcid, {})}
-        for pmcid, score in scores.items()
-    }
+            if rank_by[0] == "page_content":
+                for rank, row in enumerate(rows, start=1):
+                    pmcid = str(row.get("pmcid") or "")
+                    passage = str(row.get("page_content") or "").strip()
+                    if (
+                        not pmcid
+                        or not passage
+                        or not _is_visual_passage(row)
+                    ):
+                        continue
+                    evidence.setdefault(pmcid, []).append({
+                        "query": synonym,
+                        "query_kind": "synonym",
+                        "text": passage[:MAX_EVIDENCE_TEXT_CHARS],
+                        "section": str(row.get("section_title") or ""),
+                        "section_type": str(row.get("section_type") or ""),
+                        "modality": "",
+                        "finding": "",
+                        "rank": rank,
+                        "score": 1.0 / (RRF_K + rank),
+                    })
+    for spec in visual_queries or []:
+        query = str(spec.get("query") or "").strip()
+        if not query:
+            continue
+        rows = _rank_query(
+            ns, ["page_content", "BM25", query], VISUAL_QUERY_TOP_K
+        )
+        ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
+        ranked_weights.append(1.0)  # keep a broad recall path for every hit
+        visual_rows = [
+            row for row in rows
+            if _is_visual_passage(row)
+        ]
+        if visual_rows:
+            # A qualified visual hit contributes this bonus plus its broad
+            # path contribution, making its total weight 12x without
+            # suppressing articles that a visual query finds less directly.
+            ranked_lists.append([str(row.get("pmcid") or "") for row in visual_rows])
+            ranked_weights.append(VISUAL_QUERY_RRF_WEIGHT - 1.0)
+        for row in rows:
+            pmcid = str(row.get("pmcid") or "")
+            if pmcid and pmcid not in attrs:
+                attrs[pmcid] = row
+        for rank, row in enumerate(rows, start=1):
+            pmcid = str(row.get("pmcid") or "")
+            passage = str(row.get("page_content") or "").strip()
+            if (
+                not pmcid
+                or not passage
+                or not _is_visual_passage(row)
+            ):
+                continue
+            evidence.setdefault(pmcid, []).append({
+                "query": query,
+                "query_kind": "visual",
+                "text": passage[:MAX_EVIDENCE_TEXT_CHARS],
+                "section": str(row.get("section_title") or ""),
+                "section_type": str(row.get("section_type") or ""),
+                "modality": str(spec.get("modality") or ""),
+                "finding": str(spec.get("finding") or ""),
+                "rank": rank,
+                "score": 1.0 / (RRF_K + rank),
+            })
+    scores = rrf_scores(ranked_lists, weights=ranked_weights)
+    out = {}
+    for pmcid, score in scores.items():
+        out[pmcid] = {
+            "score": score,
+            "attrs": attrs.get(pmcid, {}),
+            "matched_passages": _select_evidence(evidence.get(pmcid, [])),
+        }
+    return out
+
+
+def _select_evidence(evidence: list[dict]) -> list[dict]:
+    """Keep a bounded mix, reserving at least one slot for visual query hits."""
+    best_by_passage: dict[tuple[str, str], dict] = {}
+    for item in evidence:
+        identity = (str(item.get("section") or ""), str(item.get("text") or ""))
+        if not identity[1]:
+            continue
+        prior = best_by_passage.get(identity)
+        item_is_visual = item.get("query_kind") == "visual"
+        prior_is_visual = prior and prior.get("query_kind") == "visual"
+        if (
+            prior is None
+            or (item_is_visual and not prior_is_visual)
+            or (item_is_visual == prior_is_visual and item.get("score", 0) > prior.get("score", 0))
+        ):
+            best_by_passage[identity] = dict(item)
+    ranked = sorted(
+        best_by_passage.values(),
+        key=lambda item: (float(item.get("score") or 0), item.get("query_kind") == "visual"),
+        reverse=True,
+    )
+    visual = [item for item in ranked if item.get("query_kind") == "visual"]
+    general = [item for item in ranked if item.get("query_kind") != "visual"]
+    visual_slots = min(len(visual), max(1, MAX_EVIDENCE_PER_ARTICLE // 2))
+    selected = visual[:visual_slots] + general[: MAX_EVIDENCE_PER_ARTICLE - visual_slots]
+    if len(selected) < MAX_EVIDENCE_PER_ARTICLE:
+        selected_ids = {
+            (str(item.get("section") or ""), str(item.get("text") or ""))
+            for item in selected
+        }
+        selected.extend(
+            item for item in ranked
+            if (str(item.get("section") or ""), str(item.get("text") or "")) not in selected_ids
+        )
+    return selected[:MAX_EVIDENCE_PER_ARTICLE]
 
 
 def abstract_for(ns, pmcid: str) -> str:
@@ -282,10 +573,38 @@ def fetch_abstracts(ns, pmcids: list[str]) -> dict[str, str]:
     return dict(zip(pmcids, values))
 
 
+def _merge_evidence(existing: list[dict], incoming: list[dict]) -> list[dict]:
+    """Merge cross-disease evidence by passage while keeping the strongest hit."""
+    merged: dict[tuple[str, str], dict] = {}
+    for item in [*(existing or []), *(incoming or [])]:
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        identity = (str(item.get("section") or ""), text)
+        prior = merged.get(identity)
+        if (
+            prior is None
+            or (item.get("query_kind") == "visual" and prior.get("query_kind") != "visual")
+            or (
+                item.get("query_kind") == prior.get("query_kind")
+                and float(item.get("score") or 0) > float(prior.get("score") or 0)
+            )
+        ):
+            merged[identity] = dict(item)
+    return _select_evidence(list(merged.values()))
+
+
 # ---------------------------------------------------------------------------
 # DB + relevance
 # ---------------------------------------------------------------------------
-def upsert_candidate(conn, pmcid: str, attrs: dict, score: float, keys: set[str]) -> str:
+def upsert_candidate(
+    conn,
+    pmcid: str,
+    attrs: dict,
+    score: float,
+    keys: set[str],
+    matched_passages: list[dict] | None = None,
+) -> str:
     """INSERT OR IGNORE a candidate; refresh early-status rows. Returns status."""
     meta = dict(
         pmid=attrs.get("pmid"),
@@ -296,9 +615,12 @@ def upsert_candidate(conn, pmcid: str, attrs: dict, score: float, keys: set[str]
         country=attrs.get("country") or None,
         publication_types_json=db.to_json(attrs.get("publication_type") or []),
         retrieval_score=score,
+        retrieval_evidence_json=db.to_json(
+            matched_passages[:MAX_EVIDENCE_PER_ARTICLE] if matched_passages else []
+        ),
     )
     row = conn.execute(
-        "SELECT status, retrieval_score, primary_disease_keys_json FROM articles "
+        "SELECT status, retrieval_score, retrieval_evidence_json, primary_disease_keys_json FROM articles "
         "WHERE pmcid = ?",
         (pmcid,),
     ).fetchone()
@@ -306,14 +628,18 @@ def upsert_candidate(conn, pmcid: str, attrs: dict, score: float, keys: set[str]
         conn.execute(
             "INSERT OR IGNORE INTO articles "
             "(pmcid, pmid, doi, title, journal, year, country, "
-            " publication_types_json, retrieval_score, primary_disease_keys_json, "
+            " publication_types_json, retrieval_score, retrieval_evidence_json, primary_disease_keys_json, "
             " status) VALUES (:pmcid, :pmid, :doi, :title, :journal, :year, "
-            " :country, :publication_types_json, :retrieval_score, :keys, "
+            " :country, :publication_types_json, :retrieval_score, :retrieval_evidence_json, :keys, "
             " 'candidate')",
             {**meta, "pmcid": pmcid, "keys": db.to_json(sorted(keys))},
         )
         return "candidate"
     status = row["status"]
+    incoming_evidence = matched_passages or []
+    previous_evidence = db.from_json(row["retrieval_evidence_json"], []) or []
+    merged_evidence = _merge_evidence(previous_evidence, incoming_evidence)
+    evidence_json = db.to_json(merged_evidence)
     if status in {"candidate", "license_ok", "license_rejected"}:
         merged_keys = sorted(set(db.from_json(row["primary_disease_keys_json"], [])) | keys)
         merged_score = max(score, row["retrieval_score"] or 0.0)
@@ -321,21 +647,33 @@ def upsert_candidate(conn, pmcid: str, attrs: dict, score: float, keys: set[str]
             "UPDATE articles SET pmid=:pmid, doi=:doi, title=:title, "
             "journal=:journal, year=:year, country=:country, "
             "publication_types_json=:publication_types_json, "
-            "retrieval_score=:retrieval_score, primary_disease_keys_json=:keys, "
+            "retrieval_score=:retrieval_score, "
+            "retrieval_evidence_json=:evidence_json, "
+            "primary_disease_keys_json=:keys, "
             "updated_at=datetime('now') WHERE pmcid=:pmcid",
             {
                 **meta,
                 "retrieval_score": merged_score,
                 "keys": db.to_json(merged_keys),
+                "evidence_json": evidence_json,
                 "pmcid": pmcid,
             },
         )
-    elif score > (row["retrieval_score"] or 0.0):
-        conn.execute(
-            "UPDATE articles SET retrieval_score=?, updated_at=datetime('now') "
-            "WHERE pmcid=?",
-            (score, pmcid),
-        )
+    else:
+        updates = []
+        values: list = []
+        if score > (row["retrieval_score"] or 0.0):
+            updates.append("retrieval_score=?")
+            values.append(score)
+        if incoming_evidence and evidence_json != row["retrieval_evidence_json"]:
+            updates.append("retrieval_evidence_json=?")
+            values.append(evidence_json)
+        if updates:
+            updates.append("updated_at=datetime('now')")
+            values.append(pmcid)
+            conn.execute(
+                f"UPDATE articles SET {', '.join(updates)} WHERE pmcid=?", values
+            )
     return status
 
 
@@ -434,11 +772,7 @@ def db_funnel_counts(conn) -> dict[str, dict]:
 def relevant_pmcids_within_cap(
     conn, cap: int = DEFAULT_CAP, disease: str | None = None
 ) -> set[str]:
-    """PMCIDs with status relevant that rank within the per-disease cap.
-
-    parse.py applies the
-    same logic itself via --accept-cap.
-    """
+    """Legacy report helper; yield-based parsing does not use this cap."""
     keys = [disease] if disease in PILOT_KEYS else list(diseases.DISEASE_KEYS)
     keep: set[str] = set()
     for key in keys:
@@ -610,6 +944,7 @@ def run(args) -> int:
     cap = getattr(args, "cap", None) or DEFAULT_CAP
     limit = getattr(args, "limit", None)
     diseases_data = diseases.load_diseases()
+    visual_findings = _visual_findings_from_db(conn) or diseases.load_findings_vocab()
 
     retriever = _make_retriever()
     ns = retriever.ns_pmc
@@ -622,8 +957,19 @@ def run(args) -> int:
     retrieval_counts: dict[str, dict] = {}
     for key in disease_keys:
         synonyms = diseases_data[key]["synonyms"]
-        print(f"[{key}] {len(synonyms)} synonyms x3 buckets ...")
-        articles = retrieve_for_disease(ns, embed_fn, synonyms)
+        visual_queries = visual_queries_for_disease(
+            key,
+            diseases_data,
+            findings=visual_findings,
+            coverage_counts=_stored_panel_counts(conn, key),
+        )
+        print(
+            f"[{key}] {len(synonyms)} synonyms x3 buckets + "
+            f"{len(visual_queries)} visual passage queries ..."
+        )
+        articles = retrieve_for_disease(
+            ns, embed_fn, synonyms, visual_queries, disease_key=key
+        )
         # --limit caps the candidate set per disease (top N by score).
         ranked = sorted(
             articles.items(), key=lambda kv: kv[1]["score"], reverse=True
@@ -645,9 +991,14 @@ def run(args) -> int:
                     "score": info["score"],
                     "attrs": attrs,
                     "keys": {key},
+                    "matched_passages": list(info.get("matched_passages") or []),
                 }
             else:
                 entry["keys"].add(key)
+                entry["matched_passages"] = _merge_evidence(
+                    entry.get("matched_passages", []),
+                    info.get("matched_passages", []),
+                )
                 if info["score"] > entry["score"]:
                     entry["score"] = info["score"]
                     entry["attrs"] = attrs
@@ -669,7 +1020,10 @@ def run(args) -> int:
     # 4. Insert candidates (INSERT OR IGNORE; resumable).
     # ------------------------------------------------------------------
     for pmcid, info in retrieved.items():
-        upsert_candidate(conn, pmcid, info["attrs"], info["score"], info["keys"])
+        upsert_candidate(
+            conn, pmcid, info["attrs"], info["score"], info["keys"],
+            info.get("matched_passages"),
+        )
     conn.commit()
 
     client = llm.LLMClient(
@@ -796,8 +1150,8 @@ def run(args) -> int:
         entry = totals.get(key) or {}
         if entry.get("over_cap"):
             print(
-                f"!!! [{key}] {entry.get('relevant')} relevant articles exceed "
-                f"the cap of {cap}: human confirmation required before `parse`."
+                f"[{key}] {entry.get('relevant')} relevant articles exceed the "
+                f"legacy report threshold of {cap}; parsing uses yield batches."
             )
     conn.close()
     return 0

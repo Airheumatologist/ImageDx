@@ -17,9 +17,6 @@ __pycache__/
 **/._*
 .DS_Store
 
-# Separate projects
-elixir-ai/
-
 # Logs and checkpoints
 *.log
 *checkpoint*.txt
@@ -43,14 +40,7 @@ fix_*.py
 # Visual findings pilot data (SQLite, images, reports)
 data/visual_pilot/
 
-# Node modules (frontend has its own .gitignore)
-node_modules/
-frontend/.next/
 .claude/
-
-# Runtime cache databases
-data/cache/*.db*
-data/cache_review_tmp*/
 
 # Local SSH keys
 .ssh/

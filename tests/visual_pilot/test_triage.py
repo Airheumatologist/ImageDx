@@ -174,7 +174,7 @@ def test_limit_caps_figures(conn, monkeypatch):
 
 def test_disease_scope(conn, monkeypatch):
     _article(conn, "PMC_SLE", keys=("sle",))
-    _article(conn, "PMC_DM", keys=("dm",))
+    _article(conn, "PMC_DM", keys=("dm", "sle"))
     _figure(conn, "PMC_SLE:f1", "PMC_SLE")
     _figure(conn, "PMC_DM:f1", "PMC_DM")
     _install_fake(
@@ -183,6 +183,110 @@ def test_disease_scope(conn, monkeypatch):
     assert triage.run(_args(disease="dm")) == 0
     assert _status(conn, "PMC_DM:f1") == "caption_kept"
     assert _status(conn, "PMC_SLE:f1") == "pending"
+
+
+def test_drop_with_explicit_patient_target_caption_routes_uncertain(conn):
+    _article(conn, "PMC_DM", keys=("dm",))
+    _figure(
+        conn,
+        "PMC_DM:f1",
+        "PMC_DM",
+        caption="Clinical photograph of Gottron papules in a patient with dermatomyositis.",
+    )
+    row = dict(conn.execute("SELECT * FROM figures WHERE figure_id='PMC_DM:f1'").fetchone())
+    response = {
+        "results": [
+            _p2_item(
+                "PMC_DM:f1",
+                "drop",
+                is_real_patient_image=True,
+                diseases_mentioned=["sle"],
+                reason="not a target disease",
+            )
+        ]
+    }
+    triage._apply_batch(conn, [row], llm.BatchResult(index=0, parsed=response, meta={}))
+    stored = conn.execute(
+        "SELECT status,triage_json FROM figures WHERE figure_id='PMC_DM:f1'"
+    ).fetchone()
+    assert stored["status"] == "caption_uncertain"
+    assert db.from_json(stored["triage_json"], {})["route_adjustment"] == (
+        "uncertain_due_to_conflicting_patient_or_target_evidence"
+    )
+
+
+def test_drop_reason_keep_alone_does_not_promote_diagram(conn):
+    _article(conn, "PMC_DM_KEEP", keys=("dm",))
+    _figure(conn, "PMC_DM_KEEP:f1", "PMC_DM_KEEP", caption="Unclear figure.")
+    row = dict(conn.execute("SELECT * FROM figures WHERE figure_id='PMC_DM_KEEP:f1'").fetchone())
+    response = {"results": [_p2_item(
+        "PMC_DM_KEEP:f1", "drop", is_real_patient_image=False, reason="keep"
+    )]}
+    triage._apply_batch(conn, [row], llm.BatchResult(index=0, parsed=response, meta={}))
+    assert _status(conn, "PMC_DM_KEEP:f1") == "caption_rejected"
+
+
+def test_historical_conflicting_drop_is_requeued_once_with_license_gate(conn):
+    _article(conn, "PMC_OLD", keys=("dm",))
+    _figure(conn, "PMC_OLD:good", "PMC_OLD", status="caption_rejected", caption="Clinical photograph of Gottron papules in dermatomyositis")
+    _figure(conn, "PMC_OLD:bad_license", "PMC_OLD", status="caption_rejected", caption="Clinical photograph of Gottron papules in dermatomyositis")
+    for fid, license_code in (("PMC_OLD:good", "cc-by"), ("PMC_OLD:bad_license", "cc-by-nc")):
+        conn.execute(
+            "UPDATE figures SET effective_license=?, image_url=?, triage_json=? WHERE figure_id=?",
+            (license_code, "https://example.test/figure.jpg", db.to_json(_p2_item(fid, "drop", reason="keep")), fid),
+        )
+    conn.commit()
+    assert triage.revisit_conflicting_rejections(conn, dry_run=True) == 1
+    assert _status(conn, "PMC_OLD:good") == "caption_rejected"
+    assert triage.revisit_conflicting_rejections(conn) == 1
+    assert _status(conn, "PMC_OLD:good") == "caption_uncertain"
+    assert _status(conn, "PMC_OLD:bad_license") == "caption_rejected"
+    assert triage.revisit_conflicting_rejections(conn) == 0
+
+
+def test_historical_other_disease_image_is_not_requeued(conn):
+    _article(conn, "PMC_OTHER", keys=("dm", "sle"))
+    _figure(
+        conn, "PMC_OTHER:f1", "PMC_OTHER", status="caption_rejected",
+        caption="Renal infarct in an infant with DADA2.",
+    )
+    conn.execute(
+        "UPDATE figures SET effective_license='cc-by', image_url=?, triage_json=?, "
+        "in_text_mentions_json=? WHERE figure_id='PMC_OTHER:f1'",
+        (
+            "https://example.test/figure.jpg",
+            db.to_json(_p2_item("PMC_OTHER:f1", "drop", reason="keep")),
+            db.to_json(["Lupus and dermatomyositis are discussed elsewhere in the article."]),
+        ),
+    )
+    conn.commit()
+    assert triage.revisit_conflicting_rejections(conn) == 0
+    assert _status(conn, "PMC_OTHER:f1") == "caption_rejected"
+
+
+def test_contradictory_patient_signal_does_not_override_third_party_rejection(conn):
+    _article(conn, "PMC_DM2", keys=("dm",))
+    _figure(
+        conn,
+        "PMC_DM2:f1",
+        "PMC_DM2",
+        caption="Clinical photograph of Gottron papules in a patient with dermatomyositis.",
+    )
+    row = dict(conn.execute("SELECT * FROM figures WHERE figure_id='PMC_DM2:f1'").fetchone())
+    response = {
+        "results": [
+            _p2_item(
+                "PMC_DM2:f1",
+                "drop",
+                is_real_patient_image=True,
+                third_party=True,
+                third_party_quote="reproduced with permission",
+                reason="keep",
+            )
+        ]
+    }
+    triage._apply_batch(conn, [row], llm.BatchResult(index=0, parsed=response, meta={}))
+    assert _status(conn, "PMC_DM2:f1") == "caption_rejected"
 
 
 # ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ import json
 import re
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import lru_cache
 
 from PIL import Image
 
@@ -37,6 +38,156 @@ SUBTYPES = {
     "dm": {"classic", "cadm", "jdm", "anti_mda5", "cancer_associated"},
     "as": {"r_axspa", "nr_axspa"},
 }
+
+# Lightweight, deterministic pre-vision ranking. This changes call order only:
+# it does not reject candidates. The caption model has already applied the
+# existing third-party/license gate, and this stage checks the figure-level
+# license again before giving an item a positive license score.
+_MODALITY_TERMS = {
+    "clinical_photo": ("clinical photograph", "clinical photo", "photograph", "skin lesion", "rash", "papule", "ulcer", "gottron", "heliotrope"),
+    "mri": ("mri", "magnetic resonance", "stir", "t1-weighted", "t2-weighted"),
+    "radiograph": ("radiograph", "x-ray", "x ray", "plain film"),
+    "ct": ("computed tomography", " ct ", "ldct", "dect"),
+    "ultrasound": ("ultrasound", "sonogram", "doppler"),
+    "histology": ("histology", "histological", "biopsy", "stain", "h&e", "hematoxylin", "immunofluorescence"),
+}
+_VISUAL_CONTEXT = ("patient", "image", "photograph", "photo", "mri", "radiograph", "histolog", "biopsy", "ultrasound", "computed tomography", "ct scan")
+_DIAGRAM_CUES = ("diagram", "schematic", "flowchart", "algorithm", "mechanism", "pathway", "prisma flow")
+_ALTERNATIVE_DIAGNOSIS_CUES = ("degenerative", "osteitis condensans", "fracture", "brucellosis", "healthy control", "normal control")
+
+
+def _contains(text: str, term: str) -> bool:
+    """Phrase-aware case-insensitive match, with punctuation as boundaries."""
+    term = term.strip().lower()
+    if not term:
+        return False
+    if term.startswith(" ") or term.endswith(" "):
+        return term in f" {text.lower()} "
+    return re.search(r"(?<![a-z0-9])" + re.escape(term) + r"(?![a-z0-9])", text.lower()) is not None
+
+
+@lru_cache(maxsize=8)
+def _disease_terms(disease_key: str) -> tuple[str, ...]:
+    item = diseases.load_diseases().get(disease_key, {})
+    terms = [item.get("name", ""), *item.get("synonyms", [])]
+    # Common short forms often occur with punctuation/qualifiers.
+    terms += {"sle": ["lupus", "sle"], "dm": ["dermatomyositis", "jdm", "cadm", "anti-mda5"],
+              "as": ["axspa", "ankylosing spondylitis", "sacroiliitis"]}.get(disease_key, [])
+    return tuple(dict.fromkeys(t for t in terms if t))
+
+
+def _load_priority_context(conn) -> dict:
+    vocabulary = [dict(row) for row in conn.execute(
+        "SELECT finding_key,label,synonyms_json,disease_keys_json FROM findings_vocab WHERE approved=1"
+    )]
+    coverage: dict[str, set[str]] = {}
+    for row in conn.execute("SELECT disease_key,findings_json FROM panels"):
+        coverage.setdefault(row["disease_key"], set()).update(
+            f["finding_key"] for f in db.from_json(row["findings_json"], []) or []
+            if isinstance(f, dict) and f.get("finding_key")
+        )
+    return {"vocabulary": vocabulary, "coverage": coverage}
+
+
+def _figure_findings(conn, disease_key: str, text: str, vocabulary=None) -> set[str]:
+    found = set()
+    rows = vocabulary if vocabulary is not None else conn.execute(
+        "SELECT finding_key,label,synonyms_json,disease_keys_json FROM findings_vocab WHERE approved=1"
+    )
+    for row in rows:
+        keys = db.from_json(row["disease_keys_json"], [])
+        if keys and disease_key not in keys:
+            continue
+        terms = [row["label"], row["finding_key"].replace("_", " "), *db.from_json(row["synonyms_json"], [])]
+        # Caption prose frequently expands site abbreviations and inserts
+        # anatomical words (e.g. "sacroiliac joint erosions" vs "SI erosions").
+        key = row["finding_key"]
+        if key.startswith("si_"):
+            stem = key[3:].replace("_", " ")
+            terms.extend((f"sacroiliac {stem}", f"sacroiliac joint {stem}"))
+        if any(_contains(text, t) for t in terms):
+            found.add(row["finding_key"])
+    return found
+
+
+def figure_priority(conn, figure: dict, article: dict, context: dict | None = None) -> tuple[float, dict]:
+    """Return a metadata-based call-order score and its auditable components.
+
+    This is intentionally a soft ranking signal. A low or uncertain score
+    never removes a figure from the vision queue.
+    """
+    caption = figure.get("caption") or ""
+    mentions = db.from_json(figure.get("in_text_mentions_json"), []) or []
+    mention_text = " ".join(str(x) for x in mentions)
+    title = article.get("title") or ""
+    combined = f"{caption} {mention_text} {title}"
+    keys = db.from_json(article.get("primary_disease_keys_json"), []) or []
+    status = figure.get("status")
+    context = context or _load_priority_context(conn)
+    license_code = figure.get("effective_license") or article.get("license_code")
+    license_mode = pmc.license_allows(license_code) if license_code else None
+
+    status_score = 1.0 if status == "caption_kept" else 0.0
+    caption_disease_hits = [key for key in keys if any(_contains(caption, term) for term in _disease_terms(key))]
+    mention_disease_hits = [key for key in keys if any(_contains(mention_text, term) for term in _disease_terms(key))]
+    title_disease_hits = [key for key in keys if any(_contains(title, term) for term in _disease_terms(key))]
+    disease_hits = sorted(set(caption_disease_hits + mention_disease_hits + title_disease_hits))
+    disease_score = (2.0 if caption_disease_hits else 0.0) + (0.75 if mention_disease_hits else 0.0) + (0.35 if title_disease_hits else 0.0)
+    if not disease_score and keys:
+        disease_score = 0.4  # parent article disease is weak context only
+    alternative_penalty = -1.25 if any(_contains(caption, term) for term in _ALTERNATIVE_DIAGNOSIS_CUES) else 0.0
+    modality_hits = [mode for mode, terms in _MODALITY_TERMS.items()
+                     if any(_contains(f" {combined} ", term) for term in terms)]
+    visual_context = any(_contains(combined, term) for term in _VISUAL_CONTEXT)
+    modality_score = min(2.0, 0.8 * len(modality_hits))
+    # In-text figure-specific passage support gives a modest boost; broad
+    # article prose alone is weak evidence and cannot outweigh captions.
+    mention_score = min(1.5, 0.35 * sum(_contains(mention_text, term) for term in _VISUAL_CONTEXT))
+    license_score = 1.0 if license_mode is not None else -8.0
+
+    coverage_bonus = 0.0
+    matched_findings: set[str] = set()
+    matched_finding_pairs: set[tuple[str, str]] = set()
+    if keys:
+        # Keep finding coverage disease-specific: a finding stored for SLE
+        # must not make the same key look covered for DM on a mixed article.
+        for key in keys:
+            found_for_disease = _figure_findings(conn, key, combined, context["vocabulary"])
+            matched_findings |= found_for_disease
+            matched_finding_pairs |= {(key, finding) for finding in found_for_disease}
+            known = context["coverage"].get(key, set())
+            coverage_bonus += min(1.0, 0.7 * len(found_for_disease - known))
+    coverage_bonus = min(2.0, coverage_bonus)
+    finding_score = min(1.8, 0.9 * len(matched_finding_pairs))
+    # Mechanism-only diagrams receive no visual-context boost; remain eligible
+    # because some broad reviews contain a relevant figure despite generic text.
+    visual_score = 0.6 if visual_context else 0.0
+    diagram_penalty = -1.5 if any(_contains(caption, term) for term in _DIAGRAM_CUES) else 0.0
+    total = status_score + disease_score + alternative_penalty + modality_score + mention_score + license_score + finding_score + coverage_bonus + visual_score + diagram_penalty
+    return total, {
+        "status": status_score, "disease": disease_score, "disease_hits": disease_hits,
+        "alternative_diagnosis": alternative_penalty,
+        "modality": modality_score, "modality_hits": modality_hits,
+        "in_text": mention_score, "license": license_score,
+        "coverage": coverage_bonus, "finding_match": finding_score,
+        "diagram_penalty": diagram_penalty, "matched_findings": sorted(matched_findings),
+        "matched_finding_disease_pairs": sorted([list(pair) for pair in matched_finding_pairs]),
+        "visual_context": visual_context,
+    }
+
+
+def rank_figures(conn, figures: list[dict], articles: dict[str, dict]) -> list[dict]:
+    """Stable priority order; uncertain figures stay in the returned queue."""
+    context = _load_priority_context(conn)
+    ranked = []
+    for fig in figures:
+        score, components = figure_priority(conn, fig, articles[fig["pmcid"]], context)
+        ranked.append((score, fig["status"] == "caption_kept", fig["figure_id"], fig, components))
+    ranked.sort(key=lambda x: (-x[0], -int(x[1]), x[2]))
+    for score, _, _, fig, components in ranked:
+        fig["_priority_score"] = score
+        fig["_priority_components"] = components
+    return [item[3] for item in ranked]
 
 
 def normalize_subtype(disease_key: str | None, subtype) -> tuple[str | None, str | None]:
@@ -174,28 +325,43 @@ def run(args) -> int:
     if args.pmcids:
         wanted = set(args.pmcids)
         rows = [r for r in rows if r["pmcid"] in wanted]
+    articles = {
+        r["pmcid"]: dict(r)
+        for r in conn.execute(
+            "SELECT pmcid, title, primary_disease_keys_json, license_code FROM articles"
+        )
+    }
     figures = []
     for r in rows:
         fig = dict(r)
         if fig["status"] == "vision_error" and (fig["attempts"] or 0) >= MAX_ATTEMPTS:
             continue
+        article = articles.get(fig["pmcid"], {})
+        if not fig.get("effective_license") and article.get("license_code"):
+            # Older/imported rows may have only the article-level license.
+            # Parse normally copies this onto each figure; persist the same
+            # inherited value so the later storage stage sees the same gate.
+            fig["effective_license"] = article["license_code"]
+            conn.execute(
+                "UPDATE figures SET effective_license=? WHERE figure_id=?",
+                (fig["effective_license"], fig["figure_id"]),
+            )
+        # Re-assert the figure-level commercial license gate at the call
+        # boundary. Parse normally routes disallowed licenses out of this
+        # queue; this protects resumed/imported rows as well.
+        if pmc.license_allows(fig.get("effective_license")) is None:
+            continue
         figures.append(fig)
-    # caption_kept first, then figure_id.
-    figures.sort(key=lambda f: (f["status"] != "caption_kept", f["figure_id"]))
+    conn.commit()
+    figures = rank_figures(conn, figures, articles)
     if args.limit:
         figures = figures[: args.limit]
 
     if args.dry_run:
-        print(f"judge: {len(figures)} figures in scope")
+        print(f"judge: {len(figures)} figures in scope (metadata-prioritized)")
         conn.close()
         return 0
 
-    articles = {
-        r["pmcid"]: dict(r)
-        for r in conn.execute(
-            "SELECT pmcid, title, primary_disease_keys_json FROM articles"
-        )
-    }
     vocab_cache: dict[tuple, list[dict]] = {}
 
     def vocab_for(fig) -> list[dict]:
@@ -206,11 +372,18 @@ def run(args) -> int:
             vocab_cache[keys] = vocab_for_diseases(conn, list(keys))
         return vocab_cache[keys]
 
-    client = llm.LLMClient(db_conn=conn, budget_usd=args.budget_usd)
+    # Let the figure-level retry queue handle transient vision timeouts. A
+    # single request should not occupy a worker for multiple full timeouts.
+    client = llm.LLMClient(
+        db_conn=conn, budget_usd=args.budget_usd, max_retries=0,
+        concurrency=min(config.VP_CONCURRENCY, 4),
+    )
     totals = {"accepted": 0, "rejected": 0, "errors": 0}
     reasons: Counter = Counter()
     budget_hit = False
-    chunk_size = config.VP_CONCURRENCY * 4
+    # Keep fetch batches small so one slow image host response does not hold
+    # dozens of already downloaded figures before model judging can begin.
+    chunk_size = config.VP_CONCURRENCY
 
     for chunk_start in range(0, len(figures), chunk_size):
         if budget_hit:

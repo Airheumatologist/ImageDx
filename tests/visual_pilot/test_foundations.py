@@ -38,6 +38,7 @@ EXPECTED_COLUMNS = {
         "license_url",
         "oa_subset",
         "retrieval_score",
+        "retrieval_evidence_json",
         "primary_disease_keys_json",
         "relevance_decision",
         "relevance_reason",
@@ -153,6 +154,24 @@ def test_init_db_is_idempotent(conn):
     assert conn.execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table'").fetchone()["n"] >= len(
         EXPECTED_COLUMNS
     )
+
+
+def test_init_db_adds_retrieval_evidence_to_existing_articles(tmp_path):
+    path = tmp_path / "legacy.sqlite"
+    legacy = sqlite3.connect(path)
+    legacy.execute("CREATE TABLE articles (pmcid TEXT PRIMARY KEY, status TEXT NOT NULL)")
+    legacy.execute("INSERT INTO articles VALUES ('PMC1', 'relevant')")
+    legacy.commit()
+    legacy.close()
+
+    upgraded = db.init_db(db.connect(path))
+    try:
+        row = upgraded.execute(
+            "SELECT retrieval_evidence_json FROM articles WHERE pmcid = 'PMC1'"
+        ).fetchone()
+        assert row["retrieval_evidence_json"] == "[]"
+    finally:
+        upgraded.close()
 
 
 def test_seed_twice_gives_same_counts(conn):

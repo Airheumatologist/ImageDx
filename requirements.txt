@@ -1,35 +1,21 @@
-# Runtime dependencies for backend API + retrieval pipeline.
+# Runtime dependencies for the Visual Findings Library pipeline (src/visual_pilot).
 
-# API server
+# Viewer (src/visual_pilot/viewer)
 fastapi>=0.109.0
 uvicorn>=0.27.0
-gunicorn>=23.0.0
-pydantic>=2.12.0
-starlette>=0.49.0
 
-# Providers and retrieval backends
-openai>=2.21.0
+# Retrieval + providers (turbopuffer PMC namespace, OpenAI-compatible LLM/embeddings)
 turbopuffer>=0.10.0
-
-# Data and ranking utilities used by runtime pipeline
-pandas>=2.3.0
-numpy>=2.0.0
-anyascii>=0.3.0
-python-dateutil>=2.9.0
-pytz>=2025.0
-tzdata>=2025.0
-
-# Configuration
-python-dotenv>=1.2.0
-
-# Networking utilities used by providers
-requests>=2.32.0
+openai>=2.21.0
 httpx>=0.28.0
 
-# Visual findings pilot (src/visual_pilot): XML parsing, images, LLM schemas
+# JATS XML parsing, figure images, LLM output schemas
 lxml>=5.0.0
 pillow>=10.0.0
 jsonschema>=4.0.0
+
+# Configuration (.env loading)
+python-dotenv>=1.2.0
 
 # Test runner for local CI/smoke checks
 pytest>=8.0.0

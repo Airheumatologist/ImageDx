@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS articles (
     license_url             TEXT,
     oa_subset               TEXT,
     retrieval_score         REAL,
+    retrieval_evidence_json TEXT NOT NULL DEFAULT '[]',
     primary_disease_keys_json TEXT NOT NULL DEFAULT '[]',
     relevance_decision      TEXT,
     relevance_reason        TEXT,
@@ -227,6 +228,7 @@ def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
 _ARTICLE_MIGRATIONS = (
     "ALTER TABLE articles ADD COLUMN study_region TEXT",
     "ALTER TABLE articles ADD COLUMN error TEXT",
+    "ALTER TABLE articles ADD COLUMN retrieval_evidence_json TEXT NOT NULL DEFAULT '[]'",
 )
 
 
@@ -237,6 +239,7 @@ def _migrate_articles(conn: sqlite3.Connection) -> None:
     wanted = {
         "study_region": _ARTICLE_MIGRATIONS[0],
         "error": _ARTICLE_MIGRATIONS[1],
+        "retrieval_evidence_json": _ARTICLE_MIGRATIONS[2],
     }
     for column, statement in wanted.items():
         if column not in existing:

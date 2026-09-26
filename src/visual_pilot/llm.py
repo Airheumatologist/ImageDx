@@ -87,6 +87,7 @@ class LLMClient:
         budget_usd: float | None = None,
         dry_run: bool = False,
         max_retries: int = 3,
+        concurrency: int | None = None,
     ) -> None:
         self.provider = (provider or config.VP_LLM_PROVIDER).strip().lower()
         self.api_key, self.base_url = config.llm_credentials(self.provider)
@@ -94,6 +95,7 @@ class LLMClient:
         self.budget_usd = budget_usd
         self.dry_run = dry_run
         self.max_retries = max_retries
+        self.concurrency = max(1, concurrency or config.VP_CONCURRENCY)
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
         self._lock = threading.Lock()
@@ -191,7 +193,7 @@ class LLMClient:
         """
         requests = list(requests)
         results: list[BatchResult | None] = [None] * len(requests)
-        with ThreadPoolExecutor(max_workers=config.VP_CONCURRENCY) as pool:
+        with ThreadPoolExecutor(max_workers=self.concurrency) as pool:
             futures = {
                 pool.submit(self.call_json, **req): i for i, req in enumerate(requests)
             }
@@ -216,7 +218,8 @@ class LLMClient:
             # max_retries=0: transient retries are handled here so that
             # budget/cache semantics stay under our control.
             self._client = openai.OpenAI(
-                api_key=self.api_key, base_url=self.base_url, timeout=300, max_retries=0
+                api_key=self.api_key, base_url=self.base_url,
+                timeout=config.VP_LLM_TIMEOUT_SECONDS, max_retries=0,
             )
         return self._client
 

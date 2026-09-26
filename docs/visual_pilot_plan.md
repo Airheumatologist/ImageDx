@@ -154,8 +154,12 @@ Confirm and write down in the pilot README section (`src/visual_pilot/README.md`
 2. **Collapse chunks to articles** by `pmcid`, keeping the best score.
 3. **Exclude** any article whose publication types include an excluded type (section 2).
 4. **Join licenses** from stage 0 and keep only allowed codes.
-5. **Relevance check:** Articles whose title contains the disease or synonym pass the rule directly. All others go through a text LLM call on title plus abstract (prompt P1).
-6. **Checkpoint:** Print and save `reports/stage2_counts.json` with, per disease: candidates, after type filter, after license filter, relevant. **Stop for human confirmation before stage 3** if any disease has more than 150 relevant articles; the proposed default cap is the top 150 by score, per disease.
+5. **Relevance check:** All licensed candidate reviews go through prompt P1 on title plus abstract. A bounded caption check may rescue an otherwise excluded broad review when an eligible figure specifically covers a pilot disease.
+6. **Checkpoint:** Print and save `reports/stage2_counts.json` with, per disease: candidates, after type filter, after license filter, relevant. This file is a funnel report; article count no longer blocks stage 3.
+
+7. **Visual retrieval ranking:** Rank with retained disease/finding/modality query passages, source section, title and abstract. On a bounded shortlist, inspect JATS captions and favor eligible clinical, imaging and histology figures that match uncovered findings. Keep broad reviews when a specific figure supplies relevant evidence. The JATS check follows the existing third-party, image availability and license rules; uncertain captions remain available to stage 4.
+
+8. **Yield expansion:** `run-all` processes per-disease batches of 50 and compares newly stored distinct image hashes and newly covered approved findings after triage, vision review and storage. It continues while batches add either kind of coverage, and stops after two consecutive zero-yield batches. Defaults cap a run at 600 articles per disease and 900 seconds; configure with `--batch-size`, `--max-articles`, `--max-runtime-seconds`, and `--zero-yield-batches`. Runs resume from database status. Standalone `parse` processes one ranked batch; rerun it to continue.
 
 **Done when:** the `articles` table is filled, the counts file exists, and a unit test covers publication-type exclusion and chunk collapse.
 
@@ -180,6 +184,11 @@ For each relevant article:
   - `drop` or `third_party = true` → `caption_rejected`
   - `keep` → `caption_kept`
   - `uncertain` → `caption_uncertain`
+
+  Contradictory model output that says `drop` while explicitly describing an
+  eligible target-disease patient image is routed to `caption_uncertain` for
+  vision review. The next triage run also re-queues matching historical P2
+  rejections. Third-party and disallowed-license content remains rejected.
 
   `caption_kept` and `caption_uncertain` both go on to stage 5.
 
@@ -300,13 +309,9 @@ All calls: temperature 0, strict JSON-schema output, and the system prompt ends 
 
 ## 8. Run order for the pilot
 1. `cli init`
-2. `cli select --disease all`, then **human review of stage2_counts.json and confirmation of the cap**
-3. `cli parse --disease all`
-4. `cli triage --disease all --budget-usd <X>`
-5. `cli judge --disease all --budget-usd <Y>` (start with `--limit 20` per disease, check crops in the viewer, then run the rest)
-6. `cli extract --disease all`
-7. `cli report`, then `cli serve`
-8. Human review: all accepted panels, the caption-rejected list, proposed findings.
+2. `cli run-all --disease all --budget-usd <X>` to select, parse and review successive yield batches.
+3. `cli report`, then `cli serve` if running the stages separately.
+4. Human review: accepted panels, caption-rejected figures, proposed findings, and coverage gaps.
 
 ## 9. Testing and quality rules
 - Unit tests make **no network calls**; the only fixtures on disk are the small JATS sample and synthetic images.
@@ -317,6 +322,6 @@ All calls: temperature 0, strict JSON-schema output, and the system prompt ends 
 ## 10. Known risks
 - Figure-level third-party material not clearly worded in the caption. Review flagged edge cases by hand; legal review before any commercial use.
 - VLM bboxes can be imprecise → whole-figure fallback + manual review.
-- SLE will dominate → stage 2 cap.
+- Disease yield can differ → review per-disease counts, distinct stored images and remaining finding coverage after each run.
 - Likely coverage gaps: darker-skin examples of malar rash, heliotrope rash, Gottron papules; AS clinical photos.
 - Unconfirmed: PMC S3 layout and whether the LLM can fetch URLs (stage 0).

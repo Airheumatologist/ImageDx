@@ -1,0 +1,81 @@
+{
+  "budget_per_disease": 3,
+  "results": {
+    "sle": {
+      "baseline": {
+        "precision_at_3": 0.3333333333333333,
+        "recall_at_3": 0.2,
+        "top": [
+          "PMC9456621:jcm-11-05212-f001",
+          "PMC9456621:jcm-11-05212-f002",
+          "PMC9456621:jcm-11-05212-f003"
+        ]
+      },
+      "priority": {
+        "precision_at_3": 1.0,
+        "recall_at_3": 0.6,
+        "top": [
+          "PMC9456621:jcm-11-05212-f005",
+          "PMC9456621:jcm-11-05212-f002",
+          "PMC9456621:jcm-11-05212-f004"
+        ]
+      },
+      "caption_rejected_audit": {
+        "sampled": 2,
+        "caption_positive_rejected": [
+          "PMC10173173:fig0005"
+        ]
+      }
+    },
+    "dm": {
+      "baseline": {
+        "precision_at_3": 0.6666666666666666,
+        "recall_at_3": 0.6666666666666666,
+        "top": [
+          "PMC9491410:f1",
+          "PMC9491410:f2",
+          "PMC9491410:f3"
+        ]
+      },
+      "priority": {
+        "precision_at_3": 1.0,
+        "recall_at_3": 1.0,
+        "top": [
+          "PMC9491410:f1",
+          "PMC9491410:f2",
+          "PMC9491410:f4"
+        ]
+      },
+      "caption_rejected_audit": {
+        "sampled": 2,
+        "caption_positive_rejected": [
+          "PMC10222774:vaccines-11-00898-f002"
+        ]
+      }
+    },
+    "as": {
+      "baseline": {
+        "precision_at_3": 0.6666666666666666,
+        "recall_at_3": 1.0,
+        "top": [
+          "PMC9184454:Fig2",
+          "PMC9184454:Fig3",
+          "PMC9450190:F1"
+        ]
+      },
+      "priority": {
+        "precision_at_3": 0.6666666666666666,
+        "recall_at_3": 1.0,
+        "top": [
+          "PMC9450190:F1",
+          "PMC9184454:Fig3",
+          "PMC9184454:Fig2"
+        ]
+      },
+      "caption_rejected_audit": {
+        "sampled": 2,
+        "caption_positive_rejected": []
+      }
+    }
+  }
+}

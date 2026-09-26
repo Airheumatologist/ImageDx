@@ -1,8 +1,8 @@
 """Configuration for the Visual Findings Library pilot.
 
-Provider settings (xAI, DeepInfra, turbopuffer) are reused from the existing
-``src.config`` module (which loads ``.env`` at import). Pilot-specific ``VP_*``
-settings are read here with their spec defaults (docs/visual_pilot_plan.md §3).
+Provider settings (xAI, DeepInfra, turbopuffer) are read from the environment;
+the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
+are read here with their spec defaults (docs/visual_pilot_plan.md §3).
 
 Data paths are resolved lazily through functions (not module constants) so
 tests can override ``VP_DATA_DIR`` with env vars / monkeypatch.
@@ -12,7 +12,10 @@ import json
 import os
 from pathlib import Path
 
-from src import config as _base
+from dotenv import load_dotenv
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(REPO_ROOT / ".env")
 
 
 def _env_int(name: str, default: int) -> int:
@@ -26,24 +29,28 @@ def _env_int(name: str, default: int) -> int:
 
 
 # -----------------------------------------------------------------------------
-# Reused provider settings (see src/config.py). The repo's LLM provider has
-# changed over time (xai -> opencode); resolve each credential defensively so
-# this module works with either version of src/config.py plus a plain env var.
+# Provider settings for retrieval (turbopuffer PMC namespace + DeepInfra
+# embeddings) and the LLM stages (P1-P4).
 # -----------------------------------------------------------------------------
-XAI_API_KEY = getattr(_base, "XAI_API_KEY", None) or os.getenv("XAI_API_KEY")
-XAI_BASE_URL = getattr(_base, "XAI_BASE_URL", None) or os.getenv(
-    "XAI_BASE_URL", "https://api.x.ai/v1"
+XAI_API_KEY = os.getenv("XAI_API_KEY")
+XAI_BASE_URL = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
+DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
+DEEPINFRA_BASE_URL = os.getenv(
+    "DEEPINFRA_BASE_URL", "https://api.deepinfra.com/v1/openai"
 )
-DEEPINFRA_API_KEY = _base.DEEPINFRA_API_KEY
-DEEPINFRA_BASE_URL = _base.DEEPINFRA_BASE_URL
-OPENCODE_API_KEY = getattr(_base, "OPENCODE_API_KEY", None) or os.getenv("OPENCODE_API_KEY")
-OPENCODE_BASE_URL = getattr(_base, "OPENCODE_BASE_URL", None) or os.getenv(
-    "OPENCODE_BASE_URL", "https://opencode.ai/zen/v1"
+OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
+OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/v1")
+TURBOPUFFER_API_KEY = os.getenv("TURBOPUFFER_API_KEY", "")
+TURBOPUFFER_REGION = os.getenv("TURBOPUFFER_REGION", "gcp-us-central1").strip()
+TURBOPUFFER_NAMESPACE_PMC = os.getenv(
+    "TURBOPUFFER_NAMESPACE_PMC", "medical_database_pmc"
 )
-TURBOPUFFER_API_KEY = _base.TURBOPUFFER_API_KEY
-TURBOPUFFER_REGION = _base.TURBOPUFFER_REGION
-TURBOPUFFER_NAMESPACE_PMC = _base.TURBOPUFFER_NAMESPACE_PMC
-TURBOPUFFER_NAMESPACE_PUBMED = _base.TURBOPUFFER_NAMESPACE_PUBMED
+TURBOPUFFER_TIMEOUT_SECONDS = _env_int("TURBOPUFFER_TIMEOUT_SECONDS", 30)
+EMBEDDING_MODEL = os.getenv(
+    "RUNTIME_EMBEDDING_MODEL",
+    os.getenv("EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-0.6B"),
+)
+EMBEDDING_TIMEOUT_SECONDS = _env_int("DEEPINFRA_EMBED_TIMEOUT_SECONDS", 120)
 
 # Credentials for each supported VP_LLM_PROVIDER value.
 _LLM_PROVIDER_CREDENTIALS = {
@@ -76,8 +83,11 @@ VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "Qwen/Qwen3-VL-235B-A22B-Instruct")
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_NCBI_API_KEY = os.getenv("VP_NCBI_API_KEY") or None
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 4))
+VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Figures per P2 caption-triage batch.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
+# Maximum per-disease visual finding/modality passage queries in stage 2.
+VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 12))
 
 # Per-model USD per 1M tokens (input/output). Source: DeepInfra
 # `GET {DEEPINFRA_BASE_URL}/models` -> metadata.pricing, cross-checked against
@@ -108,7 +118,6 @@ def model_price(model: str) -> tuple[float, float] | None:
         return None
     return float(entry["in"]), float(entry["out"])
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA_DIR = REPO_ROOT / "data" / "visual_pilot"
 DB_FILENAME = "visual_pilot.sqlite"
 

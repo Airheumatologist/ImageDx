@@ -128,6 +128,9 @@ def _args(**over):
         cap=None,
         accept_cap=False,
         pmcids=None,
+        batch_size=50,
+        max_articles=600,
+        max_runtime_seconds=900,
     )
     base.update(over)
     return argparse.Namespace(**base)
@@ -231,7 +234,44 @@ def test_parse_runner_parse_error(conn, monkeypatch):
     assert "404" in article["error"]
 
 
-def test_parse_cap_guard(conn, vp_data_dir, bundle_mock):
+def test_specific_eligible_figure_rescues_broad_review(conn):
+    _insert_article(conn, "PMCRESCUE", keys=(), score=0.1, status="irrelevant")
+    article = dict(conn.execute(
+        "SELECT * FROM articles WHERE pmcid='PMCRESCUE'"
+    ).fetchone())
+    article["caption_candidates"] = [{
+        "caption": "Clinical photographs showing Gottron papules in dermatomyositis",
+        "eligible": True,
+    }]
+    assert parse._rescue_if_caption_matches(conn, article, "dm") is True
+    saved = conn.execute(
+        "SELECT status, primary_disease_keys_json, relevance_reason "
+        "FROM articles WHERE pmcid='PMCRESCUE'"
+    ).fetchone()
+    assert saved["status"] == "relevant"
+    assert "dm" in db.from_json(saved["primary_disease_keys_json"])
+    assert saved["relevance_reason"] == "visual_figure_caption_rescue"
+
+
+def test_visual_rescue_respects_article_license(conn):
+    _insert_article(
+        conn, "PMCBADLIC", keys=(), score=0.1, status="irrelevant",
+        license_code="cc-by-nc",
+    )
+    article = dict(conn.execute(
+        "SELECT * FROM articles WHERE pmcid='PMCBADLIC'"
+    ).fetchone())
+    article["caption_candidates"] = [{
+        "caption": "Clinical photographs showing Gottron papules in dermatomyositis",
+        "eligible": True,
+    }]
+    assert parse._rescue_if_caption_matches(conn, article, "dm") is False
+    assert conn.execute(
+        "SELECT status FROM articles WHERE pmcid='PMCBADLIC'"
+    ).fetchone()["status"] == "irrelevant"
+
+
+def test_parse_uses_resumable_batches_without_fixed_cap(conn, vp_data_dir, bundle_mock):
     reports = vp_config.reports_dir()
     reports.mkdir(parents=True, exist_ok=True)
     (reports / "stage2_counts.json").write_text(
@@ -239,16 +279,19 @@ def test_parse_cap_guard(conn, vp_data_dir, bundle_mock):
     )
     for i in range(3):
         _insert_article(conn, f"PMC{i}", keys=("sle",), score=float(3 - i))
-    # Without --accept-cap the run exits 3.
-    assert parse.run(_args()) == 3
-    assert conn.execute("SELECT COUNT(*) AS n FROM figures").fetchone()["n"] == 0
-    # With --accept-cap --cap 2, only the top-2 scored articles parse.
-    assert parse.run(_args(accept_cap=True, cap=2)) == 0
+    # A batch processes the top two, and the next invocation resumes at PMC2.
+    assert parse.run(_args(batch_size=2)) == 0
     parsed = {
         r["pmcid"]
         for r in conn.execute("SELECT pmcid FROM articles WHERE status='parsed'")
     }
     assert parsed == {"PMC0", "PMC1"}
+    assert parse.run(_args(batch_size=2)) == 0
+    parsed = {
+        r["pmcid"]
+        for r in conn.execute("SELECT pmcid FROM articles WHERE status='parsed'")
+    }
+    assert parsed == {"PMC0", "PMC1", "PMC2"}
 
 
 def test_articles_migration_idempotent(vp_data_dir):

@@ -1,1 +1,1 @@
-# Medical RAG Pipeline - Source Package
+# Visual Findings Library - Source Package

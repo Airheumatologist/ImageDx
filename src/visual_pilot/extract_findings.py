@@ -290,6 +290,12 @@ def _has_text_rows(conn, pmcid: str) -> bool:
 # ---------------------------------------------------------------------------
 def run(args) -> int:
     conn = db.init_db()
+    if getattr(args, "image_only", False):
+        with conn:
+            image_rows = rebuild_image_rows(conn)
+        print(f"extract: {image_rows} image rows rebuilt")
+        conn.close()
+        return 0
     disease = None if args.disease == "all" else args.disease
     rows = db.rows_with_status(conn, "articles", "parsed", disease=disease)
     if args.pmcids:

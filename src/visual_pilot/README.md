@@ -11,6 +11,7 @@ open-access review articles with commercial-use licenses. Spec:
 # From the repo root, using the system python3.
 python3 -m src.visual_pilot.cli init                 # create DB + seed diseases/vocab
 python3 -m src.visual_pilot.cli <stage> --disease all --limit N --dry-run --budget-usd X
+python3 -m src.visual_pilot.cli run-all --disease all --budget-usd X
 ```
 
 Stages: `init | select | parse | triage | judge | store | extract | report |
@@ -18,13 +19,25 @@ serve | run-all`. Every stage is idempotent and resumes from the `status`
 column. Data lives under `data/visual_pilot/` (override with `VP_DATA_DIR`):
 `visual_pilot.sqlite`, `panels/`, `thumbs/`, `figures/`, `reports/`.
 
+Article selection adds up to `VP_VISUAL_QUERY_CAP` finding/modality passage
+queries per disease (default 12), prioritizing findings with fewer stored
+panels. Matching passages and section labels are retained in
+`articles.retrieval_evidence_json`. Article ranking uses that evidence and a
+bounded JATS caption check; figure ranking orders the vision queue by image
+relevance and coverage gaps. `run-all` processes 50 articles per disease at a
+time, then triages, judges, and stores their figures. It continues while a
+batch adds distinct stored images or covers new approved findings, stopping
+after two empty-yield batches. `--batch-size`, `--max-articles`,
+`--max-runtime-seconds`, and `--zero-yield-batches` set safety limits. A
+standalone `parse` invocation processes one ranked batch and can be rerun.
+
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL` (default
 `meta-llama/Llama-4-Scout-17B-16E-Instruct` — Qwen3-235B timed out / 429'd on
 every batched P2 call), `VP_EXTRACT_MODEL`, `VP_JUDGE_MODEL`, `VP_TRIAGE_BATCH`
 (P2 batch size, default 40), `VP_LLM_PROVIDER`, `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`,
-`VP_NCBI_API_KEY`, `VP_DATA_DIR`. Provider keys come from the existing `.env`
+`VP_NCBI_API_KEY`, `VP_VISUAL_QUERY_CAP`, `VP_DATA_DIR`. Provider keys come from `.env`
 (`DEEPINFRA_API_KEY`, `OPENCODE_API_KEY`, `TURBOPUFFER_API_KEY`) via
-`src.config`; the default provider is DeepInfra (`VP_LLM_PROVIDER`).
+`config.py`; the default provider is DeepInfra (`VP_LLM_PROVIDER`).
 
 ## Stage 0 findings
 
@@ -64,4 +77,3 @@ articles (SLE/DM/AS) and `scripts/vp_smoke_llm.py` for the LLM checks._
   `VP_IMAGE_MAX_EDGE`, in memory), `to_data_url`; per-host rate limiting
   (NCBI ≤3 req/s, ≤10 with `VP_NCBI_API_KEY`; others ~5) with retries on
   429/5xx. Nothing is written to disk.
-
