@@ -7,6 +7,7 @@ import pytest
 
 from src.visual_pilot import db, diseases, llm, pmc, select_articles
 from src.visual_pilot import config as vp_config
+from src.visual_pilot.prompts import P1
 
 
 # ---------------------------------------------------------------------------
@@ -445,3 +446,243 @@ def test_recheck_title_rule(conn, monkeypatch):
     )
     assert counts["sle"]["relevant"] == 1  # PMCC only (PMCA moved to dm)
     assert counts["dm"]["relevant"] == 1  # PMCA
+
+
+# ---------------------------------------------------------------------------
+# W4a: parallel retrieval — identical output to the sequential implementation
+# ---------------------------------------------------------------------------
+def _retrieve_for_disease_sequential(
+    ns, embed_fn, synonyms, visual_queries=None
+):
+    """Private copy of the pre-parallelization logic, kept for comparison."""
+    sa = select_articles
+    ranked_lists = []
+    ranked_weights = []
+    attrs = {}
+    evidence = {}
+    for synonym in synonyms:
+        embedding = None
+        if embed_fn is not None:
+            try:
+                embedding = embed_fn(synonym)
+            except Exception:
+                pass
+        buckets = [
+            (["title", "BM25", synonym], sa.TITLE_TOP_K),
+            (["page_content", "BM25", synonym], sa.CONTENT_TOP_K),
+        ]
+        if embedding is not None:
+            buckets.append((["vector", "ANN", embedding], sa.DENSE_TOP_K))
+        for rank_by, top_k in buckets:
+            rows = sa._rank_query(ns, rank_by, top_k)
+            ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
+            ranked_weights.append(1.0)
+            for row in rows:
+                pmcid = str(row.get("pmcid") or "")
+                if pmcid and pmcid not in attrs:
+                    attrs[pmcid] = row
+            if rank_by[0] == "page_content":
+                for rank, row in enumerate(rows, start=1):
+                    pmcid = str(row.get("pmcid") or "")
+                    passage = str(row.get("page_content") or "").strip()
+                    if not pmcid or not passage or not sa._is_visual_passage(row):
+                        continue
+                    evidence.setdefault(pmcid, []).append({
+                        "query": synonym,
+                        "query_kind": "synonym",
+                        "text": passage[: sa.MAX_EVIDENCE_TEXT_CHARS],
+                        "section": str(row.get("section_title") or ""),
+                        "section_type": str(row.get("section_type") or ""),
+                        "modality": "",
+                        "finding": "",
+                        "rank": rank,
+                        "score": 1.0 / (sa.RRF_K + rank),
+                    })
+    for spec in visual_queries or []:
+        query = str(spec.get("query") or "").strip()
+        if not query:
+            continue
+        rows = sa._rank_query(
+            ns, ["page_content", "BM25", query], sa.VISUAL_QUERY_TOP_K
+        )
+        ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
+        ranked_weights.append(1.0)
+        visual_rows = [row for row in rows if sa._is_visual_passage(row)]
+        if visual_rows:
+            ranked_lists.append(
+                [str(row.get("pmcid") or "") for row in visual_rows]
+            )
+            ranked_weights.append(sa.VISUAL_QUERY_RRF_WEIGHT - 1.0)
+        for row in rows:
+            pmcid = str(row.get("pmcid") or "")
+            if pmcid and pmcid not in attrs:
+                attrs[pmcid] = row
+        for rank, row in enumerate(rows, start=1):
+            pmcid = str(row.get("pmcid") or "")
+            passage = str(row.get("page_content") or "").strip()
+            if not pmcid or not passage or not sa._is_visual_passage(row):
+                continue
+            evidence.setdefault(pmcid, []).append({
+                "query": query,
+                "query_kind": "visual",
+                "text": passage[: sa.MAX_EVIDENCE_TEXT_CHARS],
+                "section": str(row.get("section_title") or ""),
+                "section_type": str(row.get("section_type") or ""),
+                "modality": str(spec.get("modality") or ""),
+                "finding": str(spec.get("finding") or ""),
+                "rank": rank,
+                "score": 1.0 / (sa.RRF_K + rank),
+            })
+    scores = sa.rrf_scores(ranked_lists, weights=ranked_weights)
+    out = {}
+    for pmcid, score in scores.items():
+        out[pmcid] = {
+            "score": score,
+            "attrs": attrs.get(pmcid, {}),
+            "matched_passages": sa._select_evidence(evidence.get(pmcid, [])),
+        }
+    return out
+
+
+def _parity_responder(kw):
+    """Fixed rows per bucket; thread-safe (read-only) for the query pool."""
+    rank_by = kw.get("rank_by")
+    if rank_by is None:
+        return []
+    field = rank_by[0]
+    term = rank_by[2] if len(rank_by) > 2 else ""
+    if field == "title":
+        return [
+            _row("PMC_A1", f"Review about {term}", ["Review"], "review-article"),
+            _row("PMC_A2", "Shared hit", ["Review"], "review-article"),
+        ]
+    if field == "vector":
+        return [
+            _row("PMC_A2", "Shared hit", ["Review"], "review-article"),
+            _row("PMC_A3", "Dense only", ["Review"], "review-article"),
+        ]
+    if term == "visual alpha query":
+        return [
+            _row(
+                "PMC_V1", "Visual hit", ["Review"], "review-article",
+                page_content="Photograph shows a malar rash.",
+                section_title="Clinical findings", section_type="clinical",
+            ),
+            _row(
+                "PMC_V2", "Plain hit", ["Review"], "review-article",
+                page_content="Molecular signaling pathways.",
+                section_title="Mechanism", section_type="mechanism",
+            ),
+        ]
+    if term == "visual beta query":
+        return [
+            _row(
+                "PMC_V2", "Plain hit", ["Review"], "review-article",
+                page_content="Molecular signaling pathways.",
+                section_title="Mechanism", section_type="mechanism",
+            ),
+        ]
+    return [
+        _row(
+            "PMC_C1", "Content hit", ["Review"], "review-article",
+            page_content="Biopsy reveals a histologic lesion.",
+            section_title="Pathology", section_type="clinical",
+        ),
+        _row(
+            "PMC_A2", "Shared hit", ["Review"], "review-article",
+            page_content="General text without cues.",
+            section_title="Introduction", section_type="intro",
+        ),
+    ]
+
+
+def test_retrieve_for_disease_parallel_matches_sequential(monkeypatch):
+    """Same scores, attrs and matched_passages as the serial code path."""
+    monkeypatch.setattr(vp_config, "VP_CONCURRENCY", 4)
+    ns = FakeNs(_parity_responder)
+    synonyms = ["alpha syn", "beta syn"]
+    visual_queries = [
+        {
+            "query": "visual alpha query",
+            "finding": "malar rash",
+            "modality": "clinical photograph",
+        },
+        {
+            "query": "visual beta query",
+            "finding": "other finding",
+            "modality": "MRI",
+        },
+        {"query": "   "},  # empty specs are skipped in both paths
+    ]
+
+    batched_calls = []
+
+    def embed_many(queries):
+        queries = list(queries)
+        batched_calls.append(queries)
+        return [[0.1, 0.2] if q == "alpha syn" else None for q in queries]
+
+    embed_one = lambda q: [0.1, 0.2] if q == "alpha syn" else None  # noqa: E731
+
+    select_articles._or_filter_supported = True
+    calls_before = len(ns.calls)
+    parallel = select_articles.retrieve_for_disease(
+        ns,
+        embed_one,
+        synonyms,
+        visual_queries,
+        disease_key="sle",
+        embed_many_fn=embed_many,
+    )
+    parallel_query_count = len(ns.calls) - calls_before
+
+    select_articles._or_filter_supported = True
+    reference = _retrieve_for_disease_sequential(
+        ns, embed_one, synonyms, visual_queries
+    )
+    reference_query_count = len(ns.calls) - calls_before - parallel_query_count
+
+    assert parallel == reference
+    # One batched embeddings request covered every synonym.
+    assert batched_calls == [["alpha syn", "beta syn"]]
+    # Same number of namespace queries as the sequential implementation.
+    assert parallel_query_count == reference_query_count
+    # Dense ANN ran only for the synonym whose embedding exists.
+    rank_bys = [c["rank_by"][0] for c in ns.calls[: parallel_query_count]]
+    assert rank_bys.count("vector") == 1
+    assert parallel  # non-empty fused output
+
+
+def test_retrieve_for_disease_falls_back_to_per_item_embedding(monkeypatch):
+    """A failing embed_many_fn falls back to embed_fn per synonym."""
+    monkeypatch.setattr(vp_config, "VP_CONCURRENCY", 4)
+    ns = FakeNs(_parity_responder)
+    per_item_calls = []
+
+    def embed_many(queries):
+        raise RuntimeError("batch unsupported")
+
+    def embed_one(q):
+        per_item_calls.append(q)
+        return [0.5]
+
+    select_articles._or_filter_supported = True
+    out = select_articles.retrieve_for_disease(
+        ns, embed_one, ["syn one", "syn two"], embed_many_fn=embed_many
+    )
+    assert per_item_calls == ["syn one", "syn two"]
+    rank_bys = [c["rank_by"][0] for c in ns.calls]
+    assert rank_bys.count("vector") == 2  # dense ran for both synonyms
+    assert out
+
+
+def test_p1_request_construction_unchanged():
+    """P1 request fields and the Title/Abstract truncation are fixed."""
+    req = select_articles._p1_request("My title", "A" * 5000)
+    assert req["stage"] == "p1"
+    assert req["model"] == vp_config.VP_TRIAGE_MODEL
+    assert req["system"] == P1.system
+    assert req["schema"] == P1.schema
+    assert req["prompt_version"] == P1.version
+    assert req["user_content"].startswith("Title: My title\nAbstract: ")
+    assert req["user_content"] == "Title: My title\nAbstract: " + "A" * 4000

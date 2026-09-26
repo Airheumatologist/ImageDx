@@ -1,6 +1,8 @@
 """Visual query selection and passage evidence tests without network calls."""
 
-from src.visual_pilot import diseases, select_articles
+from types import SimpleNamespace
+
+from src.visual_pilot import diseases, retrieval, select_articles
 
 
 def test_visual_passage_gate_requires_image_or_clinical_context():
@@ -205,3 +207,98 @@ def test_visual_retrieval_weights_image_passages_above_broad_mechanism_hits():
     assert articles["PMC_IMAGE"]["score"] > articles["PMC_MECHANISM"]["score"]
     assert articles["PMC_IMAGE"]["matched_passages"]
     assert articles["PMC_MECHANISM"]["matched_passages"] == []
+
+
+# ---------------------------------------------------------------------------
+# W4a: batched query embeddings
+# ---------------------------------------------------------------------------
+class _FakeEmbeddings:
+    """OpenAI-style embeddings endpoint; vectors keyed by input string."""
+
+    def __init__(self, vectors, batch_error=None, reversed_data=False):
+        self._vectors = vectors
+        self._batch_error = batch_error
+        self._reversed = reversed_data
+        self.batch_inputs = []
+        self.single_inputs = []
+
+    def create(self, model=None, input=None):
+        if isinstance(input, list):
+            self.batch_inputs.append(list(input))
+            if self._batch_error is not None:
+                raise self._batch_error
+            data = [
+                SimpleNamespace(index=i, embedding=self._vectors[q])
+                for i, q in enumerate(input)
+            ]
+            if self._reversed:
+                data.reverse()
+            return SimpleNamespace(data=data)
+        self.single_inputs.append(input)
+        return SimpleNamespace(
+            data=[SimpleNamespace(index=0, embedding=self._vectors[input])]
+        )
+
+
+def _retriever(embeddings_api):
+    """VisualRetriever with a stubbed embeddings client (no tpuf needed)."""
+    r = retrieval.VisualRetriever.__new__(retrieval.VisualRetriever)
+    r.embedding_model = "test-embed-model"
+    r.openai_client = (
+        SimpleNamespace(embeddings=embeddings_api)
+        if embeddings_api is not None
+        else None
+    )
+    return r
+
+
+def test_embed_queries_batched_matches_per_item():
+    vectors = {"lupus": [0.1, 0.2], "SLE": [0.3, 0.4]}
+    api = _FakeEmbeddings(vectors)
+    r = _retriever(api)
+
+    batched = r.embed_queries(["lupus", "SLE"])
+    per_item = [r._embed_query(q) for q in ["lupus", "SLE"]]
+
+    assert batched == per_item == [vectors["lupus"], vectors["SLE"]]
+    assert api.batch_inputs == [["lupus", "SLE"]]
+
+
+def test_embed_queries_aligns_out_of_order_data_by_index():
+    vectors = {"a": [1.0], "b": [2.0], "c": [3.0]}
+    api = _FakeEmbeddings(vectors, reversed_data=True)
+    r = _retriever(api)
+    assert r.embed_queries(["a", "b", "c"]) == [[1.0], [2.0], [3.0]]
+
+
+def test_embed_queries_falls_back_to_per_item_on_batch_failure():
+    vectors = {"a": [1.0], "b": [2.0]}
+    api = _FakeEmbeddings(vectors, batch_error=RuntimeError("batch boom"))
+    r = _retriever(api)
+
+    assert r.embed_queries(["a", "b"]) == [[1.0], [2.0]]
+    assert api.single_inputs == ["a", "b"]
+
+
+def test_embed_queries_falls_back_on_incomplete_response():
+    class _ShortEmbeddings(_FakeEmbeddings):
+        def create(self, model=None, input=None):
+            if isinstance(input, list):
+                self.batch_inputs.append(list(input))
+                return SimpleNamespace(
+                    data=[SimpleNamespace(index=0, embedding=self._vectors[input[0]])]
+                )
+            return super().create(model=model, input=input)
+
+    vectors = {"a": [1.0], "b": [2.0]}
+    api = _ShortEmbeddings(vectors)
+    r = _retriever(api)
+
+    assert r.embed_queries(["a", "b"]) == [[1.0], [2.0]]
+    assert api.single_inputs == ["a", "b"]
+
+
+def test_embed_queries_without_client_returns_nones():
+    r = _retriever(None)
+    assert r.embed_queries(["a", "b"]) == [None, None]
+    assert r.embed_queries([]) == []
