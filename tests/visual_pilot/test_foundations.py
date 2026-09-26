@@ -44,6 +44,11 @@ EXPECTED_COLUMNS = {
         "relevance_reason",
         "study_region",
         "error",
+        "s3_prefix",
+        "media_files_json",
+        "authors_json",
+        "author_count",
+        "journal_name",
         "status",
     },
     "figures": {
@@ -154,6 +159,191 @@ def test_init_db_is_idempotent(conn):
     assert conn.execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table'").fetchone()["n"] >= len(
         EXPECTED_COLUMNS
     )
+
+
+# The pre-W2 (contract §4 C2) schema: articles without the S3 bundle /
+# attribution metadata columns, panels without the sha256 index. Replicated
+# from `git show b87e626:src/visual_pilot/db.py`.
+_PRE_W2_SCHEMA = """
+CREATE TABLE articles (
+    pmcid                   TEXT PRIMARY KEY,
+    pmid                    TEXT,
+    doi                     TEXT,
+    title                   TEXT,
+    journal                 TEXT,
+    year                    INTEGER,
+    country                 TEXT,
+    publication_types_json  TEXT NOT NULL DEFAULT '[]',
+    license_code            TEXT,
+    license_url             TEXT,
+    oa_subset               TEXT,
+    retrieval_score         REAL,
+    retrieval_evidence_json TEXT NOT NULL DEFAULT '[]',
+    primary_disease_keys_json TEXT NOT NULL DEFAULT '[]',
+    relevance_decision      TEXT,
+    relevance_reason        TEXT,
+    study_region            TEXT,
+    error                   TEXT,
+    status                  TEXT NOT NULL DEFAULT 'candidate',
+    created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE figures (
+    figure_id            TEXT PRIMARY KEY,
+    pmcid                TEXT NOT NULL REFERENCES articles(pmcid),
+    label                TEXT,
+    caption              TEXT,
+    sha256               TEXT,
+    status               TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE TABLE panels (
+    panel_id               TEXT PRIMARY KEY,
+    figure_id              TEXT NOT NULL REFERENCES figures(figure_id),
+    pmcid                  TEXT NOT NULL REFERENCES articles(pmcid),
+    panel_label            TEXT,
+    disease_key            TEXT REFERENCES diseases(disease_key),
+    subtype                TEXT,
+    modality               TEXT,
+    body_site              TEXT,
+    findings_json          TEXT NOT NULL DEFAULT '[]',
+    typicality             TEXT,
+    stage                  TEXT,
+    age_group              TEXT,
+    skin_tone              TEXT,
+    stated_ethnicity       TEXT,
+    stated_ethnicity_quote TEXT,
+    study_region           TEXT,
+    annotations_present    INTEGER,
+    bbox_json              TEXT,
+    crop_mode              TEXT,
+    confidence             REAL,
+    rationale              TEXT,
+    image_path             TEXT,
+    thumb_path             TEXT,
+    width                  INTEGER,
+    height                 INTEGER,
+    sha256                 TEXT,
+    attribution_text       TEXT,
+    license_code           TEXT,
+    license_url            TEXT,
+    source_url             TEXT,
+    created_at             TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
+);
+"""
+
+_W2_ARTICLE_COLUMNS = {
+    "s3_prefix",
+    "media_files_json",
+    "authors_json",
+    "author_count",
+    "journal_name",
+}
+
+
+def test_panels_sha256_index_exists(conn):
+    indexes = {row["name"] for row in conn.execute("PRAGMA index_list('panels')")}
+    assert "idx_panels_sha256" in indexes
+    indexed = [
+        row["name"] for row in conn.execute("PRAGMA index_info('idx_panels_sha256')")
+    ]
+    assert indexed == ["sha256"]
+
+
+def test_init_db_migrates_pre_w2_schema(tmp_path):
+    """A DB created with the pre-change schema gains the C2 columns/index."""
+    path = tmp_path / "legacy.sqlite"
+    legacy = sqlite3.connect(path)
+    legacy.executescript(_PRE_W2_SCHEMA)
+    legacy.execute(
+        "INSERT INTO articles (pmcid, title, status) VALUES ('PMC9', 't', 'parsed')"
+    )
+    legacy.execute("INSERT INTO figures (figure_id, pmcid) VALUES ('PMC9:f1', 'PMC9')")
+    legacy.execute(
+        "INSERT INTO panels (panel_id, figure_id, pmcid, sha256) "
+        "VALUES ('P9', 'PMC9:f1', 'PMC9', 'deadbeef')"
+    )
+    before_articles = {
+        row[1]: tuple(row) for row in legacy.execute("PRAGMA table_info(articles)")
+    }
+    before_panels = {
+        row[1]: tuple(row) for row in legacy.execute("PRAGMA table_info(panels)")
+    }
+    legacy.commit()
+    legacy.close()
+
+    upgraded = db.init_db(db.connect(path))
+    try:
+        after_articles = {
+            row["name"]: tuple(row)
+            for row in upgraded.execute("PRAGMA table_info(articles)")
+        }
+        # No existing column changed: every pre-change column keeps the same
+        # cid/type/notnull/default/pk; new columns are only appended.
+        assert _W2_ARTICLE_COLUMNS.isdisjoint(before_articles)
+        assert set(before_articles) < set(after_articles)
+        assert _W2_ARTICLE_COLUMNS <= set(after_articles)
+        for name, info in before_articles.items():
+            assert after_articles[name] == info, f"articles.{name} changed"
+
+        after_panels = {
+            row["name"]: tuple(row)
+            for row in upgraded.execute("PRAGMA table_info(panels)")
+        }
+        for name, info in before_panels.items():
+            assert after_panels[name] == info, f"panels.{name} changed"
+
+        indexes = {
+            row["name"] for row in upgraded.execute("PRAGMA index_list('panels')")
+        }
+        assert "idx_panels_sha256" in indexes
+
+        # Existing rows are preserved; new columns are readable and nullable.
+        row = upgraded.execute(
+            "SELECT pmcid, s3_prefix, media_files_json, authors_json, "
+            "author_count, journal_name FROM articles WHERE pmcid = 'PMC9'"
+        ).fetchone()
+        assert row["pmcid"] == "PMC9"
+        assert dict(row) == {
+            "pmcid": "PMC9",
+            "s3_prefix": None,
+            "media_files_json": None,
+            "authors_json": None,
+            "author_count": None,
+            "journal_name": None,
+        }
+
+        # Re-running init on an already-migrated DB is a no-op.
+        db.init_db(upgraded)
+        assert {
+            row["name"] for row in upgraded.execute("PRAGMA table_info(articles)")
+        } == set(after_articles)
+    finally:
+        upgraded.close()
+
+
+def test_set_status_accepts_w2_article_columns(conn):
+    _insert_article(conn, "PMCW2", ["sle"])
+    db.set_status(
+        conn,
+        "articles",
+        "PMCW2",
+        "parsed",
+        s3_prefix="PMCW2.1",
+        media_files_json='["fig1.jpg","fig2.jpg"]',
+        authors_json='["Doe J","Roe K"]',
+        author_count=2,
+        journal_name="J Test",
+    )
+    row = conn.execute(
+        "SELECT s3_prefix, media_files_json, authors_json, author_count, "
+        "journal_name FROM articles WHERE pmcid = 'PMCW2'"
+    ).fetchone()
+    assert row["s3_prefix"] == "PMCW2.1"
+    assert db.from_json(row["media_files_json"]) == ["fig1.jpg", "fig2.jpg"]
+    assert db.from_json(row["authors_json"]) == ["Doe J", "Roe K"]
+    assert row["author_count"] == 2
+    assert row["journal_name"] == "J Test"
 
 
 def test_init_db_adds_retrieval_evidence_to_existing_articles(tmp_path):

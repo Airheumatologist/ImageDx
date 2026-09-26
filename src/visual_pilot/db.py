@@ -56,6 +56,11 @@ CREATE TABLE IF NOT EXISTS articles (
     relevance_reason        TEXT,
     study_region            TEXT,
     error                   TEXT,
+    s3_prefix               TEXT,
+    media_files_json        TEXT,
+    authors_json            TEXT,
+    author_count            INTEGER,
+    journal_name            TEXT,
     status                  TEXT NOT NULL DEFAULT 'candidate',
     created_at              TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
@@ -150,6 +155,7 @@ CREATE INDEX IF NOT EXISTS idx_figures_pmcid ON figures(pmcid);
 CREATE INDEX IF NOT EXISTS idx_figures_status ON figures(status);
 CREATE INDEX IF NOT EXISTS idx_panels_figure ON panels(figure_id);
 CREATE INDEX IF NOT EXISTS idx_panels_disease ON panels(disease_key);
+CREATE INDEX IF NOT EXISTS idx_panels_sha256 ON panels(sha256);
 """
 
 _PK_COLUMNS = {
@@ -194,6 +200,12 @@ _ARTICLE_MIGRATIONS = (
     "ALTER TABLE articles ADD COLUMN study_region TEXT",
     "ALTER TABLE articles ADD COLUMN error TEXT",
     "ALTER TABLE articles ADD COLUMN retrieval_evidence_json TEXT NOT NULL DEFAULT '[]'",
+    # C2 additions (contract §4): S3 bundle + attribution metadata.
+    "ALTER TABLE articles ADD COLUMN s3_prefix TEXT",
+    "ALTER TABLE articles ADD COLUMN media_files_json TEXT",
+    "ALTER TABLE articles ADD COLUMN authors_json TEXT",
+    "ALTER TABLE articles ADD COLUMN author_count INTEGER",
+    "ALTER TABLE articles ADD COLUMN journal_name TEXT",
 )
 
 
@@ -205,6 +217,11 @@ def _migrate_articles(conn: sqlite3.Connection) -> None:
         "study_region": _ARTICLE_MIGRATIONS[0],
         "error": _ARTICLE_MIGRATIONS[1],
         "retrieval_evidence_json": _ARTICLE_MIGRATIONS[2],
+        "s3_prefix": _ARTICLE_MIGRATIONS[3],
+        "media_files_json": _ARTICLE_MIGRATIONS[4],
+        "authors_json": _ARTICLE_MIGRATIONS[5],
+        "author_count": _ARTICLE_MIGRATIONS[6],
+        "journal_name": _ARTICLE_MIGRATIONS[7],
     }
     for column, statement in wanted.items():
         if column not in existing:
