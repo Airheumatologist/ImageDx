@@ -29,6 +29,16 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_float(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
 # -----------------------------------------------------------------------------
 # Provider settings: turbopuffer PMC namespace for retrieval, DeepInfra for
 # query embeddings only, and OpenCode Zen for all LLM stages (P1-P4).
@@ -82,6 +92,30 @@ VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 # Maximum per-disease visual finding/modality passage queries in stage 2.
 VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 12))
+
+# -----------------------------------------------------------------------------
+# Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults
+# preserve current behavior; later workstreams switch each of these on.
+# -----------------------------------------------------------------------------
+# Request rate for the public S3 bucket (pmc-oa-opendata); NCBI hosts unchanged.
+VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
+# Worker pool size for fetches/parse/store (W5/W6/W7).
+VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 8))
+# Max in-flight P3 vision-judge calls (W6; raise only after the W11 probe).
+VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 4))
+# Max in-flight P1 relevance calls (W4); defaults to VP_CONCURRENCY.
+VP_P1_CONCURRENCY = max(1, _env_int("VP_P1_CONCURRENCY", VP_CONCURRENCY))
+# Per-request LLM timeout for the P3 judge (W6).
+VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
+# Retries on HTTP 429 for provider calls (W3).
+VP_RATE_LIMIT_RETRIES = max(0, _env_int("VP_RATE_LIMIT_RETRIES", 4))
+# In-memory cap for the judge->store original-bytes handoff (W6/W7).
+VP_ORIGINALS_CACHE_MB = max(0, _env_int("VP_ORIGINALS_CACHE_MB", 512))
+# W0 timing instrumentation: 1 records timings and writes reports/timings_*.json.
+VP_TIMINGS = _env_int("VP_TIMINGS", 1)
+# W0 parity harness: 1 makes an llm_calls cache miss raise LLMError instead of
+# calling the provider (used with seeded candidate runs; default off).
+VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 
 # Per-model USD per 1M tokens (input/output). space-bunny-free is free for a
 # limited time on OpenCode Zen; override or extend at runtime with
