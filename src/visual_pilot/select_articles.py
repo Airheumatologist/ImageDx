@@ -402,27 +402,62 @@ def _rank_query(ns, rank_by, top_k) -> list[dict]:
     return _merge_ranked(rows_a, rows_b)
 
 
+def _embed_synonyms(synonyms: list[str], embed_fn, embed_many_fn) -> list:
+    """Embeddings aligned with ``synonyms``; ``None`` skips dense ANN.
+
+    ``embed_many_fn`` issues one batched request for all synonyms. When it is
+    absent or raises, fall back to the per-item ``embed_fn`` path — vectors
+    are identical either way and dense embedding stays best-effort.
+    """
+    if embed_many_fn is not None:
+        try:
+            vectors = list(embed_many_fn(list(synonyms)))
+            return (vectors + [None] * len(synonyms))[: len(synonyms)]
+        except Exception as exc:  # noqa: BLE001 - dense is best-effort
+            logger.warning(
+                "batched embedding failed (%s); falling back to per-item", exc
+            )
+    if embed_fn is None:
+        return [None] * len(synonyms)
+    embeddings = []
+    for synonym in synonyms:
+        embedding = None
+        try:
+            embedding = embed_fn(synonym)
+        except Exception as exc:  # noqa: BLE001 - dense is best-effort
+            logger.warning("embedding failed for %r: %s", synonym, exc)
+        embeddings.append(embedding)
+    return embeddings
+
+
 def retrieve_for_disease(
     ns,
     embed_fn,
     synonyms: list[str],
     visual_queries: list[dict[str, str]] | None = None,
     disease_key: str | None = None,
+    embed_many_fn=None,
 ) -> dict[str, dict]:
-    """Fuse ranked lists and preserve the best passage evidence per PMC article."""
-    ranked_lists: list[list[str]] = []
-    ranked_weights: list[float] = []
-    attrs: dict[str, dict] = {}
-    evidence: dict[str, list[dict]] = {}
-    for synonym in synonyms:
-        embedding = None
-        if embed_fn is not None:
-            try:
-                embedding = embed_fn(synonym)
-            except Exception as exc:  # noqa: BLE001 - dense is best-effort
-                logger.warning("embedding failed for %r: %s", synonym, exc)
+    """Fuse ranked lists and preserve the best passage evidence per PMC article.
+
+    The independent turbopuffer queries (per-synonym buckets + per-visual
+    lookups) run on a thread pool; ``ns`` is shared because the Stainless
+    client wraps a thread-safe ``httpx.Client`` and ``Namespace.query`` is a
+    stateless POST. Ranked lists are replayed below in exactly the order the
+    sequential code appended them, so RRF fusion, ``attrs`` first-seen wins,
+    and evidence selection are identical to the serial implementation.
+    """
+    synonyms = list(synonyms or [])
+    embeddings = _embed_synonyms(synonyms, embed_fn, embed_many_fn)
+    for synonym, embedding in zip(synonyms, embeddings):
         if embedding is None:
             logger.info("no embedding for %r; dense ANN skipped", synonym)
+
+    # Build the query jobs in issue order, keeping the context each job's
+    # rows need for the downstream merge (query kind, evidence metadata).
+    jobs: list[tuple[list, int]] = []
+    contexts: list[dict] = []
+    for synonym, embedding in zip(synonyms, embeddings):
         buckets = [
             (["title", "BM25", synonym], TITLE_TOP_K),
             (["page_content", "BM25", synonym], CONTENT_TOP_K),
@@ -430,74 +465,77 @@ def retrieve_for_disease(
         if embedding is not None:
             buckets.append((["vector", "ANN", embedding], DENSE_TOP_K))
         for rank_by, top_k in buckets:
-            rows = _rank_query(ns, rank_by, top_k)
-            ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
-            ranked_weights.append(1.0)
-            for row in rows:
-                pmcid = str(row.get("pmcid") or "")
-                if pmcid and pmcid not in attrs:
-                    attrs[pmcid] = row
-            if rank_by[0] == "page_content":
-                for rank, row in enumerate(rows, start=1):
-                    pmcid = str(row.get("pmcid") or "")
-                    passage = str(row.get("page_content") or "").strip()
-                    if (
-                        not pmcid
-                        or not passage
-                        or not _is_visual_passage(row)
-                    ):
-                        continue
-                    evidence.setdefault(pmcid, []).append({
-                        "query": synonym,
-                        "query_kind": "synonym",
-                        "text": passage[:MAX_EVIDENCE_TEXT_CHARS],
-                        "section": str(row.get("section_title") or ""),
-                        "section_type": str(row.get("section_type") or ""),
-                        "modality": "",
-                        "finding": "",
-                        "rank": rank,
-                        "score": 1.0 / (RRF_K + rank),
-                    })
+            jobs.append((rank_by, top_k))
+            contexts.append(
+                {
+                    "query": synonym,
+                    "query_kind": "synonym",
+                    "modality": "",
+                    "finding": "",
+                }
+            )
     for spec in visual_queries or []:
         query = str(spec.get("query") or "").strip()
         if not query:
             continue
-        rows = _rank_query(
-            ns, ["page_content", "BM25", query], VISUAL_QUERY_TOP_K
+        jobs.append((["page_content", "BM25", query], VISUAL_QUERY_TOP_K))
+        contexts.append(
+            {
+                "query": query,
+                "query_kind": "visual",
+                "modality": str(spec.get("modality") or ""),
+                "finding": str(spec.get("finding") or ""),
+            }
         )
+
+    def _run(job):
+        rank_by, top_k = job
+        return _rank_query(ns, rank_by, top_k)
+
+    workers = min(len(jobs), max(1, int(config.VP_CONCURRENCY)))
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            all_rows = list(pool.map(_run, jobs))
+    else:
+        all_rows = [_run(job) for job in jobs]
+
+    ranked_lists: list[list[str]] = []
+    ranked_weights: list[float] = []
+    attrs: dict[str, dict] = {}
+    evidence: dict[str, list[dict]] = {}
+    for (rank_by, _top_k), context, rows in zip(jobs, contexts, all_rows):
         ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
         ranked_weights.append(1.0)  # keep a broad recall path for every hit
-        visual_rows = [
-            row for row in rows
-            if _is_visual_passage(row)
-        ]
-        if visual_rows:
-            # A qualified visual hit contributes this bonus plus its broad
-            # path contribution, making its total weight 12x without
-            # suppressing articles that a visual query finds less directly.
-            ranked_lists.append([str(row.get("pmcid") or "") for row in visual_rows])
-            ranked_weights.append(VISUAL_QUERY_RRF_WEIGHT - 1.0)
+        if context["query_kind"] == "visual":
+            visual_rows = [row for row in rows if _is_visual_passage(row)]
+            if visual_rows:
+                # A qualified visual hit contributes this bonus plus its
+                # broad path contribution, making its total weight 12x
+                # without suppressing articles that a visual query finds
+                # less directly.
+                ranked_lists.append(
+                    [str(row.get("pmcid") or "") for row in visual_rows]
+                )
+                ranked_weights.append(VISUAL_QUERY_RRF_WEIGHT - 1.0)
         for row in rows:
             pmcid = str(row.get("pmcid") or "")
             if pmcid and pmcid not in attrs:
                 attrs[pmcid] = row
+        if rank_by[0] != "page_content":
+            continue
         for rank, row in enumerate(rows, start=1):
             pmcid = str(row.get("pmcid") or "")
             passage = str(row.get("page_content") or "").strip()
-            if (
-                not pmcid
-                or not passage
-                or not _is_visual_passage(row)
-            ):
+            if not pmcid or not passage or not _is_visual_passage(row):
                 continue
             evidence.setdefault(pmcid, []).append({
-                "query": query,
-                "query_kind": "visual",
+                "query": context["query"],
+                "query_kind": context["query_kind"],
                 "text": passage[:MAX_EVIDENCE_TEXT_CHARS],
                 "section": str(row.get("section_title") or ""),
                 "section_type": str(row.get("section_type") or ""),
-                "modality": str(spec.get("modality") or ""),
-                "finding": str(spec.get("finding") or ""),
+                "modality": context["modality"],
+                "finding": context["finding"],
                 "rank": rank,
                 "score": 1.0 / (RRF_K + rank),
             })
@@ -932,6 +970,7 @@ def run(args) -> int:
     retriever = _make_retriever()
     ns = retriever.ns_pmc
     embed_fn = getattr(retriever, "_embed_query", None)
+    embed_many_fn = getattr(retriever, "embed_queries", None)
 
     # ------------------------------------------------------------------
     # 1-3. Retrieval -> RRF -> type filter, per disease.
@@ -951,7 +990,12 @@ def run(args) -> int:
             f"{len(visual_queries)} visual passage queries ..."
         )
         articles = retrieve_for_disease(
-            ns, embed_fn, synonyms, visual_queries, disease_key=key
+            ns,
+            embed_fn,
+            synonyms,
+            visual_queries,
+            disease_key=key,
+            embed_many_fn=embed_many_fn,
         )
         # --limit caps the candidate set per disease (top N by score).
         ranked = sorted(
