@@ -1,0 +1,36 @@
+{
+  "pmcids": [
+    "PMC11816486",
+    "PMC10173173",
+    "PMC8615745",
+    "PMC11011942",
+    "PMC3561694",
+    "PMC11333434",
+    "PMC11990037",
+    "PMC8721135",
+    "PMC12032750",
+    "PMC6558048",
+    "PMC11807366",
+    "PMC10786976",
+    "PMC4637993",
+    "PMC12969460",
+    "PMC5741895",
+    "PMC9283193",
+    "PMC6132717",
+    "PMC9450190",
+    "PMC5913283",
+    "PMC8268702"
+  ],
+  "rationale": {
+    "criteria": {
+      "cc_by_nd": "PMC12969460 (as) — the only parsed cc-by-nd article in the main DB; exercises the whole_figure license path",
+      "tiff_figure": "PMC10786976 (dm) — the only parsed article whose S3 bundle contains TIFF media (401_2023_2669_MOESM*.tif supplementary files); note the TIFFs are supplementary hrefs, not <fig><graphic> targets, so no parsed article in the DB resolves a TIFF figure image — this is the closest available coverage",
+      "multi_disease": "PMC11333434 (as+dm+sle), PMC11990037 (dm+sle)",
+      "third_party_caption_rejected": "PMC5741895 (as) — figure Fig1 caption_rejected with triage_json third_party=true"
+    },
+    "stratification": "all rows have articles.status='parsed' in the main DB; ~7 per disease counting primary_disease_keys_json membership (sle=7, dm=8, as=8). Picked for small figure counts (1-7) to keep the baseline run cheap; mostly 'stored' figure outcomes with a few caption_rejected for route coverage. PMC10786976 has one vision_error figure in the main DB (attempts=3, LLM timeout) — it re-runs fresh in the parity set.",
+    "sle": ["PMC11816486", "PMC10173173", "PMC8615745", "PMC11011942", "PMC3561694", "PMC11333434", "PMC11990037"],
+    "dm": ["PMC8721135", "PMC12032750", "PMC6558048", "PMC11807366", "PMC10786976", "PMC4637993", "PMC11333434", "PMC11990037"],
+    "as": ["PMC12969460", "PMC5741895", "PMC9283193", "PMC6132717", "PMC9450190", "PMC5913283", "PMC8268702", "PMC11333434"]
+  }
+}

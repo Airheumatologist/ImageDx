@@ -39,7 +39,7 @@ import httpx
 from lxml import etree
 from PIL import Image
 
-from . import config
+from . import config, timing
 
 S3_BASE = "https://pmc-oa-opendata.s3.amazonaws.com"
 EPMC_REST = "https://www.ebi.ac.uk/europepmc/webservices/rest"
@@ -111,6 +111,8 @@ class RateLimiter:
         delay = slot - now
         if delay > 0:
             time.sleep(delay)
+        # W0/C7: observe limiter wait per host; no behavior change.
+        timing.record("limiter_wait", max(delay, 0.0), host=host)
 
 
 def _default_host_rps() -> dict[str, float]:
@@ -144,6 +146,15 @@ def set_http_client(client: httpx.Client | None) -> None:
 def _request(url: str, *, max_retries: int = 4) -> httpx.Response:
     """GET with per-host rate limiting and backoff on 429/5xx."""
     host = urlparse(url).netloc
+    started = time.monotonic()
+    try:
+        return _request_inner(url, host, max_retries=max_retries)
+    finally:
+        # W0/C7: total fetch wall time per host (includes retries/backoff).
+        timing.record("http_fetch", time.monotonic() - started, host=host)
+
+
+def _request_inner(url: str, host: str, *, max_retries: int = 4) -> httpx.Response:
     last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         RATE_LIMITER.wait(host)
@@ -152,6 +163,7 @@ def _request(url: str, *, max_retries: int = 4) -> httpx.Response:
         except httpx.TransportError as exc:
             last_exc = exc
             resp = None
+            timing.count("http_error", host=host)
         if resp is not None and resp.status_code == 200:
             return resp
         if resp is not None and resp.status_code in (404, 403, 410):
@@ -159,6 +171,8 @@ def _request(url: str, *, max_retries: int = 4) -> httpx.Response:
         retryable = resp is None or resp.status_code == 429 or resp.status_code >= 500
         if not retryable:
             raise PmcError(f"HTTP {resp.status_code} for {url}")
+        if resp is not None and resp.status_code == 429:
+            timing.count("http_429", host=host)
         if attempt >= max_retries:
             break
         retry_after = float(resp.headers.get("Retry-After", 0)) if resp is not None else 0.0

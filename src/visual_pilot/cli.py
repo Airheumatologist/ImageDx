@@ -10,8 +10,9 @@ from __future__ import annotations
 import argparse
 import time
 from collections.abc import Callable
+from datetime import datetime, timezone
 
-from . import config, db, diseases
+from . import config, db, diseases, timing
 
 CommandFn = Callable[[argparse.Namespace], int]
 
@@ -46,6 +47,16 @@ def _cmd_init(args: argparse.Namespace) -> int:
 def _cmd_not_implemented(args: argparse.Namespace) -> int:
     print(f"{args.command}: not implemented yet")
     return 2
+
+
+def _write_timings_report() -> None:
+    """W0/C7: write reports/timings_<utc>.json at the end of run-all."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    try:
+        path = timing.write_report(config.reports_dir() / f"timings_{stamp}.json")
+        print(f"run-all: timings written to {path}")
+    except Exception as exc:  # noqa: BLE001 - reporting must never fail run-all
+        print(f"run-all: could not write timings report: {exc}")
 
 
 def _lazy(module: str, attr: str = "run") -> CommandFn:
@@ -153,110 +164,120 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
     elif requested_pmcids is None:
         print("run-all: select")
         args.budget_usd = _remaining_budget()
-        rc = COMMANDS["select"](args)
+        with timing.stage("select"):
+            rc = COMMANDS["select"](args)
         if rc != 0:
             return rc
     else:
         print(f"run-all: using {len(requested_pmcids)} existing requested PMCIDs; selection skipped")
     if args.dry_run:
+        _write_timings_report()
         return 0
 
     disease_keys = list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
     scoped = argparse.Namespace(**vars(args))
     per_disease_cap = min(max_articles, args.limit) if args.limit is not None else max_articles
 
-    # Resume any figure work left by an interrupted earlier invocation before
-    # measuring marginal yield from new article batches.
-    for disease_key in disease_keys:
-        scoped.disease = disease_key
-        scoped.pmcids = sorted(requested_pmcids) if requested_pmcids is not None else None
-        for name in ("triage", "judge", "store"):
-            remaining = _remaining_budget()
-            if remaining is not None and remaining <= 0:
-                print(f"run-all: budget ${budget0:.2f} exhausted while resuming {name}")
-                return 4
-            scoped.budget_usd = remaining
-            print(f"run-all: resume queued figures for {disease_key}: {name}")
-            rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
-            if rc != 0:
-                return rc
-
-    for disease_key in disease_keys:
-        processed = 0
-        zero_yield_batches = 0
-        while processed < per_disease_cap:
-            if time.monotonic() - started >= max_runtime:
-                print(f"run-all: runtime safety limit ({max_runtime}s) reached; stopping expansion")
-                break
-            remaining = _remaining_budget()
-            if remaining is not None and remaining <= 0:
-                print(f"run-all: budget ${budget0:.2f} exhausted; stopping expansion")
-                return 4
-            conn = db.connect()
-            try:
-                selected = parse_stage.select_batch(
-                    conn,
-                    disease_key,
-                    min(batch_size, per_disease_cap - processed),
-                    pmcids=requested_pmcids,
-                )
-            finally:
-                conn.close()
-            if requested_pmcids is not None:
-                selected = [r for r in selected if r["pmcid"] in requested_pmcids]
-            if not selected:
-                break
-            pmcids = [r["pmcid"] for r in selected]
-            before_images, before_findings = _snapshot(disease_key)
+    # W0/C7: every stage call below is wrapped in timing.stage(...) and the
+    # report is written on every exit path. Observation only.
+    try:
+        # Resume any figure work left by an interrupted earlier invocation before
+        # measuring marginal yield from new article batches.
+        for disease_key in disease_keys:
             scoped.disease = disease_key
-            scoped.pmcids = pmcids
-            scoped.limit = None
-            for name in ("parse", "triage", "judge", "store"):
+            scoped.pmcids = sorted(requested_pmcids) if requested_pmcids is not None else None
+            for name in ("triage", "judge", "store"):
                 remaining = _remaining_budget()
                 if remaining is not None and remaining <= 0:
-                    print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
+                    print(f"run-all: budget ${budget0:.2f} exhausted while resuming {name}")
                     return 4
                 scoped.budget_usd = remaining
-                print(f"run-all: {disease_key} batch {processed // batch_size + 1}: {name} ({len(pmcids)} articles)")
-                rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
+                print(f"run-all: resume queued figures for {disease_key}: {name}")
+                with timing.stage(name):
+                    rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
                 if rc != 0:
                     return rc
-            after_images, after_findings = _snapshot(disease_key)
-            new_images = after_images - before_images
-            new_findings = after_findings - before_findings
-            processed += len(pmcids)
-            unfinished = _unfinished_figures(pmcids)
-            if unfinished:
-                print(
-                    f"run-all: {disease_key} batch has {unfinished} unfinished figures; "
-                    "leaving it resumable and pausing disease expansion"
-                )
-                break
-            print(
-                f"run-all: {disease_key} batch yield: {len(new_images)} distinct images, "
-                f"{len(new_findings)} newly covered findings"
-            )
-            if new_images or new_findings:
-                zero_yield_batches = 0
-            else:
-                zero_yield_batches += 1
-                if zero_yield_batches >= zero_yield_limit:
-                    print(f"run-all: {disease_key} stopped after {zero_yield_batches} consecutive zero-yield batches")
-                    break
 
-    scoped.disease = args.disease
-    scoped.pmcids = None
-    for name in ("extract", "report"):
-        remaining = _remaining_budget()
-        if remaining is not None and remaining <= 0:
-            print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
-            return 4
-        scoped.budget_usd = remaining
-        print(f"run-all: {name}")
-        rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
-        if rc != 0:
-            return rc
-    return 0
+        for disease_key in disease_keys:
+            processed = 0
+            zero_yield_batches = 0
+            while processed < per_disease_cap:
+                if time.monotonic() - started >= max_runtime:
+                    print(f"run-all: runtime safety limit ({max_runtime}s) reached; stopping expansion")
+                    break
+                remaining = _remaining_budget()
+                if remaining is not None and remaining <= 0:
+                    print(f"run-all: budget ${budget0:.2f} exhausted; stopping expansion")
+                    return 4
+                conn = db.connect()
+                try:
+                    selected = parse_stage.select_batch(
+                        conn,
+                        disease_key,
+                        min(batch_size, per_disease_cap - processed),
+                        pmcids=requested_pmcids,
+                    )
+                finally:
+                    conn.close()
+                if requested_pmcids is not None:
+                    selected = [r for r in selected if r["pmcid"] in requested_pmcids]
+                if not selected:
+                    break
+                pmcids = [r["pmcid"] for r in selected]
+                before_images, before_findings = _snapshot(disease_key)
+                scoped.disease = disease_key
+                scoped.pmcids = pmcids
+                scoped.limit = None
+                for name in ("parse", "triage", "judge", "store"):
+                    remaining = _remaining_budget()
+                    if remaining is not None and remaining <= 0:
+                        print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
+                        return 4
+                    scoped.budget_usd = remaining
+                    print(f"run-all: {disease_key} batch {processed // batch_size + 1}: {name} ({len(pmcids)} articles)")
+                    with timing.stage(name):
+                        rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
+                    if rc != 0:
+                        return rc
+                after_images, after_findings = _snapshot(disease_key)
+                new_images = after_images - before_images
+                new_findings = after_findings - before_findings
+                processed += len(pmcids)
+                unfinished = _unfinished_figures(pmcids)
+                if unfinished:
+                    print(
+                        f"run-all: {disease_key} batch has {unfinished} unfinished figures; "
+                        "leaving it resumable and pausing disease expansion"
+                    )
+                    break
+                print(
+                    f"run-all: {disease_key} batch yield: {len(new_images)} distinct images, "
+                    f"{len(new_findings)} newly covered findings"
+                )
+                if new_images or new_findings:
+                    zero_yield_batches = 0
+                else:
+                    zero_yield_batches += 1
+                    if zero_yield_batches >= zero_yield_limit:
+                        print(f"run-all: {disease_key} stopped after {zero_yield_batches} consecutive zero-yield batches")
+                        break
+
+        scoped.disease = args.disease
+        scoped.pmcids = None
+        for name in ("extract", "report"):
+            remaining = _remaining_budget()
+            if remaining is not None and remaining <= 0:
+                print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
+                return 4
+            scoped.budget_usd = remaining
+            print(f"run-all: {name}")
+            with timing.stage(name):
+                rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
+            if rc != 0:
+                return rc
+        return 0
+    finally:
+        _write_timings_report()
 
 
 # Registry: later workstreams replace the None entries with their module's

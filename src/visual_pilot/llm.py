@@ -23,7 +23,7 @@ from typing import Any
 import jsonschema
 import openai
 
-from . import config, db
+from . import config, db, timing
 from .prompts import Prompt
 
 
@@ -117,10 +117,12 @@ class LLMClient:
     ) -> tuple[Any, dict]:
         """One JSON call. Returns (parsed_response, meta)."""
         images = images or []
+        started = time.monotonic()  # W0/C7 timing hook (observation only)
         input_hash = self._input_hash(stage, model, prompt_version, system, user_content, images)
 
         cached = self._cache_lookup(input_hash)
         if cached is not None:
+            timing.record("llm_latency", time.monotonic() - started, stage=stage, source="cache")
             return json.loads(cached["response_json"]), {
                 "cached": True,
                 "input_hash": input_hash,
@@ -132,7 +134,12 @@ class LLMClient:
                 "attempts": 0,
             }
 
+        if config.VP_LLM_CACHE_ONLY:
+            # W0 parity harness: never hit the provider on a cache miss.
+            raise LLMError(f"cache miss: {stage} {input_hash}")
+
         if self.dry_run:
+            timing.record("llm_latency", time.monotonic() - started, stage=stage, source="dry_run")
             return None, {
                 "cached": False,
                 "dry_run": True,
@@ -144,9 +151,11 @@ class LLMClient:
 
         self._check_budget()
 
-        parsed, raw_content, usage, attempts, mode = self._call_with_validation(
-            model, system, user_content, schema, images
-        )
+        with timing.inflight("llm"):
+            parsed, raw_content, usage, attempts, mode = self._call_with_validation(
+                model, system, user_content, schema, images
+            )
+        timing.record("llm_latency", time.monotonic() - started, stage=stage, source="live")
         cost = self._cost(model, usage)
         with self._lock:
             self.spent_usd += cost or 0.0
@@ -354,7 +363,14 @@ class LLMClient:
         for attempt in range(self.max_retries + 1):
             try:
                 return call()
-            except _TRANSIENT_ERRORS:
+            except _TRANSIENT_ERRORS as exc:
+                # W0/C7: count transient failures (429s/timeouts) — observation only.
+                if isinstance(exc, openai.RateLimitError):
+                    timing.count("llm_429")
+                elif isinstance(exc, openai.APITimeoutError):
+                    timing.count("llm_timeout")
+                else:
+                    timing.count("llm_transient")
                 if attempt >= self.max_retries:
                     raise
                 time.sleep(min(8.0, 2.0**attempt))
