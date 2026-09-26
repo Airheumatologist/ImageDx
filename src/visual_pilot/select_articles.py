@@ -729,6 +729,10 @@ def join_license(pmcid: str) -> tuple[str, dict]:
         "license_code": lic.code,
         "license_url": lic.url,
         "oa_subset": lic.oa_subset,
+        # C3 hints (W4b): persisted on the article row so parse can use the
+        # hinted get_article_bundle path and skip re-listing the S3 dir.
+        "s3_prefix": lic.prefix,
+        "media_files": lic.media_files,
         "error": None,
     }
 
@@ -738,6 +742,11 @@ def apply_license(conn, pmcid: str, outcome: dict) -> str:
         "relevance_reason": outcome.get("error")
         or f"license:{outcome.get('license_code')}",
     }
+    if "s3_prefix" in outcome or "media_files" in outcome:
+        fields.update(
+            s3_prefix=outcome.get("s3_prefix"),
+            media_files_json=db.to_json(list(outcome.get("media_files") or [])),
+        )
     if outcome.get("status") == "license_ok":
         fields.update(
             license_code=outcome.get("license_code"),
@@ -884,7 +893,11 @@ def run_recheck_title_rule(args, conn) -> int:
 
     ns = _make_retriever().ns_pmc
     abstracts = fetch_abstracts(ns, [r["pmcid"] for r in rows])
-    client = llm.LLMClient(db_conn=conn, budget_usd=args.budget_usd)
+    client = llm.LLMClient(
+        db_conn=conn,
+        budget_usd=args.budget_usd,
+        concurrency=config.VP_P1_CONCURRENCY,
+    )
     items = [
         (r, _p1_request(r["title"] or "", abstracts.get(r["pmcid"], "")))
         for r in rows
@@ -1054,7 +1067,10 @@ def run(args) -> int:
     conn.commit()
 
     client = llm.LLMClient(
-        db_conn=conn, budget_usd=args.budget_usd, dry_run=False
+        db_conn=conn,
+        budget_usd=args.budget_usd,
+        dry_run=False,
+        concurrency=config.VP_P1_CONCURRENCY,
     )
     in_scope = set(disease_keys)
 
@@ -1078,7 +1094,7 @@ def run(args) -> int:
             print(f"license: {len(pending_license)} candidate articles")
             applied = 0
             with ThreadPoolExecutor(
-                max_workers=config.VP_CONCURRENCY
+                max_workers=config.VP_FETCH_CONCURRENCY
             ) as pool:
                 for pmcid, outcome in pool.map(join_license, pending_license):
                     apply_license(conn, pmcid, outcome)
