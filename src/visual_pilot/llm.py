@@ -1,12 +1,15 @@
-"""LLM provider layer for the visual pilot (workstream W4).
+"""LLM provider layer for the visual pilot.
 
 OpenAI-compatible chat calls on OpenCode Zen (``VP_LLM_PROVIDER=opencode``)
 with strict JSON-schema output, one repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 
-There is no provider batch API, so ``call_many`` runs requests on a thread
-pool of ``VP_CONCURRENCY`` workers.
+There is no provider batch API, so ``call_many``/``iter_many`` run requests
+on a thread pool of ``VP_CONCURRENCY`` workers. Contract C4
+(docs/visual_pilot_plan.md §4): per-client timeout, lazy completion-order
+``iter_many``, and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
+independent of ``max_retries``.
 """
 
 from __future__ import annotations
@@ -15,9 +18,11 @@ import hashlib
 import json
 import threading
 import time
-from collections.abc import Iterable
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections.abc import Iterable, Iterator
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import jsonschema
@@ -88,6 +93,7 @@ class LLMClient:
         dry_run: bool = False,
         max_retries: int = 3,
         concurrency: int | None = None,
+        timeout_seconds: float | None = None,
     ) -> None:
         self.provider = (provider or config.VP_LLM_PROVIDER).strip().lower()
         self.api_key, self.base_url = config.llm_credentials(self.provider)
@@ -96,6 +102,12 @@ class LLMClient:
         self.dry_run = dry_run
         self.max_retries = max_retries
         self.concurrency = max(1, concurrency or config.VP_CONCURRENCY)
+        # C4: per-client request timeout (judge uses VP_JUDGE_TIMEOUT_SECONDS).
+        self.timeout_seconds = (
+            timeout_seconds
+            if timeout_seconds is not None
+            else config.VP_LLM_TIMEOUT_SECONDS
+        )
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
         self._lock = threading.Lock()
@@ -200,20 +212,53 @@ class LLMClient:
         ``requests`` items are kwargs dicts for call_json. Results keep input
         order; per-item failures land in BatchResult.error.
         """
-        requests = list(requests)
-        results: list[BatchResult | None] = [None] * len(requests)
-        with ThreadPoolExecutor(max_workers=self.concurrency) as pool:
-            futures = {
-                pool.submit(self.call_json, **req): i for i, req in enumerate(requests)
-            }
-            for fut in as_completed(futures):
-                i = futures[fut]
-                try:
-                    parsed, meta = fut.result()
-                    results[i] = BatchResult(index=i, parsed=parsed, meta=meta)
-                except Exception as exc:  # noqa: BLE001 - per-item capture
-                    results[i] = BatchResult(index=i, error=exc)
-        return results  # type: ignore[return-value]
+        return sorted(self.iter_many(requests), key=lambda r: r.index)
+
+    def iter_many(
+        self,
+        requests: Iterable[dict],
+        max_in_flight: int | None = None,
+    ) -> Iterator[BatchResult]:
+        """Stream call_json results in completion order (contract C4).
+
+        ``requests`` items are kwargs dicts for call_json. The iterable is
+        consumed lazily: at most ``max_in_flight`` (default
+        ``self.concurrency``) calls are in flight, and the next request is
+        pulled only when a slot frees — so a generator feeding off a fetch
+        pool is never drained ahead of the caller. ``BatchResult.index`` is
+        the item's 0-based position in the consumed iterable; per-item
+        failures land in ``BatchResult.error``.
+        """
+        cap = max(1, max_in_flight or self.concurrency)
+        items = enumerate(iter(requests))
+        with ThreadPoolExecutor(max_workers=cap) as pool:
+            pending: dict[Future, int] = {}
+
+            def _fill() -> None:
+                while len(pending) < cap:
+                    try:
+                        index, req = next(items)
+                    except StopIteration:
+                        return
+                    pending[pool.submit(self.call_json, **req)] = index
+
+            _fill()
+            while pending:
+                done, _ = wait(pending, return_when=FIRST_COMPLETED)
+                results: list[BatchResult] = []
+                for fut in done:
+                    index = pending.pop(fut)
+                    try:
+                        parsed, meta = fut.result()
+                    except Exception as exc:  # noqa: BLE001 - per-item capture
+                        results.append(BatchResult(index=index, error=exc))
+                    else:
+                        results.append(
+                            BatchResult(index=index, parsed=parsed, meta=meta)
+                        )
+                # Free slots first so workers stay busy while results stream out.
+                _fill()
+                yield from results
 
     # ------------------------------------------------------------------
     # Internals
@@ -228,7 +273,7 @@ class LLMClient:
             # budget/cache semantics stay under our control.
             self._client = openai.OpenAI(
                 api_key=self.api_key, base_url=self.base_url,
-                timeout=config.VP_LLM_TIMEOUT_SECONDS, max_retries=0,
+                timeout=self.timeout_seconds, max_retries=0,
             )
         return self._client
 
@@ -360,21 +405,59 @@ class LLMClient:
         return parsed, None
 
     def _with_retries(self, call):
-        for attempt in range(self.max_retries + 1):
+        # C4: two independent retry budgets. HTTP 429s consume
+        # VP_RATE_LIMIT_RETRIES and honor Retry-After; timeouts, connection
+        # errors and 5xx consume max_retries with the original backoff.
+        transient_attempt = 0
+        rate_limit_attempt = 0
+        while True:
             try:
                 return call()
             except _TRANSIENT_ERRORS as exc:
                 # W0/C7: count transient failures (429s/timeouts) — observation only.
                 if isinstance(exc, openai.RateLimitError):
                     timing.count("llm_429")
-                elif isinstance(exc, openai.APITimeoutError):
-                    timing.count("llm_timeout")
+                    if rate_limit_attempt >= config.VP_RATE_LIMIT_RETRIES:
+                        raise
+                    time.sleep(self._retry_delay_429(exc, rate_limit_attempt))
+                    rate_limit_attempt += 1
                 else:
-                    timing.count("llm_transient")
-                if attempt >= self.max_retries:
-                    raise
-                time.sleep(min(8.0, 2.0**attempt))
-        return None  # unreachable
+                    if isinstance(exc, openai.APITimeoutError):
+                        timing.count("llm_timeout")
+                    else:
+                        timing.count("llm_transient")
+                    if transient_attempt >= self.max_retries:
+                        raise
+                    time.sleep(min(8.0, 2.0**transient_attempt))
+                    transient_attempt += 1
+
+    @staticmethod
+    def _retry_delay_429(exc: openai.RateLimitError, attempt: int) -> float:
+        """Seconds to wait before retrying a 429.
+
+        Honors a ``Retry-After`` response header (seconds or HTTP date);
+        falls back to exponential backoff. Either way capped at 30 s.
+        """
+        delay: float | None = None
+        response = getattr(exc, "response", None)
+        header = None
+        if response is not None:
+            try:
+                header = response.headers.get("Retry-After")
+            except Exception:  # noqa: BLE001 - tolerate odd response objects
+                header = None
+        if header:
+            try:
+                delay = float(header)
+            except ValueError:
+                try:
+                    when = parsedate_to_datetime(header)
+                    delay = (when - datetime.now(timezone.utc)).total_seconds()
+                except (TypeError, ValueError):
+                    delay = None
+        if delay is None:
+            delay = 2.0**attempt
+        return min(30.0, max(0.0, delay))
 
     @staticmethod
     def _looks_like_schema_unsupported(exc: Exception) -> bool:
