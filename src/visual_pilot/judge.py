@@ -11,6 +11,12 @@ non-pilot disease -> excluded, bbox clamped/swapped) and stored in
 ``figures.vision_json``; the figure becomes ``vision_accepted`` when at
 least one panel is included, else ``vision_rejected``. Fetch/LLM failures
 become ``vision_error`` (attempts-bounded retries on later runs).
+
+Scheduling (plan §5 W6): a fetch pool of ``VP_FETCH_CONCURRENCY`` workers
+prepares images in ``rank_figures`` priority order and streams them into
+``LLMClient.iter_many`` (≤ ``VP_JUDGE_CONCURRENCY`` in flight); results are
+applied on the main thread in completion order. Accepted figures' original
+bytes are parked in ``originals`` (contract C5) for the store stage.
 """
 
 from __future__ import annotations
@@ -19,13 +25,13 @@ import hashlib
 import io
 import json
 import re
-from collections import Counter
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections import Counter, deque
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 
 from PIL import Image
 
-from . import config, db, diseases, llm, pmc
+from . import config, db, diseases, llm, originals, pmc
 from .prompts import P3
 
 MAX_ATTEMPTS = 3
@@ -376,35 +382,45 @@ def run(args) -> int:
     # single request should not occupy a worker for multiple full timeouts.
     client = llm.LLMClient(
         db_conn=conn, budget_usd=args.budget_usd, max_retries=0,
-        concurrency=min(config.VP_CONCURRENCY, 4),
+        concurrency=config.VP_JUDGE_CONCURRENCY,
+        timeout_seconds=config.VP_JUDGE_TIMEOUT_SECONDS,
     )
     totals = {"accepted": 0, "rejected": 0, "errors": 0}
     reasons: Counter = Counter()
     budget_hit = False
-    # Keep fetch batches small so one slow image host response does not hold
-    # dozens of already downloaded figures before model judging can begin.
-    chunk_size = config.VP_CONCURRENCY
 
-    for chunk_start in range(0, len(figures), chunk_size):
-        if budget_hit:
-            break
-        chunk = figures[chunk_start : chunk_start + chunk_size]
+    # Streaming pipeline (plan §5 W6): a fetch pool prepares images just
+    # ahead of the judge and client.iter_many pulls a new request only when
+    # an LLM slot frees, so completed-but-unjudged images stay bounded to
+    # ~2x the in-flight cap and the whole figure set's bytes are never held
+    # in memory at once. Everything below runs on this thread: figures are
+    # dispatched in rank_figures priority order, results are applied and
+    # committed in completion order (call order is not an input; §1).
+    fetch_window = max(1, 2 * config.VP_JUDGE_CONCURRENCY)
+    submitted: list[dict] = []  # BatchResult.index -> figure
 
-        # Fetch the chunk's image bytes on a thread pool (memory stays bounded
-        # to the chunk), then judge them in one call_many.
-        ready: list[dict] = []
-        with ThreadPoolExecutor(max_workers=config.VP_CONCURRENCY) as pool:
-            futures = {}
-            for fig in chunk:
-                if not fig["image_url"]:
-                    db.set_status(
-                        conn, "figures", fig["figure_id"], "vision_error",
-                        error="needs_bytes",
-                    )
-                    continue
-                futures[pool.submit(fetch_and_prepare, fig)] = fig
-            for fut in as_completed(futures):
-                fig = futures[fut]
+    def _requests():
+        """Yield call_json kwargs in priority order, fetching just ahead."""
+        pending: deque = deque()  # (figure, fetch future), priority order
+        fig_iter = iter(figures)
+        pool = ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY)
+        try:
+            while True:
+                while len(pending) < fetch_window:
+                    fig = next(fig_iter, None)
+                    if fig is None:
+                        break
+                    if not fig["image_url"]:
+                        db.set_status(
+                            conn, "figures", fig["figure_id"], "vision_error",
+                            error="needs_bytes",
+                        )
+                        conn.commit()
+                        continue
+                    pending.append((fig, pool.submit(fetch_and_prepare, fig)))
+                if not pending:
+                    return
+                fig, fut = pending.popleft()
                 try:
                     original, mime, prepared, note = fut.result()
                 except Exception as exc:  # noqa: BLE001 - per-figure isolation
@@ -413,23 +429,16 @@ def run(args) -> int:
                         error=f"fetch: {exc}"[:500],
                         attempts=(fig["attempts"] or 0) + 1,
                     )
+                    conn.commit()
                     totals["errors"] += 1
                     continue
+                article = articles[fig["pmcid"]]
+                vocab = vocab_for(fig)
+                fig["_valid_keys"] = {v["finding_key"] for v in vocab}
                 fig["_original"] = original
-                fig["_data_url"] = pmc.to_data_url(mime, prepared)
                 fig["_format_note"] = note
-                ready.append(fig)
-        conn.commit()
-        if not ready:
-            continue
-
-        requests = []
-        for fig in ready:
-            article = articles[fig["pmcid"]]
-            vocab = vocab_for(fig)
-            fig["_valid_keys"] = {v["finding_key"] for v in vocab}
-            requests.append(
-                {
+                submitted.append(fig)
+                yield {
                     "stage": "p3",
                     "model": config.VP_JUDGE_MODEL,
                     "system": P3.system,
@@ -438,27 +447,38 @@ def run(args) -> int:
                     "prompt_version": P3.version,
                     "images": [
                         llm.ImageInput(
-                            data_url=fig["_data_url"],
-                            sha256=hashlib.sha256(fig["_original"]).hexdigest(),
+                            data_url=pmc.to_data_url(mime, prepared),
+                            sha256=hashlib.sha256(original).hexdigest(),
                         )
                     ],
                 }
-            )
+        finally:
+            # Early stop (budget/exception): cancel not-yet-started fetches;
+            # running ones finish in the background and are discarded.
+            pool.shutdown(wait=False, cancel_futures=True)
 
-        for fig, res in zip(ready, client.call_many(requests)):
+    requests = _requests()
+    results = client.iter_many(requests, max_in_flight=config.VP_JUDGE_CONCURRENCY)
+    try:
+        for res in results:
+            fig = submitted[res.index]
             if res.error is not None:
                 if isinstance(res.error, llm.BudgetExceeded):
                     budget_hit = True  # leave status unchanged, stop cleanly
-                    continue
+                    break
                 db.set_status(
                     conn, "figures", fig["figure_id"], "vision_error",
                     error=f"llm: {res.error}"[:500],
                     attempts=(fig["attempts"] or 0) + 1,
                 )
                 totals["errors"] += 1
+                conn.commit()
+                fig.pop("_original", None)
+                fig.pop("_format_note", None)
                 continue
             parsed = post_validate(res.parsed or {}, fig["_valid_keys"])
             status = figure_status(parsed)
+            sha256 = hashlib.sha256(fig["_original"]).hexdigest()
             db.set_status(
                 conn,
                 "figures",
@@ -466,17 +486,25 @@ def run(args) -> int:
                 status,
                 vision_json=db.to_json(parsed),
                 image_format=fig["_format_note"],
-                sha256=hashlib.sha256(fig["_original"]).hexdigest(),
+                sha256=sha256,
                 error=None,
             )
             if status == "vision_accepted":
+                # C5: hand the original bytes to the store stage. Bytes for
+                # every other outcome are dropped immediately below.
+                originals.put(fig["figure_id"], sha256, fig["_original"])
                 totals["accepted"] += 1
             else:
                 totals["rejected"] += 1
                 for panel in parsed.get("panels") or []:
                     if not panel.get("include"):
                         reasons[panel.get("exclusion_reason") or "not_relevant"] += 1
-        conn.commit()
+            conn.commit()
+            fig.pop("_original", None)
+            fig.pop("_format_note", None)
+    finally:
+        requests.close()
+        results.close()
 
     if budget_hit:
         print(f"LLM budget exhausted (${client.spent_usd:.4f}); stopping cleanly. Rerun to resume.")
