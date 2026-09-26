@@ -104,7 +104,6 @@ class _Bundle:
     def __init__(self, pmcid, xml, files):
         self.pmcid = pmcid
         self.xml_text = xml
-        self.license = pmc.LicenseInfo(code="cc-by", url=None, oa_subset="oa")
         self.metadata = {}
         self._files = set(files)
 

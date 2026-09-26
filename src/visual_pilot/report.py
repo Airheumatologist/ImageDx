@@ -19,7 +19,6 @@ from collections import Counter
 from . import config, db, diseases
 
 _COUNTS_FILE = "stage2_counts.json"
-REJECTED_REASON_ORDER = ("third_party", "license", "no_graphic")
 
 
 def _rows(conn, sql, params=()):

@@ -152,16 +152,6 @@ CREATE INDEX IF NOT EXISTS idx_panels_figure ON panels(figure_id);
 CREATE INDEX IF NOT EXISTS idx_panels_disease ON panels(disease_key);
 """
 
-TABLES = (
-    "diseases",
-    "findings_vocab",
-    "articles",
-    "figures",
-    "panels",
-    "disease_findings",
-    "llm_calls",
-)
-
 _PK_COLUMNS = {
     "diseases": "disease_key",
     "findings_vocab": "finding_key",
@@ -171,31 +161,6 @@ _PK_COLUMNS = {
     "disease_findings": "id",
     "llm_calls": "call_id",
 }
-
-# Status vocabularies per §4 (kept here as the single source of truth).
-ARTICLE_STATUSES = frozenset(
-    {
-        "candidate",
-        "license_ok",
-        "license_rejected",
-        "relevant",
-        "irrelevant",
-        "parsed",
-        "parse_error",
-    }
-)
-FIGURE_STATUSES = frozenset(
-    {
-        "pending",
-        "caption_kept",
-        "caption_uncertain",
-        "caption_rejected",
-        "vision_accepted",
-        "vision_rejected",
-        "vision_error",
-        "stored",
-    }
-)
 
 def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     """Open a connection to the pilot DB (creating parent dirs as needed)."""

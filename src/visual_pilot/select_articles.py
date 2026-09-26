@@ -31,7 +31,6 @@ TITLE_TOP_K = 200
 CONTENT_TOP_K = 300
 DENSE_TOP_K = 300
 VISUAL_QUERY_TOP_K = 150
-MAX_VISUAL_QUERIES = config.VP_VISUAL_QUERY_CAP
 MAX_EVIDENCE_PER_ARTICLE = 8
 MAX_EVIDENCE_TEXT_CHARS = 1200
 VISUAL_QUERY_RRF_WEIGHT = 12.0
@@ -769,25 +768,9 @@ def db_funnel_counts(conn) -> dict[str, dict]:
     return out
 
 
-def relevant_pmcids_within_cap(
-    conn, cap: int = DEFAULT_CAP, disease: str | None = None
-) -> set[str]:
-    """Legacy report helper; yield-based parsing does not use this cap."""
-    keys = [disease] if disease in PILOT_KEYS else list(diseases.DISEASE_KEYS)
-    keep: set[str] = set()
-    for key in keys:
-        rows = db.rows_with_status(
-            conn, "articles", list(_RELEVANT_STATUSES), disease=key
-        )
-        rows.sort(key=lambda r: (r["retrieval_score"] or 0.0), reverse=True)
-        keep.update(r["pmcid"] for r in rows[:cap])
-    return keep
-
-
 def write_counts(
     conn,
     retrieval_counts: dict[str, dict],
-    ran_diseases: set[str],
     cap: int,
 ) -> dict[str, dict]:
     """Merge this run's retrieval numbers with DB-derived funnel counts."""
@@ -917,7 +900,7 @@ def run_recheck_title_rule(args, conn) -> int:
             f"LLM budget exhausted: {deferred} articles left at title_rule; "
             "rerun to resume."
         )
-    totals = write_counts(conn, {}, in_scope, cap)
+    totals = write_counts(conn, {}, cap)
     print(json.dumps(totals, indent=1))
     print(
         f"recheck: {kept} stayed relevant, {flipped} flipped to irrelevant, "
@@ -1143,7 +1126,7 @@ def run(args) -> int:
     # ------------------------------------------------------------------
     # 7. Counts checkpoint.
     # ------------------------------------------------------------------
-    totals = write_counts(conn, retrieval_counts, in_scope, cap)
+    totals = write_counts(conn, retrieval_counts, cap)
     print(json.dumps(totals, indent=1))
     print(f"live LLM spend this run: ${client.spent_usd:.4f}")
     for key in disease_keys:

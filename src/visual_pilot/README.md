@@ -72,7 +72,7 @@ articles (SLE/DM/AS) and `scripts/vp_smoke_llm.py` for the LLM checks._
   image formats seen: jpg, webp; **TIFF share 0/38 (0%)** — TIFF→PNG support
   is implemented anyway.
 - **API:** `get_license`, `license_allows`, `get_article_bundle`
-  (`xml_text` + href→`ImageRef` resolver + `LicenseInfo`),
+  (`xml_text` + href→`ImageRef` resolver + `metadata`),
   `fetch_image_bytes`, `prepare_for_llm` (TIFF/other→PNG + downscale to
   `VP_IMAGE_MAX_EDGE`, in memory), `to_data_url`; per-host rate limiting
   (NCBI ≤3 req/s, ≤10 with `VP_NCBI_API_KEY`; others ~5) with retries on

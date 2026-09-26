@@ -81,7 +81,6 @@ VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "Qwen/Qwen3-235B-A22B-Instruct-
 # Strongest VL model available on DeepInfra for the vision judge.
 VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "Qwen/Qwen3-VL-235B-A22B-Instruct")
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
-VP_NCBI_API_KEY = os.getenv("VP_NCBI_API_KEY") or None
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 4))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Figures per P2 caption-triage batch.
@@ -131,18 +130,6 @@ def data_dir() -> Path:
 
 def db_path() -> Path:
     return data_dir() / DB_FILENAME
-
-
-def panels_dir() -> Path:
-    return data_dir() / "panels"
-
-
-def thumbs_dir() -> Path:
-    return data_dir() / "thumbs"
-
-
-def figures_dir() -> Path:
-    return data_dir() / "figures"
 
 
 def reports_dir() -> Path:

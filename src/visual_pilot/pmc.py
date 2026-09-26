@@ -42,7 +42,6 @@ from PIL import Image
 from . import config
 
 S3_BASE = "https://pmc-oa-opendata.s3.amazonaws.com"
-S3_BUCKET_PREFIXES = ("",)  # article dirs sit at the bucket root
 EPMC_REST = "https://www.ebi.ac.uk/europepmc/webservices/rest"
 S3_XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 
@@ -88,7 +87,6 @@ class ArticleBundle:
     pmcid: str
     xml_text: str
     resolver: Callable[[str], ImageRef]
-    license: LicenseInfo
     metadata: dict = field(default_factory=dict)
 
 
@@ -296,7 +294,6 @@ def _article_bundle_cached(pmcid: str) -> ArticleBundle:
 def _build_bundle(pmcid: str) -> ArticleBundle:
     meta = _article_metadata(pmcid)
     xml_text = _fetch_xml_text(pmcid, meta)
-    license_info = get_license(pmcid)
     files = _figure_files(pmcid, meta)
     prefix = _article_prefix(meta) or _latest_prefix(pmcid)
 
@@ -321,7 +318,6 @@ def _build_bundle(pmcid: str) -> ArticleBundle:
         pmcid=pmcid,
         xml_text=xml_text,
         resolver=resolver,
-        license=license_info,
         metadata=meta or {},
     )
 

@@ -407,7 +407,6 @@ def _mock_bundle(monkeypatch):
         lambda pmcid, **kw: pmc.ArticleBundle(
             pmcid=pmcid, xml_text=FIXTURE_XML,
             resolver=lambda h: pmc.ImageRef(url=None, needs_bytes=True),
-            license=pmc.LicenseInfo(code="cc-by", url=None, oa_subset="oa"),
         ),
     )
 
