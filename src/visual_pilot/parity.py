@@ -204,10 +204,13 @@ def cmd_run(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 def _rows(conn: sqlite3.Connection, table: str, cols: tuple[str, ...]) -> list[tuple]:
     col_list = ", ".join(cols)
-    return [
-        tuple(row)
-        for row in conn.execute(f"SELECT {col_list} FROM {table} ORDER BY {cols[0]}")
-    ]
+    # Sorted as tuples: insertion order (and therefore ORDER BY ties) differs
+    # between sequential and streamed apply — compare content, not rowids.
+    # repr() key keeps the sort deterministic across mixed str/None/float.
+    return sorted(
+        (tuple(row) for row in conn.execute(f"SELECT {col_list} FROM {table}")),
+        key=lambda t: tuple(repr(v) for v in t),
+    )
 
 
 def _file_manifest(root: Path) -> dict[str, str]:
@@ -251,20 +254,35 @@ def compare(baseline_dir: Path, candidate_dir: Path) -> list[str]:
     cconn = _connect_ro(candidate_dir / config.DB_FILENAME)
 
     # 1. Cache-miss markers in the candidate (any changed model input).
-    for table, col in (("figures", "error"), ("articles", "error")):
-        hits = [
+    #    Errored baseline rows legitimately miss: failed calls are never
+    #    ledgered, so a cache-only replay cannot reproduce them.
+    def _baseline_errored(table: str, keycol: str) -> set:
+        return {
+            r[0]
+            for r in bconn.execute(
+                f"SELECT {keycol} FROM {table} WHERE error IS NOT NULL"
+            )
+        }
+
+    for table, col, keycol in (
+        ("figures", "error", "figure_id"),
+        ("articles", "error", "pmcid"),
+    ):
+        errored = _baseline_errored(table, keycol)
+        flagged = [
             r[0]
             for r in cconn.execute(
-                f"SELECT 1 FROM {table} WHERE {col} LIKE '%' || ? || '%'",
+                f"SELECT {keycol} FROM {table} "
+                f"WHERE {col} LIKE '%' || ? || '%'",
                 (CACHE_MISS_MARKER,),
             )
+            if r[0] not in errored
         ]
-        if hits:
-            n = cconn.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE {col} LIKE '%' || ? || '%'",
-                (CACHE_MISS_MARKER,),
-            ).fetchone()[0]
-            failures.append(f"{table}: {n} row(s) contain '{CACHE_MISS_MARKER}' errors")
+        if flagged:
+            failures.append(
+                f"{table}: {len(flagged)} row(s) contain "
+                f"'{CACHE_MISS_MARKER}' errors: {flagged[:5]}"
+            )
 
     # 2. llm_calls row count equal (no new live calls).
     bn = bconn.execute("SELECT COUNT(*) FROM llm_calls").fetchone()[0]
@@ -288,8 +306,31 @@ def compare(baseline_dir: Path, candidate_dir: Path) -> list[str]:
                 f"{len(chash.get(stage, set()))} candidate)"
             )
 
-    # 4. figures rows on the compared columns.
-    _compare_table(failures, bconn, cconn, "figures", FIGURE_COMPARE_COLS)
+    # 4. figures rows on the compared columns. Error text is volatile across
+    #    runs (transport message vs replayed cache miss), so it is reduced to
+    #    presence; status/attempts still pin the outcome.
+    def figure_rows(conn):
+        err_idx = FIGURE_COMPARE_COLS.index("error")
+        col_list = ", ".join(FIGURE_COMPARE_COLS)
+        rows = []
+        for row in conn.execute(f"SELECT {col_list} FROM figures"):
+            t = list(row)
+            t[err_idx] = "(set)" if t[err_idx] else None
+            rows.append(tuple(t))
+        return sorted(rows, key=lambda t: tuple(repr(v) for v in t))
+
+    brows, crows = figure_rows(bconn), figure_rows(cconn)
+    if brows != crows:
+        bset, cset = set(brows), set(crows)
+        failures.append(
+            f"figures: {len(bset - cset)} baseline-only, "
+            f"{len(cset - bset)} candidate-only row(s) "
+            f"(of {len(brows)}/{len(crows)})"
+        )
+        for row in sorted(bset - cset)[:5]:
+            failures.append(f"  baseline-only figures: {row[0]!r}")
+        for row in sorted(cset - bset)[:5]:
+            failures.append(f"  candidate-only figures: {row[0]!r}")
 
     # 5. panels rows, every column except timestamps.
     panel_cols = tuple(
@@ -298,9 +339,12 @@ def compare(baseline_dir: Path, candidate_dir: Path) -> list[str]:
     )
     _compare_table(failures, bconn, cconn, "panels", panel_cols)
 
-    # 6. disease_findings rows (ids + content; timestamps excluded).
+    # 6. disease_findings rows (content only; autoincrement id and created_at
+    #    are bookkeeping — streamed apply inserts in a different order).
     df_cols = tuple(
-        c for c in db.table_columns(bconn, "disease_findings") if c != "created_at"
+        c
+        for c in db.table_columns(bconn, "disease_findings")
+        if c not in ("id", "created_at")
     )
     _compare_table(failures, bconn, cconn, "disease_findings", df_cols)
 

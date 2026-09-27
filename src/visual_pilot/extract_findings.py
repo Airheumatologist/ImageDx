@@ -238,6 +238,10 @@ def apply_response(
     pmcid = article["pmcid"]
     assertions = (parsed or {}).get("assertions") or []
 
+    # A re-apply (--force or a direct call over already-applied rows) must not
+    # re-count proposals; a first apply — including a cache-only replay onto a
+    # fresh DB — upserts them so findings_vocab matches the live run.
+    reapplied = _has_text_rows(conn, pmcid)
     conn.execute(
         "DELETE FROM disease_findings WHERE pmcid = ? AND source = 'text'", (pmcid,)
     )
@@ -253,9 +257,7 @@ def apply_response(
         finding_key = cleaned.get("finding_key")
         proposed = cleaned.get("proposed_finding")
         if proposed:
-            # A cached call means this article was already processed once —
-            # its proposals were counted then; skip to keep reruns idempotent.
-            if not cached and proposed not in seen_proposed:
+            if not reapplied and proposed not in seen_proposed:
                 seen_proposed.add(proposed)
                 stats["proposed"] += upsert_proposed(
                     conn, proposed, cleaned["disease_key"], None
