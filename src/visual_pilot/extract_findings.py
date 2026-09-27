@@ -1,7 +1,9 @@
 """Stage 7: P4 text extraction of disease->finding statements.
 
-For each ``parsed`` article the JATS bundle is refetched in memory; body
-sections whose headings match clinical keywords go to P4 (whole body as
+For each ``parsed`` article the JATS body sections come from the in-process
+parse cache (``parse.sections_for``) when available, else a hinted in-memory
+refetch (``articles.s3_prefix``/``media_files_json`` skip the S3 listing);
+body sections whose headings match clinical keywords go to P4 (whole body as
 fallback, ~120k char cap). Assertions are post-validated: non-pilot
 diseases dropped, unknown finding keys moved to ``proposed_finding``, and
 quotes that do not appear verbatim in the source text (after whitespace,
@@ -22,11 +24,11 @@ from __future__ import annotations
 
 import json
 import re
-import threading
 import unicodedata
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 
-from . import config, db, diseases, jats, llm, pmc
+from . import config, db, diseases, jats, llm, parse, pmc, timing
 from .prompts import P4
 from .store import slugify, upsert_proposed
 
@@ -174,24 +176,44 @@ def user_content(
 # ---------------------------------------------------------------------------
 # Per-article prepare / apply
 # ---------------------------------------------------------------------------
-def prepare_article(conn, article: dict, *, db_lock=None) -> dict | None:
-    """Refetch + parse the bundle, pick sections, build the P4 request.
+def _body_sections(article: dict) -> list[tuple[str, str]]:
+    """Raw JATS body sections for the article (memory only — never disk).
 
-    Returns None when the article yields no usable source text. When called
-    from a worker pool, ``db_lock`` must serialize the shared ``conn`` reads —
-    sqlite cursors are not safe to iterate concurrently.
+    W8/B5: reuse ``parse.sections_for`` when the article was parsed in this
+    process; on a miss refetch the XML via the hinted bundle path —
+    ``articles.s3_prefix``/``media_files_json`` skip the S3 listing round
+    trip. Either way the same XML produces the same sections.
     """
-    parsed = jats.parse_article(pmc.get_article_bundle(article["pmcid"]).xml_text)
-    sections = pick_sections(parsed.body_sections)
+    sections = parse.sections_for(article["pmcid"])
+    if sections is not None:
+        timing.count("extract_sections", source="memory")
+        return sections
+    timing.count("extract_sections", source="refetch")
+    bundle = pmc.get_article_bundle(
+        article["pmcid"],
+        prefix=article.get("s3_prefix"),
+        media_files=db.from_json(article.get("media_files_json")) or None,
+    )
+    return jats.parse_article(bundle.xml_text).body_sections
+
+
+def _vocab_key(article: dict) -> tuple[str, ...]:
+    """Sorted disease-key tuple: the vocab cache key (equal sets share it)."""
+    return tuple(sorted(db.from_json(article["primary_disease_keys_json"], []) or []))
+
+
+def prepare_article(article: dict, vocabulary: list[dict]) -> dict | None:
+    """Pick sections and build the P4 request for one article.
+
+    Returns None when the article yields no usable source text. ``vocabulary``
+    is precomputed by the caller (cached per disease-key tuple on the main
+    thread) so pooled preparation never touches the shared sqlite connection.
+    """
+    sections = pick_sections(_body_sections(article))
     source_text = "\n\n".join(text for _, text in sections)
     if not source_text.strip():
         return None
     disease_keys = db.from_json(article["primary_disease_keys_json"], [])
-    if db_lock is None:
-        vocabulary = _vocabulary(conn, disease_keys)
-    else:
-        with db_lock:
-            vocabulary = _vocabulary(conn, disease_keys)
     return {
         "sections": sections,
         "source_text": source_text,
@@ -336,45 +358,90 @@ def run(args) -> int:
         "image_rows": 0,
     }
 
-    # Refetch + section-pick on a thread pool, then one call_many for P4.
-    db_lock = threading.Lock()
+    # W8/B10: vocabulary once per distinct disease-key tuple, here on the
+    # main thread before any pooled work starts — prepare workers then never
+    # touch the shared sqlite connection.
+    vocab_cache: dict[tuple[str, ...], list[dict]] = {}
+    for article in articles:
+        key = _vocab_key(article)
+        if key not in vocab_cache:
+            vocab_cache[key] = _vocabulary(
+                conn, db.from_json(article["primary_disease_keys_json"], []) or []
+            )
 
-    def _prepare(article):
+    # W8: stream P4 through client.iter_many. A fetch pool prepares articles
+    # just ahead of the LLM calls — iter_many pulls a new request only when
+    # a slot frees, so P4 starts before all articles finish preparing and
+    # prepared ctxs stay bounded to ~2x the in-flight cap. Results are
+    # applied and committed on this thread in completion order; per-article
+    # error isolation and stats accounting are unchanged.
+    window = max(1, 2 * client.concurrency)
+    submitted: list[tuple[dict, dict]] = []  # consumed index -> (article, ctx)
+
+    def _requests():
+        """Yield P4 call_json kwargs in article order, preparing just ahead."""
+        pending: deque = deque()  # (article, prepare future), input order
+        art_iter = iter(articles)
+        pool = ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY)
         try:
-            return prepare_article(conn, article, db_lock=db_lock)
-        except Exception as exc:  # noqa: BLE001 - per-article isolation
-            print(f"{article['pmcid']}: fetch error {exc}")
-            stats["errors"] += 1
-            return "error"
-
-    pending: list[tuple[dict, dict]] = []
-    with ThreadPoolExecutor(max_workers=config.VP_CONCURRENCY) as pool:
-        for article, ctx in zip(articles, pool.map(_prepare, articles)):
-            if ctx == "error":
-                continue
-            if ctx is None:
-                stats["no_sections"] += 1
-            else:
-                pending.append((article, ctx))
+            while True:
+                while len(pending) < window:
+                    article = next(art_iter, None)
+                    if article is None:
+                        break
+                    pending.append(
+                        (
+                            article,
+                            pool.submit(
+                                prepare_article,
+                                article,
+                                vocab_cache[_vocab_key(article)],
+                            ),
+                        )
+                    )
+                if not pending:
+                    return
+                article, fut = pending.popleft()
+                try:
+                    ctx = fut.result()
+                except Exception as exc:  # noqa: BLE001 - per-article isolation
+                    print(f"{article['pmcid']}: fetch error {exc}")
+                    stats["errors"] += 1
+                    continue
+                if ctx is None:
+                    stats["no_sections"] += 1
+                    continue
+                submitted.append((article, ctx))
+                yield ctx["request"]
+        finally:
+            # Early stop: cancel not-yet-started prepares; running ones
+            # finish in the background and are discarded.
+            pool.shutdown(wait=False, cancel_futures=True)
 
     budget_hit = False
-    results = client.call_many([ctx["request"] for _, ctx in pending])
-    for (article, ctx), res in zip(pending, results):
-        if res.error is not None:
-            if isinstance(res.error, llm.BudgetExceeded):
-                budget_hit = True  # leave the article parsed; stop cleanly
-            else:
-                stats["errors"] += 1
-            continue
-        with conn:  # delete + reinsert per pmcid in one transaction
-            apply_response(
-                conn,
-                article,
-                ctx,
-                res.parsed,
-                bool((res.meta or {}).get("cached")),
-                stats,
-            )
+    requests = _requests()
+    results = client.iter_many(requests)
+    try:
+        for res in results:
+            article, ctx = submitted[res.index]
+            if res.error is not None:
+                if isinstance(res.error, llm.BudgetExceeded):
+                    budget_hit = True  # leave the article parsed; stop cleanly
+                else:
+                    stats["errors"] += 1
+                continue
+            with conn:  # delete + reinsert per pmcid in one transaction
+                apply_response(
+                    conn,
+                    article,
+                    ctx,
+                    res.parsed,
+                    bool((res.meta or {}).get("cached")),
+                    stats,
+                )
+    finally:
+        requests.close()
+        results.close()
     if budget_hit:
         print(f"LLM budget exhausted (${client.spent_usd:.4f}); stopping cleanly. Rerun to resume.")
 
