@@ -443,7 +443,8 @@ def _stats():
 def test_extract_article_idempotent(conn, monkeypatch):
     article = dict(_article(conn))
     _mock_bundle(monkeypatch)
-    ctx = extract_findings.prepare_article(conn, article)
+    vocab = extract_findings._vocabulary(conn, ["dm"])
+    ctx = extract_findings.prepare_article(article, vocab)
     assert ctx is not None
     # gottron_papules is already in the seeded approved vocab
     quote = "illustrated in Figures 1 and 2"
@@ -492,14 +493,14 @@ def test_extract_run_skips_existing_and_force(conn, monkeypatch):
         def __init__(self):
             self.requests_seen = []
             self.spent_usd = 0.0
+            self.concurrency = 4
 
-        def call_many(self, requests):
-            requests = list(requests)
-            self.requests_seen.append(requests)
-            return [
-                BatchResult(index=i, parsed={"assertions": []}, meta={"cached": False})
-                for i in range(len(requests))
-            ]
+        def iter_many(self, requests, max_in_flight=None):
+            for i, req in enumerate(requests):
+                self.requests_seen.append(req)
+                yield BatchResult(
+                    index=i, parsed={"assertions": []}, meta={"cached": False}
+                )
 
     client = _Client()
     monkeypatch.setattr(extract_findings.llm, "LLMClient", lambda **kw: client)
@@ -508,7 +509,7 @@ def test_extract_run_skips_existing_and_force(conn, monkeypatch):
     assert client.requests_seen == []
     # --force reprocesses (rows are deleted + reinserted)
     assert extract_findings.run(_args(force=True)) == 0
-    assert len(client.requests_seen) == 1 and len(client.requests_seen[0]) == 1
+    assert len(client.requests_seen) == 1
 
 
 # ---------------------------------------------------------------------------
