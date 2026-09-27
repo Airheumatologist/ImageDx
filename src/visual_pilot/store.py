@@ -1,17 +1,31 @@
 """Stage 6: crop panels, write image files, insert panel rows.
 
-For each ``vision_accepted`` figure the original bytes are refetched into
-memory; the original is written to ``figures/{pmcid}/{basename}`` (TIFF
-converted to PNG on write) and every included panel is cropped from its
-normalized bbox (2% padding of the original size, clamped) to
-``panels/{disease}/{modality}/{panel_id}.png`` with a 400px WebP thumb in
-``thumbs/``. ``whole_figure`` crop mode applies to ND licenses, missing or
-tiny (<3%) bboxes and >30% overlaps between included panels.
+For each ``vision_accepted`` figure the original bytes come from the
+judge->store handoff cache (contract C5, ``originals.take``) or are
+refetched into memory; the original is written to
+``figures/{pmcid}/{basename}`` (TIFF converted to PNG on write) and every
+included panel is cropped from its normalized bbox (2% padding of the
+original size, clamped) to ``panels/{disease}/{modality}/{panel_id}.png``
+with a 400px WebP thumb in ``thumbs/``. ``whole_figure`` crop mode applies
+to ND licenses, missing or tiny (<3%) bboxes and >30% overlaps between
+included panels. When ``figures.sha256`` is set the bytes must match it; a
+mismatch is a store error (the figure stays ``vision_accepted``) rather
+than silently storing different pixels.
+
+Attribution (contract C6) is built from the persisted
+``articles.authors_json``/``author_count``/``journal_name``; a hinted JATS
+refetch is used only when those fields are missing.
 
 Exact dedup: panels whose saved PNG sha256 already exists reuse the earlier
 file but keep their own row, attribution and license. Proposed findings
 upsert into findings_vocab exactly once per figure (the vision_accepted ->
 stored transition is the only place they are counted).
+
+Scheduling (plan §5 W7): fetch + decode + crop + PNG/WebP encoding run on a
+``VP_FETCH_CONCURRENCY`` worker pool; file writes, the sha256 dedup check,
+panel inserts, proposal upserts and the ``vision_accepted -> stored`` flip
+are applied on the main thread in deterministic figure order, one
+transaction per figure — identical results to the sequential path.
 """
 
 from __future__ import annotations
@@ -19,11 +33,13 @@ from __future__ import annotations
 import hashlib
 import io
 import re
+import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
-from . import config, db, diseases, jats, pmc
+from . import config, db, diseases, jats, originals, pmc, timing
 
 PILOT_KEYS = set(diseases.DISEASE_KEYS)
 PAD_FRAC = 0.02
@@ -188,9 +204,9 @@ def _original_basename(figure: dict) -> str:
     return name or f"{figure['figure_id'].replace(':', '_')}.png"
 
 
-def write_original(original_bytes: bytes, figure: dict, data_dir: Path) -> str:
-    """Save the original figure bytes; TIFF originals are converted to PNG
-    on write (and the saved name gets a .png suffix)."""
+def _encode_original(original_bytes: bytes, figure: dict) -> tuple[str, bytes]:
+    """(rel_path, file_bytes) for the original figure; TIFF originals are
+    converted to PNG (and the saved name gets a .png suffix)."""
     name = _original_basename(figure)
     data = original_bytes
     with Image.open(io.BytesIO(original_bytes)) as im:
@@ -199,7 +215,12 @@ def write_original(original_bytes: bytes, figure: dict, data_dir: Path) -> str:
             im.convert("RGB").save(buf, format="PNG")
             data = buf.getvalue()
             name = PurePosixPath(name).with_suffix(".png").name
-    rel = f"figures/{figure['pmcid']}/{name}"
+    return f"figures/{figure['pmcid']}/{name}", data
+
+
+def write_original(original_bytes: bytes, figure: dict, data_dir: Path) -> str:
+    """Save the original figure bytes (see ``_encode_original``)."""
+    rel, data = _encode_original(original_bytes, figure)
     path = data_dir / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
@@ -236,46 +257,183 @@ def upsert_proposed(conn, term: str, disease_key: str, modality: str | None) -> 
     return True
 
 
-def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, data_dir: Path) -> dict:
-    """Write files + panel rows for one vision_accepted figure."""
-    ref = pmc.ImageRef(url=figure["image_url"], format=figure["image_format"])
-    original_bytes = pmc.fetch_image_bytes(ref)
-    img = Image.open(io.BytesIO(original_bytes)).convert("RGB")
-    write_original(original_bytes, figure, data_dir)
+def _row_get(row, key):
+    """``row[key]`` for dicts and sqlite3.Rows; None when absent."""
+    try:
+        return row[key]
+    except (KeyError, IndexError, TypeError):
+        return None
 
+
+def _bundle_for_row(article_row) -> pmc.ArticleBundle:
+    """``pmc.get_article_bundle``, C3-hinted from the row's persisted
+    ``s3_prefix``/``media_files_json`` when present (same resolver output as
+    the unhinted path)."""
+    prefix = _row_get(article_row, "s3_prefix")
+    if not prefix:
+        return pmc.get_article_bundle(article_row["pmcid"])
+    media = db.from_json(_row_get(article_row, "media_files_json"), None)
+    if not isinstance(media, list):
+        media = None
+    return pmc.get_article_bundle(
+        article_row["pmcid"], prefix=prefix, media_files=media
+    )
+
+
+def _attribution_source(article_row) -> tuple[list[str], int, str | None]:
+    """(authors, author_count, journal_name) for ``attribution_text``.
+
+    Contract C6: persisted ``authors_json``/``author_count``/``journal_name``
+    are used first; a hinted JATS refetch happens only when they are missing
+    or empty (rows created before C6, or never parsed).
+    """
+    try:
+        authors = db.from_json(_row_get(article_row, "authors_json"), None)
+    except ValueError:
+        authors = None
+    author_count = _row_get(article_row, "author_count")
+    journal_name = _row_get(article_row, "journal_name")
+    have_authors = (
+        isinstance(authors, list)
+        and author_count is not None
+        and (int(author_count) <= 0 or bool(authors))
+    )
+    have_journal = bool(journal_name) or bool(_row_get(article_row, "journal"))
+    if have_authors and have_journal:
+        return [str(a) for a in authors], int(author_count or 0), journal_name
+    bundle = _bundle_for_row(article_row)
+    parsed = jats.parse_article(bundle.xml_text)
+    return parsed.authors, parsed.author_count, parsed.journal_name
+
+
+def _original_bytes(figure: dict) -> bytes:
+    """Judge-handoff bytes (C5) or a refetch, sha256-verified against the row.
+
+    ``originals.take`` consumes the entry either way, so a cache mismatch
+    falls back to ``pmc.fetch_image_bytes``; when ``figures.sha256`` is set
+    the resolved bytes must match it — a mismatch raises so the figure stays
+    ``vision_accepted`` rather than silently storing different pixels.
+    """
+    expected = figure.get("sha256") or ""
+    if expected:
+        data = originals.take(figure["figure_id"], expected)
+        if data is not None:
+            timing.count("store_originals_hit")
+            return data
+        timing.count("store_originals_miss")
+    ref = pmc.ImageRef(url=figure["image_url"], format=figure["image_format"])
+    data = pmc.fetch_image_bytes(ref)
+    if expected and hashlib.sha256(data).hexdigest() != expected:
+        raise ValueError(
+            f"sha256 mismatch for {figure['figure_id']}: fetched bytes do not "
+            "match figures.sha256; refusing to store different pixels"
+        )
+    return data
+
+
+def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
+    """Worker-side: resolve + verify original bytes, decode, crop and encode.
+
+    No DB access and no file writes — returns everything the main thread
+    needs to apply the figure (``_apply_prepared``). ``attrib`` may carry a
+    pre-resolved (authors, author_count, journal_name) tuple; otherwise it is
+    resolved here from the article row (C6 fields, hinted JATS fallback).
+    """
+    started = time.monotonic()
+    try:
+        with timing.inflight("store_pool"):
+            original_bytes = _original_bytes(figure)
+            img = Image.open(io.BytesIO(original_bytes)).convert("RGB")
+            original_file = _encode_original(original_bytes, figure)
+
+            vision = db.from_json(figure["vision_json"], {}) or {}
+            all_panels = vision.get("panels") or []
+            fig_xml_id = figure["figure_id"].split(":", 1)[1]
+            license_mode = pmc.license_allows(figure["effective_license"])
+
+            width, height = img.size
+            panels: list[dict] = []
+            for panel, mode in zip(
+                all_panels, decide_crop_modes(all_panels, license_mode)
+            ):
+                if not panel.get("include"):
+                    continue
+                crop = img if mode == "whole_figure" else img.crop(
+                    bbox_to_pixels(panel["bbox"], width, height)
+                )
+                png_io = io.BytesIO()
+                crop.save(png_io, format="PNG")
+                png_bytes = png_io.getvalue()
+                thumb_io = io.BytesIO()
+                thumb = crop.copy()
+                thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
+                thumb.save(thumb_io, format="WEBP")
+                pid = panel_id_for(
+                    figure["pmcid"], fig_xml_id, panel.get("panel_label") or "A"
+                )
+                modality = panel.get("modality") or "other"
+                panels.append(
+                    {
+                        "panel": panel,
+                        "mode": mode,
+                        "png": png_bytes,
+                        "thumb": thumb_io.getvalue(),
+                        "sha": hashlib.sha256(png_bytes).hexdigest(),
+                        "width": crop.width,
+                        "height": crop.height,
+                        "pid": pid,
+                        "modality": modality,
+                        "rel_img": f"panels/{panel['disease_key']}/{modality}/{pid}.png",
+                        "rel_thumb": f"thumbs/{pid}.webp",
+                    }
+                )
+            if attrib is None:
+                attrib = _attribution_source(article_row)
+            return {
+                "original_file": original_file,
+                "panels": panels,
+                "attrib": attrib,
+            }
+    finally:
+        timing.record("store_prepare", time.monotonic() - started)
+
+
+def _write_file(data_dir: Path, rel: str, data: bytes) -> None:
+    path = data_dir / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+
+def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path) -> dict:
+    """Main thread: write files, dedup-check, insert panel rows for one figure.
+
+    Must run under ``with conn:`` so file writes, upserts and the caller's
+    status flip commit or roll back together. Dedup sees every panel row
+    inserted earlier in the run because callers apply in figure order.
+    """
     vision = db.from_json(figure["vision_json"], {}) or {}
-    all_panels = vision.get("panels") or []
     fig_xml_id = figure["figure_id"].split(":", 1)[1]
     effective_license = figure["effective_license"]
-    license_mode = pmc.license_allows(effective_license)
     license_url = (
         article["license_url"]
         if effective_license == article["license_code"]
         else pmc.license_url_for(effective_license, figure["fig_permissions_text"])
     )
+    authors, author_count, journal_name = prepared["attrib"]
 
-    width, height = img.size
     stats = {"panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0}
     seen_sha: set[str] = set()
 
-    for panel, mode in zip(all_panels, decide_crop_modes(all_panels, license_mode)):
-        if not panel.get("include"):
-            continue
+    rel_orig, orig_data = prepared["original_file"]
+    _write_file(data_dir, rel_orig, orig_data)
+
+    for item in prepared["panels"]:
+        panel = item["panel"]
+        mode = item["mode"]
         if mode == "whole_figure":
             stats["whole_figure"] += 1
-            crop = img
-        else:
-            crop = img.crop(bbox_to_pixels(panel["bbox"], width, height))
-
-        png_io = io.BytesIO()
-        crop.save(png_io, format="PNG")
-        png_bytes = png_io.getvalue()
-        sha = hashlib.sha256(png_bytes).hexdigest()
-
-        pid = panel_id_for(figure["pmcid"], fig_xml_id, panel.get("panel_label") or "A")
-        modality = panel.get("modality") or "other"
-        rel_img = f"panels/{panel['disease_key']}/{modality}/{pid}.png"
-        rel_thumb = f"thumbs/{pid}.webp"
+        sha = item["sha"]
+        rel_img, rel_thumb = item["rel_img"], item["rel_thumb"]
 
         existing = conn.execute(
             "SELECT image_path, thumb_path FROM panels WHERE sha256 = ?", (sha,)
@@ -285,12 +443,8 @@ def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, 
                 rel_img, rel_thumb = existing["image_path"], existing["thumb_path"]
             stats["dedup"] += 1
         else:
-            out = data_dir / rel_img
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_bytes(png_bytes)
-            thumb_path = data_dir / rel_thumb
-            thumb_path.parent.mkdir(parents=True, exist_ok=True)
-            save_thumb(crop, thumb_path)
+            _write_file(data_dir, rel_img, item["png"])
+            _write_file(data_dir, rel_thumb, item["thumb"])
             seen_sha.add(sha)
 
         findings = [
@@ -301,14 +455,14 @@ def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, 
         proposed = set(panel.get("proposed_findings") or [])
         for term in proposed:
             stats["proposed"] += upsert_proposed(
-                conn, term, panel.get("disease_key") or "", modality
+                conn, term, panel.get("disease_key") or "", item["modality"]
             )
 
         attrib = attribution_text(
-            parsed.authors,
-            parsed.author_count,
+            authors,
+            author_count,
             article["title"] or "",
-            article["journal"] or parsed.journal_name or "",
+            article["journal"] or journal_name or "",
             article["year"],
             article["doi"],
             effective_license,
@@ -326,13 +480,13 @@ def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, 
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
             "?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                pid,
+                item["pid"],
                 figure["figure_id"],
                 figure["pmcid"],
                 panel.get("panel_label"),
                 panel.get("disease_key"),
                 panel.get("subtype"),
-                modality,
+                item["modality"],
                 panel.get("body_site"),
                 db.to_json(findings),
                 panel.get("typicality"),
@@ -349,8 +503,8 @@ def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, 
                 panel.get("rationale"),
                 rel_img,
                 rel_thumb,
-                crop.width,
-                crop.height,
+                item["width"],
+                item["height"],
                 sha,
                 attrib,
                 effective_license,
@@ -360,6 +514,20 @@ def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, 
         )
         stats["panels"] += 1
     return stats
+
+
+def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, data_dir: Path) -> dict:
+    """Write files + panel rows for one vision_accepted figure.
+
+    Sequential single-figure path (prepare + apply on the calling thread);
+    ``run()`` uses the same internals across a worker pool.
+    """
+    prepared = _prepare_figure(
+        figure,
+        article,
+        attrib=(parsed.authors, parsed.author_count, parsed.journal_name),
+    )
+    return _apply_prepared(conn, figure, article, prepared, data_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -386,7 +554,7 @@ def refresh_panel_metadata(conn) -> dict:
             stats["errors"] += 1
             continue
         try:
-            parsed = jats.parse_article(pmc.get_article_bundle(figure["pmcid"]).xml_text)
+            parsed = jats.parse_article(_bundle_for_row(article).xml_text)
         except Exception as exc:  # noqa: BLE001 - per-figure isolation
             print(f"{figure['pmcid']}: refresh bundle error {exc}")
             stats["errors"] += 1
@@ -462,39 +630,83 @@ def run(args) -> int:
         conn.close()
         return 0
 
-    article_cache: dict[str, dict] = {}
-    parsed_cache: dict[str, jats.ParsedArticle] = {}
-    totals = {"stored": 0, "panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0, "errors": 0}
+    article_rows: dict[str, dict | None] = {}
     for figure in figures:
         pmcid = figure["pmcid"]
-        try:
-            if pmcid not in article_cache:
-                article_cache[pmcid] = dict(
-                    conn.execute("SELECT * FROM articles WHERE pmcid = ?", (pmcid,)).fetchone()
+        if pmcid not in article_rows:
+            row = conn.execute(
+                "SELECT * FROM articles WHERE pmcid = ?", (pmcid,)
+            ).fetchone()
+            article_rows[pmcid] = dict(row) if row is not None else None
+
+    totals = {"stored": 0, "panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0, "errors": 0}
+
+    def _store_error(fig: dict, exc: Exception) -> None:
+        # Keep vision_accepted so the figure is retried on the next run; any
+        # cached original for it is dropped (take() already consumed it).
+        originals.discard(fig["figure_id"])
+        db.set_status(
+            conn, "figures", fig["figure_id"], "vision_accepted",
+            error=f"store: {exc}"[:500],
+        )
+        totals["errors"] += 1
+        print(f"{fig['figure_id']}: store error {exc}")
+        conn.commit()
+
+    # W7: fetch + decode + crop + encode run on a VP_FETCH_CONCURRENCY pool
+    # with bounded lookahead (2x workers); results are applied on this thread
+    # strictly in figure order — one transaction per figure — so the sha256
+    # dedup check sees panels inserted earlier in the same run and the whole
+    # stage is byte-identical to the sequential implementation.
+    workers = max(1, int(getattr(config, "VP_FETCH_CONCURRENCY", 8)))
+    ahead = workers * 2
+    pending: dict[int, Future | Exception] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+
+        def submit(index: int) -> None:
+            figure = figures[index]
+            article = article_rows[figure["pmcid"]]
+            if article is None:
+                pending[index] = ValueError(
+                    f"no articles row for {figure['pmcid']}"
                 )
-                parsed_cache[pmcid] = jats.parse_article(
-                    pmc.get_article_bundle(pmcid).xml_text
-                )
-            # One transaction per figure: panel rows, proposed-finding upserts
-            # and the status flip commit together or roll back together, so a
-            # rerun never double-counts proposals.
-            with conn:
-                stats = store_figure(
-                    conn, figure, article_cache[pmcid], parsed_cache[pmcid], data_dir
-                )
-                db.set_status(conn, "figures", figure["figure_id"], "stored", error=None)
+            else:
+                pending[index] = pool.submit(_prepare_figure, figure, article)
+
+        for index in range(min(ahead, len(figures))):
+            submit(index)
+        for index, figure in enumerate(figures):
+            entry = pending.pop(index)
+            if isinstance(entry, Future):
+                try:
+                    outcome = entry.result()
+                except Exception as exc:  # noqa: BLE001 - per-figure isolation
+                    outcome = exc
+            else:
+                outcome = entry
+            follow = index + ahead
+            if follow < len(figures):
+                submit(follow)
+
+            if isinstance(outcome, Exception):
+                _store_error(figure, outcome)
+                continue
+            try:
+                # One transaction per figure: file writes, panel rows,
+                # proposed-finding upserts and the status flip commit together
+                # or roll back together, so a rerun never double-counts
+                # proposals.
+                with conn:
+                    stats = _apply_prepared(
+                        conn, figure, article_rows[figure["pmcid"]], outcome, data_dir
+                    )
+                    db.set_status(conn, "figures", figure["figure_id"], "stored", error=None)
+            except Exception as exc:  # noqa: BLE001 - per-figure isolation
+                _store_error(figure, exc)
+                continue
             for key in ("panels", "whole_figure", "dedup", "proposed"):
                 totals[key] += stats[key]
             totals["stored"] += 1
-        except Exception as exc:  # noqa: BLE001 - per-figure isolation
-            # Keep vision_accepted so the figure is retried on the next run.
-            db.set_status(
-                conn, "figures", figure["figure_id"], "vision_accepted",
-                error=f"store: {exc}"[:500],
-            )
-            totals["errors"] += 1
-            print(f"{figure['figure_id']}: store error {exc}")
-            conn.commit()
 
     print(
         f"store: {totals['stored']} figures stored, {totals['panels']} panels "
