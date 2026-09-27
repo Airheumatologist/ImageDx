@@ -78,3 +78,658 @@ def test_run_all_resets_zero_yield_after_positive_batch_then_stops(conn, monkeyp
     assert calls["parse"] == 3
     assert calls["triage"] == 4  # one resume drain, then one per batch
     assert calls["extract"] == calls["report"] == 1
+
+
+def _args(**overrides):
+    base = dict(
+        disease="dm",
+        dry_run=False,
+        budget_usd=None,
+        limit=None,
+        batch_size=50,
+        max_articles=200,
+        max_runtime_seconds=900,
+        zero_yield_batches=2,
+        pmcids=None,
+    )
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+def _insert_article(conn, pmcid, disease_key, status="parsed"):
+    conn.execute(
+        "INSERT OR IGNORE INTO articles (pmcid, title, primary_disease_keys_json, status) "
+        "VALUES (?, ?, ?, ?)",
+        (pmcid, f"Review {pmcid}", db.to_json([disease_key]), status),
+    )
+
+
+def _insert_figure(conn, pmcid, status, attempts=0):
+    figure_id = f"{pmcid}:f1"
+    conn.execute(
+        "INSERT OR IGNORE INTO figures (figure_id, pmcid, status, attempts) "
+        "VALUES (?, ?, ?, ?)",
+        (figure_id, pmcid, status, attempts),
+    )
+    return figure_id
+
+
+def _store_accepted_figures(conn, pmcids, disease_key):
+    """Flip vision_accepted figures to stored and add a distinct panel each."""
+    for pmcid in pmcids:
+        figure_id = f"{pmcid}:f1"
+        row = conn.execute(
+            "SELECT status FROM figures WHERE figure_id=?", (figure_id,)
+        ).fetchone()
+        if row is None or row["status"] != "vision_accepted":
+            continue
+        conn.execute(
+            "UPDATE figures SET status='stored' WHERE figure_id=?", (figure_id,)
+        )
+        conn.execute(
+            "INSERT INTO panels (panel_id, figure_id, pmcid, disease_key, sha256) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (f"{figure_id}:A", figure_id, pmcid, disease_key, f"sha-{pmcid}"),
+        )
+
+
+def test_run_all_retries_vision_error_in_batch_then_stores(conn, monkeypatch, capsys):
+    """A transient vision_error recovers on an in-batch judge retry."""
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    batches = [[{"pmcid": "PMC_retry"}], [{"pmcid": "PMC_second"}]]
+    selected = []
+    judge_batch_calls = []
+    store_batch_calls = []
+
+    def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+        if not batches:
+            return []
+        result = batches.pop(0)
+        selected.append(result)
+        return result[:batch_size]
+
+    def fake_stage(name):
+        def run(args):
+            if name == "store" and args.pmcids:
+                store_batch_calls.append(list(args.pmcids))
+                _store_accepted_figures(conn, args.pmcids, args.disease)
+                conn.commit()
+            return 0
+        return run
+
+    def fake_judge(args):
+        if not args.pmcids:
+            return 0  # resume drain: nothing queued
+        judge_batch_calls.append(list(args.pmcids))
+        for pmcid in args.pmcids:
+            _insert_article(conn, pmcid, args.disease)
+            figure_id = f"{pmcid}:f1"
+            row = conn.execute(
+                "SELECT status FROM figures WHERE figure_id=?", (figure_id,)
+            ).fetchone()
+            if row is None:
+                status = "vision_error" if pmcid == "PMC_retry" else "vision_accepted"
+                attempts = 1 if status == "vision_error" else 0
+                _insert_figure(conn, pmcid, status, attempts)
+            else:
+                # Retry pass: the transient failure recovered.
+                conn.execute(
+                    "UPDATE figures SET status='vision_accepted' WHERE figure_id=?",
+                    (figure_id,),
+                )
+        conn.commit()
+        return 0
+
+    monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    monkeypatch.setitem(cli.COMMANDS, "judge", fake_judge)
+    for name in ("parse", "triage", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args()) == 0
+    # Judge ran twice for the first batch (initial pass + one retry) and once
+    # for the clean second batch; store still ran once per batch, after the
+    # recovered figure could be accepted.
+    assert judge_batch_calls == [["PMC_retry"], ["PMC_retry"], ["PMC_second"]]
+    assert store_batch_calls == [["PMC_retry"], ["PMC_second"]]
+    row = conn.execute(
+        "SELECT status FROM figures WHERE figure_id='PMC_retry:f1'"
+    ).fetchone()
+    assert row["status"] == "stored"
+    # The recovered figure was stored in-batch, so the disease did not pause
+    # and expansion continued to the second batch.
+    assert len(selected) == 2
+    assert "pausing disease expansion" not in capsys.readouterr().out
+
+
+def test_run_all_vision_error_at_max_attempts_does_not_pause(conn, monkeypatch, capsys):
+    """vision_error with attempts == judge.MAX_ATTEMPTS is not 'unfinished'."""
+    from src.visual_pilot import judge as judge_module
+
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    batches = [[{"pmcid": "PMC_err"}], [{"pmcid": "PMC_ok"}]]
+    selected = []
+    judge_batch_calls = []
+
+    def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+        if not batches:
+            return []
+        result = batches.pop(0)
+        selected.append(result)
+        return result[:batch_size]
+
+    def fake_stage(name):
+        def run(args):
+            if name == "store" and args.pmcids:
+                _store_accepted_figures(conn, args.pmcids, args.disease)
+                conn.commit()
+            return 0
+        return run
+
+    def fake_judge(args):
+        if not args.pmcids:
+            return 0  # resume drain: nothing queued
+        judge_batch_calls.append(list(args.pmcids))
+        for pmcid in args.pmcids:
+            _insert_article(conn, pmcid, args.disease)
+            figure_id = f"{pmcid}:f1"
+            row = conn.execute(
+                "SELECT status FROM figures WHERE figure_id=?", (figure_id,)
+            ).fetchone()
+            if pmcid == "PMC_err":
+                if row is None:
+                    _insert_figure(conn, pmcid, "vision_error", attempts=1)
+                else:
+                    # Every retry keeps failing; attempts climbs to the cap.
+                    conn.execute(
+                        "UPDATE figures SET attempts=attempts+1 WHERE figure_id=?",
+                        (figure_id,),
+                    )
+            elif row is None:
+                _insert_figure(conn, pmcid, "vision_accepted")
+        conn.commit()
+        return 0
+
+    monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    monkeypatch.setitem(cli.COMMANDS, "judge", fake_judge)
+    for name in ("parse", "triage", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args()) == 0
+    # The failing figure got the initial pass plus MAX_ATTEMPTS - 1 retries.
+    assert judge_batch_calls == [["PMC_err"]] * judge_module.MAX_ATTEMPTS + [["PMC_ok"]]
+    row = conn.execute(
+        "SELECT status, attempts FROM figures WHERE figure_id='PMC_err:f1'"
+    ).fetchone()
+    assert row["status"] == "vision_error"
+    assert row["attempts"] == judge_module.MAX_ATTEMPTS
+    # Exhausted retries are not unfinished: no pause, yield was still counted
+    # (zero here), and expansion continued to the next batch which stored.
+    assert len(selected) == 2
+    out = capsys.readouterr().out
+    assert "pausing disease expansion" not in out
+    assert "batch yield" in out
+    assert conn.execute(
+        "SELECT status FROM figures WHERE figure_id='PMC_ok:f1'"
+    ).fetchone()["status"] == "stored"
+
+
+def test_run_all_round_robins_in_scope_diseases(conn, monkeypatch):
+    """Batches interleave across diseases; exhaustion only drops that queue."""
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    queues = {
+        "sle": [[{"pmcid": "PMC_sle_0"}], [{"pmcid": "PMC_sle_1"}]],
+        "dm": [[{"pmcid": "PMC_dm_0"}]],
+        "as": [[{"pmcid": "PMC_as_0"}], [{"pmcid": "PMC_as_1"}]],
+    }
+    select_order = []
+    stored = []
+
+    def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+        select_order.append(disease_key)
+        queue = queues.get(disease_key, [])
+        return queue.pop(0)[:batch_size] if queue else []
+
+    def fake_stage(name):
+        def run(args):
+            if name == "store" and args.pmcids:
+                for pmcid in args.pmcids:
+                    _insert_article(conn, pmcid, args.disease)
+                    _insert_figure(conn, pmcid, "stored")
+                    conn.execute(
+                        "INSERT INTO panels (panel_id, figure_id, pmcid, disease_key, sha256) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (f"{pmcid}:f1:A", f"{pmcid}:f1", pmcid, args.disease, f"sha-{pmcid}"),
+                    )
+                    stored.append((args.disease, pmcid))
+                conn.commit()
+            return 0
+        return run
+
+    monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    for name in ("parse", "triage", "judge", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args(disease="all")) == 0
+    # One batch per disease per rotation; dm's queue empties first without
+    # stopping sle/as, and each disease is re-polled until exhausted.
+    assert select_order == ["sle", "dm", "as", "sle", "dm", "as", "sle", "as"]
+    assert stored == [
+        ("sle", "PMC_sle_0"),
+        ("dm", "PMC_dm_0"),
+        ("as", "PMC_as_0"),
+        ("sle", "PMC_sle_1"),
+        ("as", "PMC_as_1"),
+    ]
+
+
+def test_run_all_zero_yield_stop_is_per_disease(conn, monkeypatch, capsys):
+    """A disease hitting its zero-yield limit does not starve the others."""
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    queues = {
+        "sle": [
+            [{"pmcid": "PMC_sle_a"}],
+            [{"pmcid": "PMC_sle_b"}],
+            [{"pmcid": "PMC_sle_c"}],
+        ],
+        "dm": [[{"pmcid": "PMC_dm_a"}], [{"pmcid": "PMC_dm_b"}]],
+        "as": [],
+    }
+    select_order = []
+
+    def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+        select_order.append(disease_key)
+        queue = queues.get(disease_key, [])
+        return queue.pop(0)[:batch_size] if queue else []
+
+    def fake_stage(name):
+        def run(args):
+            # Only sle batches produce panels; dm batches yield nothing.
+            if name == "store" and args.pmcids and args.disease == "sle":
+                for pmcid in args.pmcids:
+                    _insert_article(conn, pmcid, args.disease)
+                    _insert_figure(conn, pmcid, "stored")
+                    conn.execute(
+                        "INSERT INTO panels (panel_id, figure_id, pmcid, disease_key, sha256) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (f"{pmcid}:f1:A", f"{pmcid}:f1", pmcid, args.disease, f"sha-{pmcid}"),
+                    )
+                conn.commit()
+            return 0
+        return run
+
+    monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    for name in ("parse", "triage", "judge", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args(disease="all")) == 0
+    # dm stops after two consecutive zero-yield batches; sle keeps rotating
+    # until its own queue is exhausted.
+    assert select_order == ["sle", "dm", "as", "sle", "dm", "sle", "sle"]
+    out = capsys.readouterr().out
+    assert "dm stopped after 2 consecutive zero-yield batches" in out
+    assert "sle stopped" not in out
+    assert conn.execute(
+        "SELECT status FROM figures WHERE figure_id='PMC_sle_c:f1'"
+    ).fetchone()["status"] == "stored"
+
+
+# --- W9 tasks 3-5: fetch-only prefetch, triage-once, cheaper _snapshot --------
+
+
+class _InlinePool:
+    """Synchronous ``ThreadPoolExecutor`` stand-in: runs work on the caller.
+
+    Swapping this in for ``cli.ThreadPoolExecutor`` makes the W9 prefetch
+    deterministic: ``prefetch_pool.submit(...)`` and the job's inner
+    ``pool.submit(_warm_jats_entry, ...)`` both run inline.
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        fn(*args, **kwargs)
+        return None
+
+    def shutdown(self, *args, **kwargs):
+        pass
+
+
+def _stage_runner(conn, record=None):
+    """Fake stage handlers; fake parse flips selected articles to 'parsed'."""
+
+    def fake_stage(name):
+        def run(args):
+            if name == "parse" and args.pmcids:
+                for pmcid in args.pmcids:
+                    conn.execute(
+                        "UPDATE articles SET status='parsed' WHERE pmcid=? AND status='relevant'",
+                        (pmcid,),
+                    )
+                conn.commit()
+            if name == "store" and args.pmcids:
+                if record is not None:
+                    record.setdefault("stores", []).append(list(args.pmcids))
+                for pmcid in args.pmcids:
+                    _insert_article(conn, pmcid, args.disease)
+                    _insert_figure(conn, pmcid, "stored")
+                    conn.execute(
+                        "INSERT INTO panels (panel_id, figure_id, pmcid, disease_key, sha256) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (f"{pmcid}:f1:A", f"{pmcid}:f1", pmcid, args.disease, f"sha-{pmcid}"),
+                    )
+                conn.commit()
+            return 0
+        return run
+
+    return fake_stage
+
+
+def test_run_all_triage_runs_once_per_batch_with_full_pmcids(conn, monkeypatch):
+    """W9 task 4: triage is invoked exactly once per batch and sees the
+    batch's complete pmcid list (P2 micro-batching is triage-internal)."""
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    batches = [
+        [{"pmcid": "PMC_t0"}, {"pmcid": "PMC_t1"}, {"pmcid": "PMC_t2"}],
+        [{"pmcid": "PMC_t3"}, {"pmcid": "PMC_t4"}],
+    ]
+    triage_calls = []
+
+    def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+        return batches.pop(0)[:batch_size] if batches else []
+
+    def fake_triage(args):
+        triage_calls.append(list(args.pmcids) if args.pmcids else None)
+        return 0
+
+    monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    monkeypatch.setitem(cli.COMMANDS, "triage", fake_triage)
+    fake_stage = _stage_runner(conn)
+    for name in ("parse", "judge", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args(disease="dm")) == 0
+    # One resume drain (pmcids=None), then exactly one call per batch with
+    # every pmcid of that batch — never per-article micro-batches.
+    assert triage_calls == [
+        None,
+        ["PMC_t0", "PMC_t1", "PMC_t2"],
+        ["PMC_t3", "PMC_t4"],
+    ]
+
+
+def test_run_all_prefetch_warms_next_batch_candidates(conn, monkeypatch):
+    """W9 task 3: while a batch runs, the next batch's top-ranked relevant
+    candidates are warmed into parse._JATS_CACHE, excluding the running batch."""
+    from src.visual_pilot import parse as parse_stage
+
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    monkeypatch.setattr(cli, "ThreadPoolExecutor", _InlinePool)
+    parse_stage._JATS_CACHE.clear()  # ignore warm-up entries left by other tests
+    for pmcid in ("PMC_b1", "PMC_b2", "PMC_c0", "PMC_c1", "PMC_c2", "PMC_c3"):
+        _insert_article(conn, pmcid, "dm", status="relevant")
+    conn.commit()
+
+    queues = {"dm": [[{"pmcid": "PMC_b1"}], [{"pmcid": "PMC_b2"}]]}
+    warmed = []
+    prefetch_args = []
+    real_prefetch = cli._prefetch_candidates
+
+    def spy(disease_key, batch_size, **kwargs):
+        prefetch_args.append((disease_key, frozenset(kwargs["exclude_pmcids"])))
+        return real_prefetch(disease_key, batch_size, **kwargs)
+
+    def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+        queue = queues.get(disease_key, [])
+        return queue.pop(0)[:batch_size] if queue else []
+
+    monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+    monkeypatch.setattr(cli, "_prefetch_candidates", spy)
+    monkeypatch.setattr(
+        parse_stage,
+        "_bundle_and_parsed",
+        lambda row: warmed.append(row["pmcid"]) or ("bundle", object()),
+    )
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    fake_stage = _stage_runner(conn)
+    for name in ("parse", "triage", "judge", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args(disease="dm")) == 0
+    # One prefetch per batch, always targeting the next rotation (deque empty
+    # here, so the still-running disease's own next candidates), excluding the
+    # currently-running batch's pmcids.
+    assert prefetch_args == [
+        ("dm", frozenset({"PMC_b1"})),
+        ("dm", frozenset({"PMC_b2"})),
+    ]
+    # All scores tie (no retrieval evidence) so rank_articles orders by pmcid
+    # descending; batch 1's prefetch excludes PMC_b1 and warms the rest,
+    # including next-batch article PMC_b2 before it is ever selected.
+    assert warmed[:5] == ["PMC_c3", "PMC_c2", "PMC_c1", "PMC_c0", "PMC_b2"]
+    assert "PMC_b1" not in warmed
+    # The second prefetch only sees still-'relevant' candidates (fake parse
+    # flipped PMC_b1/PMC_b2 to 'parsed').
+    assert set(parse_stage._JATS_CACHE) == {
+        "PMC_c0", "PMC_c1", "PMC_c2", "PMC_c3", "PMC_b2",
+    }
+
+
+def test_run_all_prefetch_selection_identical_on_and_off(tmp_path, monkeypatch):
+    """W9 task 3 parity: prefetch on vs. disabled must produce identical
+    select_batch calls, batch contents, and articles-table state."""
+    from src.visual_pilot import parse as parse_stage
+
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    monkeypatch.setattr(cli, "ThreadPoolExecutor", _InlinePool)
+    monkeypatch.setattr(
+        parse_stage, "_bundle_and_parsed", lambda row: ("bundle", object())
+    )
+
+    observations = []
+    for enabled in (True, False):
+        monkeypatch.setenv("VP_DATA_DIR", str(tmp_path / f"on_{enabled}"))
+        conn = db.init_db()
+        diseases.seed(conn)
+        for i in range(4):
+            _insert_article(conn, f"PMC_c{i}", "dm", status="relevant")
+        conn.commit()
+        parse_stage._JATS_CACHE.clear()
+
+        queues = {"dm": [[{"pmcid": "PMC_c0"}], [{"pmcid": "PMC_c1"}]]}
+        record = {"selects": [], "batches": []}
+
+        def fake_batch(conn_arg, disease_key, batch_size, *, pmcids=None, peek_captions=True):
+            record["selects"].append((disease_key, batch_size, pmcids))
+            queue = queues.get(disease_key, [])
+            batch = queue.pop(0)[:batch_size] if queue else []
+            record["batches"].append([r["pmcid"] for r in batch])
+            return batch
+
+        monkeypatch.setattr("src.visual_pilot.parse.select_batch", fake_batch)
+        if not enabled:
+            monkeypatch.setattr(cli, "_prefetch_candidates", lambda *a, **k: None)
+        monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+        fake_stage = _stage_runner(conn, record)
+        for name in ("parse", "triage", "judge", "store", "extract", "report"):
+            monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+        assert cli._cmd_run_all(_args(disease="dm")) == 0
+        record["articles"] = [
+            (row["pmcid"], row["status"])
+            for row in conn.execute("SELECT pmcid, status FROM articles ORDER BY pmcid")
+        ]
+        conn.close()
+        observations.append(record)
+
+    # Prefetch is pure cache warming: identical selections, identical batches,
+    # identical stored article state whether it ran or not.
+    assert observations[0] == observations[1]
+    assert observations[0]["batches"] == [["PMC_c0"], ["PMC_c1"], []]
+
+
+def test_run_all_prefetch_exceptions_do_not_affect_run(conn, monkeypatch):
+    """A prefetch worker raising must be invisible to the run."""
+    from src.visual_pilot import parse as parse_stage
+
+    diseases.seed(conn)
+    monkeypatch.setattr(cli, "_cmd_init", lambda args: 0)
+    monkeypatch.setattr(cli, "ThreadPoolExecutor", _InlinePool)
+    _insert_article(conn, "PMC_run", "dm", status="relevant")
+    _insert_article(conn, "PMC_extra", "dm", status="relevant")
+    conn.commit()
+    parse_stage._JATS_CACHE.clear()
+    prefetch_calls = []
+    real_prefetch = cli._prefetch_candidates
+
+    def spy(disease_key, batch_size, **kwargs):
+        prefetch_calls.append(disease_key)
+        return real_prefetch(disease_key, batch_size, **kwargs)
+
+    def boom(row):
+        raise RuntimeError("prefetch exploded")
+
+    monkeypatch.setattr(cli, "_prefetch_candidates", spy)
+    monkeypatch.setattr(parse_stage, "_bundle_and_parsed", boom)
+    batches = [[{"pmcid": "PMC_run"}]]
+    monkeypatch.setattr(
+        "src.visual_pilot.parse.select_batch",
+        lambda conn_arg, key, n, *, pmcids=None, peek_captions=True: (
+            batches.pop(0)[:n] if batches else []
+        ),
+    )
+    monkeypatch.setitem(cli.COMMANDS, "select", lambda args: 0)
+    stores = []
+    fake_stage = _stage_runner(conn, {"stores": stores})
+    for name in ("parse", "triage", "judge", "store", "extract", "report"):
+        monkeypatch.setitem(cli.COMMANDS, name, fake_stage(name))
+
+    assert cli._cmd_run_all(_args(disease="dm")) == 0
+    assert prefetch_calls == ["dm"]
+    assert stores == [["PMC_run"]]
+
+
+def test_prefetch_candidates_is_write_free(conn, monkeypatch):
+    """The prefetch job reads and warms but never writes to the database."""
+    from src.visual_pilot import parse as parse_stage
+
+    diseases.seed(conn)
+    for i in range(3):
+        _insert_article(conn, f"PMC_w{i}", "sle", status="relevant")
+    _insert_article(conn, "PMC_done", "sle", status="parsed")
+    conn.commit()
+    before = {
+        table: [tuple(r) for r in conn.execute(f"SELECT * FROM {table}")]
+        for table in ("articles", "figures", "panels", "disease_findings", "llm_calls")
+    }
+    warmed = []
+    monkeypatch.setattr(
+        parse_stage,
+        "_bundle_and_parsed",
+        lambda row: warmed.append(row["pmcid"]) or ("bundle", object()),
+    )
+
+    parse_stage._JATS_CACHE.clear()
+    cli._prefetch_candidates(
+        "sle", 50, exclude_pmcids=frozenset(), allowed_pmcids=None, pool=_InlinePool()
+    )
+
+    assert set(warmed) == {"PMC_w0", "PMC_w1", "PMC_w2"}  # parsed row skipped
+    assert set(parse_stage._JATS_CACHE) == set(warmed)
+    after = {
+        table: [tuple(r) for r in conn.execute(f"SELECT * FROM {table}")]
+        for table in ("articles", "figures", "panels", "disease_findings", "llm_calls")
+    }
+    assert before == after
+
+
+def _snapshot_reference(conn, disease_key):
+    """The pre-W9 per-row Python implementation of ``cli._snapshot``."""
+    hashes = {
+        r["sha256"]
+        for r in conn.execute(
+            "SELECT DISTINCT sha256 FROM panels WHERE disease_key=? "
+            "AND sha256 IS NOT NULL AND sha256 != ''",
+            (disease_key,),
+        )
+    }
+    approved = {
+        r["finding_key"]
+        for r in conn.execute(
+            "SELECT finding_key FROM findings_vocab WHERE approved=1 "
+            "AND EXISTS (SELECT 1 FROM json_each(disease_keys_json) je "
+            "WHERE je.value=?)",
+            (disease_key,),
+        )
+    }
+    findings: set[str] = set()
+    for r in conn.execute(
+        "SELECT findings_json FROM panels WHERE disease_key=?", (disease_key,)
+    ):
+        for value in db.from_json(r["findings_json"], []) or []:
+            key = value.get("finding_key") if isinstance(value, dict) else value
+            if key and str(key) in approved:
+                findings.add(str(key))
+    return hashes, findings
+
+
+def test_snapshot_matches_reference_on_edge_cases(conn):
+    """W9 task 5: the aggregate-SQL _snapshot equals the old Python loop."""
+    diseases.seed(conn)
+    conn.execute(
+        "INSERT INTO findings_vocab (finding_key, disease_keys_json, label, "
+        "synonyms_json, category, approved) VALUES (?, ?, ?, ?, ?, 0)",
+        ("proposed_unapproved", db.to_json(["sle"]), "Proposed", "[]", "skin"),
+    )
+    _insert_article(conn, "PMC_snap", "sle")
+    _insert_figure(conn, "PMC_snap", "stored")
+    _insert_article(conn, "PMC_snap_dm", "dm")
+    _insert_figure(conn, "PMC_snap_dm", "stored")
+    fixtures = [
+        # (panel suffix, disease_key, sha256, findings_json)
+        ("p1", "sle", "sha-a", [{"finding_key": "malar_rash"}]),
+        ("p2", "sle", "sha-a", [{"finding_key": "oral_ulcer"}, {"label": "x"}]),
+        ("p3", "sle", "sha-b", ["malar_rash", "zzz_unknown", 5]),
+        ("p4", "sle", None, [{"finding_key": "cutaneous_vasculitis"}]),
+        ("p5", "sle", "", []),
+        ("p6", "sle", "sha-c", [{"finding_key": "proposed_unapproved"}]),
+        ("p7", "sle", "sha-c", "malar_rash"),          # scalar JSON, not array
+        ("p8", "sle", "sha-c", {"finding_key": "malar_rash"}),  # object, not array
+        ("p9", "sle", "sha-c", [{"finding_key": None}]),
+        ("dm1", "dm", "sha-dm", [{"finding_key": "gottron_papules"}]),
+    ]
+    for suffix, key, sha, findings in fixtures:
+        conn.execute(
+            "INSERT INTO panels (panel_id, figure_id, pmcid, disease_key, sha256, "
+            "findings_json) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                f"panel_{suffix}",
+                "PMC_snap_dm:f1" if key == "dm" else "PMC_snap:f1",
+                "PMC_snap_dm" if key == "dm" else "PMC_snap",
+                key,
+                sha,
+                db.to_json(findings),
+            ),
+        )
+    conn.commit()
+
+    expected = (
+        {"sha-a", "sha-b", "sha-c"},
+        {"malar_rash", "oral_ulcer", "cutaneous_vasculitis"},
+    )
+    assert cli._snapshot(conn, "sle") == _snapshot_reference(conn, "sle") == expected
+    assert cli._snapshot(conn, "dm") == _snapshot_reference(conn, "dm") == (
+        {"sha-dm"},
+        {"gottron_papules"},
+    )
