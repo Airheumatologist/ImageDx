@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import time
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -73,6 +74,7 @@ def _lazy(module: str, attr: str = "run") -> CommandFn:
 
 def _cmd_run_all(args: argparse.Namespace) -> int:
     """Select once, then expand visual-yield batches until marginal yield falls."""
+    from . import judge
     from . import parse as parse_stage
 
     started = time.monotonic()
@@ -141,7 +143,8 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
         try:
             placeholders = ""
             values: tuple = (
-                "pending", "caption_kept", "caption_uncertain", "vision_accepted", 3
+                "pending", "caption_kept", "caption_uncertain", "vision_accepted",
+                judge.MAX_ATTEMPTS,
             )
             if pmcids:
                 marks = ",".join("?" for _ in pmcids)
@@ -152,6 +155,26 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
                 "(status IN (?,?,?,?) OR (status='vision_error' AND attempts < ?))"
                 + placeholders,
                 values,
+            ).fetchone()["n"]
+        finally:
+            c.close()
+
+    def _retriable_vision_errors(pmcids) -> int:
+        """Cheap count of ``vision_error`` figures judge would still retry.
+
+        Mirrors the ``attempts < judge.MAX_ATTEMPTS`` filter in ``judge.run``
+        so the in-batch retry below only re-invokes judge when a pass could
+        actually do work.
+        """
+        if not pmcids:
+            return 0
+        c = db.connect()
+        try:
+            marks = ",".join("?" for _ in pmcids)
+            return c.execute(
+                "SELECT COUNT(*) AS n FROM figures WHERE status='vision_error' "
+                f"AND attempts < ? AND pmcid IN ({marks})",
+                (judge.MAX_ATTEMPTS, *pmcids),
             ).fetchone()["n"]
         finally:
             c.close()
@@ -178,6 +201,41 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
     scoped = argparse.Namespace(**vars(args))
     per_disease_cap = min(max_articles, args.limit) if args.limit is not None else max_articles
 
+    def _run_batch_stages(disease_key: str, batch_no: int, pmcids: list[str]) -> int:
+        """Run one batch through parse → triage → judge → store.
+
+        W9: between judge and store, ``vision_error`` figures that judge will
+        still retry (``attempts < judge.MAX_ATTEMPTS``) get up to
+        ``MAX_ATTEMPTS - 1`` extra judge passes so transiently-failed figures
+        recover and are stored in-batch instead of pausing the disease.
+        ``scoped`` is already narrowed to this batch's disease and pmcids.
+        """
+
+        def _stage(name: str) -> int:
+            remaining = _remaining_budget()
+            if remaining is not None and remaining <= 0:
+                print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
+                return 4
+            scoped.budget_usd = remaining
+            print(
+                f"run-all: {disease_key} batch {batch_no}: {name} "
+                f"({len(pmcids)} articles)"
+            )
+            with timing.stage(name):
+                return COMMANDS[name](scoped) if COMMANDS[name] else 2
+
+        for name in ("parse", "triage", "judge"):
+            rc = _stage(name)
+            if rc != 0:
+                return rc
+        for _ in range(judge.MAX_ATTEMPTS - 1):
+            if not _retriable_vision_errors(pmcids):
+                break
+            rc = _stage("judge")
+            if rc != 0:
+                return rc
+        return _stage("store")
+
     # W0/C7: every stage call below is wrapped in timing.stage(...) and the
     # report is written on every exit path. Observation only.
     try:
@@ -198,69 +256,72 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
                 if rc != 0:
                     return rc
 
-        for disease_key in disease_keys:
-            processed = 0
-            zero_yield_batches = 0
-            while processed < per_disease_cap:
-                if time.monotonic() - started >= max_runtime:
-                    print(f"run-all: runtime safety limit ({max_runtime}s) reached; stopping expansion")
-                    break
-                remaining = _remaining_budget()
-                if remaining is not None and remaining <= 0:
-                    print(f"run-all: budget ${budget0:.2f} exhausted; stopping expansion")
-                    return 4
-                conn = db.connect()
-                try:
-                    selected = parse_stage.select_batch(
-                        conn,
-                        disease_key,
-                        min(batch_size, per_disease_cap - processed),
-                        pmcids=requested_pmcids,
-                    )
-                finally:
-                    conn.close()
-                if requested_pmcids is not None:
-                    selected = [r for r in selected if r["pmcid"] in requested_pmcids]
-                if not selected:
-                    break
-                pmcids = [r["pmcid"] for r in selected]
-                before_images, before_findings = _snapshot(disease_key)
-                scoped.disease = disease_key
-                scoped.pmcids = pmcids
-                scoped.limit = None
-                for name in ("parse", "triage", "judge", "store"):
-                    remaining = _remaining_budget()
-                    if remaining is not None and remaining <= 0:
-                        print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
-                        return 4
-                    scoped.budget_usd = remaining
-                    print(f"run-all: {disease_key} batch {processed // batch_size + 1}: {name} ({len(pmcids)} articles)")
-                    with timing.stage(name):
-                        rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
-                    if rc != 0:
-                        return rc
-                after_images, after_findings = _snapshot(disease_key)
-                new_images = after_images - before_images
-                new_findings = after_findings - before_findings
-                processed += len(pmcids)
-                unfinished = _unfinished_figures(pmcids)
-                if unfinished:
-                    print(
-                        f"run-all: {disease_key} batch has {unfinished} unfinished figures; "
-                        "leaving it resumable and pausing disease expansion"
-                    )
-                    break
-                print(
-                    f"run-all: {disease_key} batch yield: {len(new_images)} distinct images, "
-                    f"{len(new_findings)} newly covered findings"
+        # W9: round-robin expansion across in-scope diseases. Each disease
+        # keeps its own {processed, zero_yield, batch count} state and yields
+        # the slot after every batch, so a paused/exhausted/zero-yielding
+        # disease cannot starve the others on the shared runtime + budget.
+        pending_diseases = deque(disease_keys)
+        progress = {
+            key: {"processed": 0, "zero_yield_batches": 0, "batches": 0}
+            for key in disease_keys
+        }
+        while pending_diseases:
+            if time.monotonic() - started >= max_runtime:
+                print(f"run-all: runtime safety limit ({max_runtime}s) reached; stopping expansion")
+                break
+            remaining = _remaining_budget()
+            if remaining is not None and remaining <= 0:
+                print(f"run-all: budget ${budget0:.2f} exhausted; stopping expansion")
+                return 4
+            disease_key = pending_diseases.popleft()
+            state = progress[disease_key]
+            conn = db.connect()
+            try:
+                selected = parse_stage.select_batch(
+                    conn,
+                    disease_key,
+                    min(batch_size, per_disease_cap - state["processed"]),
+                    pmcids=requested_pmcids,
                 )
-                if new_images or new_findings:
-                    zero_yield_batches = 0
-                else:
-                    zero_yield_batches += 1
-                    if zero_yield_batches >= zero_yield_limit:
-                        print(f"run-all: {disease_key} stopped after {zero_yield_batches} consecutive zero-yield batches")
-                        break
+            finally:
+                conn.close()
+            if requested_pmcids is not None:
+                selected = [r for r in selected if r["pmcid"] in requested_pmcids]
+            if not selected:
+                continue  # finished: nothing left to select for this disease
+            pmcids = [r["pmcid"] for r in selected]
+            before_images, before_findings = _snapshot(disease_key)
+            scoped.disease = disease_key
+            scoped.pmcids = pmcids
+            scoped.limit = None
+            state["batches"] += 1
+            rc = _run_batch_stages(disease_key, state["batches"], pmcids)
+            if rc != 0:
+                return rc
+            after_images, after_findings = _snapshot(disease_key)
+            new_images = after_images - before_images
+            new_findings = after_findings - before_findings
+            state["processed"] += len(pmcids)
+            unfinished = _unfinished_figures(pmcids)
+            if unfinished:
+                print(
+                    f"run-all: {disease_key} batch has {unfinished} unfinished figures; "
+                    "leaving it resumable and pausing disease expansion"
+                )
+                continue  # finished: paused, stays resumable for the next run
+            print(
+                f"run-all: {disease_key} batch yield: {len(new_images)} distinct images, "
+                f"{len(new_findings)} newly covered findings"
+            )
+            if new_images or new_findings:
+                state["zero_yield_batches"] = 0
+            else:
+                state["zero_yield_batches"] += 1
+                if state["zero_yield_batches"] >= zero_yield_limit:
+                    print(f"run-all: {disease_key} stopped after {state['zero_yield_batches']} consecutive zero-yield batches")
+                    continue  # finished: marginal yield fell
+            if state["processed"] < per_disease_cap:
+                pending_diseases.append(disease_key)
 
         scoped.disease = args.disease
         scoped.pmcids = None
