@@ -39,6 +39,7 @@ fix_*.py
 
 # Visual findings pilot data (SQLite, images, reports)
 data/visual_pilot/
+reports/
 
 .claude/
 
