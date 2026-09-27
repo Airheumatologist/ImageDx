@@ -18,9 +18,9 @@ work — never from changing what the models see or what gets written.
 
 ---
 
-## 0. Status log (updated 2026-09-27, main @ `d69fcd7`)
+## 0. Status log (updated 2026-09-27, main @ `e117af1`)
 
-**Complete: W0–W8, W10, W11. Gates G0–G2 passed. Remaining: W9, then G3.**
+**All workstreams complete: W0–W11. Gates G0–G3 passed.**
 
 Merged onto `main`, in order:
 
@@ -37,12 +37,27 @@ Merged onto `main`, in order:
 | W6 streaming judge | `05868a2` | C5 `originals.py`, `iter_many` pipeline, ≤2× buffer |
 | W7 parallel store | `b250e5f` | originals handoff + fetch fallback, ordered apply |
 | W8 extract reuse | `ce1fb79` | `sections_for` reuse, vocab cache, P4 `iter_many` |
-| Coordinator fixes | `6c33972`, `5063008`, `9593d42`, `d69fcd7` | see "nondeterminism fixes" below |
+| Coordinator fixes | `6c33972`, `5063008`, `9593d42`, `d69fcd7`, `e117af1` | see "nondeterminism fixes" below |
 | W11 probe | `reports/concurrency_probe.md` | **keep `VP_JUDGE_CONCURRENCY=4`** (see below) |
+| W9 run-all scheduling | `307ef2b`, `4e50cca`, merge `7dea4b1` | in-run judge retry, round-robin diseases, fetch-only prefetch, shared read conn |
 
-Verification state: `pytest tests/visual_pilot` → **302 passed**,
+Verification state: `pytest tests/visual_pilot` → **312 passed**,
 `ruff` clean, `parity compare reports/parity_baseline
-reports/parity_candidate_g2` → **identical**.
+reports/parity_candidate_g3` → **identical** (G3).
+
+`e117af1` (parity.py): `attempts` on `error`-bearing figure rows is
+normalized alongside `error` — W9's in-run judge retries legitimately
+raise it between the recorded baseline and a cache-only replay.
+
+G3 timing (cache-only candidate; baseline was live): stage total 7.2 s
+vs 6.0 s at G2; S3 limiter wait 41.7 s vs 29.3 s — prefetch overlap puts
+more concurrent fetches on the S3 limiter, so wait time moves into the
+background rather than disappearing. A supervised live `run-all` on a
+scratch copy of the main DB exercised resume drain (12 retriable
+`vision_error` judged), round-robin (dm/as exhausted instantly — only
+sle had `relevant` rows left), in-batch retries, prefetch, and store
+with real DeepInfra calls; stopped during `extract` (unchanged W8 path)
+after the W9 behavior was proven.
 
 ### Provider situation (important for the next wave)
 
@@ -104,15 +119,15 @@ throughput-over-tail-latency is ever preferred.
 
 ### What remains
 
-1. **W9** — `run-all` scheduling (tasks unchanged; detailed implementation
-   notes added inline below from the first attempt's analysis — no code
-   was written).
-2. **G3** — full tests + parity compare + timing report + a supervised
-   live `run-all` on a scratch copy of the main DB.
-3. Deferred items (true cross-disease concurrency, A/B input changes) —
+1. ~~W9~~ — merged (`7dea4b1`). ~~G3~~ — passed.
+2. Deferred items (true cross-disease concurrency, A/B input changes) —
    unchanged, post-G3 only.
-4. Open decision: whether to change production model defaults from
+3. Open decision: whether to change production model defaults from
    `space-bunny-free` to DeepInfra GLM (see provider note).
+4. Live-run observation for follow-up: `extract`'s P4 fan-out over a
+   large un-extracted backlog runs at provider speed (~7 calls/min on
+   DeepInfra GLM) — a full `run-all` on the main DB still needs either
+   the runtime cap to be honored mid-extract or a bounded extract.
 
 Known instrumentation gap: the `parse` stage timer shows ~0.1s because
 `select_batch`'s caption peeks do the fetching inside `cli.py`'s untimed
