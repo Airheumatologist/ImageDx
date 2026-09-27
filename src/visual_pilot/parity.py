@@ -308,14 +308,20 @@ def compare(baseline_dir: Path, candidate_dir: Path) -> list[str]:
 
     # 4. figures rows on the compared columns. Error text is volatile across
     #    runs (transport message vs replayed cache miss), so it is reduced to
-    #    presence; status/attempts still pin the outcome.
+    #    presence; status still pins the outcome. `attempts` on an errored row
+    #    is equally volatile: W9's in-run judge retries legitimately raise it
+    #    between the recorded baseline and a cache-only replay, so it is
+    #    normalized alongside error (non-errored rows still compare attempts).
     def figure_rows(conn):
         err_idx = FIGURE_COMPARE_COLS.index("error")
+        att_idx = FIGURE_COMPARE_COLS.index("attempts")
         col_list = ", ".join(FIGURE_COMPARE_COLS)
         rows = []
         for row in conn.execute(f"SELECT {col_list} FROM figures"):
             t = list(row)
-            t[err_idx] = "(set)" if t[err_idx] else None
+            if t[err_idx]:
+                t[err_idx] = "(set)"
+                t[att_idx] = "(any)"
             rows.append(tuple(t))
         return sorted(rows, key=lambda t: tuple(repr(v) for v in t))
 
