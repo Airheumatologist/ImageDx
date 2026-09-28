@@ -58,9 +58,9 @@ def test_multi_query_projection_limits_order_and_finding_provenance(monkeypatch)
     assert [query["rank_by"][0] for query in queries] == [
         "title", "page_content", "page_content",
     ]
-    assert all(query["limit"] == {
-        "total": query["top_k"], "per": {"attributes": ["pmcid"], "limit": 1},
-    } for query in queries)
+    assert [query["limit"]["total"] for query in queries] == [500, 750, 300]
+    assert all(query["limit"]["per"] == {"attributes": ["pmcid"], "limit": 1}
+               for query in queries)
     assert "abstract" not in queries[0]["include_attributes"]
     assert "page_content" not in queries[0]["include_attributes"]
     assert "page_content" in queries[1]["include_attributes"]

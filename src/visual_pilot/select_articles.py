@@ -37,6 +37,10 @@ MAX_EVIDENCE_TEXT_CHARS = 1200
 VISUAL_QUERY_RRF_WEIGHT = 12.0
 RRF_K = 60
 METADATA_BATCH_SIZE = 100
+# turbopuffer rejects a multi_query needing more than 16 concurrent
+# per-namespace permits ("requires N permits, max is 16"), so every
+# multi_query batch is capped at this many subqueries.
+MULTI_QUERY_BATCH = 16
 DEFAULT_CAP = 150
 ABSTRACT_MAX_CHARS = 4000
 
@@ -567,11 +571,28 @@ def _rank_query(ns, rank_by, top_k, counters=None) -> list[dict]:
 
 
 def _rank_jobs(ns, jobs, contexts, counters=None) -> list[list[dict]]:
-    """Run ordered retrieval jobs in one multi-query request when available."""
+    """Run ordered retrieval jobs via multi_query, chunked under the permit cap.
+
+    turbopuffer allows at most MULTI_QUERY_BATCH subqueries per multi_query
+    (per-namespace concurrency budget). Jobs run in sequential 16-wide
+    chunks — a chunk already saturates the budget, so wider parallelism
+    would only contend for permits. A failed chunk falls back to sequential
+    ``query`` calls for just that chunk (old SDKs hit this path per chunk).
+    """
     multi_query = getattr(ns, "multi_query", None)
-    if callable(multi_query) and jobs:
+
+    def _run(job):
+        rank_by, top_k = job
+        return _rank_query(ns, rank_by, top_k, counters)
+
+    if not callable(multi_query) or not jobs:
+        return [_run(job) for job in jobs]
+
+    all_rows: list[list[dict] | None] = [None] * len(jobs)
+    for start in range(0, len(jobs), MULTI_QUERY_BATCH):
+        chunk = jobs[start : start + MULTI_QUERY_BATCH]
         queries = []
-        for (rank_by, top_k), context in zip(jobs, contexts):
+        for rank_by, top_k in chunk:
             attrs = EVIDENCE_ATTRIBUTES if rank_by[0] == "page_content" else DISCOVERY_ATTRIBUTES
             queries.append({
                 "rank_by": rank_by,
@@ -583,22 +604,21 @@ def _rank_jobs(ns, jobs, contexts, counters=None) -> list[list[dict]]:
             result = multi_query(queries=queries)
             _record_billing(counters, result, query_count=len(queries))
             results = list(getattr(result, "results", []) or [])
-            if len(results) != len(jobs):
+            if len(results) != len(chunk):
                 raise ValueError(
-                    f"multi_query returned {len(results)} results for {len(jobs)} jobs"
+                    f"multi_query returned {len(results)} results for {len(chunk)} jobs"
                 )
-            return [
-                [dict(row) for row in (getattr(item, "rows", None) or [])]
-                for item in results
-            ]
-        except Exception as exc:  # noqa: BLE001 - older servers/SDKs use query()
-            logger.info("Turbopuffer multi_query unavailable (%s); using query fallback", exc)
-    def _run(job):
-        rank_by, top_k = job
-        return _rank_query(ns, rank_by, top_k, counters)
-    # Keep fallback strictly sequential: old SDKs may not support multi_query,
-    # and this also avoids races in the one-time review-filter capability probe.
-    return [_run(job) for job in jobs]
+            for offset, item in enumerate(results):
+                all_rows[start + offset] = [
+                    dict(row) for row in (getattr(item, "rows", None) or [])
+                ]
+        except Exception as exc:  # noqa: BLE001 - per-chunk compatibility fallback
+            logger.info(
+                "Turbopuffer multi_query unavailable (%s); using query fallback", exc
+            )
+            for offset, job in enumerate(chunk):
+                all_rows[start + offset] = _run(job)
+    return [rows if rows is not None else [] for rows in all_rows]
 
 
 def _embed_synonyms(synonyms: list[str], embed_fn, embed_many_fn) -> list:
@@ -641,18 +661,28 @@ def retrieve_for_disease(
     """Fuse ranked lists and preserve the best passage evidence per PMC article.
 
     The independent turbopuffer queries (per-synonym buckets + per-visual
-    lookups) run in a namespace multi-query when supported, with a sequential
-    compatibility fallback. Results are replayed in job order so RRF fusion,
-    first-seen attributes, and evidence selection stay deterministic.
+    lookups) run through chunked multi-query requests (MULTI_QUERY_BATCH
+    subqueries each), with a sequential ``query`` fallback per failed chunk.
+    Results are replayed in job order so RRF fusion, first-seen attributes,
+    and evidence selection stay deterministic.
     """
     synonyms = list(synonyms or [])
     embeddings = _embed_synonyms(synonyms, embed_fn, embed_many_fn)
     for synonym, embedding in zip(synonyms, embeddings):
         if embedding is None:
             logger.info("no embedding for %r; dense ANN skipped", synonym)
+    jobs, contexts = _job_specs(synonyms, embeddings, visual_queries)
+    all_rows = _rank_jobs(ns, jobs, contexts, billing_counters)
+    return _fuse_rows(jobs, contexts, all_rows)
 
-    # Build the query jobs in issue order, keeping the context each job's
-    # rows need for the downstream merge (query kind, evidence metadata).
+
+def _job_specs(
+    synonyms: list[str],
+    embeddings: list,
+    visual_queries: list[dict[str, str]] | None,
+) -> tuple[list[tuple[list, int]], list[dict]]:
+    """Build the query jobs in issue order, keeping the context each job's
+    rows need for the downstream merge (query kind, evidence metadata)."""
     jobs: list[tuple[list, int]] = []
     contexts: list[dict] = []
     for synonym, embedding in zip(synonyms, embeddings):
@@ -686,9 +716,16 @@ def retrieve_for_disease(
                 "finding": str(spec.get("finding") or ""),
             }
         )
+    return jobs, contexts
 
-    all_rows = _rank_jobs(ns, jobs, contexts, billing_counters)
 
+def _fuse_rows(
+    jobs: list[tuple[list, int]],
+    contexts: list[dict],
+    all_rows: list[list[dict]],
+) -> dict[str, dict]:
+    """Replays rows in job order so RRF fusion, first-seen attributes, and
+    evidence selection stay deterministic."""
     ranked_lists: list[list[str]] = []
     ranked_weights: list[float] = []
     attrs: dict[str, dict] = {}
@@ -809,49 +846,71 @@ def abstract_for(ns, pmcid: str) -> str:
         return ""
 
 
+def _hydrate_batch(ns, batch: list[str], billing_counters=None) -> dict[str, dict]:
+    """One METADATA_BATCH_SIZE slice: multi_query, else one OR-filter query."""
+    hydrated: dict[str, dict] = {}
+    multi_query = getattr(ns, "multi_query", None)
+    # multi_query needs one permit per subquery (max MULTI_QUERY_BATCH);
+    # larger batches go straight to the single OR-filter query instead.
+    if callable(multi_query) and len(batch) <= MULTI_QUERY_BATCH:
+        try:
+            queries = [
+                {
+                    "filters": ["pmcid", "Eq", pmcid],
+                    "limit": 1,
+                    "include_attributes": METADATA_ATTRIBUTES,
+                }
+                for pmcid in batch
+            ]
+            result = multi_query(queries=queries)
+            _record_billing(billing_counters, result, query_count=len(queries))
+            results = list(getattr(result, "results", []) or [])
+            if len(results) != len(batch):
+                raise ValueError("incomplete metadata multi_query response")
+            for pmcid, item in zip(batch, results):
+                rows = getattr(item, "rows", None) or []
+                if rows:
+                    hydrated[pmcid] = dict(rows[0])
+            return hydrated
+        except Exception as exc:  # noqa: BLE001 - compatibility fallback
+            logger.info("metadata multi_query unavailable (%s); using batched query", exc)
+    # A single OR-filter query hydrates the entire batch when multi_query
+    # is absent, so compatibility does not regress to one request per ID.
+    filters = ["Or", [["pmcid", "Eq", pmcid] for pmcid in batch]]
+    result = ns.query(
+        filters=filters,
+        limit={"total": len(batch), **_PER_PMCID_LIMIT},
+        include_attributes=METADATA_ATTRIBUTES,
+    )
+    _record_billing(billing_counters, result)
+    for raw in getattr(result, "rows", []) or []:
+        row = dict(raw)
+        pmcid = str(row.get("pmcid") or "")
+        if pmcid and pmcid not in hydrated:
+            hydrated[pmcid] = row
+    return hydrated
+
+
 def hydrate_metadata(ns, pmcids: list[str], billing_counters=None) -> dict[str, dict]:
     """Fetch citation metadata and abstracts in bounded batches for shortlisted IDs."""
     unique_ids = list(dict.fromkeys(str(p) for p in pmcids if p))
+    batches = [
+        unique_ids[offset : offset + METADATA_BATCH_SIZE]
+        for offset in range(0, len(unique_ids), METADATA_BATCH_SIZE)
+    ]
+    # Batches are disjoint pmcid slices on a stateless HTTP client, so they
+    # run concurrently; the merge is order-independent (no key overlap).
+    workers = min(len(batches), config.VP_RETRIEVAL_CONCURRENCY)
     hydrated: dict[str, dict] = {}
-    multi_query = getattr(ns, "multi_query", None)
-    for offset in range(0, len(unique_ids), METADATA_BATCH_SIZE):
-        batch = unique_ids[offset : offset + METADATA_BATCH_SIZE]
-        if callable(multi_query):
-            try:
-                queries = [
-                    {
-                        "filters": ["pmcid", "Eq", pmcid],
-                        "limit": 1,
-                        "include_attributes": METADATA_ATTRIBUTES,
-                    }
-                    for pmcid in batch
-                ]
-                result = multi_query(queries=queries)
-                _record_billing(billing_counters, result, query_count=len(queries))
-                results = list(getattr(result, "results", []) or [])
-                if len(results) != len(batch):
-                    raise ValueError("incomplete metadata multi_query response")
-                for pmcid, item in zip(batch, results):
-                    rows = getattr(item, "rows", None) or []
-                    if rows:
-                        hydrated[pmcid] = dict(rows[0])
-                continue
-            except Exception as exc:  # noqa: BLE001 - compatibility fallback
-                logger.info("metadata multi_query unavailable (%s); using batched query", exc)
-        # A single OR-filter query hydrates the entire batch when multi_query
-        # is absent, so compatibility does not regress to one request per ID.
-        filters = ["Or", [["pmcid", "Eq", pmcid] for pmcid in batch]]
-        result = ns.query(
-            filters=filters,
-            limit={"total": len(batch), **_PER_PMCID_LIMIT},
-            include_attributes=METADATA_ATTRIBUTES,
-        )
-        _record_billing(billing_counters, result)
-        for raw in getattr(result, "rows", []) or []:
-            row = dict(raw)
-            pmcid = str(row.get("pmcid") or "")
-            if pmcid and pmcid not in hydrated:
-                hydrated[pmcid] = row
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for partial in pool.map(
+                lambda b: _hydrate_batch(ns, b, billing_counters), batches
+            ):
+                hydrated.update(partial)
+    else:
+        for batch in batches:
+            hydrated.update(_hydrate_batch(ns, batch, billing_counters))
     return hydrated
 
 
@@ -1296,6 +1355,12 @@ def run(args) -> int:
         "billable_logical_bytes_queried": 0,
         "billable_logical_bytes_returned": 0,
     }
+    # Query specs are built first (DB reads). All diseases' jobs then run in
+    # ONE flat _rank_jobs call: multi_query requests carry at most
+    # MULTI_QUERY_BATCH subqueries (turbopuffer's 16-permit namespace budget),
+    # so ~340 retrieval queries collapse into ~22 round trips. Disease-level
+    # thread parallelism would only contend for the same permit budget.
+    specs: dict[str, dict] = {}
     for key in disease_keys:
         synonyms = diseases_data[key]["synonyms"]
         visual_queries = visual_queries_for_disease(
@@ -1304,19 +1369,33 @@ def run(args) -> int:
             findings=visual_findings,
             coverage_counts=_stored_panel_counts(conn, key),
         )
+        specs[key] = {"synonyms": synonyms, "visual_queries": visual_queries}
         print(
             f"[{key}] {len(synonyms)} synonyms x3 buckets + "
             f"{len(visual_queries)} visual passage queries ..."
         )
-        articles = retrieve_for_disease(
-            ns,
-            embed_fn,
-            synonyms,
-            visual_queries,
-            disease_key=key,
-            embed_many_fn=embed_many_fn,
-            billing_counters=billing_counters,
-        )
+
+    # Embeddings stay batched per disease: one provider failure then costs
+    # only that disease's dense-ANN path (per-item fallback still applies).
+    flat_jobs: list[tuple[list, int]] = []
+    flat_contexts: list[dict] = []
+    disease_slices: dict[str, tuple[int, list, list]] = {}
+    for key in disease_keys:
+        synonyms = specs[key]["synonyms"]
+        embeddings = _embed_synonyms(synonyms, embed_fn, embed_many_fn)
+        for synonym, embedding in zip(synonyms, embeddings):
+            if embedding is None:
+                logger.info("no embedding for %r; dense ANN skipped", synonym)
+        jobs, contexts = _job_specs(synonyms, embeddings, specs[key]["visual_queries"])
+        disease_slices[key] = (len(flat_jobs), jobs, contexts)
+        flat_jobs.extend(jobs)
+        flat_contexts.extend(contexts)
+
+    all_rows = _rank_jobs(ns, flat_jobs, flat_contexts, billing_counters)
+
+    for key in disease_keys:
+        start, jobs, contexts = disease_slices[key]
+        articles = _fuse_rows(jobs, contexts, all_rows[start : start + len(jobs)])
         # Type filtering precedes the cap. With a cap, round-robin finding
         # reservations protect undercovered manifestation lanes before the
         # remaining slots go to global RRF order.
@@ -1395,9 +1474,13 @@ def run(args) -> int:
         keys = set(db.from_json(row["primary_disease_keys_json"], []) or [])
         return bool(keys & in_scope)
 
+    license_pool = None
     try:
         # ------------------------------------------------------------------
-        # 5. License for every in-scope `candidate` row.
+        # 5-6. License and relevance run overlapped: the license pool applies
+        # outcomes on this thread while each ``license_ok`` result streams a
+        # P1 request into ``client.iter_many`` — LLM calls for cleared
+        # articles start while later licenses are still being fetched.
         # ------------------------------------------------------------------
         pending_license = [
             row["pmcid"]
@@ -1409,21 +1492,9 @@ def run(args) -> int:
         ]
         if pending_license:
             print(f"license: {len(pending_license)} candidate articles")
-            applied = 0
-            with ThreadPoolExecutor(
-                max_workers=config.VP_FETCH_CONCURRENCY
-            ) as pool:
-                for pmcid, outcome in pool.map(join_license, pending_license):
-                    apply_license(conn, pmcid, outcome)
-                    applied += 1
-                    if applied % 200 == 0:
-                        conn.commit()
-            conn.commit()
 
-        # ------------------------------------------------------------------
-        # 6. Relevance for in-scope `license_ok` rows: every article goes
-        #    through P1 (the title rule no longer auto-passes).
-        # ------------------------------------------------------------------
+        # Rows already license_ok from earlier runs are eligible for P1
+        # immediately, before this pass's licensing starts.
         rows = [
             row
             for row in conn.execute(
@@ -1433,7 +1504,7 @@ def run(args) -> int:
             if _in_scope(row)
         ]
         # Abstracts: held in memory from this run's retrieval when possible,
-        # else re-queried from tpuf on a thread pool.
+        # else re-queried from tpuf in parallel batches.
         abstracts: dict[str, str] = {}
         missing = []
         for row in rows:
@@ -1445,48 +1516,97 @@ def run(args) -> int:
         if missing:
             print(f"abstracts: re-querying {len(missing)} via tpuf")
             abstracts.update(fetch_abstracts(ns, missing))
-        p1_items = [
-            (row["pmcid"], _p1_request(row["title"] or "", abstracts.get(row["pmcid"], "")))
-            for row in rows
-        ]
+
+        def _title_for(pmcid: str) -> str:
+            attrs = (retrieved.get(pmcid) or {}).get("attrs") or {}
+            if attrs.get("title"):
+                return str(attrs["title"])
+            row = conn.execute(
+                "SELECT title FROM articles WHERE pmcid = ?", (pmcid,)
+            ).fetchone()
+            return str(row["title"] or "") if row else ""
+
+        def _abstract_for(pmcid: str) -> str:
+            cached = abstracts.get(pmcid)
+            if cached is not None:
+                return cached
+            attrs = (retrieved.get(pmcid) or {}).get("attrs") or {}
+            if attrs.get("abstract") is not None:
+                abstract = str(attrs["abstract"])
+            else:
+                abstract = abstract_for(ns, pmcid)
+            abstracts[pmcid] = abstract
+            return abstract
+
+        # License fetches are submitted eagerly so they run while the
+        # pre-cleared P1 requests above are still being consumed.
+        license_iter = None
+        if pending_license:
+            license_pool = ThreadPoolExecutor(
+                max_workers=config.VP_FETCH_CONCURRENCY
+            )
+            license_iter = license_pool.map(join_license, pending_license)
+
+        submitted: list[str] = []  # BatchResult.index -> pmcid
+
+        def _p1_feed():
+            """Yield P1 requests: pre-cleared rows first, then each article
+            as its license outcome lands (pool.map order = submission order).
+            License DB writes happen here, on the calling thread."""
+            for row in rows:
+                submitted.append(row["pmcid"])
+                yield _p1_request(row["title"] or "", abstracts.get(row["pmcid"], ""))
+            if license_iter is None:
+                return
+            applied = 0
+            for pmcid, outcome in license_iter:
+                status = apply_license(conn, pmcid, outcome)
+                applied += 1
+                if applied % 200 == 0:
+                    conn.commit()
+                if status != "license_ok":
+                    continue
+                submitted.append(pmcid)
+                yield _p1_request(_title_for(pmcid), _abstract_for(pmcid))
+            conn.commit()
 
         budget_hits = 0
-        if p1_items:
-            print(f"relevance: {len(p1_items)} articles through P1")
-            results = client.call_many(req for _, req in p1_items)
-            for (pmcid, _req), result in zip(p1_items, results):
-                if result.error is not None:
-                    if isinstance(result.error, llm.BudgetExceeded):
-                        budget_hits += 1  # stays license_ok; rerun to resume
-                    else:
-                        conn.execute(
-                            "UPDATE articles SET error = ?, "
-                            "updated_at = datetime('now') WHERE pmcid = ?",
-                            (str(result.error), pmcid),
-                        )
-                    continue
-                parsed = result.parsed or {}
-                keys = [
-                    k
-                    for k in (parsed.get("primary_disease_keys") or [])
-                    if k in PILOT_KEYS
-                ]
-                if _p1_relevant(parsed):
-                    apply_relevance(
-                        conn,
-                        pmcid,
-                        "relevant",
-                        parsed.get("reason") or "p1_relevant",
-                        keys,
-                    )
+        print(f"relevance: {len(rows)} pre-cleared + licensed articles through P1")
+        results = client.call_many(_p1_feed())
+        for index, result in enumerate(results):
+            pmcid = submitted[index]
+            if result.error is not None:
+                if isinstance(result.error, llm.BudgetExceeded):
+                    budget_hits += 1  # stays license_ok; rerun to resume
                 else:
-                    apply_relevance(
-                        conn,
-                        pmcid,
-                        "irrelevant",
-                        parsed.get("reason") or f"p1_{parsed.get('decision')}",
-                        None,
+                    conn.execute(
+                        "UPDATE articles SET error = ?, "
+                        "updated_at = datetime('now') WHERE pmcid = ?",
+                        (str(result.error), pmcid),
                     )
+                continue
+            parsed = result.parsed or {}
+            keys = [
+                k
+                for k in (parsed.get("primary_disease_keys") or [])
+                if k in PILOT_KEYS
+            ]
+            if _p1_relevant(parsed):
+                apply_relevance(
+                    conn,
+                    pmcid,
+                    "relevant",
+                    parsed.get("reason") or "p1_relevant",
+                    keys,
+                )
+            else:
+                apply_relevance(
+                    conn,
+                    pmcid,
+                    "irrelevant",
+                    parsed.get("reason") or f"p1_{parsed.get('decision')}",
+                    None,
+                )
         conn.commit()
         if budget_hits:
             print(
@@ -1499,6 +1619,9 @@ def run(args) -> int:
             "stopping cleanly. Rerun to resume."
         )
         conn.commit()
+    finally:
+        if license_pool is not None:
+            license_pool.shutdown(wait=True)
 
     # ------------------------------------------------------------------
     # 7. Counts checkpoint.

@@ -103,7 +103,7 @@ VP_PANEL_FORMAT = os.getenv("VP_PANEL_FORMAT", "webp").strip().lower()
 VP_PANEL_QUALITY = max(1, min(100, _env_int("VP_PANEL_QUALITY", 90)))
 VP_PANEL_MAX_EDGE = max(0, _env_int("VP_PANEL_MAX_EDGE", 2048))
 VP_ORIGINAL_MAX_EDGE = max(0, _env_int("VP_ORIGINAL_MAX_EDGE", 2048))
-VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 8))
+VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Figures per P2 caption-triage batch.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
@@ -119,10 +119,14 @@ VP_MANIFESTATION_QUOTA = max(0, _env_int("VP_MANIFESTATION_QUOTA", 20))
 # -----------------------------------------------------------------------------
 # Request rate for the public S3 bucket (pmc-oa-opendata); NCBI hosts unchanged.
 VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
-# Worker pool size for fetches/parse/store (W5/W6/W7).
-VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 8))
-# Max in-flight P3 vision-judge calls (W6; raise only after the W11 probe).
-VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 4))
+# Worker pool size for fetches/parse/store (W5/W6/W7). Host-level rate
+# limiters (pmc.RATE_LIMITER) still cap per-host throughput, so this mainly
+# controls how much of the S3/OpenRouter budget is kept in flight.
+VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
+# Max in-flight P3 vision-judge calls (W6). The W11 probe's "keep 4" result
+# was measured on DeepInfra GLM; on OpenRouter stealth/space-bunny-alpha
+# throughput scales with concurrency and rate limits are generous.
+VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 8))
 # Max in-flight P1 relevance calls (W4); defaults to VP_CONCURRENCY.
 VP_P1_CONCURRENCY = max(1, _env_int("VP_P1_CONCURRENCY", VP_CONCURRENCY))
 # Per-request LLM timeout for the P3 judge (W6).
@@ -131,6 +135,9 @@ VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
 VP_RATE_LIMIT_RETRIES = max(0, _env_int("VP_RATE_LIMIT_RETRIES", 4))
 # In-memory cap for the judge->store original-bytes handoff (W6/W7).
 VP_ORIGINALS_CACHE_MB = max(0, _env_int("VP_ORIGINALS_CACHE_MB", 512))
+# Stage-2 metadata hydration: concurrent turbopuffer batch requests in
+# select (each batch is one request, so this is HTTP-level parallelism).
+VP_RETRIEVAL_CONCURRENCY = max(1, _env_int("VP_RETRIEVAL_CONCURRENCY", 4))
 # W0 timing instrumentation: 1 records timings and writes reports/timings_*.json.
 VP_TIMINGS = _env_int("VP_TIMINGS", 1)
 # W0 parity harness: 1 makes an llm_calls cache miss raise LLMError instead of
