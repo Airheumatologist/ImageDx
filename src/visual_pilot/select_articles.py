@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 
 PILOT_KEYS = set(diseases.DISEASE_KEYS)
 
-TITLE_TOP_K = 200
-CONTENT_TOP_K = 300
-DENSE_TOP_K = 300
-VISUAL_QUERY_TOP_K = 150
+TITLE_TOP_K = 500
+CONTENT_TOP_K = 750
+DENSE_TOP_K = 750
+VISUAL_QUERY_TOP_K = 300
 MAX_EVIDENCE_PER_ARTICLE = 8
 MAX_EVIDENCE_TEXT_CHARS = 1200
 VISUAL_QUERY_RRF_WEIGHT = 12.0
@@ -66,18 +66,22 @@ _CATEGORY_MODALITY = {
     "mri": "MRI",
     "us": "ultrasound image",
     "echo": "echocardiogram",
-    "eye": "clinical photograph",
+    "eye": "ophthalmic image",
 }
 _VISUAL_SECTION_CUE = re.compile(
     r"\b(clinical|physical examination|cutaneous|dermatolog|imaging|radiolog|"
-    r"mri|computed tomography|histolog|patholog|capillaroscop|photograph)\w*\b",
+    r"mri|computed tomography|histolog|patholog|capillaroscop|photograph|"
+    r"ophthalm|ocular|eye)\w*\b",
     re.I,
 )
 _VISUAL_PASSAGE_CUE = re.compile(
     r"\b(photo(?:graph)?s?|images?|figure\s+\d|radiograph|x[ -]?ray|"
     r"mri|magnetic resonance|ct scan|computed tomography|ultrasound|"
     r"histolog|biopsy|histopatholog|micrograph|capillaroscop|rash|papules?|"
-    r"plaques?|erythema|ulcer|erosion|lesion|sacroiliitis|bone marrow edema)\b",
+    r"plaques?|erythema|ulcer|erosion|lesion|sacroiliitis|bone marrow edema|"
+    r"ophthalm|ocular|uveitis|iritis|dry eye|conjunctivitis|"
+    r"keratoconjunctivitis|meibomian|slit[ -]?lamp|fundoscop\w*|fundus|"
+    r"optical coherence tomography|fluorescein angiograph\w*)\b",
     re.I,
 )
 
@@ -223,15 +227,21 @@ def visual_queries_for_disease(
     max_queries: int | None = None,
     coverage_counts: dict[str, int] | None = None,
 ) -> list[dict[str, str]]:
-    """Build a deterministic, small set of finding/modality retrieval queries.
+    """Build deterministic, disease-specific finding/modality retrieval queries.
 
     Findings are selected round-robin across image-bearing categories so a
-    large skin vocabulary cannot crowd out imaging or pathology. Each result
+    large skin vocabulary cannot crowd out imaging or pathology. By default,
+    every approved disease-specific finding is queried; ``max_queries`` or
+    ``VP_VISUAL_QUERY_CAP`` can impose an explicit operational cap. Each result
     retains its query terms for downstream evidence and ranking.
     """
     if max_queries is None:
-        max_queries = config.VP_VISUAL_QUERY_CAP
-    if disease_key not in PILOT_KEYS or max_queries <= 0:
+        configured_cap = config.VP_VISUAL_QUERY_CAP
+        max_queries = configured_cap or None
+    elif max_queries <= 0:
+        # An explicit zero remains a way for callers to disable visual queries.
+        return []
+    if disease_key not in PILOT_KEYS:
         return []
     diseases_data = diseases_data or diseases.load_diseases()
     findings = findings if findings is not None else diseases.load_findings_vocab()
@@ -256,14 +266,14 @@ def visual_queries_for_disease(
     # Stable category order follows the image modalities in the seed schema.
     categories = list(_CATEGORY_MODALITY)
     selected: list[dict] = []
-    while len(selected) < max_queries:
+    while max_queries is None or len(selected) < max_queries:
         added = False
         for category in categories:
             bucket = by_category.get(category, [])
             if len(bucket) > sum(x["category"] == category for x in selected):
                 selected.append(bucket[sum(x["category"] == category for x in selected)])
                 added = True
-                if len(selected) >= max_queries:
+                if max_queries is not None and len(selected) >= max_queries:
                     break
         if not added:
             break
@@ -296,8 +306,28 @@ def visual_queries_for_disease(
             subtype = next(
                 (s["label"] for s in subtypes if s.get("key") == subtype_key), ""
             )
+        # Keep BM25 queries focused: the label and disease establish the
+        # target; add at most two synonyms with concepts not already present
+        # in those terms. Long lists of near-duplicates dilute useful tokens.
+        base_tokens = set(re.findall(
+            r"[a-z0-9]+", f"{disease['name']} {subtype} {finding}".casefold()
+        ))
+        distinct_synonyms = []
+        for term in item.get("synonyms", []):
+            term = str(term).strip()
+            tokens = set(re.findall(r"[a-z0-9]+", term.casefold()))
+            if not term or not tokens or len(tokens & base_tokens) / len(tokens) > 0.5:
+                continue
+            if len(term) > 80:
+                term = term[:80].rsplit(" ", 1)[0]
+            distinct_synonyms.append(term)
+            if len(distinct_synonyms) == 2:
+                break
         query = " ".join(
-            part for part in (disease["name"], subtype, finding, modality) if part
+            part for part in (
+                disease["name"], subtype, finding,
+                " ".join(distinct_synonyms), modality,
+            ) if part
         )
         out.append({
             "query": query,

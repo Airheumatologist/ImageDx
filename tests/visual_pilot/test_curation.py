@@ -71,6 +71,17 @@ def test_missing_manifestation_is_rejected_but_rationale_negation_is_safe():
     ) is None
 
 
+def test_panel_finding_must_belong_to_selected_disease():
+    panel = _panel(disease_key="psoriasis", findings=[{
+        "finding_key": "ad_flexural_eczema", "evidence": "flexural eczema",
+    }])
+    assert curation.exclusion_reason(
+        panel, {"caption": "Psoriasis-eczema overlap."},
+        {"title": "Diagnosis of Atopic Dermatitis: Mimics, Overlaps, and Complications"},
+        allowed_findings={"psoriasis_plaque"},
+    ) == "no finding approved for this disease"
+
+
 def test_post_validate_enforces_source_gate_and_records_reason():
     result = {
         "figure_is_compound": True,

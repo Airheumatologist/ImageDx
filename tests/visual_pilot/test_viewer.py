@@ -87,6 +87,44 @@ def test_api_diseases(client):
     assert all(d["subtypes"] for d in data)
 
 
+def test_psoriasis_eye_evidence_populates_tab_without_image(client):
+    from src.visual_pilot import db
+
+    conn = db.connect(client.app.state.data_dir / "visual_pilot.sqlite")
+    with conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO findings_vocab "
+            "(finding_key, disease_keys_json, label, category, approved) "
+            "VALUES ('anterior_uveitis', '[\"psoriasis\"]', 'Anterior uveitis', 'eye', 1)"
+        )
+        conn.execute(
+            "INSERT INTO articles (pmcid, title, status) VALUES "
+            "('PMC99990001', 'Psoriasis ocular review', 'parsed')"
+        )
+        conn.execute(
+            "INSERT INTO disease_findings "
+            "(disease_key, finding_key, source, pmcid, quote) VALUES "
+            "('psoriasis', 'anterior_uveitis', 'text', 'PMC99990001', "
+            "'Psoriasis is associated with uveitis.')"
+        )
+        conn.execute(
+            "INSERT INTO disease_findings "
+            "(disease_key, finding_key, source, pmcid, quote) VALUES "
+            "('ssc', 'anterior_uveitis', 'text', 'PMC99990001', "
+            "'This article also mentions systemic sclerosis.')"
+        )
+    conn.close()
+
+    tabs = client.get("/api/diseases/psoriasis/tabs").json()
+    eye = next(tab for tab in tabs if tab["key"] == "eye")
+    assert eye["evidence_only"] is True
+    assert not any(tab["key"] == "capillaroscopy" for tab in tabs)
+    evidence = client.get("/api/diseases/psoriasis/eye-evidence").json()
+    assert evidence[0]["label"] == "Uveitis"
+    assert evidence[0]["article_url"].endswith("/PMC99990001/")
+    assert client.get("/api/diseases/ssc/eye-evidence").json() == []
+
+
 # ---------------------------------------------------------------------------
 # Panels: filters, tabs, sort, attribution
 # ---------------------------------------------------------------------------
@@ -240,17 +278,53 @@ def test_sle_vascular_findings_ignore_model_subtype_and_histology_mucosa(client)
 def test_catalog_disease_without_custom_tabs_is_browsable(client):
     assert client.get("/disease/ra").status_code == 200
     tabs = client.get("/api/diseases/ra/tabs").json()
-    assert {tab["key"] for tab in tabs} >= {
-        "skin", "musculoskeletal", "eye", "capillaroscopy", "histology", "imaging", "pediatric"
-    }
     panels = client.get("/api/diseases/ra/panels").json()
     assert panels["count"] == len(panels["panels"])
+    represented = {p["tab"] for p in panels["panels"]}
+    if any(p["pediatric"] for p in panels["panels"]):
+        represented.add("pediatric")
+    assert {tab["key"] for tab in tabs} == represented
     assert client.get("/api/diseases/not-in-catalog/tabs").status_code == 404
+
+    psoriasis_tabs = client.get("/api/diseases/psoriasis/tabs").json()
+    assert "capillaroscopy" not in {tab["key"] for tab in psoriasis_tabs}
 
     from src.visual_pilot.viewer.app import GENERIC_TABS, assign_tab
     categories = {"joint_swelling": "clinical_msk", "uveitis": "eye", "nailfold_capillaries": "capillaroscopy"}
     assert assign_tab({"modality": "clinical_photo", "findings": [{"key": "joint_swelling"}]}, GENERIC_TABS, categories) == "musculoskeletal"
     assert assign_tab({"modality": "clinical_photo", "findings": [{"key": "uveitis"}]}, GENERIC_TABS, categories) == "eye"
+    # Modality wins when an automated finding tag belongs to another image
+    # type, so histology and imaging stay in their own sections.
+    skin_categories = {"plaque_psoriasis": "skin"}
+    assert assign_tab(
+        {"modality": "histology_he", "findings": [{"key": "plaque_psoriasis"}]},
+        GENERIC_TABS,
+        skin_categories,
+    ) == "histology"
+    assert assign_tab(
+        {"modality": "ct", "findings": [{"key": "plaque_psoriasis"}]},
+        GENERIC_TABS,
+        skin_categories,
+    ) == "imaging"
+    assert assign_tab(
+        {"modality": "ophthalmic", "findings": [{"key": "plaque_psoriasis"}]},
+        GENERIC_TABS,
+        skin_categories,
+    ) == "eye"
+
+
+def test_tabs_are_based_on_unfiltered_visible_panels(client):
+    # A modality filter can empty a section temporarily, but should not remove
+    # that section from the disease header.
+    all_panels = client.get("/api/diseases/psoriasis/panels").json()["panels"]
+    tabs = client.get("/api/diseases/psoriasis/tabs").json()
+    assert {tab["key"] for tab in tabs} == {panel["tab"] for panel in all_panels} | (
+        {"pediatric"} if any(panel["pediatric"] for panel in all_panels) else set()
+    )
+    client.get("/api/diseases/psoriasis/panels", params={"modality": "ophthalmic"})
+    assert {tab["key"] for tab in client.get("/api/diseases/psoriasis/tabs").json()} == {
+        panel["tab"] for panel in all_panels
+    } | ({"pediatric"} if any(panel["pediatric"] for panel in all_panels) else set())
 
 
 def test_caption_label_skips_demographic_lead_in_and_wrong_finding_label():
@@ -287,9 +361,6 @@ def test_skin_routing_uses_internal_tags_but_hides_unsupported_label(client):
 def test_pediatric_tab_is_cross_cutting_and_uses_stored_age_group(client):
     import sqlite3
 
-    tabs = client.get("/api/diseases/sle/tabs").json()
-    pediatric = next(t for t in tabs if t["key"] == "pediatric")
-    assert pediatric["cross_cutting"] is True
     db_path = client.app.state.data_dir / "visual_pilot.sqlite"
     conn = sqlite3.connect(db_path)
     conn.execute("UPDATE panels SET age_group='adolescent' WHERE panel_id=(SELECT panel_id FROM panels WHERE disease_key='sle' LIMIT 1)")
@@ -299,6 +370,9 @@ def test_pediatric_tab_is_cross_cutting_and_uses_stored_age_group(client):
     )
     conn.commit()
     conn.close()
+    tabs = client.get("/api/diseases/sle/tabs").json()
+    pediatric = next(t for t in tabs if t["key"] == "pediatric")
+    assert pediatric["cross_cutting"] is True
     panel = client.get("/api/diseases/sle/panels").json()["panels"][0]
     assert panel["pediatric"] is True
     assert panel["age_group_label"] == "Adolescent"

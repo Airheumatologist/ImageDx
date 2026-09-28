@@ -735,3 +735,12 @@ def test_snapshot_matches_reference_on_edge_cases(conn):
         {"sha-dm"},
         {"gottron_papules"},
     )
+
+
+def test_run_all_defaults_expand_article_cohort():
+    from src.visual_pilot.cli import build_parser
+
+    args = build_parser().parse_args(["run-all", "--dry-run"])
+
+    assert args.batch_size == 100
+    assert args.max_articles == 1200

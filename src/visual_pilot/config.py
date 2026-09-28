@@ -103,12 +103,13 @@ VP_PANEL_FORMAT = os.getenv("VP_PANEL_FORMAT", "webp").strip().lower()
 VP_PANEL_QUALITY = max(1, min(100, _env_int("VP_PANEL_QUALITY", 90)))
 VP_PANEL_MAX_EDGE = max(0, _env_int("VP_PANEL_MAX_EDGE", 2048))
 VP_ORIGINAL_MAX_EDGE = max(0, _env_int("VP_ORIGINAL_MAX_EDGE", 2048))
-VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 4))
+VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 8))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Figures per P2 caption-triage batch.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 # Maximum per-disease visual finding/modality passage queries in stage 2.
-VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 12))
+# Zero means use every approved disease-specific finding query.
+VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 0))
 
 # -----------------------------------------------------------------------------
 # Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults

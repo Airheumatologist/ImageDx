@@ -20,6 +20,10 @@ from . import config, curation, db, diseases
 def audit(conn, disease: str | None = None) -> dict:
     articles = {r['pmcid']: dict(r) for r in conn.execute('SELECT * FROM articles')}
     figures = {r['figure_id']: dict(r) for r in conn.execute('SELECT * FROM figures')}
+    allowed: dict[str, set[str]] = {}
+    for finding in conn.execute('SELECT finding_key, disease_keys_json FROM findings_vocab WHERE approved=1'):
+        for key in db.from_json(finding['disease_keys_json'], []):
+            allowed.setdefault(key, set()).add(finding['finding_key'])
     rows = conn.execute(
         'SELECT * FROM panels' + (' WHERE disease_key = ?' if disease else ''),
         (disease,) if disease else (),
@@ -30,6 +34,7 @@ def audit(conn, disease: str | None = None) -> dict:
         panel = dict(row)
         reason = curation.exclusion_reason(
             panel, figures.get(panel['figure_id'], {}), articles.get(panel['pmcid'], {}),
+            allowed_findings=allowed.get(panel['disease_key'], set()),
         )
         counts[panel['disease_key']] += 1
         decisions.append({

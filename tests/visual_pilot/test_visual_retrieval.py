@@ -28,6 +28,83 @@ def test_visual_query_generation_is_bounded_and_covers_modalities():
     assert select_articles.visual_queries_for_disease("invalid", data) == []
 
 
+def test_visual_queries_default_to_every_approved_disease_finding(monkeypatch):
+    data = diseases.load_diseases()
+    findings = [
+        {
+            "finding_key": f"finding_{i}",
+            "label": f"Manifestation {i}",
+            "disease_keys": ["psoriasis"],
+            "category": "skin",
+            "approved": True,
+        }
+        for i in range(25)
+    ]
+    monkeypatch.setattr(select_articles.config, "VP_VISUAL_QUERY_CAP", 0)
+
+    queries = select_articles.visual_queries_for_disease(
+        "psoriasis", data, findings=findings
+    )
+
+    assert len(queries) == len(findings)
+    assert select_articles.visual_queries_for_disease(
+        "psoriasis", data, findings=findings, max_queries=0
+    ) == []
+
+
+def test_visual_query_includes_manifestation_and_organ_system_terms():
+    data = diseases.load_diseases()
+    findings = [{
+        "finding_key": "psoriasis_uveitis",
+        "label": "Anterior uveitis",
+        "synonyms": ["iritis", "intraocular inflammation"],
+        "disease_keys": ["psoriasis"],
+        "category": "eye",
+        "approved": True,
+    }]
+
+    queries = select_articles.visual_queries_for_disease(
+        "psoriasis", data, findings=findings
+    )
+
+    assert len(queries) == 1
+    assert queries[0]["query"] == (
+        "Psoriasis Anterior uveitis iritis intraocular inflammation ophthalmic image"
+    )
+    assert queries[0]["category"] == "eye"
+
+
+def test_ocular_passages_are_retained_and_long_synonym_lists_are_compact():
+    row = {
+        "page_content": (
+            "Slit-lamp photographs show anterior uveitis with conjunctival injection."
+        ),
+        "section_title": "Ophthalmic manifestations",
+    }
+    assert select_articles._is_visual_passage(row)
+
+    queries = select_articles.visual_queries_for_disease(
+        "psoriasis", diseases.load_diseases(), findings=[{
+            "finding_key": "uveitis",
+            "label": "Anterior uveitis",
+            "synonyms": [
+                "acute anterior uveitis",
+                "iritis",
+                "iridocyclitis",
+                "psoriasis-associated anterior uveitis",
+                "uveitis associated with psoriasis",
+                "uveitis associated with psoriatic arthritis",
+            ],
+            "disease_keys": ["psoriasis"],
+            "category": "eye",
+            "approved": True,
+        }]
+    )
+    query = queries[0]["query"]
+    assert query == "Psoriasis Anterior uveitis iritis iridocyclitis ophthalmic image"
+    assert len(query) < 100
+
+
 class _Result:
     def __init__(self, rows):
         self.rows = rows

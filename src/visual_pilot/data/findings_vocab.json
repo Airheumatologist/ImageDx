@@ -317,14 +317,14 @@
   {
     "finding_key": "fascial_edema",
     "label": "Fascial edema",
-    "disease_keys": ["dm"],
+    "disease_keys": ["dm", "psa", "sle"],
     "category": "mri",
     "synonyms": ["fascial oedema", "fasciitis MRI", "fascial thickening"]
   },
   {
     "finding_key": "calcinosis_radiograph",
     "label": "Calcinosis (radiograph)",
-    "disease_keys": ["dm"],
+    "disease_keys": ["dm", "ssc"],
     "category": "radiology_xray",
     "synonyms": ["soft tissue calcification", "radiographic calcinosis"]
   },
@@ -422,7 +422,7 @@
   {
     "finding_key": "si_bone_marrow_edema",
     "label": "SI bone marrow edema (STIR)",
-    "disease_keys": ["as"],
+    "disease_keys": ["as", "psa"],
     "category": "mri",
     "synonyms": ["sacroiliac bone marrow oedema", "BMO", "sacroiliac osteitis", "bone marrow edema on MRI"]
   },
@@ -471,9 +471,9 @@
   {
     "finding_key": "anterior_uveitis",
     "label": "Anterior uveitis",
-    "disease_keys": ["as"],
+    "disease_keys": ["as", "psoriasis", "psa"],
     "category": "eye",
-    "synonyms": ["acute anterior uveitis", "iritis", "iridocyclitis"]
+    "synonyms": ["acute anterior uveitis", "iritis", "iridocyclitis", "psoriasis-associated anterior uveitis", "psoriatic uveitis", "uveitis associated with psoriasis", "uveitis associated with psoriatic arthritis"]
   },
   {
     "finding_key": "hypopyon",
@@ -507,7 +507,7 @@
   {
     "finding_key": "ra_boutonniere_deformity",
     "label": "Boutonniere deformity",
-    "disease_keys": ["ra"],
+    "disease_keys": ["ra", "sle"],
     "category": "clinical_msk",
     "synonyms": ["buttonhole deformity", "RA boutonniere"]
   },
@@ -993,5 +993,26 @@
     "disease_keys": ["ad"],
     "category": "histology",
     "synonyms": ["epidermal spongiosis", "atopic eczema biopsy"]
+  },
+  {
+    "finding_key": "psoriasis_dry_eye",
+    "label": "Dry eye disease associated with psoriasis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "eye",
+    "synonyms": ["dry eye in psoriasis", "keratoconjunctivitis sicca associated with psoriasis", "ocular surface dryness in psoriasis"]
+  },
+  {
+    "finding_key": "psoriasis_conjunctivitis",
+    "label": "Conjunctivitis associated with psoriasis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "eye",
+    "synonyms": ["conjunctivitis in psoriasis", "psoriatic conjunctivitis", "psoriasis-associated conjunctival inflammation"]
+  },
+  {
+    "finding_key": "psoriasis_meibomian_gland_dysfunction",
+    "label": "Meibomian gland dysfunction associated with psoriasis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "eye",
+    "synonyms": ["meibomian gland dysfunction in psoriasis", "meibomian gland changes associated with psoriasis"]
   }
 ]

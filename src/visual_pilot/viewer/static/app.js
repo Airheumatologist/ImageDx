@@ -1,5 +1,5 @@
 /* Disease page: clean image cards with source details available on demand. */
-const state = { tab: null, tabs: [], panels: [], vocab: [], hasPediatric: null, tabFilters: {}, loading: false };
+const state = { tab: null, tabs: [], panels: [], vocab: [], eyeEvidence: [], hasPediatric: null, tabFilters: {}, loading: false };
 const FILTER_IDS = ["f-subtype", "f-modality", "f-finding", "f-typicality", "f-skin-tone"];
 let panelsRequest = 0;
 const $ = (id) => document.getElementById(id);
@@ -173,6 +173,7 @@ function groupName(panel, groupBy) {
 
 function render() {
   const active = state.tabs.find(t => t.key === state.tab);
+  $("filters").hidden = Boolean(active?.evidence_only);
   $("f-skin-tone").hidden = !(active && active.skin_tone_filter);
   if (state.hasPediatric !== null) {
     const pediatricTab = $("tabs").querySelector('[data-tab-key="pediatric"]');
@@ -189,6 +190,7 @@ function render() {
 
   const content = $("content");
   content.replaceChildren();
+  if (active?.evidence_only) { renderEyeEvidence(content); return; }
   if (state.loading) { content.innerHTML = "<p class='empty'>Loading images…</p>"; return; }
   if (!panels.length) { content.innerHTML = "<p class='empty'>No panels in this view.</p>"; return; }
   const groupBy = state.tab === "pediatric" ? "clinical_tab" : active && active.group_by;
@@ -210,6 +212,42 @@ function render() {
     heading.textContent = name;
     content.append(heading, grid(buckets[name]));
   }
+}
+
+function renderEyeEvidence(content) {
+  const intro = document.createElement("p");
+  intro.className = "evidence-intro";
+  intro.textContent = "Documented eye manifestations. No image meeting the library's publication criteria is available yet.";
+  content.append(intro);
+  const list = document.createElement("div");
+  list.className = "evidence-grid";
+  const groups = new Map();
+  for (const item of state.eyeEvidence) {
+    if (!groups.has(item.finding_key)) groups.set(item.finding_key, []);
+    if (groups.get(item.finding_key).length < 3) groups.get(item.finding_key).push(item);
+  }
+  for (const evidence of groups.values()) {
+    const card = document.createElement("article");
+    card.className = "evidence-card";
+    const heading = document.createElement("h2");
+    heading.textContent = evidence[0].label;
+    card.append(heading);
+    for (const item of evidence) {
+      const source = document.createElement("section");
+      source.className = "evidence-source";
+      const quote = document.createElement("p");
+      quote.textContent = item.quote;
+      const link = document.createElement("a");
+      link.href = item.article_url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = item.article_title || item.pmcid;
+      source.append(quote, link);
+      card.append(source);
+    }
+    list.append(card);
+  }
+  content.append(list);
 }
 
 function grid(panels) {
@@ -267,10 +305,12 @@ Promise.all([
   fetch("/api/diseases").then(r => r.json()),
   fetch(`/api/diseases/${DISEASE}/tabs`).then(r => r.json()),
   fetch(`/api/vocab?disease=${DISEASE}`).then(r => r.json()),
-]).then(([diseases, tabs, vocab]) => {
+  fetch(`/api/diseases/${DISEASE}/eye-evidence`).then(r => r.json()),
+]).then(([diseases, tabs, vocab, eyeEvidence]) => {
   const disease = diseases.find(x => x.key === DISEASE) || {};
   $("title").textContent = `${disease.name || DISEASE} — visual library`;
-  state.tabs = [{ key: "all", label: "All" }, ...tabs, { key: "other", label: "Other" }];
+  state.tabs = [{ key: "all", label: "All" }, ...tabs];
+  state.eyeEvidence = eyeEvidence;
   state.tab = "all";
   const nav = $("tabs");
   for (const tab of state.tabs) {
@@ -288,7 +328,8 @@ Promise.all([
       restoreFilters(tab.key);
       nav.querySelectorAll(".tab").forEach(el => { el.classList.remove("active"); el.setAttribute("aria-pressed", "false"); });
       button.classList.add("active"); button.setAttribute("aria-pressed", "true");
-      loadPanels();
+      if (tab.evidence_only) render();
+      else loadPanels();
     });
     nav.append(button);
   }

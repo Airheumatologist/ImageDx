@@ -204,8 +204,8 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
 
     started = time.monotonic()
     max_runtime = max(1, int(getattr(args, "max_runtime_seconds", 900) or 900))
-    max_articles = max(1, int(getattr(args, "max_articles", 600) or 600))
-    batch_size = max(1, int(getattr(args, "batch_size", 50) or 50))
+    max_articles = max(1, int(getattr(args, "max_articles", 1200) or 1200))
+    batch_size = max(1, int(getattr(args, "batch_size", 100) or 100))
     zero_yield_limit = max(1, int(getattr(args, "zero_yield_batches", 2) or 2))
     if args.dry_run:
         print(
@@ -502,12 +502,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="legacy stage-2 report threshold; parse uses yield batches",
     )
     shared.add_argument(
-        "--batch-size", type=int, default=50,
-        help="articles per disease in a visual-yield expansion batch (default: 50)",
+        "--batch-size", type=int, default=100,
+        help="articles per disease in a visual-yield expansion batch (default: 100)",
     )
     shared.add_argument(
-        "--max-articles", type=int, default=600,
-        help="safety limit on articles processed per disease per run (default: 600)",
+        "--max-articles", type=int, default=1200,
+        help="safety limit on articles processed per disease per run (default: 1200)",
     )
     shared.add_argument(
         "--max-runtime-seconds", type=int, default=900,

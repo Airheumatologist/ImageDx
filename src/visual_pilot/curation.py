@@ -14,7 +14,7 @@ from functools import lru_cache
 
 from . import diseases
 
-POLICY_VERSION = "clinical-panels.v3"
+POLICY_VERSION = "clinical-panels.v4"
 
 # Figure-wide language. Captions and titles are stronger evidence than the
 # article's general disease context, which must never make an unrelated visual
@@ -178,6 +178,7 @@ def exclusion_reason(
     article: dict,
     *,
     image_size: tuple[int, int] | None = None,
+    allowed_findings: set[str] | None = None,
 ) -> str | None:
     """Return the first deterministic reason a panel should not be shown.
 
@@ -264,6 +265,16 @@ def exclusion_reason(
         return "normal or control image"
     if not evidence:
         return "no specific clinical manifestation identified"
+    if allowed_findings is not None:
+        raw = _get(panel, "findings")
+        if raw is None:
+            raw = _json_value(_get(panel, "findings_json"), [])
+        keys = {
+            str(item.get("finding_key") if isinstance(item, dict) else item)
+            for item in (raw or [])
+        }
+        if not keys & allowed_findings:
+            return "no finding approved for this disease"
 
     # Veterinary terms in panel text can be absent from the parent caption.
     if _VETERINARY.search(panel_text + " " + evidence_text):

@@ -17,7 +17,7 @@ def _seed(conn):
 def test_audit_apply_is_idempotent_and_preserves_source(conn, monkeypatch):
     _seed(conn)
     monkeypatch.setattr(curation_audit.curation, 'exclusion_reason',
-                        lambda p, f, a: 'text-only chart' if p['panel_id'] == 'exclude' else None)
+                        lambda p, f, a, **kw: 'text-only chart' if p['panel_id'] == 'exclude' else None)
     report = curation_audit.audit(conn)
     assert report['total'] == 2 and report['excluded'] == 1
     assert conn.execute('SELECT COUNT(*) FROM panel_curation').fetchone()[0] == 0
@@ -35,10 +35,10 @@ def test_audit_apply_is_idempotent_and_preserves_source(conn, monkeypatch):
 
 def test_policy_reversal_restores_publication(conn, monkeypatch):
     _seed(conn)
-    monkeypatch.setattr(curation_audit.curation, 'exclusion_reason', lambda p, f, a: 'collage')
+    monkeypatch.setattr(curation_audit.curation, 'exclusion_reason', lambda p, f, a, **kw: 'collage')
     curation_audit.apply_audit(conn, curation_audit.audit(conn))
     assert conn.execute('SELECT COUNT(*) FROM published_panels').fetchone()[0] == 0
-    monkeypatch.setattr(curation_audit.curation, 'exclusion_reason', lambda p, f, a: None)
+    monkeypatch.setattr(curation_audit.curation, 'exclusion_reason', lambda p, f, a, **kw: None)
     curation_audit.apply_audit(conn, curation_audit.audit(conn))
     assert conn.execute('SELECT COUNT(*) FROM published_panels').fetchone()[0] == 2
 
@@ -69,7 +69,7 @@ def test_excluded_images_do_not_satisfy_coverage_or_generate_findings(conn, monk
         "WHERE panel_id='exclude'"
     )
     monkeypatch.setattr(curation_audit.curation, 'exclusion_reason',
-                        lambda p, f, a: 'collage' if p['panel_id'] == 'exclude' else None)
+                        lambda p, f, a, **kw: 'collage' if p['panel_id'] == 'exclude' else None)
     curation_audit.apply_audit(conn, curation_audit.audit(conn))
     assert select_articles._stored_panel_counts(conn, 'sle') == {}
     assert cli._snapshot(conn, 'sle') == (set(), set())

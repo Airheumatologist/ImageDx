@@ -47,13 +47,29 @@ publication criteria applied. See
 commands and per-disease counts; `viewer_qa.json` in that directory verifies
 all ten pages and all 574 saved media routes.
 
-Article selection adds up to `VP_VISUAL_QUERY_CAP` finding/modality passage
-queries per disease (default 12), prioritizing findings with fewer stored
-panels. Matching passages and section labels are retained in
+The subsequent full regeneration used dynamic approved finding queries,
+800 retrieval candidates per disease, 100-article processing batches, and a
+360-article per-disease run limit. It parsed 1,767 fresh articles and extracted
+22,054 text finding records. A merge preserved all 184 previously approved
+panels, including 20 whose new judgments lost the prior supported finding or
+did not produce a panel. The final curated library has 1,768 parsed articles,
+307 saved panels, 204 published panels across all ten diseases, and 27,987
+text finding records. The image audit and page/media QA are recorded in
+`data/visual_pilot/reports/regeneration_summary.md`. Psoriasis has 29
+published panels; its tabs display image sections with content plus an Eye
+article-evidence section for documented uveitis. No psoriasis ocular photo
+passed the current review-article, license, and single-panel criteria.
+
+Article selection adds one finding/modality passage query per approved,
+disease-specific finding by default. `VP_VISUAL_QUERY_CAP` can cap that set
+(default 0 means all); findings with fewer stored panels are queried first.
+Title, text, and dense retrieval now request larger cohorts per query, and
+`run-all` processes 100 articles per disease per batch up to a safety limit of
+1,200. Matching passages and section labels are retained in
 `articles.retrieval_evidence_json`. Article ranking uses that evidence and a
 bounded JATS caption check; figure ranking orders the vision queue by image
-relevance and coverage gaps. `run-all` processes 50 articles per disease at a
-time, then triages, judges, and stores their figures. It continues while a
+relevance and coverage gaps. Each `run-all` batch is triaged, judged, and stored
+before the next batch is selected. It continues while a
 batch adds distinct stored images or covers new approved findings, stopping
 after two empty-yield batches. `--batch-size`, `--max-articles`,
 `--max-runtime-seconds`, and `--zero-yield-batches` set safety limits. A

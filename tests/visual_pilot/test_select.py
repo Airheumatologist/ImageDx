@@ -243,10 +243,10 @@ def test_select_run_end_to_end(conn, monkeypatch, capsys):
                 ],
             ],
         ]
-    # title BM25 top_k=200, content BM25 top_k=300; dense skipped (no embed).
+    # Expanded title/content retrieval; dense skipped (no embed).
     buckets = {(c["rank_by"][0], c["top_k"]) for c in ns.calls if c.get("rank_by")}
-    assert ("title", 200) in buckets
-    assert ("page_content", 300) in buckets
+    assert ("title", select_articles.TITLE_TOP_K) in buckets
+    assert ("page_content", select_articles.CONTENT_TOP_K) in buckets
     assert not any(b[0] == "vector" for b in buckets)
 
     rows = {

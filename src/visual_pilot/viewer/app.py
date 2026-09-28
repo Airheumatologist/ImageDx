@@ -277,6 +277,7 @@ GENERIC_TABS: list[dict] = [
     {
         "key": "eye",
         "label": "Eye",
+        "modality_priority": {"ophthalmic"},
         "priority": 0,
         "match": {
             "any_of": [
@@ -310,6 +311,7 @@ GENERIC_TABS: list[dict] = [
     {
         "key": "histology",
         "label": "Histology",
+        "modality_priority": {"histology_he", "histology_ihc", "immunofluorescence"},
         "match": {
             "any_of": [
                 {"modalities": {"histology_he", "histology_ihc", "immunofluorescence"}},
@@ -320,6 +322,7 @@ GENERIC_TABS: list[dict] = [
     {
         "key": "imaging",
         "label": "Imaging",
+        "modality_priority": {"radiograph", "ct", "mri", "ultrasound", "echo", "pet"},
         "match": {
             "any_of": [
                 {"modalities": {"radiograph", "ct", "mri", "ultrasound", "echo", "pet"}},
@@ -338,6 +341,44 @@ def _known_disease(conn, key: str) -> bool:
     return conn.execute(
         "SELECT 1 FROM diseases WHERE disease_key = ?", (key,)
     ).fetchone() is not None
+
+
+def _eye_evidence(conn, disease: str) -> list[dict]:
+    """Approved, cited eye findings when the image library has no eye panel."""
+    rows = conn.execute(
+        "SELECT fv.finding_key, fv.label, fv.disease_keys_json, df.pmcid, df.quote, a.title "
+        "FROM disease_findings df "
+        "JOIN findings_vocab fv ON fv.finding_key=df.finding_key "
+        "JOIN articles a ON a.pmcid=df.pmcid "
+        "WHERE df.disease_key=? AND df.source='text' AND fv.approved=1 "
+        "AND fv.category='eye' AND a.status='parsed' "
+        "AND COALESCE(TRIM(df.quote), '') != '' "
+        "ORDER BY CASE WHEN lower(df.quote) LIKE '%psoriasis%' THEN 0 ELSE 1 END, "
+        "a.year DESC, df.id", (disease,),
+    )
+    seen: set[tuple[str, str]] = set()
+    result = []
+    for row in rows:
+        if disease not in db.from_json(row["disease_keys_json"], []):
+            continue
+        pair = (row["finding_key"], row["pmcid"])
+        if pair in seen:
+            continue
+        seen.add(pair)
+        label = row["label"]
+        # Psoriasis review passages usually state "uveitis" without a
+        # subtype, so the evidence card must not imply anterior disease.
+        if disease in {"psoriasis", "psa"} and row["finding_key"] == "anterior_uveitis":
+            label = "Uveitis"
+        result.append({
+            "finding_key": row["finding_key"], "label": label,
+            "pmcid": row["pmcid"], "article_title": row["title"],
+            "quote": row["quote"],
+            "article_url": f"https://pmc.ncbi.nlm.nih.gov/articles/{row['pmcid']}/",
+        })
+        if len(result) >= 12:
+            break
+    return result
 
 # Pediatric is a cross-cutting view: the frontend filters explicit age_group
 # values while each returned panel also keeps its regular clinical_tab/group.
@@ -386,8 +427,12 @@ def _norm(value) -> str:
     return str(value or "").strip().lower()
 
 
-def _approved_keys(conn) -> set[str]:
-    return {r["finding_key"] for r in conn.execute("SELECT finding_key FROM findings_vocab WHERE approved=1")}
+def _approved_keys(conn, disease: str | None = None) -> set[str]:
+    rows = conn.execute("SELECT finding_key, disease_keys_json FROM findings_vocab WHERE approved=1")
+    return {
+        r["finding_key"] for r in rows
+        if disease is None or disease in db.from_json(r["disease_keys_json"], [])
+    }
 
 
 def _categories(conn) -> dict[str, str]:
@@ -671,7 +716,8 @@ def _is_pediatric(age_group) -> bool:
     return _norm(age_group) in {"child", "children", "pediatric", "paediatric", "infant", "adolescent"}
 
 
-def _exclude_curated(conn, rows: list[sqlite3.Row], panels: list[dict]) -> list[dict]:
+def _exclude_curated(conn, rows: list[sqlite3.Row], panels: list[dict],
+                     allowed_findings: set[str] | None = None) -> list[dict]:
     """Apply current-hash audit exclusions and the shared deterministic gate."""
     stored = {}
     try:
@@ -704,7 +750,7 @@ def _exclude_curated(conn, rows: list[sqlite3.Row], panels: list[dict]) -> list[
                 "effective_license": row["figure_license"] if "figure_license" in row.keys() else None,
             }
             article = {"title": row["article_title"] if "article_title" in row.keys() else None}
-            if exclusion_reason(p, figure, article):
+            if exclusion_reason(p, figure, article, allowed_findings=allowed_findings):
                 continue
         visible.append(panel)
     return visible
@@ -794,6 +840,14 @@ def _match(tab_match: dict, panel: dict, categories: dict[str, str]) -> bool:
 
 
 def assign_tab(panel: dict, tabs: list[dict], categories: dict[str, str]) -> str:
+    modality = _norm(panel.get("modality"))
+    # In the generic layout, the actual image modality is authoritative for
+    # diagnostic media. A cross-modality finding tag (for example, a skin
+    # finding attached to a histology image) must not move the image into a
+    # clinical-photo section.
+    for tab in tabs:
+        if modality and modality in {_norm(m) for m in tab.get("modality_priority", ())}:
+            return tab["key"]
     ordered = sorted(tabs, key=lambda t: 0 if t.get("priority") == 0 else 1)
     for tab in ordered:
         if tab.get("cross_cutting") or "match" not in tab:
@@ -933,7 +987,54 @@ def create_app(data_dir: str | None = None) -> FastAPI:
         try:
             if not _known_disease(c, key):
                 raise HTTPException(404, "unknown disease")
-            return [{"key": t["key"], "label": t["label"], "group_by": t.get("group_by"), "group_order": t.get("group_order"), "skin_tone_filter": bool(t.get("skin_tone_filter")), "cross_cutting": bool(t.get("cross_cutting"))} for t in _tabs_for(key)]
+            tabs = _tabs_for(key)
+            approved = _approved_keys(c, key)
+            categories = _categories(c)
+            labels = _labels(c)
+            terms = _finding_terms(c)
+            rows = _query_panels(c, key)
+            panels = [_panel_json(r, approved, labels, categories, terms) for r in rows]
+            panels = _exclude_curated(c, rows, panels, approved)
+            for panel in panels:
+                panel["tab"] = assign_tab(panel, tabs, categories)
+
+            available = {panel["tab"] for panel in panels}
+            if any(panel["pediatric"] for panel in panels):
+                available.add("pediatric")
+            # The catch-all view is useful only when routing actually leaves
+            # visible panels uncategorized.
+            if "other" in available:
+                tabs = [*tabs, {"key": "other", "label": "Other"}]
+            evidence_only_eye = (
+                "eye" not in available
+                and any(t["key"] == "eye" for t in tabs)
+                and bool(_eye_evidence(c, key))
+            )
+            if evidence_only_eye:
+                available.add("eye")
+            return [
+                {
+                    "key": t["key"],
+                    "label": t["label"],
+                    "group_by": t.get("group_by"),
+                    "group_order": t.get("group_order"),
+                    "skin_tone_filter": bool(t.get("skin_tone_filter")),
+                    "cross_cutting": bool(t.get("cross_cutting")),
+                    "evidence_only": evidence_only_eye and t["key"] == "eye",
+                }
+                for t in tabs
+                if t["key"] in available
+            ]
+        finally:
+            c.close()
+
+    @app.get("/api/diseases/{key}/eye-evidence")
+    def api_eye_evidence(key: str) -> list[dict]:
+        c = conn()
+        try:
+            if not _known_disease(c, key):
+                raise HTTPException(404, "unknown disease")
+            return _eye_evidence(c, key)
         finally:
             c.close()
 
@@ -950,7 +1051,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
         try:
             if not _known_disease(c, key):
                 raise HTTPException(404, "unknown disease")
-            approved = _approved_keys(c)
+            approved = _approved_keys(c, key)
             categories = _categories(c)
             labels = _labels(c)
             terms = _finding_terms(c)
@@ -967,7 +1068,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                 typicality=typicality,
             )
             panels = [_panel_json(r, approved, labels, categories, terms) for r in rows]
-            panels = _exclude_curated(c, rows, panels)
+            panels = _exclude_curated(c, rows, panels, approved)
             if finding:
                 panels = [p for p in panels if finding in _finding_keys(p)]
             for p in panels:
@@ -997,7 +1098,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             # Approved vocab keys only — proposed findings are never shown.
             rows = list(
                 c.execute(
-                    "SELECT df.*, fv.label AS vocab_label FROM disease_findings df "
+                    "SELECT df.*, fv.label AS vocab_label, fv.disease_keys_json FROM disease_findings df "
                     "JOIN findings_vocab fv "
                     "  ON fv.finding_key = df.finding_key AND fv.approved = 1 "
                     "WHERE df.disease_key = ? "
@@ -1009,6 +1110,8 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             seen: set[tuple] = set()
             out = []
             for r in rows:
+                if key not in db.from_json(r["disease_keys_json"], []):
+                    continue
                 pair = (r["finding_key"], r["pmcid"])
                 if pair in seen:
                     continue
@@ -1036,13 +1139,13 @@ def create_app(data_dir: str | None = None) -> FastAPI:
     def api_compare() -> list[dict]:
         c = conn()
         try:
-            approved = _approved_keys(c)
             labels = _labels(c)
             out = []
             for pair in COMPARISONS:
                 entry = {"title": pair["title"], "left": {"label": pair["left"]["label"]}, "right": {"label": pair["right"]["label"]}}
                 for side in ("left", "right"):
                     spec = pair[side]
+                    approved = _approved_keys(c, spec["disease"])
                     rows = _query_panels(
                         c,
                         spec["disease"],
@@ -1052,7 +1155,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                     categories = _categories(c)
                     terms = _finding_terms(c)
                     panels = [_panel_json(r, approved, labels, categories, terms) for r in rows]
-                    panels = _exclude_curated(c, rows, panels)
+                    panels = _exclude_curated(c, rows, panels, approved)
                     panels = _collapse_duplicates(panels)
                     if spec.get("finding"):
                         panels = [p for p in panels if spec["finding"] in _finding_keys(p)]
