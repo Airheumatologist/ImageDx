@@ -135,6 +135,45 @@ CREATE TABLE IF NOT EXISTS disease_findings (
     created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Per-disease/finding retrieval lanes. A candidate is an article independently
+-- discovered for a finding; status and last_outcome make lane exhaustion and
+-- resumptions inspectable without changing the article's global status.
+CREATE TABLE IF NOT EXISTS manifestation_candidates (
+    disease_key TEXT NOT NULL,
+    finding_key TEXT NOT NULL,
+    pmcid TEXT NOT NULL REFERENCES articles(pmcid),
+    query TEXT,
+    best_rank INTEGER,
+    retrieval_score REAL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    last_outcome TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY(disease_key, finding_key, pmcid)
+);
+
+CREATE TABLE IF NOT EXISTS manifestation_lanes (
+    disease_key TEXT NOT NULL,
+    finding_key TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    last_outcome TEXT,
+    selected_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY(disease_key, finding_key)
+);
+
+CREATE TABLE IF NOT EXISTS manifestation_representatives (
+    disease_key TEXT NOT NULL,
+    finding_key TEXT NOT NULL,
+    panel_id TEXT NOT NULL,
+    score REAL NOT NULL,
+    scoring_json TEXT NOT NULL DEFAULT '{}',
+    selection_source TEXT NOT NULL DEFAULT 'auto',
+    locked INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY(disease_key, finding_key)
+);
+
 -- Reversible publication exclusions. Original judgments, rows and files are
 -- retained; a review applies only to the exact image that was audited.
 CREATE TABLE IF NOT EXISTS panel_curation (
@@ -174,6 +213,10 @@ CREATE INDEX IF NOT EXISTS idx_figures_status ON figures(status);
 CREATE INDEX IF NOT EXISTS idx_panels_figure ON panels(figure_id);
 CREATE INDEX IF NOT EXISTS idx_panels_disease ON panels(disease_key);
 CREATE INDEX IF NOT EXISTS idx_panels_sha256 ON panels(sha256);
+CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pending
+    ON manifestation_candidates(disease_key, finding_key, status, best_rank);
+CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pmcid
+    ON manifestation_candidates(pmcid, status);
 """
 
 _PK_COLUMNS = {
@@ -208,6 +251,7 @@ def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
         conn = connect()
     conn.executescript(SCHEMA)
     _migrate_articles(conn)
+    _migrate_manifestation_representatives(conn)
     conn.commit()
     return conn
 
@@ -245,6 +289,48 @@ def _migrate_articles(conn: sqlite3.Connection) -> None:
     for column, statement in wanted.items():
         if column not in existing:
             conn.execute(statement)
+
+
+def _migrate_manifestation_representatives(conn: sqlite3.Connection) -> None:
+    """Remove the panel FK from an early manifestation table, preserving rows.
+
+    SQLite's ``INSERT OR REPLACE`` deletes the old panel row before inserting
+    its replacement. A representative's FK would therefore block panel
+    refreshes, so rebuild only databases that actually have that early FK.
+    This table is a new feature; all values are copied transactionally.
+    """
+    foreign_keys = conn.execute(
+        "PRAGMA foreign_key_list(manifestation_representatives)"
+    ).fetchall()
+    if not any(row["table"] == "panels" for row in foreign_keys):
+        return
+
+    savepoint = "migrate_manifestation_representatives"
+    conn.execute(f"SAVEPOINT {savepoint}")
+    try:
+        conn.execute(
+            "CREATE TABLE manifestation_representatives_migrating ("
+            "disease_key TEXT NOT NULL, finding_key TEXT NOT NULL, panel_id TEXT NOT NULL, "
+            "score REAL NOT NULL, scoring_json TEXT NOT NULL DEFAULT '{}', "
+            "selection_source TEXT NOT NULL DEFAULT 'auto', locked INTEGER NOT NULL DEFAULT 0, "
+            "updated_at TEXT DEFAULT (datetime('now')), PRIMARY KEY(disease_key,finding_key))"
+        )
+        conn.execute(
+            "INSERT INTO manifestation_representatives_migrating "
+            "(disease_key,finding_key,panel_id,score,scoring_json,selection_source,locked,updated_at) "
+            "SELECT disease_key,finding_key,panel_id,score,scoring_json,selection_source,locked,updated_at "
+            "FROM manifestation_representatives"
+        )
+        conn.execute("DROP TABLE manifestation_representatives")
+        conn.execute(
+            "ALTER TABLE manifestation_representatives_migrating "
+            "RENAME TO manifestation_representatives"
+        )
+        conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+    except Exception:
+        conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+        conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+        raise
 
 
 # -----------------------------------------------------------------------------

@@ -60,12 +60,31 @@ published panels; its tabs display image sections with content plus an Eye
 article-evidence section for documented uveitis. No psoriasis ocular photo
 passed the current review-article, license, and single-panel criteria.
 
-Article selection adds one finding/modality passage query per approved,
-disease-specific finding by default. `VP_VISUAL_QUERY_CAP` can cap that set
-(default 0 means all); findings with fewer stored panels are queried first.
-Title, text, and dense retrieval now request larger cohorts per query, and
-`run-all` processes 100 articles per disease per batch up to a safety limit of
-1,200. Matching passages and section labels are retained in
+Article selection queries every approved, disease-specific finding by default.
+`VP_VISUAL_QUERY_CAP=0` means all findings; a positive cap bounds the set and
+prioritizes findings with fewer stored panels. Per synonym, title BM25 retrieves
+up to 500 results, page-content BM25 up to 750, and dense ANN up to 750. Each
+visual finding query retrieves up to 300 results. Turbopuffer returns compact
+job-specific projections with a server-side maximum of one row per PMCID, and
+retrieval jobs are batched with `Namespace.multi_query` when available (ordered
+sequential fallback otherwise). Only shortlisted unique PMCIDs are hydrated
+with citation metadata and abstracts in bounded batches; page-content evidence
+queries request passage and section fields without abstracts.
+
+With finite `--limit`, publication type filtering happens before the cap. The
+shortlist first reserves distinct candidates round-robin across finding lanes,
+up to `VP_MANIFESTATION_QUOTA` (default 20 unique articles per finding), then
+fills remaining slots by global RRF. Selected finding ranks are persisted in
+`manifestation_candidates`; the downstream queue tracks per-finding lane
+status in `manifestation_lanes`. Logical Turbopuffer bytes queried and returned,
+request count, and query count are printed and recorded under
+`_turbopuffer_billing` in `reports/stage2_counts.json`.
+
+Report and viewer rebuild one deterministic primary representative for each
+covered approved disease/finding pair while retaining all eligible alternatives.
+Existing manual or locked representative selections are preserved.
+
+Matching passages and section labels are retained in
 `articles.retrieval_evidence_json`. Article ranking uses that evidence and a
 bounded JATS caption check; figure ranking orders the vision queue by image
 relevance and coverage gaps. Each `run-all` batch is triaged, judged, and stored
@@ -79,7 +98,8 @@ Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
 `VP_JUDGE_MODEL` (all default to `stealth/space-bunny-alpha` on OpenRouter),
 `VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_LLM_PROVIDER` (default `openrouter`),
 `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`,
-`VP_NCBI_API_KEY`, `VP_VISUAL_QUERY_CAP`, `VP_DATA_DIR`. Provider keys come from `.env`
+`VP_NCBI_API_KEY`, `VP_VISUAL_QUERY_CAP` (default 0, all approved findings),
+`VP_MANIFESTATION_QUOTA` (default 20), `VP_DATA_DIR`. Provider keys come from `.env`
 (`OPENROUTER_API_KEY`, `DEEPINFRA_API_KEY`, `TURBOPUFFER_API_KEY`) via
 `config.py`; the primary LLM provider is OpenRouter (`VP_LLM_PROVIDER=openrouter`),
 while DeepInfra is used only for query embeddings.

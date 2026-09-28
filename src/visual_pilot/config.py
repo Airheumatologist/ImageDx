@@ -110,6 +110,8 @@ VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 # Maximum per-disease visual finding/modality passage queries in stage 2.
 # Zero means use every approved disease-specific finding query.
 VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 0))
+# Per-finding candidate reservation quota when --limit caps stage-2 articles.
+VP_MANIFESTATION_QUOTA = max(0, _env_int("VP_MANIFESTATION_QUOTA", 20))
 
 # -----------------------------------------------------------------------------
 # Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults

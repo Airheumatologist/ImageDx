@@ -408,6 +408,9 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
             rc = _run_batch_stages(disease_key, state["batches"], pmcids)
             if rc != 0:
                 return rc
+            parse_stage.manifestation_queue.record_published_outcomes(
+                read_conn, disease_key
+            )
             after_images, after_findings = _snapshot(read_conn, disease_key)
             new_images = after_images - before_images
             new_findings = after_findings - before_findings

@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import config, db
+from .. import config, db, representatives
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
@@ -808,6 +808,19 @@ def _collapse_duplicates(panels: list[dict]) -> list[dict]:
     return list(grouped.values())
 
 
+def _mark_representatives(panels: list[dict], mapping: dict[str, dict]) -> list[dict]:
+    """Annotate cards with representative findings while keeping all cards."""
+    for panel in panels:
+        member_ids = set(panel.get("panel_ids") or [panel.get("panel_id")])
+        primary = sorted(
+            finding for finding, selection in mapping.items()
+            if selection.get("panel_id") in member_ids
+        )
+        panel["representative_findings"] = primary
+        panel["is_representative"] = bool(primary)
+    return panels
+
+
 def _match_alt(alt: dict, panel: dict, cats: set[str], body: str) -> bool:
     """One alternative: every declared key must hit (AND within it)."""
     findings = _routing_finding_keys(panel)
@@ -910,10 +923,13 @@ def create_app(data_dir: str | None = None) -> FastAPI:
     app.state.data_dir = data_root
 
     # Apply idempotent schema upgrades once at startup (including the optional
-    # persisted panel-curation audit table), not on every API request.
+    # persisted panel-curation and representative tables), not on every API request.
     initialized = db.connect(data_root / config.DB_FILENAME)
-    db.init_db(initialized)
-    initialized.close()
+    try:
+        db.init_db(initialized)
+        representatives.rebuild(initialized)
+    finally:
+        initialized.close()
 
     def conn() -> sqlite3.Connection:
         return db.connect(data_root / config.DB_FILENAME)
@@ -1057,7 +1073,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             terms = _finding_terms(c)
             if finding and finding not in approved:
                 # unapproved/proposed findings are never shown
-                return {"panels": [], "count": 0}
+                return {"panels": [], "count": 0, "representatives": {}}
             rows = _query_panels(
                 c,
                 key,
@@ -1078,6 +1094,8 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                 p["source_variant"]["clinical_tab"] = p["clinical_tab"]
                 p["source_variant"]["clinical_group"] = p["clinical_group"]
             panels = _collapse_duplicates(panels)
+            representative_map = representatives.mapping_for_disease(c, key)
+            _mark_representatives(panels, representative_map)
             for p in panels:
                 p["clinical_tab"] = p["tab"]
                 p["clinical_group"] = _clinical_group(p) if key == "sle" and p["tab"] == "skin" else None
@@ -1085,7 +1103,10 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                     _is_pediatric(age) for age in p.get("age_group_variants", [])
                 )
                 p.pop("_routing_findings", None)
-            return {"panels": _sort_panels(panels), "count": len(panels)}
+            return {
+                "panels": _sort_panels(panels), "count": len(panels),
+                "representatives": representative_map,
+            }
         finally:
             c.close()
 

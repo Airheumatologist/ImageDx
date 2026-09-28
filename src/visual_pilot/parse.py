@@ -31,6 +31,7 @@ import threading
 import time
 
 from . import article_rank, config, db, diseases, jats, pmc
+from . import manifestation_queue
 
 logger = logging.getLogger(__name__)
 
@@ -143,13 +144,7 @@ def coverage_gaps(conn, disease_key: str) -> set[str]:
         )
     }
     found: set[str] = set()
-    for row in conn.execute(
-        "SELECT findings_json FROM panels WHERE disease_key=?", (disease_key,)
-    ):
-        for value in db.from_json(row["findings_json"], []) or []:
-            key = value.get("finding_key") if isinstance(value, dict) else value
-            if key:
-                found.add(str(key))
+    found.update(manifestation_queue.published_coverage(conn, disease_key))
     return wanted - found
 
 
@@ -296,15 +291,20 @@ def select_batch(
     *,
     pmcids: set[str] | None = None,
     peek_captions: bool = True,
+    persist: bool = True,
 ) -> list[dict]:
-    """Next resumable article batch for one disease."""
+    """Next resumable article batch with finding-lane reservations."""
+    gaps = manifestation_queue.sync_candidates(conn, disease_key) if persist else coverage_gaps(conn, disease_key)
     ranked = ranked_pending_articles(
         conn,
         disease_key,
+        gaps=gaps,
         pmcids=pmcids,
         peek_limit=(min(max(0, batch_size * 2), 100) if peek_captions else 0),
     )
-    selected = ranked[: max(0, batch_size)]
+    selected = manifestation_queue.reserve_batch(
+        conn, disease_key, ranked, batch_size, gaps, persist=persist
+    )
     # C6: peeked-but-unselected bundles stay in the bounded _JATS_CACHE so a
     # later batch in this process reuses them (previously they were dropped).
     return selected
@@ -465,6 +465,7 @@ def _finish_article(conn, article_row, outcome, stats) -> str:
     finally:
         _jats_drop(pmcid)
     conn.commit()
+    manifestation_queue.record_article_outcome(conn, pmcid, status)
     return status
 
 
@@ -528,6 +529,7 @@ def run(args) -> int:
                 min(max_articles, len(allowed)),
                 pmcids=allowed,
                 peek_captions=not args.dry_run,
+                persist=not args.dry_run,
             )
             for row in batch:
                 unique.setdefault(row["pmcid"], row)
@@ -540,7 +542,8 @@ def run(args) -> int:
             if room <= 0:
                 break
             for row in select_batch(
-                conn, key, min(batch_size, room), peek_captions=not args.dry_run
+                conn, key, min(batch_size, room), peek_captions=not args.dry_run,
+                persist=not args.dry_run,
             ):
                 unique.setdefault(row["pmcid"], row)
         articles = list(unique.values())

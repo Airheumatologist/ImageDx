@@ -17,6 +17,7 @@ import json
 from collections import Counter
 
 from . import config, db, diseases
+from . import representatives
 
 _COUNTS_FILE = "stage2_counts.json"
 
@@ -224,6 +225,18 @@ def access_failures(conn) -> dict:
     return {"vision_error_classes": dict(errors.most_common()), "tiff_conversions": tiff}
 
 
+def representative_summary(conn) -> dict:
+    rows = _rows(conn, "SELECT disease_key, selection_source, locked FROM manifestation_representatives")
+    by_disease: Counter[str] = Counter(r["disease_key"] for r in rows)
+    by_source: Counter[str] = Counter(r["selection_source"] for r in rows)
+    return {
+        "covered_pairs": len(rows),
+        "by_disease": dict(sorted(by_disease.items())),
+        "by_selection_source": dict(sorted(by_source.items())),
+        "locked": sum(bool(r["locked"]) for r in rows),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Spot-check sheets
 # ---------------------------------------------------------------------------
@@ -294,6 +307,7 @@ def _page(title: str, body: str) -> str:
 # ---------------------------------------------------------------------------
 def run(args) -> int:
     conn = db.init_db()
+    representative_rebuild = representatives.rebuild(conn)
     reports = config.reports_dir()
     reports.mkdir(parents=True, exist_ok=True)
 
@@ -308,6 +322,7 @@ def run(args) -> int:
     zero = zero_image_findings(conn)
     costs = cost_summary(conn)
     failures = access_failures(conn)
+    representative_stats = representative_summary(conn)
 
     report = {
         "stage2_counts": stage2,
@@ -316,6 +331,7 @@ def run(args) -> int:
         "zero_image_findings": zero,
         "costs": costs,
         "access_failures": failures,
+        "representatives": {**representative_stats, "rebuild": representative_rebuild},
     }
     (reports / "pilot_report.json").write_text(json.dumps(report, indent=1) + "\n")
 
@@ -344,6 +360,7 @@ def run(args) -> int:
     md += ["", "## Zero-image vocab findings", f"```json\n{json.dumps(zero, indent=1)}\n```"]
     md += ["", "## Costs", f"```json\n{json.dumps(costs, indent=1)}\n```"]
     md += ["", "## Access failures", f"```json\n{json.dumps(failures, indent=1)}\n```"]
+    md += ["", "## Primary representatives", f"```json\n{json.dumps(report['representatives'], indent=1)}\n```"]
     md += ["", "## Figure rejection reasons", f"```json\n{json.dumps(funnels['all']['figure_reject_reasons'], indent=1)}\n```"]
     (reports / "pilot_report.md").write_text("\n".join(md) + "\n")
 

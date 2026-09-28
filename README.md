@@ -93,21 +93,39 @@ Retrieves candidate review articles per disease from the **prebuilt
 turbopuffer PMC chunk index** (`TURBOPUFFER_NAMESPACE_PMC`, default
 `medical_database_pmc`):
 
-- per disease synonym: title BM25 (top 200), page_content BM25 (top 300),
-  dense ANN via DeepInfra embeddings (top 300);
-- plus up to `VP_VISUAL_QUERY_CAP` (default 12) finding/modality content
-  queries ("<disease> <subtype> <finding> <modality>"), round-robined across
-  image-bearing categories and prioritized toward findings with fewer
-  stored panels;
+- per disease synonym: title BM25 (top 500), page_content BM25 (top 750),
+  dense ANN via DeepInfra embeddings (top 750);
+- plus one finding/modality content query (top 300) per approved,
+  disease-specific finding by default. `VP_VISUAL_QUERY_CAP=0` means all
+  findings; a positive value caps and round-robins them across image-bearing
+  categories, prioritizing findings with fewer stored panels;
 - all ranked lists fused per-PMCID with **RRF (k=60)**, visual hits weighted
   12x; qualifying passages kept as `retrieval_evidence_json`;
+- discovery asks Turbopuffer for compact per-job projections and at most one
+  row per PMC article. Search jobs use `Namespace.multi_query` when available,
+  with an ordered sequential fallback. Full citation metadata and abstracts
+  are hydrated in batches only for shortlisted unique PMCIDs; passage queries
+  include page text and section labels, never abstracts;
+- with a finite `--limit`, Python filters publication types first, reserves
+  candidates round-robin across finding lanes (up to
+  `VP_MANIFESTATION_QUOTA`, default 20 unique articles per finding), then fills
+  remaining slots by global RRF. Selected finding/PMCID ranks persist in
+  `manifestation_candidates` for the downstream manifestation queue;
 - filters: `has_full_text` AND review-type (`publication_type` Contains
   "Review" OR `article_type` = "review-article"); Python-side exclusions
   drop case reports, trials, letters, meta-analyses, etc.;
 - license gate via the per-article S3 metadata JSON (`license_allows` →
   `crop` / `whole_figure` / excluded);
-- relevance: the deterministic title rule first, else **P1** LLM triage on
-  title + abstract.
+- relevance: every `license_ok` article goes through **P1** LLM triage on
+  title + abstract, including articles that match the deterministic title rule.
+
+Turbopuffer logical bytes queried and returned are printed at the end of
+selection and recorded in `reports/stage2_counts.json` under
+`_turbopuffer_billing` (along with request and query counts).
+
+Report and viewer rebuild one deterministic primary representative for each
+covered approved disease/finding pair. All eligible alternatives remain in the
+library, and manual or locked selections are preserved.
 
 ### 2. `parse` — figure extraction (`parse.py`, `jats.py`, `pmc.py`)
 

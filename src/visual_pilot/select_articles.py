@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 
 from . import config, db, diseases, llm, pmc
@@ -35,24 +36,22 @@ MAX_EVIDENCE_PER_ARTICLE = 8
 MAX_EVIDENCE_TEXT_CHARS = 1200
 VISUAL_QUERY_RRF_WEIGHT = 12.0
 RRF_K = 60
+METADATA_BATCH_SIZE = 100
 DEFAULT_CAP = 150
 ABSTRACT_MAX_CHARS = 4000
 
-ATTRIBUTES = [
-    "pmcid",
-    "pmid",
-    "doi",
-    "title",
-    "abstract",
-    "journal",
-    "year",
-    "country",
-    "publication_type",
-    "article_type",
-    "page_content",
-    "section_title",
-    "section_type",
+# Discovery returns only the attributes needed to type-filter and rank hits.
+# Passage text is requested only for page-content jobs; title, abstract and
+# citation metadata are fetched later for the shortlisted unique PMCIDs.
+DISCOVERY_ATTRIBUTES = ["pmcid", "publication_type", "article_type"]
+EVIDENCE_ATTRIBUTES = [
+    *DISCOVERY_ATTRIBUTES, "page_content", "section_title", "section_type",
 ]
+METADATA_ATTRIBUTES = [
+    "pmcid", "pmid", "doi", "title", "abstract", "journal", "year", "country",
+    "publication_type", "article_type",
+]
+_PER_PMCID_LIMIT = {"per": {"attributes": ["pmcid"], "limit": 1}}
 
 _CATEGORY_MODALITY = {
     "skin": "clinical photograph",
@@ -96,6 +95,7 @@ _REVIEW_ARTICLE_TYPE = ["article_type", "Eq", "review-article"]
 
 # Whether the server accepted the nested Or filter (auto-detected once).
 _or_filter_supported: bool | None = None
+_BILLING_LOCK = Lock()
 
 # §2/history: publication labels whose *substring* disqualifies an article.
 _EXCLUDED_LABEL_PARTS = (
@@ -151,6 +151,110 @@ def passes_type_filter(
         if any(part in label for part in _EXCLUDED_LABEL_PARTS):
             return False
     return True
+
+
+def shortlist_articles(
+    articles: dict[str, dict],
+    limit: int | None,
+    per_finding_quota: int = config.VP_MANIFESTATION_QUOTA,
+) -> tuple[list[tuple[str, dict]], int, list[dict]]:
+    """Type-filter candidates, reserve manifestation lanes, then fill by RRF.
+
+    Each finding lane gets one distinct PMC article per round before any lane
+    gets its next, up to ``per_finding_quota`` articles. Shared PMCIDs count
+    once toward the global cap; an already-selected shared candidate does not
+    consume another lane's quota, allowing that lane to reserve its next hit.
+    ``limit=None`` returns every type-passed article in global RRF order.
+    """
+    ranked = sorted(articles.items(), key=lambda item: item[1]["score"], reverse=True)
+    type_passed: list[tuple[str, dict]] = []
+    for pmcid, info in ranked:
+        attrs = info.get("attrs") or {}
+        types = attrs.get("publication_type") or []
+        if isinstance(types, str):
+            types = [types]
+        if passes_type_filter(types, attrs.get("article_type")):
+            type_passed.append((pmcid, info))
+
+    if limit is None:
+        return type_passed, len(type_passed), [
+            {**candidate, "pmcid": pmcid}
+            for pmcid, info in type_passed
+            for candidate in info.get("manifestation_candidates", [])
+        ]
+    cap = max(0, int(limit))
+    if cap == 0:
+        return [], len(type_passed), []
+
+    eligible_ids = {pmcid for pmcid, _ in type_passed}
+    lane_candidates: dict[str, dict[str, dict]] = {}
+    for pmcid, info in type_passed:
+        for candidate in info.get("manifestation_candidates", []):
+            finding_key = str(candidate.get("finding_key") or "")
+            if not finding_key or pmcid not in eligible_ids:
+                continue
+            lane = lane_candidates.setdefault(finding_key, {})
+            prior = lane.get(pmcid)
+            if prior is None or int(candidate.get("best_rank") or 0) < int(
+                prior.get("best_rank") or 0
+            ):
+                lane[pmcid] = {**candidate, "pmcid": pmcid}
+
+    lane_order = list(lane_candidates)
+    lane_items = {
+        finding_key: sorted(
+            candidates.values(),
+            key=lambda item: (
+                int(item.get("best_rank") or 0),
+                -float(item.get("retrieval_score") or 0),
+                str(item["pmcid"]),
+            ),
+        )
+        for finding_key, candidates in lane_candidates.items()
+    }
+    reserved: list[str] = []
+    reserved_set: set[str] = set()
+    lane_counts = {finding_key: 0 for finding_key in lane_order}
+    lane_positions = {finding_key: 0 for finding_key in lane_order}
+    quota = max(0, int(per_finding_quota))
+    while len(reserved) < cap and quota:
+        made_progress = False
+        for finding_key in lane_order:
+            if len(reserved) >= cap:
+                break
+            if lane_counts[finding_key] >= quota:
+                continue
+            candidates = lane_items[finding_key]
+            position = lane_positions[finding_key]
+            while position < len(candidates) and candidates[position]["pmcid"] in reserved_set:
+                position += 1
+            lane_positions[finding_key] = position
+            if position >= len(candidates):
+                continue
+            pmcid = candidates[position]["pmcid"]
+            lane_positions[finding_key] += 1
+            reserved.append(pmcid)
+            reserved_set.add(pmcid)
+            lane_counts[finding_key] += 1
+            made_progress = True
+        if not made_progress:
+            break
+
+    selected_ids = list(reserved)
+    for pmcid, _info in type_passed:
+        if len(selected_ids) >= cap:
+            break
+        if pmcid not in reserved_set:
+            selected_ids.append(pmcid)
+            reserved_set.add(pmcid)
+    selected_set = set(selected_ids)
+    selected = [(pmcid, info) for pmcid, info in type_passed if pmcid in selected_set]
+    selected_candidates = [
+        {**candidate, "pmcid": pmcid}
+        for pmcid, info in selected
+        for candidate in info.get("manifestation_candidates", [])
+    ]
+    return selected, len(type_passed), selected_candidates
 
 
 def rrf_scores(
@@ -331,6 +435,7 @@ def visual_queries_for_disease(
         )
         out.append({
             "query": query,
+            "finding_key": str(item.get("finding_key") or ""),
             "finding": finding,
             "modality": modality,
             "category": item["category"],
@@ -392,13 +497,41 @@ def _split_review_filters():
     ]
 
 
-def _ns_query(ns, rank_by, filters, top_k) -> list[dict]:
+def _record_billing(counters: dict | None, result, query_count: int = 1) -> None:
+    """Accumulate Turbopuffer's logical-byte counters when the response has them."""
+    if counters is None:
+        return
+    billing = getattr(result, "billing", None)
+    if billing is None and isinstance(result, dict):
+        billing = result.get("billing")
+    if billing is None:
+        return
+    def value(name: str) -> int:
+        raw = billing.get(name, 0) if isinstance(billing, dict) else getattr(billing, name, 0)
+        try:
+            return int(raw or 0)
+        except (TypeError, ValueError):
+            return 0
+    with _BILLING_LOCK:
+        counters["requests"] = counters.get("requests", 0) + 1
+        counters["queries"] = counters.get("queries", 0) + query_count
+        counters["billable_logical_bytes_queried"] = counters.get(
+            "billable_logical_bytes_queried", 0
+        ) + value("billable_logical_bytes_queried")
+        counters["billable_logical_bytes_returned"] = counters.get(
+            "billable_logical_bytes_returned", 0
+        ) + value("billable_logical_bytes_returned")
+
+
+def _ns_query(ns, rank_by, filters, top_k, counters=None, attributes=None) -> list[dict]:
     result = ns.query(
         rank_by=rank_by,
         filters=filters,
         top_k=top_k,
-        include_attributes=ATTRIBUTES,
+        limit={"total": top_k, **_PER_PMCID_LIMIT},
+        include_attributes=attributes or DISCOVERY_ATTRIBUTES,
     )
+    _record_billing(counters, result)
     return [dict(r) for r in getattr(result, "rows", [])]
 
 
@@ -413,12 +546,13 @@ def _merge_ranked(rows_a: list[dict], rows_b: list[dict]) -> list[dict]:
     return [row for _, row in sorted(best.values(), key=lambda t: t[0])]
 
 
-def _rank_query(ns, rank_by, top_k) -> list[dict]:
+def _rank_query(ns, rank_by, top_k, counters=None) -> list[dict]:
     """One ranked list for one bucket, under the review + full-text filter."""
     global _or_filter_supported
     if _or_filter_supported is not False:
         try:
-            rows = _ns_query(ns, rank_by, _review_filters(), top_k)
+            attrs = EVIDENCE_ATTRIBUTES if rank_by[0] == "page_content" else DISCOVERY_ATTRIBUTES
+            rows = _ns_query(ns, rank_by, _review_filters(), top_k, counters, attrs)
             _or_filter_supported = True
             return rows
         except Exception as exc:  # noqa: BLE001 - detect filter support once
@@ -427,9 +561,46 @@ def _rank_query(ns, rank_by, top_k) -> list[dict]:
             )
             _or_filter_supported = False
     filters_a, filters_b = _split_review_filters()
-    rows_a = _ns_query(ns, rank_by, filters_a, top_k)
-    rows_b = _ns_query(ns, rank_by, filters_b, top_k)
+    attrs = EVIDENCE_ATTRIBUTES if rank_by[0] == "page_content" else DISCOVERY_ATTRIBUTES
+    rows_a = _ns_query(ns, rank_by, filters_a, top_k, counters, attrs)
+    rows_b = _ns_query(ns, rank_by, filters_b, top_k, counters, attrs)
     return _merge_ranked(rows_a, rows_b)
+
+
+def _rank_jobs(ns, jobs, contexts, counters=None) -> list[list[dict]]:
+    """Run ordered retrieval jobs in one multi-query request when available."""
+    multi_query = getattr(ns, "multi_query", None)
+    if callable(multi_query) and jobs:
+        queries = []
+        for (rank_by, top_k), context in zip(jobs, contexts):
+            attrs = EVIDENCE_ATTRIBUTES if rank_by[0] == "page_content" else DISCOVERY_ATTRIBUTES
+            queries.append({
+                "rank_by": rank_by,
+                "filters": _review_filters(),
+                "top_k": top_k,
+                "limit": {"total": top_k, **_PER_PMCID_LIMIT},
+                "include_attributes": attrs,
+            })
+        try:
+            result = multi_query(queries=queries)
+            _record_billing(counters, result, query_count=len(queries))
+            results = list(getattr(result, "results", []) or [])
+            if len(results) != len(jobs):
+                raise ValueError(
+                    f"multi_query returned {len(results)} results for {len(jobs)} jobs"
+                )
+            return [
+                [dict(row) for row in (getattr(item, "rows", None) or [])]
+                for item in results
+            ]
+        except Exception as exc:  # noqa: BLE001 - older servers/SDKs use query()
+            logger.info("Turbopuffer multi_query unavailable (%s); using query fallback", exc)
+    def _run(job):
+        rank_by, top_k = job
+        return _rank_query(ns, rank_by, top_k, counters)
+    # Keep fallback strictly sequential: old SDKs may not support multi_query,
+    # and this also avoids races in the one-time review-filter capability probe.
+    return [_run(job) for job in jobs]
 
 
 def _embed_synonyms(synonyms: list[str], embed_fn, embed_many_fn) -> list:
@@ -467,15 +638,14 @@ def retrieve_for_disease(
     visual_queries: list[dict[str, str]] | None = None,
     disease_key: str | None = None,
     embed_many_fn=None,
+    billing_counters: dict | None = None,
 ) -> dict[str, dict]:
     """Fuse ranked lists and preserve the best passage evidence per PMC article.
 
     The independent turbopuffer queries (per-synonym buckets + per-visual
-    lookups) run on a thread pool; ``ns`` is shared because the Stainless
-    client wraps a thread-safe ``httpx.Client`` and ``Namespace.query`` is a
-    stateless POST. Ranked lists are replayed below in exactly the order the
-    sequential code appended them, so RRF fusion, ``attrs`` first-seen wins,
-    and evidence selection are identical to the serial implementation.
+    lookups) run in a namespace multi-query when supported, with a sequential
+    compatibility fallback. Results are replayed in job order so RRF fusion,
+    first-seen attributes, and evidence selection stay deterministic.
     """
     synonyms = list(synonyms or [])
     embeddings = _embed_synonyms(synonyms, embed_fn, embed_many_fn)
@@ -513,26 +683,19 @@ def retrieve_for_disease(
             {
                 "query": query,
                 "query_kind": "visual",
+                "finding_key": str(spec.get("finding_key") or ""),
                 "modality": str(spec.get("modality") or ""),
                 "finding": str(spec.get("finding") or ""),
             }
         )
 
-    def _run(job):
-        rank_by, top_k = job
-        return _rank_query(ns, rank_by, top_k)
-
-    workers = min(len(jobs), max(1, int(config.VP_CONCURRENCY)))
-    if workers > 1:
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            all_rows = list(pool.map(_run, jobs))
-    else:
-        all_rows = [_run(job) for job in jobs]
+    all_rows = _rank_jobs(ns, jobs, contexts, billing_counters)
 
     ranked_lists: list[list[str]] = []
     ranked_weights: list[float] = []
     attrs: dict[str, dict] = {}
     evidence: dict[str, list[dict]] = {}
+    manifestation_candidates: list[dict] = []
     for (rank_by, _top_k), context, rows in zip(jobs, contexts, all_rows):
         ranked_lists.append([str(r.get("pmcid") or "") for r in rows])
         ranked_weights.append(1.0)  # keep a broad recall path for every hit
@@ -555,12 +718,25 @@ def retrieve_for_disease(
             continue
         for rank, row in enumerate(rows, start=1):
             pmcid = str(row.get("pmcid") or "")
+            if (
+                pmcid
+                and context["query_kind"] == "visual"
+                and context.get("finding_key")
+            ):
+                manifestation_candidates.append({
+                    "finding_key": context["finding_key"],
+                    "pmcid": pmcid,
+                    "query": context["query"],
+                    "best_rank": rank,
+                    "retrieval_score": 1.0 / (RRF_K + rank),
+                })
             passage = str(row.get("page_content") or "").strip()
             if not pmcid or not passage or not _is_visual_passage(row):
                 continue
             evidence.setdefault(pmcid, []).append({
                 "query": context["query"],
                 "query_kind": context["query_kind"],
+                "finding_key": context.get("finding_key", ""),
                 "text": passage[:MAX_EVIDENCE_TEXT_CHARS],
                 "section": str(row.get("section_title") or ""),
                 "section_type": str(row.get("section_type") or ""),
@@ -570,12 +746,16 @@ def retrieve_for_disease(
                 "score": 1.0 / (RRF_K + rank),
             })
     scores = rrf_scores(ranked_lists, weights=ranked_weights)
+    manifestation_by_pmcid: dict[str, list[dict]] = {}
+    for item in manifestation_candidates:
+        manifestation_by_pmcid.setdefault(item["pmcid"], []).append(item)
     out = {}
     for pmcid, score in scores.items():
         out[pmcid] = {
             "score": score,
             "attrs": attrs.get(pmcid, {}),
             "matched_passages": _select_evidence(evidence.get(pmcid, [])),
+            "manifestation_candidates": manifestation_by_pmcid.get(pmcid, []),
         }
     return out
 
@@ -631,13 +811,60 @@ def abstract_for(ns, pmcid: str) -> str:
         return ""
 
 
+def hydrate_metadata(ns, pmcids: list[str], billing_counters=None) -> dict[str, dict]:
+    """Fetch citation metadata and abstracts in bounded batches for shortlisted IDs."""
+    unique_ids = list(dict.fromkeys(str(p) for p in pmcids if p))
+    hydrated: dict[str, dict] = {}
+    multi_query = getattr(ns, "multi_query", None)
+    for offset in range(0, len(unique_ids), METADATA_BATCH_SIZE):
+        batch = unique_ids[offset : offset + METADATA_BATCH_SIZE]
+        if callable(multi_query):
+            try:
+                queries = [
+                    {
+                        "filters": ["pmcid", "Eq", pmcid],
+                        "top_k": 1,
+                        "limit": 1,
+                        "include_attributes": METADATA_ATTRIBUTES,
+                    }
+                    for pmcid in batch
+                ]
+                result = multi_query(queries=queries)
+                _record_billing(billing_counters, result, query_count=len(queries))
+                results = list(getattr(result, "results", []) or [])
+                if len(results) != len(batch):
+                    raise ValueError("incomplete metadata multi_query response")
+                for pmcid, item in zip(batch, results):
+                    rows = getattr(item, "rows", None) or []
+                    if rows:
+                        hydrated[pmcid] = dict(rows[0])
+                continue
+            except Exception as exc:  # noqa: BLE001 - compatibility fallback
+                logger.info("metadata multi_query unavailable (%s); using batched query", exc)
+        # A single OR-filter query hydrates the entire batch when multi_query
+        # is absent, so compatibility does not regress to one request per ID.
+        filters = ["Or", [["pmcid", "Eq", pmcid] for pmcid in batch]]
+        result = ns.query(
+            filters=filters,
+            top_k=len(batch),
+            limit={"total": len(batch), **_PER_PMCID_LIMIT},
+            include_attributes=METADATA_ATTRIBUTES,
+        )
+        _record_billing(billing_counters, result)
+        for raw in getattr(result, "rows", []) or []:
+            row = dict(raw)
+            pmcid = str(row.get("pmcid") or "")
+            if pmcid and pmcid not in hydrated:
+                hydrated[pmcid] = row
+    return hydrated
+
+
 def fetch_abstracts(ns, pmcids: list[str]) -> dict[str, str]:
-    """abstract_for on a thread pool of VP_CONCURRENCY workers."""
-    if not pmcids:
-        return {}
-    with ThreadPoolExecutor(max_workers=config.VP_CONCURRENCY) as pool:
-        values = pool.map(lambda p: abstract_for(ns, p), pmcids)
-    return dict(zip(pmcids, values))
+    """Fetch abstracts for IDs in bounded multi-query batches."""
+    return {
+        pmcid: str(attrs.get("abstract") or "")
+        for pmcid, attrs in hydrate_metadata(ns, pmcids).items()
+    }
 
 
 def _merge_evidence(existing: list[dict], incoming: list[dict]) -> list[dict]:
@@ -742,6 +969,48 @@ def upsert_candidate(
                 f"UPDATE articles SET {', '.join(updates)} WHERE pmcid=?", values
             )
     return status
+
+
+def upsert_manifestation_candidates(conn, candidates: list[dict]) -> int:
+    """Persist per-finding ranks, retaining the best rank seen for each pair."""
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='manifestation_candidates'"
+    ).fetchone()
+    if not exists:
+        logger.info("manifestation_candidates table not present; skipping rank persistence")
+        return 0
+    # The production table may declare a foreign key to articles.pmcid. We
+    # insert new article shortlist rows first; rank-only hits outside that
+    # shortlist can be recorded on a later run when their article row exists.
+    article_ids = {
+        row[0] for row in conn.execute("SELECT pmcid FROM articles")
+    }
+    written = 0
+    for item in candidates:
+        if (
+            not item.get("finding_key")
+            or not item.get("pmcid")
+            or item["pmcid"] not in article_ids
+        ):
+            continue
+        conn.execute(
+            "INSERT INTO manifestation_candidates "
+            "(disease_key, finding_key, pmcid, query, best_rank, retrieval_score) "
+            "VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(disease_key, finding_key, pmcid) DO UPDATE SET "
+            "query=CASE WHEN excluded.best_rank < manifestation_candidates.best_rank "
+            "THEN excluded.query ELSE manifestation_candidates.query END, "
+            "retrieval_score=CASE WHEN excluded.best_rank < manifestation_candidates.best_rank "
+            "THEN excluded.retrieval_score ELSE manifestation_candidates.retrieval_score END, "
+            "best_rank=MIN(manifestation_candidates.best_rank, excluded.best_rank), "
+            "updated_at=datetime('now')",
+            (
+                item["disease_key"], item["finding_key"], item["pmcid"], item["query"],
+                int(item["best_rank"]), float(item["retrieval_score"]),
+            ),
+        )
+        written += 1
+    return written
 
 
 def join_license(pmcid: str) -> tuple[str, dict]:
@@ -849,6 +1118,7 @@ def write_counts(
     conn,
     retrieval_counts: dict[str, dict],
     cap: int,
+    billing_counters: dict | None = None,
 ) -> dict[str, dict]:
     """Merge this run's retrieval numbers with DB-derived funnel counts."""
     reports = config.reports_dir()
@@ -869,12 +1139,15 @@ def write_counts(
             "after_type_filter": retrieval.get(
                 "after_type_filter", prev.get("after_type_filter", 0)
             ),
+            "selected": retrieval.get("selected", prev.get("selected", 0)),
             "after_license_filter": funnel[key]["after_license_filter"],
             "relevant": funnel[key]["relevant"],
             "cap": cap,
         }
         entry["over_cap"] = entry["relevant"] > cap
         out[key] = entry
+    if billing_counters:
+        out["_turbopuffer_billing"] = dict(billing_counters)
     reports.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=1) + "\n")
     return out
@@ -1020,6 +1293,13 @@ def run(args) -> int:
     # ------------------------------------------------------------------
     retrieved: dict[str, dict] = {}  # pmcid -> {score, attrs, keys}
     retrieval_counts: dict[str, dict] = {}
+    manifestation_records: list[dict] = []
+    billing_counters = {
+        "requests": 0,
+        "queries": 0,
+        "billable_logical_bytes_queried": 0,
+        "billable_logical_bytes_returned": 0,
+    }
     for key in disease_keys:
         synonyms = diseases_data[key]["synonyms"]
         visual_queries = visual_queries_for_disease(
@@ -1039,22 +1319,20 @@ def run(args) -> int:
             visual_queries,
             disease_key=key,
             embed_many_fn=embed_many_fn,
+            billing_counters=billing_counters,
         )
-        # --limit caps the candidate set per disease (top N by score).
-        ranked = sorted(
-            articles.items(), key=lambda kv: kv[1]["score"], reverse=True
+        # Type filtering precedes the cap. With a cap, round-robin finding
+        # reservations protect undercovered manifestation lanes before the
+        # remaining slots go to global RRF order.
+        ranked, n_type_passed, selected_manifestations = shortlist_articles(
+            articles, limit, config.VP_MANIFESTATION_QUOTA
         )
-        if limit is not None:
-            ranked = ranked[:limit]
-        type_passed = 0
+        manifestation_records.extend(
+            {**candidate, "disease_key": key}
+            for candidate in selected_manifestations
+        )
         for pmcid, info in ranked:
             attrs = info["attrs"]
-            types = attrs.get("publication_type") or []
-            if isinstance(types, str):
-                types = [types]
-            if not passes_type_filter(types, attrs.get("article_type")):
-                continue
-            type_passed += 1
             entry = retrieved.get(pmcid)
             if entry is None:
                 retrieved[pmcid] = {
@@ -1073,15 +1351,18 @@ def run(args) -> int:
                     entry["score"] = info["score"]
                     entry["attrs"] = attrs
         retrieval_counts[key] = {
-            "candidates": len(ranked),
-            "after_type_filter": type_passed,
+            "candidates": len(articles),
+            "after_type_filter": n_type_passed,
+            "selected": len(ranked),
         }
         print(
-            f"[{key}] {len(ranked)} candidates, {type_passed} after type filter"
+            f"[{key}] {len(articles)} candidates, {n_type_passed} pass type filter, "
+            f"{len(ranked)} selected"
         )
 
     if args.dry_run:
         print(json.dumps(retrieval_counts, indent=1))
+        print(f"Turbopuffer billing: {json.dumps(billing_counters, sort_keys=True)}")
         print("dry-run: no DB writes, no LLM calls")
         conn.close()
         return 0
@@ -1089,11 +1370,21 @@ def run(args) -> int:
     # ------------------------------------------------------------------
     # 4. Insert candidates (INSERT OR IGNORE; resumable).
     # ------------------------------------------------------------------
+    # Hydrate rich metadata only after the disease-level cap and type filter
+    # have produced the actual article shortlist. Reuse unique PMCIDs across
+    # diseases and carry abstracts forward to P1.
+    shortlisted_ids = list(dict.fromkeys(retrieved))
+    metadata = hydrate_metadata(ns, shortlisted_ids, billing_counters)
+    for pmcid, info in retrieved.items():
+        info["attrs"] = {**info.get("attrs", {}), **metadata.get(pmcid, {})}
     for pmcid, info in retrieved.items():
         upsert_candidate(
             conn, pmcid, info["attrs"], info["score"], info["keys"],
             info.get("matched_passages"),
         )
+    persisted = upsert_manifestation_candidates(conn, manifestation_records)
+    if persisted:
+        print(f"manifestation candidates: persisted {persisted} per-finding ranks")
     conn.commit()
 
     client = llm.LLMClient(
@@ -1216,9 +1507,10 @@ def run(args) -> int:
     # ------------------------------------------------------------------
     # 7. Counts checkpoint.
     # ------------------------------------------------------------------
-    totals = write_counts(conn, retrieval_counts, cap)
+    totals = write_counts(conn, retrieval_counts, cap, billing_counters)
     print(json.dumps(totals, indent=1))
     print(f"live LLM spend this run: ${client.spent_usd:.4f}")
+    print(f"Turbopuffer billing: {json.dumps(billing_counters, sort_keys=True)}")
     for key in disease_keys:
         entry = totals.get(key) or {}
         if entry.get("over_cap"):
