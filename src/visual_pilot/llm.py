@@ -269,11 +269,18 @@ class LLMClient:
                 raise LLMError(
                     f"no API key configured for provider {self.provider!r}"
                 )
+            headers = None
+            if self.provider == "openrouter":
+                headers = {
+                    "HTTP-Referer": "https://visual-pilot.local",
+                    "X-Title": "Visual Pilot",
+                }
             # max_retries=0: transient retries are handled here so that
             # budget/cache semantics stay under our control.
             self._client = openai.OpenAI(
                 api_key=self.api_key, base_url=self.base_url,
                 timeout=self.timeout_seconds, max_retries=0,
+                default_headers=headers,
             )
         return self._client
 
@@ -329,32 +336,55 @@ class LLMClient:
         images: list[ImageInput],
     ):
         """Single chat completion with strict-schema -> json_object fallback."""
-        messages = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": self._user_parts(user_content, images)},
-        ]
-        mode = self._response_mode.get(model, "json_schema")
-        try:
-            resp = self._with_retries(
-                lambda: self._openai().chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=0,
-                    response_format=_response_format_for(mode, schema),
+        mode = self._response_mode.get(model)
+        if mode is None:
+            if "stealth" in model or "space-bunny" in model:
+                mode = "json_object"
+            else:
+                mode = "json_schema"
+
+        def _make_messages(target_mode: str) -> list[dict]:
+            sys_text = system
+            if target_mode == "json_object":
+                sys_text = (
+                    f"{system}\n\nStrict Output Schema (JSON):\n"
+                    f"{json.dumps(schema)}"
                 )
+            return [
+                {"role": "system", "content": sys_text},
+                {"role": "user", "content": self._user_parts(user_content, images)},
+            ]
+
+        extra_kwargs = {}
+        if config.LLM_REASONING_EFFORT:
+            extra_kwargs["extra_body"] = {
+                "reasoning": {"effort": config.LLM_REASONING_EFFORT}
+            }
+
+        def _send(target_mode: str):
+            res = self._openai().chat.completions.create(
+                model=model,
+                messages=_make_messages(target_mode),
+                temperature=0,
+                response_format=_response_format_for(target_mode, schema),
+                **extra_kwargs,
             )
-        except openai.BadRequestError as exc:
-            if mode == "json_schema" and self._looks_like_schema_unsupported(exc):
+            if getattr(res, "choices", None) is None:
+                err = getattr(res, "error", None) or "empty choices returned"
+                raise openai.InternalServerError(
+                    f"provider error: {err}",
+                    response=getattr(res, "_response", None),
+                    body=None,
+                )
+            return res
+
+        try:
+            resp = self._with_retries(lambda: _send(mode))
+        except (openai.BadRequestError, openai.InternalServerError) as exc:
+            if mode == "json_schema":
                 mode = "json_object"
                 self._response_mode[model] = mode
-                resp = self._with_retries(
-                    lambda: self._openai().chat.completions.create(
-                        model=model,
-                        messages=messages,
-                        temperature=0,
-                        response_format={"type": "json_object"},
-                    )
-                )
+                resp = self._with_retries(lambda: _send(mode))
             else:
                 raise
         else:

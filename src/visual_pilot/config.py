@@ -49,6 +49,11 @@ DEEPINFRA_BASE_URL = os.getenv(
 )
 OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
 OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/v1")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_BASE_URL = os.getenv(
+    "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
+)
+LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 TURBOPUFFER_API_KEY = os.getenv("TURBOPUFFER_API_KEY", "")
 TURBOPUFFER_REGION = os.getenv("TURBOPUFFER_REGION", "gcp-us-central1").strip()
 TURBOPUFFER_NAMESPACE_PMC = os.getenv(
@@ -61,14 +66,14 @@ EMBEDDING_MODEL = os.getenv(
 )
 EMBEDDING_TIMEOUT_SECONDS = _env_int("DEEPINFRA_EMBED_TIMEOUT_SECONDS", 120)
 
-# Credentials for each supported VP_LLM_PROVIDER value. OpenCode Zen is the
-# only LLM provider; DeepInfra credentials above are for embeddings only.
+# Credentials for each supported VP_LLM_PROVIDER value.
 _LLM_PROVIDER_CREDENTIALS = {
     "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
     # DeepInfra is primarily the embeddings/reranking provider, but the same
     # OpenAI-compatible endpoint serves chat models (used for parity runs while
     # space-bunny-free's upstream rejects union-type json_schema).
     "deepinfra": lambda: (DEEPINFRA_API_KEY, DEEPINFRA_BASE_URL),
+    "openrouter": lambda: (OPENROUTER_API_KEY, OPENROUTER_BASE_URL),
 }
 LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
 
@@ -82,13 +87,13 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*), defaults per spec §3 / repo adjustments box.
-# Every LLM stage runs on OpenCode Zen; space-bunny-free is multimodal, so the
-# same model covers caption triage, extraction, and the vision judge.
+# Every LLM stage runs on OpenRouter; stealth/space-bunny-alpha is multimodal, so
+# the same model covers caption triage, extraction, and the vision judge.
 # -----------------------------------------------------------------------------
-VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "opencode").strip().lower()
-VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "space-bunny-free")
-VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "space-bunny-free")
-VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "space-bunny-free")
+VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "openrouter").strip().lower()
+VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "stealth/space-bunny-alpha")
+VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "stealth/space-bunny-alpha")
+VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "stealth/space-bunny-alpha")
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 4))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
@@ -126,6 +131,7 @@ VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 # VP_MODEL_PRICES_JSON='{"model": {"in": x, "out": y}}'.
 MODEL_PRICES = {
     "space-bunny-free": {"in": 0.0, "out": 0.0},
+    "stealth/space-bunny-alpha": {"in": 0.0, "out": 0.0},
 }
 
 

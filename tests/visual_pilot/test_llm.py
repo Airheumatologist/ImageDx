@@ -570,3 +570,22 @@ def test_call_prompt_uses_prompt_version(conn):
     client.call_prompt("p1", P1, MODEL, "user text")
     row = conn.execute("SELECT request_meta_json FROM llm_calls").fetchone()
     assert db.from_json(row["request_meta_json"])["prompt_version"] == P1.version
+
+
+def test_openrouter_provider_credentials(monkeypatch):
+    monkeypatch.setattr(config, "OPENROUTER_API_KEY", "test-or-key")
+    key, url = config.llm_credentials("openrouter")
+    assert key == "test-or-key"
+    assert url == "https://openrouter.ai/api/v1"
+
+
+def test_space_bunny_defaults_to_json_object(conn):
+    client = make_client([VALID], conn)
+    parsed, meta = _call(client, model="stealth/space-bunny-alpha")
+    assert parsed == {"ok": True}
+    calls = client._client.completions.calls
+    assert len(calls) == 1
+    assert calls[0]["response_format"] == {"type": "json_object"}
+    assert "Strict Output Schema" in calls[0]["messages"][0]["content"]
+    assert client._response_mode["stealth/space-bunny-alpha"] == "json_object"
+

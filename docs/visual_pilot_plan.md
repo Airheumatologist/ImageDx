@@ -122,8 +122,10 @@ throughput-over-tail-latency is ever preferred.
 1. ~~W9~~ — merged (`7dea4b1`). ~~G3~~ — passed.
 2. Deferred items (true cross-disease concurrency, A/B input changes) —
    unchanged, post-G3 only.
-3. Open decision: whether to change production model defaults from
-   `space-bunny-free` to DeepInfra GLM (see provider note).
+3. Resolved decision: Production model defaults switched permanently to
+   OpenRouter `stealth/space-bunny-alpha` (`VP_LLM_PROVIDER=openrouter`), replacing
+   DeepInfra GLM and OpenCode `space-bunny-free`. Free tier ($0.00), 1M context,
+   3.45x faster overall (6.4x faster on vision judging), with schema injection.
 4. Live-run observation for follow-up: `extract`'s P4 fan-out over a
    large un-extracted backlog runs at provider speed (~7 calls/min on
    DeepInfra GLM) — a full `run-all` on the main DB still needs either
