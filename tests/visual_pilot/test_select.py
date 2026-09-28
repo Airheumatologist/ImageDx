@@ -82,7 +82,9 @@ DISEASES = diseases.load_diseases()
         ("Juvenile dermatomyositis and JDM variants", {"dm"}),
         ("Ankylosing spondylitis in 2024", {"as"}),
         ("Axial spondyloarthritis review", {"as"}),
-        ("Rheumatoid arthritis review", set()),
+        ("Rheumatoid arthritis review", {"ra"}),
+        ("Psoriasis: clinical manifestations", {"psoriasis"}),
+        ("Psoriatic arthritis review", {"psa"}),
         ("SLE and dermatomyositis overlap", {"sle", "dm"}),
     ],
 )

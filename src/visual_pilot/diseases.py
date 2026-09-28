@@ -1,4 +1,4 @@
-"""Stage 1 seed data: the three pilot diseases and the findings vocabulary.
+"""Stage 1 seed data: the configured pilot diseases and findings vocabulary.
 
 Seed files live in ``src/visual_pilot/data/``. ``seed()`` is idempotent: it
 upserts descriptive fields but never resets ``approved``, ``proposed_by_llm``
@@ -15,8 +15,6 @@ from pathlib import Path
 from .db import to_json
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
-
-DISEASE_KEYS = ("sle", "dm", "as")
 
 # findings_vocab.category enum per spec §4.
 FINDING_CATEGORIES = frozenset(
@@ -38,7 +36,23 @@ FINDING_CATEGORIES = frozenset(
 
 
 def load_diseases() -> dict[str, dict]:
-    return json.loads((DATA_DIR / "diseases.json").read_text(encoding="utf-8"))
+    data = json.loads((DATA_DIR / "diseases.json").read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or not data:
+        raise ValueError("diseases.json must contain a non-empty disease object")
+    for key, disease in data.items():
+        if not isinstance(key, str) or not key or not isinstance(disease, dict):
+            raise ValueError("diseases.json entries must map non-empty keys to objects")
+    return data
+
+
+def disease_keys_from_catalog() -> tuple[str, ...]:
+    """Return the configured catalog keys in stable JSON order."""
+    return tuple(load_diseases())
+
+
+# Kept as a module-level compatibility surface for stage code; each process
+# loads the authoritative configured catalog once at import time.
+DISEASE_KEYS = disease_keys_from_catalog()
 
 
 def load_findings_vocab() -> list[dict]:
@@ -79,7 +93,7 @@ def seed(conn: sqlite3.Connection) -> dict[str, int]:
         )
 
     vocab = load_findings_vocab()
-    valid_diseases = set(DISEASE_KEYS)
+    valid_diseases = set(diseases)
     for item in vocab:
         _validate_vocab_item(item, valid_diseases)
         conn.execute(

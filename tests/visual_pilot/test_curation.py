@@ -102,3 +102,25 @@ def test_another_pilot_disease_does_not_inherit_review_topic():
     assert curation.exclusion_reason(_panel(), {
         'caption': 'Clinical photograph of dermatomyositis in this patient.',
     }, {'title': 'Lupus and its differential diagnoses'}) == 'caption identifies another disease'
+
+
+def test_catalog_matcher_uses_full_phrase_boundaries_and_cross_disease_scope(monkeypatch):
+    monkeypatch.setattr(curation.diseases, "load_diseases", lambda: {
+        "ra": {"name": "Rheumatoid arthritis", "synonyms": ["RA"]},
+        "ad": {"name": "Atopic dermatitis", "synonyms": ["AD"]},
+    })
+    curation._disease_matchers.cache_clear()
+    try:
+        assert curation._diseases_in_text("RA is a common abbreviation in notes.") == set()
+        assert curation._diseases_in_text("Rheumatoid-arthritis lesions.") == {"ra"}
+        assert curation.exclusion_reason(
+            _panel(disease_key="ra"),
+            {"caption": "Clinical photograph of atopic dermatitis."},
+            {"title": "Rheumatoid arthritis overview"},
+        ) == "caption identifies another disease"
+        assert curation.exclusion_reason(
+            _panel(disease_key="ra"), {"caption": "Pannus."},
+            {"title": "Rheumatoid arthritis"},
+        ) is None
+    finally:
+        curation._disease_matchers.cache_clear()

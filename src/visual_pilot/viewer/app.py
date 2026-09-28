@@ -258,10 +258,92 @@ TABS: dict[str, list[dict]] = {
     ],
 }
 
+# New catalog diseases share this broad modality/category routing until they
+# receive a disease-specific layout. It keeps their images browsable while
+# allowing approved findings and source metadata to remain data-driven.
+GENERIC_TABS: list[dict] = [
+    {
+        "key": "mucosa",
+        "label": "Mucosa",
+        "priority": 0,
+        "match": {"any_of": [{"categories": {"mucosa"}}]},
+    },
+    {
+        "key": "musculoskeletal",
+        "label": "Musculoskeletal",
+        "priority": 0,
+        "match": {"any_of": [{"categories": {"clinical_msk"}}]},
+    },
+    {
+        "key": "eye",
+        "label": "Eye",
+        "priority": 0,
+        "match": {
+            "any_of": [
+                {"modalities": {"ophthalmic"}},
+                {"categories": {"eye"}},
+            ]
+        },
+    },
+    {
+        "key": "capillaroscopy",
+        "label": "Capillaroscopy",
+        "priority": 0,
+        "match": {
+            "any_of": [
+                {"modalities": {"capillaroscopy"}},
+                {"categories": {"capillaroscopy"}},
+            ]
+        },
+    },
+    {
+        "key": "skin",
+        "label": "Skin / nail",
+        "skin_tone_filter": True,
+        "match": {
+            "any_of": [
+                {"modalities": {"clinical_photo", "dermoscopy"}},
+                {"categories": {"skin", "nail"}},
+            ]
+        },
+    },
+    {
+        "key": "histology",
+        "label": "Histology",
+        "match": {
+            "any_of": [
+                {"modalities": {"histology_he", "histology_ihc", "immunofluorescence"}},
+                {"categories": {"histology"}},
+            ]
+        },
+    },
+    {
+        "key": "imaging",
+        "label": "Imaging",
+        "match": {
+            "any_of": [
+                {"modalities": {"radiograph", "ct", "mri", "ultrasound", "echo", "pet"}},
+                {"categories": {"radiology_xray", "ct", "mri", "us", "echo"}},
+            ]
+        },
+    },
+]
+
+
+def _tabs_for(key: str) -> list[dict]:
+    return TABS.get(key, GENERIC_TABS)
+
+
+def _known_disease(conn, key: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM diseases WHERE disease_key = ?", (key,)
+    ).fetchone() is not None
+
 # Pediatric is a cross-cutting view: the frontend filters explicit age_group
 # values while each returned panel also keeps its regular clinical_tab/group.
 for _tabs in TABS.values():
     _tabs.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
+GENERIC_TABS.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
 
 # Side-by-side comparisons for /compare/sle-dm-skin (§5 stage 8).
 COMPARISONS = [
@@ -799,9 +881,13 @@ def create_app(data_dir: str | None = None) -> FastAPI:
 
     @app.get("/disease/{key}", response_class=HTMLResponse)
     def disease_page(key: str) -> HTMLResponse:
-        if key not in TABS:
-            raise HTTPException(404, "unknown disease")
-        return _page("disease.html")
+        c = conn()
+        try:
+            if not _known_disease(c, key):
+                raise HTTPException(404, "unknown disease")
+            return _page("disease.html")
+        finally:
+            c.close()
 
     @app.get("/compare/sle-dm-skin", response_class=HTMLResponse)
     def compare_page() -> HTMLResponse:
@@ -843,9 +929,13 @@ def create_app(data_dir: str | None = None) -> FastAPI:
 
     @app.get("/api/diseases/{key}/tabs")
     def api_tabs(key: str) -> list[dict]:
-        if key not in TABS:
-            raise HTTPException(404, "unknown disease")
-        return [{"key": t["key"], "label": t["label"], "group_by": t.get("group_by"), "group_order": t.get("group_order"), "skin_tone_filter": bool(t.get("skin_tone_filter")), "cross_cutting": bool(t.get("cross_cutting"))} for t in TABS[key]]
+        c = conn()
+        try:
+            if not _known_disease(c, key):
+                raise HTTPException(404, "unknown disease")
+            return [{"key": t["key"], "label": t["label"], "group_by": t.get("group_by"), "group_order": t.get("group_order"), "skin_tone_filter": bool(t.get("skin_tone_filter")), "cross_cutting": bool(t.get("cross_cutting"))} for t in _tabs_for(key)]
+        finally:
+            c.close()
 
     @app.get("/api/diseases/{key}/panels")
     def api_panels(
@@ -856,10 +946,10 @@ def create_app(data_dir: str | None = None) -> FastAPI:
         finding: str | None = None,
         typicality: str | None = None,
     ) -> dict:
-        if key not in TABS:
-            raise HTTPException(404, "unknown disease")
         c = conn()
         try:
+            if not _known_disease(c, key):
+                raise HTTPException(404, "unknown disease")
             approved = _approved_keys(c)
             categories = _categories(c)
             labels = _labels(c)
@@ -881,7 +971,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             if finding:
                 panels = [p for p in panels if finding in _finding_keys(p)]
             for p in panels:
-                p["tab"] = assign_tab(p, TABS[key], categories)
+                p["tab"] = assign_tab(p, _tabs_for(key), categories)
                 p["clinical_tab"] = p["tab"]
                 p["clinical_group"] = _clinical_group(p) if key == "sle" and p["tab"] == "skin" else None
                 p["source_variant"]["clinical_tab"] = p["clinical_tab"]
@@ -900,10 +990,10 @@ def create_app(data_dir: str | None = None) -> FastAPI:
 
     @app.get("/api/diseases/{key}/findings")
     def api_findings(key: str) -> list[dict]:
-        if key not in TABS:
-            raise HTTPException(404, "unknown disease")
         c = conn()
         try:
+            if not _known_disease(c, key):
+                raise HTTPException(404, "unknown disease")
             # Approved vocab keys only — proposed findings are never shown.
             rows = list(
                 c.execute(

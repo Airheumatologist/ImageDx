@@ -65,14 +65,14 @@
   {
     "finding_key": "raynaud_phenomenon",
     "label": "Raynaud phenomenon",
-    "disease_keys": ["sle"],
+    "disease_keys": ["sle", "ssc"],
     "category": "skin",
     "synonyms": ["Raynaud's phenomenon", "acral cyanosis", "digital ischemia"]
   },
   {
     "finding_key": "periungual_erythema",
     "label": "Periungual erythema",
-    "disease_keys": ["sle", "dm"],
+    "disease_keys": ["sle", "dm", "ssc"],
     "category": "nail",
     "synonyms": ["periungual telangiectasia", "nailfold erythema", "periungual redness"]
   },
@@ -485,15 +485,513 @@
   {
     "finding_key": "achilles_enthesitis",
     "label": "Achilles enthesitis",
-    "disease_keys": ["as"],
+    "disease_keys": ["as", "psa"],
     "category": "clinical_msk",
     "synonyms": ["Achilles tendon enthesitis", "heel enthesitis", "insertional Achilles tendinitis"]
   },
   {
     "finding_key": "dactylitis",
     "label": "Dactylitis",
-    "disease_keys": ["as"],
+    "disease_keys": ["as", "psa"],
     "category": "clinical_msk",
     "synonyms": ["sausage digit", "sausage toe", "sausage finger"]
+  }
+,
+  {
+    "finding_key": "ra_swan_neck_deformity",
+    "label": "Swan-neck deformity",
+    "disease_keys": ["ra"],
+    "category": "clinical_msk",
+    "synonyms": ["RA swan neck", "PIP hyperextension with DIP flexion"]
+  },
+  {
+    "finding_key": "ra_boutonniere_deformity",
+    "label": "Boutonniere deformity",
+    "disease_keys": ["ra"],
+    "category": "clinical_msk",
+    "synonyms": ["buttonhole deformity", "RA boutonniere"]
+  },
+  {
+    "finding_key": "ra_ulnar_deviation",
+    "label": "Ulnar deviation of the fingers",
+    "disease_keys": ["ra"],
+    "category": "clinical_msk",
+    "synonyms": ["ulnar drift", "ulnar deviation at MCP joints"]
+  },
+  {
+    "finding_key": "ra_rheumatoid_nodules",
+    "label": "Rheumatoid nodules",
+    "disease_keys": ["ra"],
+    "category": "skin",
+    "synonyms": ["subcutaneous rheumatoid nodules", "rheumatoid nodule"]
+  },
+  {
+    "finding_key": "ra_marginal_erosions",
+    "label": "Marginal joint erosions",
+    "disease_keys": ["ra"],
+    "category": "radiology_xray",
+    "synonyms": ["juxta-articular erosions", "marginal erosions in rheumatoid arthritis"]
+  },
+  {
+    "finding_key": "ra_periarticular_osteopenia",
+    "label": "Periarticular osteopenia",
+    "disease_keys": ["ra"],
+    "category": "radiology_xray",
+    "synonyms": ["juxta-articular osteopenia", "periarticular osteoporosis"]
+  },
+  {
+    "finding_key": "ra_atlantoaxial_subluxation",
+    "label": "Atlantoaxial subluxation",
+    "disease_keys": ["ra"],
+    "category": "radiology_xray",
+    "synonyms": ["C1-C2 subluxation", "atlanto-axial instability"]
+  },
+  {
+    "finding_key": "ra_mcp_joint_space_narrowing",
+    "label": "MCP joint-space narrowing",
+    "disease_keys": ["ra"],
+    "category": "radiology_xray",
+    "synonyms": ["metacarpophalangeal joint-space loss", "symmetric joint space narrowing"]
+  },
+  {
+    "finding_key": "ra_synovitis_ultrasound",
+    "label": "Synovitis on ultrasound",
+    "disease_keys": ["ra"],
+    "category": "us",
+    "synonyms": ["power Doppler synovitis", "synovial hypertrophy on ultrasound"]
+  },
+  {
+    "finding_key": "ra_pannus_mri",
+    "label": "Synovial pannus (MRI)",
+    "disease_keys": ["ra"],
+    "category": "mri",
+    "synonyms": ["rheumatoid pannus", "enhancing synovial pannus"]
+  },
+  {
+    "finding_key": "ssc_sclerodactyly",
+    "label": "Sclerodactyly",
+    "disease_keys": ["ssc"],
+    "category": "skin",
+    "synonyms": ["scleroderma fingers", "skin tightening of fingers"]
+  },
+  {
+    "finding_key": "ssc_digital_ulcers",
+    "label": "Systemic-sclerosis digital ulcers",
+    "disease_keys": ["ssc"],
+    "category": "skin",
+    "synonyms": ["scleroderma digital ulcers", "ischemic fingertip ulcers"]
+  },
+  {
+    "finding_key": "ssc_telangiectasias",
+    "label": "Telangiectasias in systemic sclerosis",
+    "disease_keys": ["ssc"],
+    "category": "skin",
+    "synonyms": ["mat telangiectasia", "scleroderma telangiectasia"]
+  },
+  {
+    "finding_key": "ssc_puffy_fingers",
+    "label": "Puffy fingers",
+    "disease_keys": ["ssc"],
+    "category": "skin",
+    "synonyms": ["edematous fingers", "early systemic sclerosis hand swelling"]
+  },
+  {
+    "finding_key": "ssc_microstomia",
+    "label": "Microstomia",
+    "disease_keys": ["ssc"],
+    "category": "clinical_msk",
+    "synonyms": ["small oral aperture", "reduced mouth opening in scleroderma"]
+  },
+  {
+    "finding_key": "ssc_nailfold_giant_capillaries",
+    "label": "Nailfold giant capillaries in systemic sclerosis",
+    "disease_keys": ["ssc", "dm"],
+    "category": "capillaroscopy",
+    "synonyms": ["scleroderma pattern capillaroscopy", "megacapillaries"]
+  },
+  {
+    "finding_key": "ssc_nailfold_capillary_dropout",
+    "label": "Nailfold capillary dropout in systemic sclerosis",
+    "disease_keys": ["ssc", "dm"],
+    "category": "capillaroscopy",
+    "synonyms": ["avascular areas on capillaroscopy", "reduced nailfold capillary density"]
+  },
+  {
+    "finding_key": "ssc_interstitial_lung_disease_ct",
+    "label": "Systemic-sclerosis interstitial lung disease (CT)",
+    "disease_keys": ["ssc"],
+    "category": "ct",
+    "synonyms": ["SSc-ILD", "NSIP pattern in systemic sclerosis"]
+  },
+  {
+    "finding_key": "ssc_esophageal_dilation",
+    "label": "Dilated esophagus in systemic sclerosis",
+    "disease_keys": ["ssc"],
+    "category": "ct",
+    "synonyms": ["patulous esophagus", "scleroderma esophagus on CT"]
+  },
+  {
+    "finding_key": "ssc_skin_fibrosis_histology",
+    "label": "Dermal fibrosis in systemic sclerosis",
+    "disease_keys": ["ssc"],
+    "category": "histology",
+    "synonyms": ["scleroderma skin biopsy", "thickened collagen bundles"]
+  },
+  {
+    "finding_key": "psoriasis_plaque",
+    "label": "Plaque psoriasis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "skin",
+    "synonyms": ["psoriasis vulgaris", "well-demarcated erythematous scaly plaques", "silvery scale"]
+  },
+  {
+    "finding_key": "psoriasis_guttate",
+    "label": "Guttate psoriasis",
+    "disease_keys": ["psoriasis"],
+    "category": "skin",
+    "synonyms": ["drop-like psoriatic papules", "eruptive guttate lesions"]
+  },
+  {
+    "finding_key": "psoriasis_inverse",
+    "label": "Inverse psoriasis",
+    "disease_keys": ["psoriasis"],
+    "category": "skin",
+    "synonyms": ["flexural psoriasis", "intertriginous psoriasis"]
+  },
+  {
+    "finding_key": "psoriasis_pustular",
+    "label": "Pustular psoriasis",
+    "disease_keys": ["psoriasis"],
+    "category": "skin",
+    "synonyms": ["generalized pustular psoriasis", "sterile pustules in psoriasis"]
+  },
+  {
+    "finding_key": "psoriasis_erythrodermic",
+    "label": "Erythrodermic psoriasis",
+    "disease_keys": ["psoriasis"],
+    "category": "skin",
+    "synonyms": ["psoriatic erythroderma", "generalized erythema and scaling"]
+  },
+  {
+    "finding_key": "psoriasis_palmoplantar",
+    "label": "Palmoplantar psoriasis",
+    "disease_keys": ["psoriasis"],
+    "category": "skin",
+    "synonyms": ["palmoplantar pustulosis", "palmoplantar plaque psoriasis"]
+  },
+  {
+    "finding_key": "psoriasis_nail_pitting",
+    "label": "Nail pitting in psoriasis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "nail",
+    "synonyms": ["psoriatic nail pitting", "pinpoint nail pits"]
+  },
+  {
+    "finding_key": "psoriasis_nail_oil_spots",
+    "label": "Oil-drop nail changes in psoriasis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "nail",
+    "synonyms": ["salmon patches", "oil spots in psoriatic nail disease"]
+  },
+  {
+    "finding_key": "psoriasis_nail_onycholysis",
+    "label": "Psoriatic nail onycholysis",
+    "disease_keys": ["psoriasis", "psa"],
+    "category": "nail",
+    "synonyms": ["distal onycholysis", "onycholysis with subungual hyperkeratosis"]
+  },
+  {
+    "finding_key": "psoriasis_munro_microabscesses",
+    "label": "Munro microabscesses",
+    "disease_keys": ["psoriasis"],
+    "category": "histology",
+    "synonyms": ["neutrophils in stratum corneum", "psoriasis histopathology"]
+  },
+  {
+    "finding_key": "psa_dactylitis",
+    "label": "Dactylitis in psoriatic arthritis",
+    "disease_keys": ["psa", "as"],
+    "category": "clinical_msk",
+    "synonyms": ["sausage digit in PsA", "whole-digit swelling"]
+  },
+  {
+    "finding_key": "psa_enthesitis",
+    "label": "Enthesitis in psoriatic arthritis",
+    "disease_keys": ["psa", "as"],
+    "category": "clinical_msk",
+    "synonyms": ["PsA enthesitis", "inflammatory entheseal insertion"]
+  },
+  {
+    "finding_key": "psa_pencil_in_cup",
+    "label": "Pencil-in-cup deformity",
+    "disease_keys": ["psa"],
+    "category": "radiology_xray",
+    "synonyms": ["pencil in cup deformity", "psoriatic arthritis osteolysis"]
+  },
+  {
+    "finding_key": "psa_periostitis",
+    "label": "Periostitis in psoriatic arthritis",
+    "disease_keys": ["psa"],
+    "category": "radiology_xray",
+    "synonyms": ["juxta-articular new bone formation", "periosteal reaction in PsA"]
+  },
+  {
+    "finding_key": "psa_acroosteolysis",
+    "label": "Acro-osteolysis in psoriatic arthritis",
+    "disease_keys": ["psa"],
+    "category": "radiology_xray",
+    "synonyms": ["distal phalanx resorption", "terminal tuft resorption"]
+  },
+  {
+    "finding_key": "psa_ankylosis",
+    "label": "Joint ankylosis in psoriatic arthritis",
+    "disease_keys": ["psa"],
+    "category": "radiology_xray",
+    "synonyms": ["interphalangeal ankylosis", "bony fusion in PsA"]
+  },
+  {
+    "finding_key": "psa_sacroiliitis",
+    "label": "Sacroiliitis in psoriatic arthritis",
+    "disease_keys": ["psa", "as"],
+    "category": "radiology_xray",
+    "synonyms": ["PsA sacroiliitis", "asymmetric sacroiliac erosions"]
+  },
+  {
+    "finding_key": "psa_synovitis_ultrasound",
+    "label": "Peripheral synovitis in psoriatic arthritis (ultrasound)",
+    "disease_keys": ["psa"],
+    "category": "us",
+    "synonyms": ["power Doppler synovitis in PsA", "PsA joint ultrasound"]
+  },
+  {
+    "finding_key": "psa_entheseal_inflammation_us",
+    "label": "Entheseal inflammation in psoriatic arthritis (ultrasound)",
+    "disease_keys": ["psa"],
+    "category": "us",
+    "synonyms": ["Doppler-positive enthesitis", "PsA enthesis ultrasound"]
+  },
+  {
+    "finding_key": "psa_dip_erosions",
+    "label": "Distal interphalangeal erosions in psoriatic arthritis",
+    "disease_keys": ["psa"],
+    "category": "radiology_xray",
+    "synonyms": ["DIP erosions", "PsA distal interphalangeal joint damage"]
+  },
+  {
+    "finding_key": "sarcoid_lupus_pernio",
+    "label": "Lupus pernio",
+    "disease_keys": ["sarcoidosis"],
+    "category": "skin",
+    "synonyms": ["violaceous plaques of the nose", "chronic cutaneous sarcoidosis of the face"]
+  },
+  {
+    "finding_key": "sarcoid_papules",
+    "label": "Papular cutaneous sarcoidosis",
+    "disease_keys": ["sarcoidosis"],
+    "category": "skin",
+    "synonyms": ["sarcoidal papules", "cutaneous granulomatous papules"]
+  },
+  {
+    "finding_key": "sarcoid_scar_infiltration",
+    "label": "Scar sarcoidosis",
+    "disease_keys": ["sarcoidosis"],
+    "category": "skin",
+    "synonyms": ["sarcoidosis in old scars", "scar infiltration by sarcoid"]
+  },
+  {
+    "finding_key": "sarcoid_erythema_nodosum",
+    "label": "Erythema nodosum in sarcoidosis",
+    "disease_keys": ["sarcoidosis"],
+    "category": "skin",
+    "synonyms": ["tender shin nodules in Löfgren syndrome", "sarcoid-associated erythema nodosum"]
+  },
+  {
+    "finding_key": "sarcoid_bilateral_hilar_adenopathy",
+    "label": "Bilateral hilar lymphadenopathy",
+    "disease_keys": ["sarcoidosis"],
+    "category": "radiology_xray",
+    "synonyms": ["bilateral hilar lymphadenopathy on chest radiograph", "stage I thoracic sarcoidosis"]
+  },
+  {
+    "finding_key": "sarcoid_parenchymal_opacities",
+    "label": "Pulmonary parenchymal sarcoidosis (chest radiograph)",
+    "disease_keys": ["sarcoidosis"],
+    "category": "radiology_xray",
+    "synonyms": ["stage II sarcoidosis", "reticulonodular pulmonary opacities"]
+  },
+  {
+    "finding_key": "sarcoid_perilymphatic_nodules",
+    "label": "Perilymphatic pulmonary nodules",
+    "disease_keys": ["sarcoidosis"],
+    "category": "ct",
+    "synonyms": ["peribronchovascular nodules on CT", "upper-lobe perilymphatic micronodules"]
+  },
+  {
+    "finding_key": "sarcoid_galaxy_sign",
+    "label": "Galaxy sign in pulmonary sarcoidosis",
+    "disease_keys": ["sarcoidosis"],
+    "category": "ct",
+    "synonyms": ["sarcoid galaxy sign", "coalescent nodules with satellite nodules"]
+  },
+  {
+    "finding_key": "sarcoid_noncaseating_granuloma",
+    "label": "Non-necrotizing granulomas",
+    "disease_keys": ["sarcoidosis"],
+    "category": "histology",
+    "synonyms": ["noncaseating granuloma", "sarcoidal granulomatous inflammation"]
+  },
+  {
+    "finding_key": "sarcoid_uveitis",
+    "label": "Uveitis in sarcoidosis",
+    "disease_keys": ["sarcoidosis"],
+    "category": "eye",
+    "synonyms": ["sarcoid uveitis", "granulomatous anterior uveitis"]
+  },
+  {
+    "finding_key": "sarcoid_lacrimal_gland_enlargement",
+    "label": "Lacrimal gland enlargement in sarcoidosis",
+    "disease_keys": ["sarcoidosis"],
+    "category": "ct",
+    "synonyms": ["sarcoid dacryoadenitis", "bilateral lacrimal gland enlargement"]
+  },
+  {
+    "finding_key": "gout_podagra",
+    "label": "Podagra (first MTP gout)",
+    "disease_keys": ["gout"],
+    "category": "clinical_msk",
+    "synonyms": ["acute gout of the first metatarsophalangeal joint", "gouty first toe"]
+  },
+  {
+    "finding_key": "gout_tophi",
+    "label": "Subcutaneous tophi",
+    "disease_keys": ["gout"],
+    "category": "skin",
+    "synonyms": ["tophaceous gout", "gouty tophus"]
+  },
+  {
+    "finding_key": "gout_auricular_tophi",
+    "label": "Auricular tophi",
+    "disease_keys": ["gout"],
+    "category": "skin",
+    "synonyms": ["tophus of the ear helix", "pinna tophus"]
+  },
+  {
+    "finding_key": "gout_overhanging_erosions",
+    "label": "Overhanging-edge erosions in gout",
+    "disease_keys": ["gout"],
+    "category": "radiology_xray",
+    "synonyms": ["punched-out gout erosions", "rat-bite erosions with sclerotic margins"]
+  },
+  {
+    "finding_key": "gout_joint_space_preservation",
+    "label": "Joint-space preservation in chronic gout",
+    "disease_keys": ["gout"],
+    "category": "radiology_xray",
+    "synonyms": ["preserved joint space despite erosions", "gout radiograph joint space"]
+  },
+  {
+    "finding_key": "gout_double_contour",
+    "label": "Ultrasound double-contour sign",
+    "disease_keys": ["gout"],
+    "category": "us",
+    "synonyms": ["urate double contour sign", "cartilage surface urate deposition"]
+  },
+  {
+    "finding_key": "gout_ultrasound_tophi",
+    "label": "Tophus on ultrasound",
+    "disease_keys": ["gout"],
+    "category": "us",
+    "synonyms": ["heterogeneous hyperechoic gouty mass", "ultrasound gout tophus"]
+  },
+  {
+    "finding_key": "gout_deposit_dect",
+    "label": "Urate deposition on dual-energy CT",
+    "disease_keys": ["gout"],
+    "category": "ct",
+    "synonyms": ["DECT urate color map", "dual-energy CT gout"]
+  },
+  {
+    "finding_key": "gout_synovial_crystals",
+    "label": "Needle-shaped monosodium urate crystals",
+    "disease_keys": ["gout"],
+    "category": "histology",
+    "synonyms": ["negatively birefringent urate crystals", "gout crystal microscopy"]
+  },
+  {
+    "finding_key": "gout_bursitis",
+    "label": "Gouty bursitis",
+    "disease_keys": ["gout"],
+    "category": "us",
+    "synonyms": ["olecranon tophaceous bursitis", "prepatellar gouty bursitis"]
+  },
+  {
+    "finding_key": "ad_flexural_eczema",
+    "label": "Flexural atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["flexural eczema", "antecubital and popliteal eczema"]
+  },
+  {
+    "finding_key": "ad_lichenification",
+    "label": "Lichenification in atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["lichenified eczema", "chronic scratch-induced skin thickening"]
+  },
+  {
+    "finding_key": "ad_infantile_face_scalp",
+    "label": "Infantile facial and scalp eczema",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["infantile atopic dermatitis cheeks", "eczema of infant face"]
+  },
+  {
+    "finding_key": "ad_hand_eczema",
+    "label": "Atopic hand eczema",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["chronic hand dermatitis in atopy", "fissured hand eczema"]
+  },
+  {
+    "finding_key": "ad_eyelid_eczema",
+    "label": "Eyelid atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["eyelid eczema", "periorbital atopic dermatitis"]
+  },
+  {
+    "finding_key": "ad_head_neck_dermatitis",
+    "label": "Head-and-neck atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["head and neck eczema", "facial atopic dermatitis in adults"]
+  },
+  {
+    "finding_key": "ad_nummular_lesions",
+    "label": "Nummular lesions in atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["discoid eczema in atopy", "coin-shaped eczematous plaques"]
+  },
+  {
+    "finding_key": "ad_excoriations",
+    "label": "Excoriations in atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["scratch marks", "excoriated eczematous lesions"]
+  },
+  {
+    "finding_key": "ad_prurigo_nodules",
+    "label": "Prurigo nodules associated with atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "skin",
+    "synonyms": ["nodular prurigo in atopy", "prurigo nodularis with atopic dermatitis"]
+  },
+  {
+    "finding_key": "ad_spongiosis_histology",
+    "label": "Spongiotic dermatitis in atopic dermatitis",
+    "disease_keys": ["ad"],
+    "category": "histology",
+    "synonyms": ["epidermal spongiosis", "atopic eczema biopsy"]
   }
 ]

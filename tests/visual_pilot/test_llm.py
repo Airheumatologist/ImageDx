@@ -226,8 +226,7 @@ def _req(i):
 def test_input_hash_golden_values():
     """Cache identity is stable for a prompt and changes with revised prompts.
 
-    P1 retains the original digest; P2/P3 v3 intentionally invalidate old
-    judgments after the clinical publication policy changed.
+    Configured scope changes the cache identities for all affected stages.
     """
     client = llm.LLMClient(provider="opencode")
     image = llm.ImageInput(
@@ -254,9 +253,9 @@ def test_input_hash_golden_values():
         ),
     }
     assert hashes == {
-        "p1": "12823cc4dfd929a47213daa432b10138afaf92c1fdc33db4c4836d4bc051eec1",
-        "p2": "be660cad44f059b68dab5fdc2d961b2f9bf574079eed217fa95a34e87fc10193",
-        "p3": "0dc52a9403bec7cbe928f97d96c8f32e93e177e6396de87c9ef94de7782ee6d2",
+        "p1": "03adc71560b008b38052f6c3d8279b914821d324e55aaba05f47f8a34719db85",
+        "p2": "a4971ee611e1de73d08b7e0960dac07a724227d7143765f282c256543aafe15c",
+        "p3": "6484b61db544eb7858aee570cf5e8574d3d40f2e3c4bb274caf927eef486ffaa",
     }
     assert hashes['p3'] != client._input_hash(
         'p3', 'space-bunny-free', 'p3.v1', P3.system,

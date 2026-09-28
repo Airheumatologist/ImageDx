@@ -121,6 +121,20 @@ def test_post_validate_non_pilot_disease_excluded():
     assert panel["exclusion_reason"] == "other_disease"
 
 
+def test_post_validate_accepts_new_catalog_disease():
+    result = {
+        "figure_id": "f",
+        "panels": [
+            {"panel_label": "A", "bbox": [0, 0, 1, 1], "include": True,
+             "exclusion_reason": None, "disease_key": "ra",
+             "findings": [], "proposed_findings": [], "confidence": 0.5}
+        ],
+    }
+    panel = judge.post_validate(result, set())["panels"][0]
+    assert panel["include"] is True
+    assert panel["disease_key"] == "ra"
+
+
 def test_post_validate_bbox_clamp_and_swap():
     result = {
         "figure_id": "f",
@@ -384,10 +398,14 @@ def test_extract_post_validate(conn):
         valid, src,
     )
     assert ok["finding_key"] == "gottron_papules"
-    # non-pilot disease dropped
+    # Unknown disease key is still dropped outside the configured catalog.
     assert extract_findings.post_validate(
-        {"disease_key": "ra", "finding_key": None, "quote": "quick"}, valid, src
+        {"disease_key": "not_in_catalog", "finding_key": None, "quote": "quick"}, valid, src
     ) is None
+    ra = extract_findings.post_validate(
+        {"disease_key": "ra", "finding_key": None, "quote": "quick brown"}, valid, src
+    )
+    assert ra and ra["disease_key"] == "ra"
     # unknown key -> proposed
     moved = extract_findings.post_validate(
         {"disease_key": "dm", "finding_key": "unknown_thing", "quote": "quick brown"},

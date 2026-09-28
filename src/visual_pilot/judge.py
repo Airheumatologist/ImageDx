@@ -40,9 +40,12 @@ PILOT_KEYS = set(diseases.DISEASE_KEYS)
 # P3 enum per disease (§6). Matching is case-insensitive with
 # hyphen/space->underscore folding.
 SUBTYPES = {
-    "sle": {"acle", "scle", "dle", "lupus_nephritis", "npsle", "other_systemic"},
-    "dm": {"classic", "cadm", "jdm", "anti_mda5", "cancer_associated"},
-    "as": {"r_axspa", "nr_axspa"},
+    key: {
+        re.sub(r"[^a-z0-9]+", "_", str(subtype.get("key", "")).casefold()).strip("_")
+        for subtype in disease.get("subtypes", [])
+        if subtype.get("key")
+    }
+    for key, disease in diseases.load_diseases().items()
 }
 
 # Lightweight, deterministic pre-vision ranking. This changes call order only:

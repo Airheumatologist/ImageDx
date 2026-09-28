@@ -5,8 +5,10 @@ findings-tagged collection of disease imagery curated from PMC open-access
 review articles with commercial-use licenses.
 
 Current disease scope: **SLE**, **dermatomyositis**, **ankylosing
-spondylitis** (see `src/visual_pilot/data/diseases.json`). The authoritative
-spec is `docs/visual_pilot_plan.md`.
+spondylitis**, **rheumatoid arthritis**, **systemic sclerosis**,
+**psoriasis**, **psoriatic arthritis**, **sarcoidosis**, **gout**, and
+**atopic dermatitis** (see `src/visual_pilot/data/diseases.json`). The
+authoritative spec is `docs/visual_pilot_plan.md`.
 
 ## Pipeline at a glance
 
@@ -317,13 +319,45 @@ findings.
 
 The previous pilot datasets, SQLite backups, image files, model-response
 caches, generated reports, and one-off evaluation artifacts were cleared on
-2026-09-27. No replacement runtime database has been initialized.
+2026-09-27. The replacement ten-disease pilot completed on 2026-09-28 UTC:
+420 parsed review articles, 167 saved images, **123 published images across
+all ten diseases**, and 6,486 text finding assertions. The publication audit
+saved 44 reversible exclusions; excluded images remain available on disk.
 
-Before starting the full run, replace `src/visual_pilot/data/diseases.json`
-with the new disease index and update `src/visual_pilot/data/findings_vocab.json`
-for that scope. The next `init` or `run-all` creates a fresh database under
-`data/visual_pilot/` (or `VP_DATA_DIR`). The unit tests and their synthetic
-fixtures remain available to validate the pipeline.
+The run used the new pipeline and the configured OpenRouter models:
+
+```bash
+python3 -m src.visual_pilot.cli run-all --disease all --limit 80 \
+  --batch-size 20 --max-articles 60 --max-runtime-seconds 7200 --budget-usd 5
+python3 -m src.visual_pilot.curation_audit --disease all --apply
+python3 -m src.visual_pilot.cli report
+python3 -m src.visual_pilot.cli serve --port 8765
+```
+
+Runtime data is under `data/visual_pilot/` (or `VP_DATA_DIR`); reports include
+`pilot_report.md`, `curation_audit_all.json`, and `viewer_qa.json`.
+The disease scope now drives CLI choices, prompt schemas, subtype validation,
+and publication matching. The viewer supports catalog diseases through
+generic tabs where a custom layout is not defined. Verification: 349 tests
+passed, all ten live disease pages returned HTTP 200, and all 334 saved image
+and thumbnail paths loaded and decoded successfully.
+
+### Threefold article expansion
+
+On 2026-09-28, the candidate limit was raised from 80 to 240 per disease and
+the per-run article cap from 60 to 180. Because screening reduced the actual
+article count, retrieval was widened to 480 candidates per disease. Caption
+rescue inspected up to 100 candidates per disease, with a targeted pass for
+eight candidates beyond that shortlist. The final library has **1,408 parsed
+review articles** (3.35× the initial run), **287 saved images**, and **184
+published images** (61 more, a 49.6% increase). The 6,486 original text
+finding assertions and every original image were preserved.
+
+The expansion used `run-all --image-only` with the same license, patient-image,
+whole-figure, and named-manifestation gates. The latest comparison and commands
+are in `data/visual_pilot/reports/expansion_3x/expansion_report.md`; the preview
+remains at `http://127.0.0.1:8765/`. Final QA checked all ten disease pages,
+184 visible cards, and all 574 saved image and thumbnail routes.
 
 ## Testing
 

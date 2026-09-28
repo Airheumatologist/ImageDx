@@ -73,7 +73,7 @@ def test_prepare_copies_and_resets(tmp_path, source_db, parity_set):
     assert rows["PMC1"]["license_code"] == "cc-by"  # license kept
     assert rows["PMC1"]["relevance_decision"] == "relevant"  # relevance kept
     assert rows["PMC2"]["license_code"] == "cc-by-nd"
-    assert conn.execute("SELECT COUNT(*) n FROM diseases").fetchone()["n"] == 3
+    assert conn.execute("SELECT COUNT(*) n FROM diseases").fetchone()["n"] == len(diseases.load_diseases())
     assert conn.execute("SELECT COUNT(*) n FROM findings_vocab").fetchone()["n"] > 0
     conn.close()
 

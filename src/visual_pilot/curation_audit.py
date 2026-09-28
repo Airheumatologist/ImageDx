@@ -14,7 +14,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import config, curation, db
+from . import config, curation, db, diseases
 
 
 def audit(conn, disease: str | None = None) -> dict:
@@ -88,7 +88,7 @@ def apply_audit(conn, report: dict) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data-dir', type=Path, default=config.data_dir())
-    parser.add_argument('--disease', choices=['sle', 'dm', 'as', 'all'], default='all')
+    parser.add_argument('--disease', choices=[*diseases.load_diseases(), 'all'], default='all')
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     root = args.data_dir.resolve()

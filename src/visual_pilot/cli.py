@@ -479,7 +479,7 @@ def build_parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument(
         "--disease",
-        choices=["sle", "dm", "as", "all"],
+        choices=[*diseases.disease_keys_from_catalog(), "all"],
         default="all",
         help="disease scope (default: all)",
     )

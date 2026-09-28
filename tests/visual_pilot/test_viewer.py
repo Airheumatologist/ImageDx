@@ -67,7 +67,12 @@ def client(tmp_path):
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "path",
-    ["/", "/disease/sle", "/disease/dm", "/disease/as", "/compare/sle-dm-skin"],
+    [
+        "/", "/disease/sle", "/disease/dm", "/disease/as", "/disease/ra",
+        "/disease/ssc", "/disease/psoriasis", "/disease/psa",
+        "/disease/sarcoidosis", "/disease/gout", "/disease/ad",
+        "/compare/sle-dm-skin",
+    ],
 )
 def test_pages_200(client, path):
     assert client.get(path).status_code == 200
@@ -75,7 +80,10 @@ def test_pages_200(client, path):
 
 def test_api_diseases(client):
     data = client.get("/api/diseases").json()
-    assert {d["key"] for d in data} == {"sle", "dm", "as"}
+    assert {d["key"] for d in data} == {
+        "sle", "dm", "as", "ra", "ssc", "psoriasis", "psa",
+        "sarcoidosis", "gout", "ad",
+    }
     assert all(d["subtypes"] for d in data)
 
 
@@ -220,7 +228,6 @@ def test_sle_vascular_findings_ignore_model_subtype_and_histology_mucosa(client)
     assert vascular["clinical_group"] == "Vascular findings"
     assert vascular["tab"] == "skin"
     assert vascular["clinical_tab"] == "skin"
-
     from src.visual_pilot.viewer.app import assign_tab, _categories
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -228,6 +235,22 @@ def test_sle_vascular_findings_ignore_model_subtype_and_histology_mucosa(client)
     conn.close()
     histology_oral = {"modality": "histology_he", "body_site": "oral mucosa", "findings": [{"key": "oral_ulcer"}]}
     assert assign_tab(histology_oral, __import__("src.visual_pilot.viewer.app", fromlist=["TABS"]).TABS["sle"], categories) == "other"
+
+
+def test_catalog_disease_without_custom_tabs_is_browsable(client):
+    assert client.get("/disease/ra").status_code == 200
+    tabs = client.get("/api/diseases/ra/tabs").json()
+    assert {tab["key"] for tab in tabs} >= {
+        "skin", "musculoskeletal", "eye", "capillaroscopy", "histology", "imaging", "pediatric"
+    }
+    panels = client.get("/api/diseases/ra/panels").json()
+    assert panels["count"] == len(panels["panels"])
+    assert client.get("/api/diseases/not-in-catalog/tabs").status_code == 404
+
+    from src.visual_pilot.viewer.app import GENERIC_TABS, assign_tab
+    categories = {"joint_swelling": "clinical_msk", "uveitis": "eye", "nailfold_capillaries": "capillaroscopy"}
+    assert assign_tab({"modality": "clinical_photo", "findings": [{"key": "joint_swelling"}]}, GENERIC_TABS, categories) == "musculoskeletal"
+    assert assign_tab({"modality": "clinical_photo", "findings": [{"key": "uveitis"}]}, GENERIC_TABS, categories) == "eye"
 
 
 def test_caption_label_skips_demographic_lead_in_and_wrong_finding_label():

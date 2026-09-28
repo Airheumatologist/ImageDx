@@ -1,8 +1,11 @@
 # Visual Findings Library pilot
 
 Self-contained pilot for a VisualDx-style image library covering **SLE**,
-**dermatomyositis** and **ankylosing spondylitis**, built only from PMC
-open-access review articles with commercial-use licenses. Spec:
+**dermatomyositis**, **ankylosing spondylitis**, **rheumatoid arthritis**,
+**systemic sclerosis**, **psoriasis**, **psoriatic arthritis**, **sarcoidosis**,
+**gout**, and **atopic dermatitis**, built only from PMC open-access review
+articles with commercial-use licenses. The disease index and approved visual
+findings are in `data/diseases.json` and `data/findings_vocab.json`. Spec:
 `docs/visual_pilot_plan.md`.
 
 ## Usage
@@ -18,6 +21,31 @@ Stages: `init | select | parse | triage | judge | store | extract | report |
 serve | run-all`. Every stage is idempotent and resumes from the `status`
 column. Data lives under `data/visual_pilot/` (override with `VP_DATA_DIR`):
 `visual_pilot.sqlite`, `panels/`, `thumbs/`, `figures/`, `reports/`.
+
+## Fresh data run
+
+The previous pilot data and generated artifacts were cleared on 2026-09-27.
+The replacement ten-disease run completed on 2026-09-28 UTC with 420 parsed
+articles, 167 saved images, 123 published images, and 6,486 text finding
+assertions. All ten diseases have published images. The audit saved 44
+reversible exclusions and a pre-curation database backup.
+
+The run used `run-all --disease all --limit 80 --batch-size 20
+--max-articles 60 --max-runtime-seconds 7200 --budget-usd 5`, followed by
+`curation_audit --disease all --apply` and `report`. Use
+`python3 -m src.visual_pilot.cli serve --port 8765` to preview the library.
+Reports and verification results live in `data/visual_pilot/reports/`.
+
+The 2026-09-28 image expansion then increased the candidate limit to 240 and
+finally 480 per disease, with a per-run article cap of 180. Caption rescue used
+100-candidate inspection passes and a targeted eight-article tail. It finished
+with 1,408 parsed review articles (3.35× the original), 287 saved images, and
+184 published images (61 more than the initial run). All 6,486 original text
+finding assertions and existing images were preserved. The same clinical-image
+publication criteria applied. See
+`data/visual_pilot/reports/expansion_3x/expansion_report.md` for the full
+commands and per-disease counts; `viewer_qa.json` in that directory verifies
+all ten pages and all 574 saved media routes.
 
 Article selection adds up to `VP_VISUAL_QUERY_CAP` finding/modality passage
 queries per disease (default 12), prioritizing findings with fewer stored

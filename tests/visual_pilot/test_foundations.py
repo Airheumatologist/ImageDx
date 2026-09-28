@@ -376,7 +376,7 @@ def test_seed_twice_gives_same_counts(conn):
         for table in ("diseases", "findings_vocab")
     }
     assert first == second
-    assert first["diseases"] == 3
+    assert first["diseases"] == len(diseases.load_diseases())
     assert first["findings_vocab"] > 0
 
 
@@ -491,7 +491,7 @@ def test_cli_init_and_stub(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("VP_DATA_DIR", str(tmp_path / "vp"))
     assert cli.main(["init"]) == 0
     out = capsys.readouterr().out
-    assert "diseases: 3" in out
+    assert f"diseases: {len(diseases.load_diseases())}" in out
     assert "findings_vocab:" in out
     assert (tmp_path / "vp" / "visual_pilot.sqlite").exists()
 

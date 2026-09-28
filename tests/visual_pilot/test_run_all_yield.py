@@ -318,7 +318,9 @@ def test_run_all_round_robins_in_scope_diseases(conn, monkeypatch):
     assert cli._cmd_run_all(_args(disease="all")) == 0
     # One batch per disease per rotation; dm's queue empties first without
     # stopping sle/as, and each disease is re-polled until exhausted.
-    assert select_order == ["sle", "dm", "as", "sle", "dm", "as", "sle", "as"]
+    assert select_order == list(diseases.DISEASE_KEYS) + [
+        "sle", "dm", "as", "sle", "as"
+    ]
     assert stored == [
         ("sle", "PMC_sle_0"),
         ("dm", "PMC_dm_0"),
@@ -372,7 +374,7 @@ def test_run_all_zero_yield_stop_is_per_disease(conn, monkeypatch, capsys):
     assert cli._cmd_run_all(_args(disease="all")) == 0
     # dm stops after two consecutive zero-yield batches; sle keeps rotating
     # until its own queue is exhausted.
-    assert select_order == ["sle", "dm", "as", "sle", "dm", "sle", "sle"]
+    assert select_order == list(diseases.DISEASE_KEYS) + ["sle", "dm", "sle", "sle"]
     out = capsys.readouterr().out
     assert "dm stopped after 2 consecutive zero-yield batches" in out
     assert "sle stopped" not in out

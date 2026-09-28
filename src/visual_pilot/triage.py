@@ -39,10 +39,25 @@ _PATIENT_IMAGE_CATEGORIES = {
     "immunofluorescence", "radiology", "ultrasound", "echo",
     "endoscopy", "ophthalmic", "gross", "mixed",
 }
-_OTHER_DISEASE_CUES = (
+_KNOWN_OTHER_DISEASE_CUES = (
     "systemic sclerosis", "rheumatoid arthritis", "psoriatic arthritis",
     "polymyositis", "inclusion body myositis", "healthy control",
 )
+
+
+def _other_disease_cues() -> tuple[str, ...]:
+    """Keep deterministic alternate-disease guards out of the target scope."""
+    configured = " ".join(
+        " ".join([data.get("name", ""), *data.get("synonyms", [])]).casefold()
+        for data in diseases.load_diseases().values()
+    )
+    return tuple(
+        cue for cue in _KNOWN_OTHER_DISEASE_CUES
+        if cue not in configured
+    )
+
+
+_OTHER_DISEASE_CUES = _other_disease_cues()
 
 
 def _cached_pattern(patterns: dict, term) -> re.Pattern:

@@ -10,6 +10,9 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
+
+from . import diseases
 
 POLICY_VERSION = "clinical-panels.v3"
 
@@ -27,15 +30,14 @@ _VETERINARY = re.compile(
     r"\b(?:veterinary|canine|feline|in dogs?|in cats?|dogs? with (?:lupus|dermatomyositis)|cats? with (?:lupus|dermatomyositis)|dog model|mouse model|murine model)\b",
     re.I,
 )
-_OTHER_DISEASE = re.compile(
-    r"\b(?:sarcoidosis|scleroderma|systemic sclerosis|rheumatoid arthritis|psoriatic arthritis|polymyositis|inclusion body myositis|covid-19|interferonopathy|tafro syndrome|oro-facial granulomatosis)\b",
-    re.I,
+# These abbreviations have common meanings outside the disease itself. The
+# full configured disease name still matches, while the acronym alone cannot
+# accidentally establish a figure's disease association.
+_AMBIGUOUS_ACRONYMS = {"ad", "as", "dm", "psa", "ra", "ssc"}
+_NONPILOT_DISEASES = (
+    "scleroderma", "polymyositis", "inclusion body myositis", "covid-19",
+    "interferonopathy", "tafro syndrome", "oro-facial granulomatosis",
 )
-_TARGET_CUES = {
-    "sle": re.compile(r"\b(?:sle|systemic lupus erythematosus|lupus)\b", re.I),
-    "dm": re.compile(r"\b(?:dermatomyositis|juvenile dermatomyositis|anti[- ]?mda5)\b", re.I),
-    "as": re.compile(r"\b(?:ankylosing spondylitis|axspa|axial spondyloarthritis|nr[- ]?axspa|r[- ]?axspa)\b", re.I),
-}
 _NEGATIVE = re.compile(
     r"\b(?:normal control|healthy control|unaffected control|negative control|control group|normal image|normal scan|normal mri|normal capillary bed|normal capillary pattern|unremarkable (?:image|scan|mri|finding))\b",
     re.I,
@@ -44,6 +46,51 @@ _BAD_PANEL = re.compile(
     r"\b(?:diagram of|schematic of|flow ?chart|classification chart|classification table|text[- ]only graphic)\b",
     re.I,
 )
+
+
+def _term_pattern(term: str) -> re.Pattern | None:
+    """Compile a configured disease name/synonym with phrase-aware boundaries."""
+    value = " ".join(str(term or "").strip().split())
+    if len(value) < 3 or value.casefold() in _AMBIGUOUS_ACRONYMS:
+        return None
+    words = re.split(r"[\s-]+", value)
+    body = r"[\s-]+".join(re.escape(word) for word in words if word)
+    if not body:
+        return None
+    return re.compile(r"(?<![a-z0-9])" + body + r"(?![a-z0-9])", re.I)
+
+
+@lru_cache(maxsize=1)
+def _disease_matchers() -> dict[str, tuple[re.Pattern, ...]]:
+    """Build exact-phrase matchers from the disease catalog's names/synonyms."""
+    matchers = {}
+    for key, item in diseases.load_diseases().items():
+        patterns = []
+        seen = set()
+        for term in (item.get("name", ""), *item.get("synonyms", [])):
+            pattern = _term_pattern(term)
+            if pattern and pattern.pattern not in seen:
+                seen.add(pattern.pattern)
+                patterns.append(pattern)
+        matchers[key] = tuple(patterns)
+    return matchers
+
+
+def _diseases_in_text(text: str) -> set[str]:
+    return {
+        key for key, patterns in _disease_matchers().items()
+        if any(pattern.search(text or "") for pattern in patterns)
+    }
+
+
+_NONPILOT_MATCHERS = tuple(
+    pattern for term in _NONPILOT_DISEASES
+    if (pattern := _term_pattern(term)) is not None
+)
+
+
+def _has_nonpilot_disease(text: str) -> bool:
+    return any(pattern.search(text or "") for pattern in _NONPILOT_MATCHERS)
 
 
 def _json_value(value, default):
@@ -159,14 +206,13 @@ def exclusion_reason(
         return source_reason
     caption = _text(_get(figure, "caption"))
     target = _text(_get(panel, "disease_key"))
-    if target in _TARGET_CUES:
-        target_in_caption = bool(_TARGET_CUES[target].search(caption))
+    matchers = _disease_matchers()
+    if target in matchers:
+        target_in_caption = target in _diseases_in_text(caption)
         title = _text(_get(article, "title"))
-        target_in_title = bool(_TARGET_CUES[target].search(title))
-        other_pilot_disease = any(
-            cue.search(caption) for key, cue in _TARGET_CUES.items() if key != target
-        )
-        if (_OTHER_DISEASE.search(caption) or other_pilot_disease) and not target_in_caption:
+        target_in_title = target in _diseases_in_text(title)
+        other_diseases = _diseases_in_text(caption) - {target}
+        if (other_diseases or _has_nonpilot_disease(caption)) and not target_in_caption:
             return "caption identifies another disease"
         # Disease-focused titles can establish scope for terse captions such
         # as "Malar rash". General review topics alone cannot attribute a
