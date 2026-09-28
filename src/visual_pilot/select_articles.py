@@ -527,7 +527,6 @@ def _ns_query(ns, rank_by, filters, top_k, counters=None, attributes=None) -> li
     result = ns.query(
         rank_by=rank_by,
         filters=filters,
-        top_k=top_k,
         limit={"total": top_k, **_PER_PMCID_LIMIT},
         include_attributes=attributes or DISCOVERY_ATTRIBUTES,
     )
@@ -577,7 +576,6 @@ def _rank_jobs(ns, jobs, contexts, counters=None) -> list[list[dict]]:
             queries.append({
                 "rank_by": rank_by,
                 "filters": _review_filters(),
-                "top_k": top_k,
                 "limit": {"total": top_k, **_PER_PMCID_LIMIT},
                 "include_attributes": attrs,
             })
@@ -802,7 +800,7 @@ def abstract_for(ns, pmcid: str) -> str:
     try:
         result = ns.query(
             filters=["pmcid", "Eq", pmcid],
-            top_k=1,
+            limit=1,
             include_attributes=["abstract"],
         )
         rows = getattr(result, "rows", [])
@@ -823,7 +821,6 @@ def hydrate_metadata(ns, pmcids: list[str], billing_counters=None) -> dict[str, 
                 queries = [
                     {
                         "filters": ["pmcid", "Eq", pmcid],
-                        "top_k": 1,
                         "limit": 1,
                         "include_attributes": METADATA_ATTRIBUTES,
                     }
@@ -846,7 +843,6 @@ def hydrate_metadata(ns, pmcids: list[str], billing_counters=None) -> dict[str, 
         filters = ["Or", [["pmcid", "Eq", pmcid] for pmcid in batch]]
         result = ns.query(
             filters=filters,
-            top_k=len(batch),
             limit={"total": len(batch), **_PER_PMCID_LIMIT},
             include_attributes=METADATA_ATTRIBUTES,
         )
