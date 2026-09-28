@@ -14,7 +14,7 @@ spec is `docs/visual_pilot_plan.md`.
                         Visual Findings Library pipeline
                         ================================
 
-  PREBUILT INDEXES                    LLM STAGES (OpenCode Zen)
+  PREBUILT INDEXES                    LLM STAGES (OpenRouter)
   +---------------------------+       P1 article relevance   (text)
   | turbopuffer PMC namespace |       P2 caption triage      (text, batched)
   |  chunk-level: title BM25, |       P3 figure judgment     (vision)
@@ -128,7 +128,7 @@ depict the target disease.
 ### 3. `triage` — caption triage (`triage.py`, prompt P2)
 
 `pending` figures go to a text model (`VP_TRIAGE_MODEL`, default
-`space-bunny-free` on OpenCode Zen) in batches of `VP_TRIAGE_BATCH` (40). Per
+`stealth/space-bunny-alpha` on OpenRouter) in batches of `VP_TRIAGE_BATCH` (40). Per
 figure the model
 returns a route:
 

@@ -1,7 +1,8 @@
 """LLM provider layer for the visual pilot.
 
-OpenAI-compatible chat calls on OpenCode Zen (``VP_LLM_PROVIDER=opencode``)
-with strict JSON-schema output, one repair retry on validation failure, an
+OpenAI-compatible chat calls (default provider OpenRouter,
+``VP_LLM_PROVIDER=openrouter``; ``opencode`` and ``deepinfra`` remain
+supported) with strict JSON-schema output, one repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 

@@ -3,7 +3,7 @@
 > **Repo adjustments (authoritative, override the text below where they conflict):**
 > - Repo root is `/Volumes/Vibing/Turborag` (not `/Volumes/Vibing/Review Article`). Python 3.14 system interpreter (`python3`); pillow, lxml, jsonschema, httpx, openai, turbopuffer, fastapi, pytest, ruff are installed. Add any new runtime deps (pillow, lxml, jsonschema) to `requirements.txt`.
 > - There is no `tests/` dir yet; create `tests/visual_pilot/`. `.gitignore` ignores `test_*.py` except under `tests/`. Add `data/visual_pilot/` to `.gitignore`.
-> - LLM provider: **OpenCode Zen** (OpenAI-compatible, `OPENCODE_API_KEY`, `OPENCODE_BASE_URL`). DeepInfra (`DEEPINFRA_API_KEY`, `DEEPINFRA_BASE_URL`) is used only for query embeddings/reranking. Defaults: `VP_TRIAGE_MODEL`/`VP_EXTRACT_MODEL`/`VP_JUDGE_MODEL` all default to `space-bunny-free` (multimodal, so it covers the vision judge). Triage batch size: `VP_TRIAGE_BATCH` (default 40).
+> - LLM provider: **OpenRouter** (OpenAI-compatible, `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`; OpenCode Zen remains a supported `VP_LLM_PROVIDER=opencode` alternative). DeepInfra (`DEEPINFRA_API_KEY`, `DEEPINFRA_BASE_URL`) is used only for query embeddings/reranking. Defaults: `VP_TRIAGE_MODEL`/`VP_EXTRACT_MODEL`/`VP_JUDGE_MODEL` all default to `stealth/space-bunny-alpha` (multimodal, so it covers the vision judge). Triage batch size: `VP_TRIAGE_BATCH` (default 40).
 > - Existing `frontend/` and existing `src/*.py` modules must not be modified (import/reuse only).
 
 The orchestrator owns sections 2, 4 and 6 (decisions, schema, prompts). Implementers must not change them.
@@ -73,7 +73,7 @@ The orchestrator owns sections 2, 4 and 6 (decisions, schema, prompts). Implemen
   - `thumbs/{panel_id}.webp`
   - `figures/{pmcid}/{figure_file}` (original of each accepted figure)
   - `reports/`
-- **New env vars:** `VP_TRIAGE_MODEL`, `VP_JUDGE_MODEL`, `VP_EXTRACT_MODEL`, `VP_LLM_PROVIDER` (opencode, default opencode), `VP_IMAGE_MAX_EDGE=1568`, `VP_NCBI_API_KEY` (optional), `VP_CONCURRENCY`, `VP_DATA_DIR`. Never commit `.env`. Document them in `env.example`.
+- **New env vars:** `VP_TRIAGE_MODEL`, `VP_JUDGE_MODEL`, `VP_EXTRACT_MODEL`, `VP_LLM_PROVIDER` (openrouter|opencode|deepinfra, default openrouter), `VP_IMAGE_MAX_EDGE=1568`, `VP_NCBI_API_KEY` (optional), `VP_CONCURRENCY`, `VP_DATA_DIR`. Never commit `.env`. Document them in `env.example`.
 
 ---
 

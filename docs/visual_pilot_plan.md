@@ -77,9 +77,14 @@ the model name) matches the seeded ledger.
 
 Note: GLM-5.3-Flash is nondeterministic at temperature 0 — identical P3
 inputs produced 65/63/63/64 accepts across the W11 probe runs. Parity
-therefore relies on the seeded ledger, never on re-decision. Production
-defaults still point at `space-bunny-free`; switching them is a deliberate
-follow-up decision (changes the cache domain).
+therefore relies on the seeded ledger, never on re-decision.
+
+**Resolved 2026-09-27 (`5219c7a`):** production defaults switched to
+OpenRouter `stealth/space-bunny-alpha` (`VP_LLM_PROVIDER=openrouter`;
+`opencode`/`deepinfra` remain supported providers). This changes
+`input_hash`'s model component, so the DeepInfra-keyed parity baseline
+below cannot validate future candidates — record a fresh baseline before
+the next parity gate.
 
 ### Nondeterminism / correctness fixes made during gating
 
@@ -255,13 +260,14 @@ Every workstream must, before handoff:
   mocked LLM clients; see `tests/visual_pilot/conftest.py`.
 - Live runs must use a **scratch** `VP_DATA_DIR`, never the main
   `data/visual_pilot/`, unless the coordinator says otherwise.
-- Live/parity runs currently need
-  `VP_LLM_PROVIDER=deepinfra
+- The recorded parity baseline predates the provider switch; replaying it
+  needs `VP_LLM_PROVIDER=deepinfra
   VP_TRIAGE_MODEL=zai-org/GLM-5.3-Flash
   VP_EXTRACT_MODEL=zai-org/GLM-5.3-Flash
   VP_JUDGE_MODEL=zai-org/GLM-5.3-Flash`
-  so `input_hash` matches the seeded ledger (§0 provider note).
-  `DEEPINFRA_API_KEY` is in the gitignored `.env`, auto-loaded by config.
+  so `input_hash` matches its seeded ledger (§0 provider note). For new
+  baselines/candidates under the OpenRouter defaults, export nothing —
+  `OPENROUTER_API_KEY` is in the gitignored `.env`, auto-loaded by config.
 - Parity artifacts live under `reports/` (gitignored):
   `parity_baseline/` is the recorded live baseline; candidates go to
   `reports/parity_candidate_*`.
@@ -782,7 +788,7 @@ Known limitations / follow-ups: <list>
 
 | Risk | Mitigation |
 |---|---|
-| Provider rate limits / schema compatibility | W11 probe ran on DeepInfra GLM: zero 429s at c≤16, p95 latency fails criterion >4 → default stays 4. `space-bunny-free` upstream currently 400s on union-type schemas — production default unchanged pending a deliberate decision (§0) |
+| Provider rate limits / schema compatibility | W11 probe ran on DeepInfra GLM: zero 429s at c≤16, p95 latency fails criterion >4 → default stays 4. `space-bunny-free` upstream currently 400s on union-type schemas — resolved: production defaults moved to OpenRouter `stealth/space-bunny-alpha` (§0) |
 | Higher S3 rate triggers throttling (503 SlowDown) | Existing backoff honors `Retry-After`; `VP_S3_RPS` is tunable; timing report tracks retries |
 | Thread-safety of shared SQLite connection | All writes stay on the owning stage's main thread; LLM ledger writes stay under the existing lock; background parse (W9) uses its own connection |
 | Memory growth from in-memory caches | Every cache bounded (C3 LRU sizes, C5 MB cap, C6 bounded); judge buffers ≤2× in-flight |

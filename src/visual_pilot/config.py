@@ -1,6 +1,6 @@
 """Configuration for the Visual Findings Library pilot.
 
-Provider settings (OpenCode Zen, DeepInfra embeddings, turbopuffer) are read
+Provider settings (OpenRouter, DeepInfra embeddings, turbopuffer) are read
 from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
 are read here with their spec defaults (docs/visual_pilot_plan.md §3).
@@ -41,7 +41,7 @@ def _env_float(name: str, default: float) -> float:
 
 # -----------------------------------------------------------------------------
 # Provider settings: turbopuffer PMC namespace for retrieval, DeepInfra for
-# query embeddings only, and OpenCode Zen for all LLM stages (P1-P4).
+# query embeddings only, and OpenRouter for all LLM stages (P1-P4).
 # -----------------------------------------------------------------------------
 DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
 DEEPINFRA_BASE_URL = os.getenv(
@@ -126,8 +126,8 @@ VP_TIMINGS = _env_int("VP_TIMINGS", 1)
 # calling the provider (used with seeded candidate runs; default off).
 VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 
-# Per-model USD per 1M tokens (input/output). space-bunny-free is free for a
-# limited time on OpenCode Zen; override or extend at runtime with
+# Per-model USD per 1M tokens (input/output). stealth/space-bunny-alpha is
+# free on OpenRouter; override or extend at runtime with
 # VP_MODEL_PRICES_JSON='{"model": {"in": x, "out": y}}'.
 MODEL_PRICES = {
     "space-bunny-free": {"in": 0.0, "out": 0.0},
