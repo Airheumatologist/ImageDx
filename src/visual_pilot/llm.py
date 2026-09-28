@@ -380,7 +380,7 @@ class LLMClient:
 
         try:
             resp = self._with_retries(lambda: _send(mode))
-        except (openai.BadRequestError, openai.InternalServerError) as exc:
+        except (openai.BadRequestError, openai.InternalServerError):
             if mode == "json_schema":
                 mode = "json_object"
                 self._response_mode[model] = mode
