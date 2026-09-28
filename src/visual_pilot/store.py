@@ -2,10 +2,12 @@
 
 For each ``vision_accepted`` figure the original bytes come from the
 judge->store handoff cache (contract C5, ``originals.take``) or are
-refetched into memory; the original is written to
-``figures/{pmcid}/{basename}`` (TIFF converted to PNG on write) and every
-included panel is cropped from its normalized bbox (2% padding of the
-original size, clamped) to ``panels/{disease}/{modality}/{panel_id}.png``
+refetched into memory; a display copy capped at ``VP_ORIGINAL_MAX_EDGE``
+is written to ``figures/{pmcid}/{stem}.webp`` (raw bytes stay refetchable
+from the PMC S3 bundle) and every included panel is cropped from its
+normalized bbox (2% padding of the original size, clamped), capped at
+``VP_PANEL_MAX_EDGE`` and encoded per ``VP_PANEL_FORMAT``/``VP_PANEL_QUALITY``
+(default WebP q90) to ``panels/{disease}/{modality}/{panel_id}.{ext}``
 with a 400px WebP thumb in ``thumbs/``. ``whole_figure`` crop mode applies
 to ND licenses, missing or tiny (<3%) bboxes and >30% overlaps between
 included panels. When ``figures.sha256`` is set the bytes must match it; a
@@ -16,8 +18,8 @@ Attribution (contract C6) is built from the persisted
 ``articles.authors_json``/``author_count``/``journal_name``; a hinted JATS
 refetch is used only when those fields are missing.
 
-Exact dedup: panels whose saved PNG sha256 already exists reuse the earlier
-file but keep their own row, attribution and license. Proposed findings
+Exact dedup: panels whose saved image sha256 already exists reuse the
+earlier file but keep their own row, attribution and license. Proposed findings
 upsert into findings_vocab exactly once per figure (the vision_accepted ->
 stored transition is the only place they are counted).
 
@@ -193,7 +195,45 @@ def slugify(term: str) -> str:
 def save_thumb(img: Image.Image, path: Path) -> None:
     thumb = img.copy()
     thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
-    thumb.save(path, format="WEBP")
+    thumb.save(path, format="WEBP", quality=80, method=6)
+
+
+def _cap_edge(img: Image.Image, max_edge: int) -> Image.Image:
+    """Return ``img`` downscaled so the long edge is <= ``max_edge``
+    (0 disables). Returns the same object when no resize is needed."""
+    if max_edge and max(img.size) > max_edge:
+        scale = max_edge / max(img.size)
+        return img.resize(
+            (max(1, round(img.width * scale)), max(1, round(img.height * scale))),
+            Image.Resampling.LANCZOS,
+        )
+    return img
+
+
+_PANEL_ENCODINGS = {
+    "webp": (".webp", "WEBP"),
+    "jpeg": (".jpg", "JPEG"),
+    "png": (".png", "PNG"),
+}
+
+
+def _encode_panel(img: Image.Image) -> tuple[bytes, str]:
+    """(encoded_bytes, file_ext) for one panel per VP_PANEL_FORMAT/QUALITY."""
+    try:
+        ext, pil_fmt = _PANEL_ENCODINGS[config.VP_PANEL_FORMAT]
+    except KeyError:
+        raise ValueError(
+            f"VP_PANEL_FORMAT must be one of {sorted(_PANEL_ENCODINGS)}"
+        ) from None
+    buf = io.BytesIO()
+    if pil_fmt == "PNG":
+        img.save(buf, format="PNG", optimize=True)
+    elif pil_fmt == "JPEG":
+        img.save(buf, format="JPEG", quality=config.VP_PANEL_QUALITY,
+                 optimize=True, progressive=True)
+    else:
+        img.save(buf, format="WEBP", quality=config.VP_PANEL_QUALITY, method=6)
+    return buf.getvalue(), ext
 
 
 # ---------------------------------------------------------------------------
@@ -201,26 +241,26 @@ def save_thumb(img: Image.Image, path: Path) -> None:
 # ---------------------------------------------------------------------------
 def _original_basename(figure: dict) -> str:
     name = PurePosixPath((figure.get("image_url") or "").split("?")[0]).name
-    return name or f"{figure['figure_id'].replace(':', '_')}.png"
+    return name or f"{figure['figure_id'].replace(':', '_')}.webp"
 
 
-def _encode_original(original_bytes: bytes, figure: dict) -> tuple[str, bytes]:
-    """(rel_path, file_bytes) for the original figure; TIFF originals are
-    converted to PNG (and the saved name gets a .png suffix)."""
-    name = _original_basename(figure)
-    data = original_bytes
-    with Image.open(io.BytesIO(original_bytes)) as im:
-        if (im.format or "").upper() in {"TIFF", "TIF"}:
-            buf = io.BytesIO()
-            im.convert("RGB").save(buf, format="PNG")
-            data = buf.getvalue()
-            name = PurePosixPath(name).with_suffix(".png").name
-    return f"figures/{figure['pmcid']}/{name}", data
+def _encode_original(img: Image.Image, figure: dict) -> tuple[str, bytes]:
+    """(rel_path, file_bytes) for the stored figure original: a display copy
+    re-encoded as WebP capped at ``VP_ORIGINAL_MAX_EDGE``. The verbatim bytes
+    are never written to disk — they stay refetchable from the PMC S3 bundle
+    (``figures.sha256`` verifies the pixels on refetch)."""
+    name = PurePosixPath(_original_basename(figure)).with_suffix(".webp").name
+    buf = io.BytesIO()
+    _cap_edge(img, config.VP_ORIGINAL_MAX_EDGE).save(
+        buf, format="WEBP", quality=config.VP_PANEL_QUALITY, method=6
+    )
+    return f"figures/{figure['pmcid']}/{name}", buf.getvalue()
 
 
 def write_original(original_bytes: bytes, figure: dict, data_dir: Path) -> str:
-    """Save the original figure bytes (see ``_encode_original``)."""
-    rel, data = _encode_original(original_bytes, figure)
+    """Save the display copy of a figure original (see ``_encode_original``)."""
+    with Image.open(io.BytesIO(original_bytes)) as im:
+        rel, data = _encode_original(im.convert("RGB"), figure)
     path = data_dir / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
@@ -344,7 +384,7 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
         with timing.inflight("store_pool"):
             original_bytes = _original_bytes(figure)
             img = Image.open(io.BytesIO(original_bytes)).convert("RGB")
-            original_file = _encode_original(original_bytes, figure)
+            original_file = _encode_original(img, figure)
 
             vision = db.from_json(figure["vision_json"], {}) or {}
             all_panels = vision.get("panels") or []
@@ -372,13 +412,12 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
                 crop = img if mode == "whole_figure" else img.crop(
                     bbox_to_pixels(panel["bbox"], width, height)
                 )
-                png_io = io.BytesIO()
-                crop.save(png_io, format="PNG")
-                png_bytes = png_io.getvalue()
+                crop = _cap_edge(crop, config.VP_PANEL_MAX_EDGE)
+                img_bytes, img_ext = _encode_panel(crop)
                 thumb_io = io.BytesIO()
                 thumb = crop.copy()
                 thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
-                thumb.save(thumb_io, format="WEBP")
+                thumb.save(thumb_io, format="WEBP", quality=80, method=6)
                 pid = panel_id_for(
                     figure["pmcid"], fig_xml_id, panel.get("panel_label") or "A"
                 )
@@ -387,14 +426,14 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
                     {
                         "panel": panel,
                         "mode": mode,
-                        "png": png_bytes,
+                        "img_bytes": img_bytes,
                         "thumb": thumb_io.getvalue(),
-                        "sha": hashlib.sha256(png_bytes).hexdigest(),
+                        "sha": hashlib.sha256(img_bytes).hexdigest(),
                         "width": crop.width,
                         "height": crop.height,
                         "pid": pid,
                         "modality": modality,
-                        "rel_img": f"panels/{panel['disease_key']}/{modality}/{pid}.png",
+                        "rel_img": f"panels/{panel['disease_key']}/{modality}/{pid}{img_ext}",
                         "rel_thumb": f"thumbs/{pid}.webp",
                     }
                 )
@@ -477,7 +516,7 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
                 rel_img, rel_thumb = existing["image_path"], existing["thumb_path"]
             stats["dedup"] += 1
         else:
-            _write_file(data_dir, rel_img, item["png"])
+            _write_file(data_dir, rel_img, item["img_bytes"])
             _write_file(data_dir, rel_thumb, item["thumb"])
             seen_sha.add(sha)
 
@@ -687,7 +726,7 @@ def run(args) -> int:
         print(f"{fig['figure_id']}: store error {exc}")
         conn.commit()
 
-    # W7: fetch + decode + crop + encode run on a VP_FETCH_CONCURRENCY pool
+    # W7: fetch + decode + crop + WebP encode run on a VP_FETCH_CONCURRENCY pool
     # with bounded lookahead (2x workers); results are applied on this thread
     # strictly in figure order — one transaction per figure — so the sha256
     # dedup check sees panels inserted earlier in the same run and the whole

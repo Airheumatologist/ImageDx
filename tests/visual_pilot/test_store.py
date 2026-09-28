@@ -160,7 +160,7 @@ def test_store_run_uses_originals_handoff(conn, vp_data_dir, monkeypatch):
         "SELECT status FROM figures WHERE figure_id='PMC1:F1'"
     ).fetchone()["status"] == "stored"
     assert conn.execute("SELECT COUNT(*) n FROM panels").fetchone()["n"] == 1
-    assert (vp_data_dir / "figures" / "PMC1" / "f1.png").exists()
+    assert (vp_data_dir / "figures" / "PMC1" / "f1.webp").exists()
     assert originals._stats() == (0, 0)
 
 
@@ -471,7 +471,43 @@ def test_store_dedup_across_runs(conn, vp_data_dir, monkeypatch):
     rows = conn.execute("SELECT image_path FROM panels ORDER BY panel_id").fetchall()
     assert len(rows) == 2
     assert rows[0]["image_path"] == rows[1]["image_path"]
-    assert len(list((vp_data_dir / "panels").rglob("*.png"))) == 1
+    assert len(list((vp_data_dir / "panels").rglob("*.webp"))) == 1
+
+
+def test_store_panel_capped_and_encoded_webp(conn, vp_data_dir, monkeypatch):
+    """Oversized sources are stored as WebP capped at VP_PANEL_MAX_EDGE;
+    the saved row records the stored (downscaled) dimensions."""
+    _article(conn)
+    monkeypatch.setattr(
+        pmc, "fetch_image_bytes",
+        _image_map({"big.png": _png_bytes(size=(3000, 2000))}),
+    )
+    _figure(conn, url="https://s3/x/big.png",
+            vision=_vision([_panel("A", None)]))
+    assert store.run(_args()) == 0
+    row = conn.execute("SELECT * FROM panels").fetchone()
+    assert row["image_path"].endswith(".webp")
+    assert row["width"] == config.VP_PANEL_MAX_EDGE
+    assert row["height"] == round(2000 * config.VP_PANEL_MAX_EDGE / 3000)
+    with Image.open(vp_data_dir / row["image_path"]) as im:
+        assert im.format == "WEBP"
+    with Image.open(
+        vp_data_dir / "figures" / "PMC1" / "big.webp"
+    ) as im:
+        assert im.format == "WEBP"
+        assert max(im.size) <= config.VP_ORIGINAL_MAX_EDGE
+
+
+def test_store_panel_format_png_override(conn, vp_data_dir, monkeypatch):
+    _article(conn)
+    monkeypatch.setattr(pmc, "fetch_image_bytes", lambda ref: _png_bytes())
+    monkeypatch.setattr(config, "VP_PANEL_FORMAT", "png")
+    _figure(conn, vision=_vision([_panel("A", None)]))
+    assert store.run(_args()) == 0
+    row = conn.execute("SELECT image_path FROM panels").fetchone()
+    assert row["image_path"].endswith(".png")
+    with Image.open(vp_data_dir / row["image_path"]) as im:
+        assert im.format == "PNG"
 
 
 def test_store_marks_compound_source_rejected_with_reason(conn, vp_data_dir, monkeypatch):
@@ -493,4 +529,4 @@ def test_store_marks_compound_source_rejected_with_reason(conn, vp_data_dir, mon
     assert all(panel["include"] is False for panel in stored["panels"])
     assert all("collage" in panel["curation_reason"] for panel in stored["panels"])
     assert conn.execute("SELECT COUNT(*) FROM panels").fetchone()[0] == 0
-    assert len(list((vp_data_dir / "panels").rglob("*.png"))) == 0
+    assert len(list((vp_data_dir / "panels").rglob("*.*"))) == 0

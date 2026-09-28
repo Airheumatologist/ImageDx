@@ -69,11 +69,11 @@ The orchestrator owns sections 2, 4 and 6 (decisions, schema, prompts). Implemen
   - Every stage takes `--disease {sle,dm,as,all}`, `--limit N`, `--dry-run` and `--budget-usd X`, and **resumes** from the status column.
 - **Data folder:** `data/visual_pilot/` (overridable with `VP_DATA_DIR`, used by tests)
   - `visual_pilot.sqlite`
-  - `panels/{sle|dm|as}/{modality}/{panel_id}.png`
+  - `panels/{sle|dm|as}/{modality}/{panel_id}.{ext}` (ext per `VP_PANEL_FORMAT`, default `.webp`)
   - `thumbs/{panel_id}.webp`
-  - `figures/{pmcid}/{figure_file}` (original of each accepted figure)
+  - `figures/{pmcid}/{stem}.webp` (display copy of each accepted figure, capped at `VP_ORIGINAL_MAX_EDGE`; verbatim bytes stay refetchable from the PMC S3 bundle)
   - `reports/`
-- **New env vars:** `VP_TRIAGE_MODEL`, `VP_JUDGE_MODEL`, `VP_EXTRACT_MODEL`, `VP_LLM_PROVIDER` (openrouter|opencode|deepinfra, default openrouter), `VP_IMAGE_MAX_EDGE=1568`, `VP_NCBI_API_KEY` (optional), `VP_CONCURRENCY`, `VP_DATA_DIR`. Never commit `.env`. Document them in `env.example`.
+- **New env vars:** `VP_TRIAGE_MODEL`, `VP_JUDGE_MODEL`, `VP_EXTRACT_MODEL`, `VP_LLM_PROVIDER` (openrouter|opencode|deepinfra, default openrouter), `VP_IMAGE_MAX_EDGE=1568`, `VP_NCBI_API_KEY` (optional), `VP_CONCURRENCY`, `VP_DATA_DIR`, `VP_PANEL_FORMAT` (webp|jpeg|png), `VP_PANEL_QUALITY` (90), `VP_PANEL_MAX_EDGE` (2048), `VP_ORIGINAL_MAX_EDGE` (2048). Never commit `.env`. Document them in `env.example`.
 
 ---
 
@@ -209,8 +209,8 @@ For each relevant article:
 ### Stage 6: Save accepted panels
 For each `vision_accepted` figure:
 1. Fetch the original full-resolution bytes into memory, or reuse them.
-2. Write the original to `figures/{pmcid}/`.
-3. **Crop each included panel** from the normalized bbox, scaled to the original's pixel size, with 2% padding. Save as PNG under `panels/{disease}/{modality}/` plus a WebP thumbnail with a 400 px long edge.
+2. Write a display copy of the original to `figures/{pmcid}/{stem}.webp`, capped at `VP_ORIGINAL_MAX_EDGE` (default 2048 px).
+3. **Crop each included panel** from the normalized bbox, scaled to the original's pixel size, with 2% padding. Downscale to `VP_PANEL_MAX_EDGE` (default 2048 px) and save under `panels/{disease}/{modality}/` in `VP_PANEL_FORMAT` (default WebP at `VP_PANEL_QUALITY`=90; `png` keeps lossless archival crops) plus a WebP thumbnail with a 400 px long edge.
 4. **Whole-figure fallback** (`crop_mode = whole_figure`) when any of these holds:
    - the license is ND
    - the bbox is missing or covers under 3% of the figure area

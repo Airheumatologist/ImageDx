@@ -244,7 +244,7 @@ def test_store_figure_rejects_multi_panel_source(conn, vp_data_dir, monkeypatch)
     assert all(p["include"] is False for p in stored["panels"])
     assert all("collage" in p["curation_reason"] for p in stored["panels"])
     # Rejected sources leave no local figure or crop assets.
-    assert not (vp_data_dir / "figures" / "PMC1" / "f1.png").exists()
+    assert not (vp_data_dir / "figures" / "PMC1" / "f1.webp").exists()
 
 
 def test_store_nd_license_whole_figure(conn, vp_data_dir, monkeypatch):
@@ -285,7 +285,7 @@ def test_store_dedup_reuses_file(conn, vp_data_dir, monkeypatch):
     assert rows[0]["image_path"] == rows[1]["image_path"]
     assert rows[0]["attribution_text"] != rows[1]["attribution_text"]
     # only one file on disk
-    assert len(list((vp_data_dir / "panels").rglob("*.png"))) == 1
+    assert len(list((vp_data_dir / "panels").rglob("*.webp"))) == 1
 
 
 def test_store_proposed_finding_once_and_never_approved(conn, vp_data_dir, monkeypatch):
@@ -677,14 +677,14 @@ def test_rebuild_image_rows(conn):
 # ---------------------------------------------------------------------------
 # W-rework: TIFF original write, subtype enum, report cumulative funnel
 # ---------------------------------------------------------------------------
-def test_write_original_tiff_to_png(vp_data_dir):
+def test_write_original_tiff_to_webp(vp_data_dir):
     buf = io.BytesIO()
     Image.new("RGB", (32, 24), (10, 20, 30)).save(buf, format="TIFF")
     figure = {"pmcid": "PMC9", "figure_id": "PMC9:F1", "image_url": "https://s3/x/img.tiff"}
     rel = store.write_original(buf.getvalue(), figure, vp_data_dir)
-    assert rel.endswith(".png")
+    assert rel.endswith(".webp")
     with Image.open(vp_data_dir / rel) as im:
-        assert im.format == "PNG" and im.size == (32, 24)
+        assert im.format == "WEBP" and im.size == (32, 24)
 
 
 def test_normalize_subtype_variants():

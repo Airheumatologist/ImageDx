@@ -52,7 +52,7 @@ spec is `docs/visual_pilot_plan.md`.
  +=====================================================================+
  | 5. STORE       store.py                                -> panels    |
  |    bbox crops (2% pad), whole-figure mode for ND/overlap/tiny,      |
- |    PNG + 400px WebP thumbs, sha256 dedup, attribution text,         |
+ |    WebP q90 @2048px + 400px thumbs, sha256 dedup, attribution,      |
  |    proposed findings upserted to findings_vocab (unapproved)        |
  +=====================================================================+
               |
@@ -164,23 +164,28 @@ failures → `vision_error` (retried up to 3 attempts).
 
 ### 5. `store` — panel materialization (`store.py`)
 
-`vision_accepted` figures are refetched; the original is written to
-`figures/{pmcid}/` (TIFF→PNG). Each included panel is cropped from its
-bbox with 2% padding and saved:
+`vision_accepted` figures are refetched; a display copy capped at
+`VP_ORIGINAL_MAX_EDGE` (default 2048px) is written to
+`figures/{pmcid}/{stem}.webp` — the verbatim bytes stay refetchable from
+the PMC S3 bundle (`figures.sha256` verifies pixels on refetch). Each
+included panel is cropped from its bbox with 2% padding, capped at
+`VP_PANEL_MAX_EDGE` (default 2048px) and encoded per `VP_PANEL_FORMAT`
+(default WebP at `VP_PANEL_QUALITY`=90; `png` keeps lossless archival
+crops):
 
 ```text
 data/visual_pilot/
 |-- visual_pilot.sqlite
-|-- figures/{pmcid}/{file}                      # originals
-|-- panels/{disease}/{modality}/{panel_id}.png  # crops
-|-- thumbs/{panel_id}.webp                      # 400px thumbnails
-`-- reports/                                    # stage-7 output
+|-- figures/{pmcid}/{stem}.webp                  # capped display originals
+|-- panels/{disease}/{modality}/{panel_id}.webp  # crops
+|-- thumbs/{panel_id}.webp                       # 400px thumbnails
+`-- reports/                                     # stage-7 output
 ```
 
 - **crop mode** `whole_figure` applies to ND licenses, missing/tiny
   (<3%) bboxes and >30% panel overlaps;
-- **dedup:** identical PNG sha256 reuses the existing file (own row,
-  attribution and license kept);
+- **dedup:** identical encoded-image sha256 reuses the existing file (own
+  row, attribution and license kept);
 - `proposed_findings` upsert `findings_vocab` as unapproved entries
   (`approved=0`, `proposed_by_llm=1`) — exactly once per figure;
 - each panel gets a citation `attribution_text` (authors, title, journal,

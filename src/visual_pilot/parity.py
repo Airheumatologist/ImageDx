@@ -389,7 +389,7 @@ def compare(baseline_dir: Path, candidate_dir: Path) -> list[str]:
         owner = None
         for row in fig_rows:
             base = PurePosixPath((row["image_url"] or "").split("?")[0]).name
-            names = {base, PurePosixPath(base).with_suffix(".png").name}
+            names = {base, PurePosixPath(base).with_suffix(".webp").name}
             if name in names:
                 owner = row
                 break

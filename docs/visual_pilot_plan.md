@@ -159,10 +159,12 @@ speed gains.
    (`pmc.prepare_for_llm`, `VP_IMAGE_MAX_EDGE=1568`) are unchanged. Therefore
    every `llm_calls.input_hash` for the same work is byte-identical.
 2. **Same stored images.** Panels are cropped from the *original* fetched
-   bytes, saved as lossless PNG, with the same bbox scaling, 2% padding,
-   whole-figure rules (ND license, bbox <3%, overlap >30%) and exact-hash
-   dedup. Thumbnails stay 400 px WebP. The downscaled LLM copy is never
-   stored.
+   bytes with the same bbox scaling, 2% padding, whole-figure rules (ND
+   license, bbox <3%, overlap >30%) and exact-hash dedup, then capped at
+   `VP_PANEL_MAX_EDGE` and encoded per `VP_PANEL_FORMAT`/`VP_PANEL_QUALITY`
+   (default WebP q90; `png` restores lossless archival crops). Thumbnails
+   stay 400 px WebP. The stored "original" is a WebP display copy capped at
+   `VP_ORIGINAL_MAX_EDGE`; the downscaled LLM copy is never stored.
 3. **No image or full text on disk before acceptance.** Nothing is written to
    disk for a figure until it is `vision_accepted` (spec core rule; enforced by
    the existing no-disk tests in `test_parse.py` / `test_pmc.py`). Full article
@@ -220,7 +222,7 @@ succeeded on the first schema attempt (repair retries are not a cost).
 | B3 | Public S3 bucket shares the 5 req/s default limiter; caps license, peek, parse, judge fetch and store fetch combined | `pmc.py` `_DEFAULT_RPS`, `RATE_LIMITER` |
 | B4 | Parse fetches/parses articles one at a time | `parse.py` `run` |
 | B5 | Duplicate fetches: license metadata refetched at parse (256-entry LRU); caption peek discards ~50 of 100 bundles per batch (64-entry LRU); judge's image bytes refetched by store; store and extract refetch JATS | `pmc.py`, `parse.py`, `store.py`, `extract_findings.py` |
-| B6 | Store is one figure at a time (fetch, decode, PNG encode, thumb); no index on `panels.sha256` | `store.py`, `db.py` |
+| B6 | Store is one figure at a time (fetch, decode, panel encode, thumb); no index on `panels.sha256` | `store.py`, `db.py` |
 | B7 | Selection queries (per synonym ×3 buckets + 12 visual queries) and embeddings run serially | `select_articles.py` `retrieve_for_disease` |
 | B8 | Stages are hard barriers per batch; diseases run strictly SLE → DM → AS on one shared 900 s clock, so later diseases can be starved | `cli.py` `_cmd_run_all` |
 | B9 | 300 s LLM timeout with no retry pins a worker for 5 min on a stalled call | `config.py`, `llm.py` |
@@ -547,12 +549,12 @@ compare against baseline (§6) + timing report.
      pixels).
   2. Build attribution from `articles.authors_json/author_count/
      journal_name`; fall back to the JATS refetch only when missing.
-  3. Run fetch + decode + crop + PNG/WebP encoding on a worker pool; perform
+  3. Run fetch + decode + crop + image encoding on a worker pool; perform
      file writes for a figure, panel inserts, proposal upserts and the status
      flip in one transaction on the main thread (dedup check uses the new
      index and must see earlier panels from the same run — process results in
      deterministic figure order).
-- **Acceptance / tests:** byte-identical panel PNGs, thumbs, `panels` rows
+- **Acceptance / tests:** byte-identical panel images, thumbs, `panels` rows
   (excluding timestamps) vs sequential store for fixture figures, including
   ND whole-figure, dedup within one run and across runs, and proposal counts.
 
