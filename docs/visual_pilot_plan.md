@@ -20,6 +20,12 @@ work — never from changing what the models see or what gets written.
 
 ## 0. Status log (updated 2026-09-27, main @ `e117af1`)
 
+The historical verification results below describe the completed pilot.
+Its runtime data, parity snapshots, live-run copies, generated reports, and
+one-off probe/evaluation artifacts were cleared on 2026-09-27 before a new
+full disease index is supplied. Record a fresh baseline for future parity
+checks; the old paths below are historical references.
+
 **All workstreams complete: W0–W11. Gates G0–G3 passed.**
 
 Merged onto `main`, in order:

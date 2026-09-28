@@ -42,8 +42,9 @@ while DeepInfra is used only for query embeddings.
 
 ## Stage 0 findings
 
-_Checked 2026-09-25 via `scripts/vp_stage0_probe.py` on 10 real PMC OA review
-articles (SLE/DM/AS) and `scripts/vp_smoke_llm.py` for the LLM checks._
+_Checked 2026-09-25 on 10 real PMC OA review articles (SLE/DM/AS), with
+separate LLM access checks. The one-off probe scripts and pilot outputs
+were retired during the 2026-09-27 data cleanup._
 
 - **PMC infrastructure (2025 reorg).** The old endpoints are dead:
   `oa.fcgi` 404s, `oa_file_list.csv` 404s, `oa_package` tarballs gone,

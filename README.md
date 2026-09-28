@@ -252,8 +252,8 @@ turborag/
 |-- README.md
 |-- env.example                  # provider keys + VP_* settings
 |-- requirements.txt
-|-- docs/                        # plan, baselines, eval results
-|-- scripts/                     # vp_* probes, smoke tests, eval harnesses
+|-- docs/                        # specifications, plan, curation review
+|-- scripts/                     # synthetic fixture generator for viewer tests
 |-- src/
 |   `-- visual_pilot/            # the pipeline package
 |       |-- cli.py               # stage runner + run-all orchestrator
@@ -307,6 +307,18 @@ python3 -m src.visual_pilot.cli serve --port 8765    # browse the library
 
 See `src/visual_pilot/README.md` for stage details, env vars, and stage-0
 findings.
+
+## Fresh data run
+
+The previous pilot datasets, SQLite backups, image files, model-response
+caches, generated reports, and one-off evaluation artifacts were cleared on
+2026-09-27. No replacement runtime database has been initialized.
+
+Before starting the full run, replace `src/visual_pilot/data/diseases.json`
+with the new disease index and update `src/visual_pilot/data/findings_vocab.json`
+for that scope. The next `init` or `run-all` creates a fresh database under
+`data/visual_pilot/` (or `VP_DATA_DIR`). The unit tests and their synthetic
+fixtures remain available to validate the pipeline.
 
 ## Testing
 
