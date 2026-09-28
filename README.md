@@ -217,6 +217,18 @@ under `/api/...`, images under `/media/...` (panels/thumbs/figures only).
 Includes an SLE↔DM skin comparison page. Unapproved proposed findings are
 filtered out of every response.
 
+Image cards show a readable depiction label; opening one reveals the full
+image, concise article context, and source/license links. SLE skin groups use
+the depicted findings, with vascular findings separate from cutaneous lupus
+subtypes. The Pediatric view gathers known child/adolescent images.
+
+The clinical publication policy excludes collages, unusable snippets,
+non-patient graphics, normal/control images, and veterinary material. To audit
+an existing library, run `python3 -m src.visual_pilot.curation_audit`; add
+`--apply` to back up SQLite and save reversible exclusions. The images and
+original judgments are retained. See [curation review](docs/visual_curation_review.md)
+for the diagnosis and audit details.
+
 ## Guarantees
 
 ```text

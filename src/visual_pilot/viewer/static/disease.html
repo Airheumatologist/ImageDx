@@ -30,13 +30,16 @@
     </select>
   </section>
   <main id="content"></main>
-  <aside id="key-findings"><h2>Key findings</h2><ul></ul></aside>
 
-  <div id="lightbox" hidden>
-    <div class="lb-inner">
+  <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title" hidden>
+    <section class="lb-inner">
+      <button id="lb-close" class="lb-close" type="button" data-close-lightbox aria-label="Close image details">Close</button>
       <img id="lb-img" alt="">
-      <div id="lb-caption"></div>
-    </div>
+      <div class="lb-info">
+        <h2 id="lb-title"></h2>
+        <div id="lb-details"></div>
+      </div>
+    </section>
   </div>
 
   <script>

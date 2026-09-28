@@ -31,7 +31,7 @@ from functools import lru_cache
 
 from PIL import Image
 
-from . import config, db, diseases, llm, originals, pmc
+from . import config, curation, db, diseases, llm, originals, pmc
 from .prompts import P3
 
 MAX_ATTEMPTS = 3
@@ -87,7 +87,7 @@ def _load_priority_context(conn) -> dict:
         "SELECT finding_key,label,synonyms_json,disease_keys_json FROM findings_vocab WHERE approved=1"
     )]
     coverage: dict[str, set[str]] = {}
-    for row in conn.execute("SELECT disease_key,findings_json FROM panels"):
+    for row in conn.execute("SELECT disease_key,findings_json FROM published_panels"):
         coverage.setdefault(row["disease_key"], set()).update(
             f["finding_key"] for f in db.from_json(row["findings_json"], []) or []
             if isinstance(f, dict) and f.get("finding_key")
@@ -240,6 +240,7 @@ def user_content(figure: dict, article: dict, vocabulary: list[dict]) -> str:
             "label": figure["label"] or "",
             "caption": figure["caption"] or "",
             "in_text_mentions": db.from_json(figure["in_text_mentions_json"], []),
+            "prior_caption_triage": db.from_json(figure.get("triage_json"), {}) or {},
             "article_title": article["title"] or "",
             "primary_disease_keys": db.from_json(article["primary_disease_keys_json"], []),
             "vocabulary": vocabulary,
@@ -251,22 +252,29 @@ def user_content(figure: dict, article: dict, vocabulary: list[dict]) -> str:
 # ---------------------------------------------------------------------------
 # Image fetch + preparation
 # ---------------------------------------------------------------------------
-def fetch_and_prepare(figure: dict) -> tuple[str, bytes, bytes, str | None]:
-    """(original_bytes, mime, prepared_bytes, format_note) — memory only."""
+def fetch_and_prepare(figure: dict) -> tuple[str, bytes, bytes, str | None, tuple[int, int]]:
+    """(original_bytes, mime, prepared_bytes, format_note, size) — memory only."""
     ref = pmc.ImageRef(url=figure["image_url"], needs_bytes=False, format=figure["image_format"])
     original = pmc.fetch_image_bytes(ref)
     with Image.open(io.BytesIO(original)) as im:
         orig_fmt = (im.format or "").lower() or figure["image_format"]
+        size = im.size
     mime, prepared = pmc.prepare_for_llm(original)
     prep_fmt = mime.rsplit("/", 1)[-1]
     note = f"{orig_fmt}->{prep_fmt}" if orig_fmt and orig_fmt != prep_fmt else (orig_fmt or prep_fmt)
-    return original, mime, prepared, note
+    return original, mime, prepared, note, size
 
 
 # ---------------------------------------------------------------------------
 # Post-validation of the P3 response (spec §5 stage 5)
 # ---------------------------------------------------------------------------
-def post_validate(result: dict, valid_keys: set[str]) -> dict:
+def post_validate(
+    result: dict,
+    valid_keys: set[str],
+    figure: dict | None = None,
+    article: dict | None = None,
+    image_size: tuple[int, int] | None = None,
+) -> dict:
     out = dict(result)
     panels = []
     for panel in result.get("panels") or []:
@@ -305,9 +313,35 @@ def post_validate(result: dict, valid_keys: set[str]) -> dict:
             panel["rationale"] = ((panel.get("rationale") or "") + " " + note).strip()
         else:
             panel["subtype"] = canon
+        if figure is not None and article is not None and panel.get("include"):
+            gate_figure = {
+                **figure,
+                "figure_is_compound": out.get("figure_is_compound"),
+                "vision_panel_count": len(result.get("panels") or []),
+            }
+            reason = curation.exclusion_reason(
+                panel, gate_figure, article, image_size=image_size
+            )
+            if reason:
+                panel["include"] = False
+                panel["exclusion_reason"] = _curation_reason_key(reason)
+                panel["curation_reason"] = reason
         panels.append(panel)
     out["panels"] = panels
     return out
+
+
+def _curation_reason_key(reason: str) -> str:
+    """Map shared policy reasons onto the P3 response enum."""
+    if "collage" in reason:
+        return "collage"
+    if "diagram" in reason or "chart" in reason or "text-only" in reason:
+        return "diagram"
+    if "normal" in reason or "control" in reason:
+        return "normal_control"
+    if "crop" in reason or "bounds" in reason:
+        return "poor_quality"
+    return "not_patient_image"
 
 
 def figure_status(result: dict) -> str:
@@ -422,7 +456,7 @@ def run(args) -> int:
                     return
                 fig, fut = pending.popleft()
                 try:
-                    original, mime, prepared, note = fut.result()
+                    original, mime, prepared, note, image_size = fut.result()
                 except Exception as exc:  # noqa: BLE001 - per-figure isolation
                     db.set_status(
                         conn, "figures", fig["figure_id"], "vision_error",
@@ -436,6 +470,7 @@ def run(args) -> int:
                 vocab = vocab_for(fig)
                 fig["_valid_keys"] = {v["finding_key"] for v in vocab}
                 fig["_original"] = original
+                fig["_image_size"] = image_size
                 fig["_format_note"] = note
                 submitted.append(fig)
                 yield {
@@ -474,9 +509,14 @@ def run(args) -> int:
                 totals["errors"] += 1
                 conn.commit()
                 fig.pop("_original", None)
+                fig.pop("_image_size", None)
                 fig.pop("_format_note", None)
                 continue
-            parsed = post_validate(res.parsed or {}, fig["_valid_keys"])
+            parsed = post_validate(
+                res.parsed or {}, fig["_valid_keys"],
+                figure=fig, article=articles[fig["pmcid"]],
+                image_size=fig.get("_image_size"),
+            )
             status = figure_status(parsed)
             sha256 = hashlib.sha256(fig["_original"]).hexdigest()
             db.set_status(
@@ -501,6 +541,7 @@ def run(args) -> int:
                         reasons[panel.get("exclusion_reason") or "not_relevant"] += 1
             conn.commit()
             fig.pop("_original", None)
+            fig.pop("_image_size", None)
             fig.pop("_format_note", None)
     finally:
         requests.close()

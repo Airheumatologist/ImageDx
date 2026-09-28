@@ -39,7 +39,7 @@ from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
-from . import config, db, diseases, jats, originals, pmc, timing
+from . import config, curation, db, diseases, jats, originals, pmc, timing
 
 PILOT_KEYS = set(diseases.DISEASE_KEYS)
 PAD_FRAC = 0.02
@@ -353,10 +353,21 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
 
             width, height = img.size
             panels: list[dict] = []
-            for panel, mode in zip(
+            curation_exclusions: list[tuple[int, str]] = []
+            for panel_index, (panel, mode) in enumerate(zip(
                 all_panels, decide_crop_modes(all_panels, license_mode)
-            ):
+            )):
                 if not panel.get("include"):
+                    continue
+                # Recheck the shared eligibility policy at the write boundary.
+                # This blocks legacy or imported accepted judgments from
+                # becoming newly visible when their caption/source is clearly
+                # a collage, chart, normal image, or poor crop.
+                reason = curation.exclusion_reason(
+                    panel, figure, article_row, image_size=(width, height)
+                )
+                if reason:
+                    curation_exclusions.append((panel_index, reason))
                     continue
                 crop = img if mode == "whole_figure" else img.crop(
                     bbox_to_pixels(panel["bbox"], width, height)
@@ -392,6 +403,7 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
             return {
                 "original_file": original_file,
                 "panels": panels,
+                "curation_exclusions": curation_exclusions,
                 "attrib": attrib,
             }
     finally:
@@ -412,6 +424,26 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
     inserted earlier in the run because callers apply in figure order.
     """
     vision = db.from_json(figure["vision_json"], {}) or {}
+    for panel_index, reason in prepared.get("curation_exclusions", []):
+        # The report is tied to the exact stored vision panel ordering and is
+        # retained with the judgment for diagnosis. The DB audit remains the
+        # source of reversible publication exclusions for existing rows.
+        panels = vision.get("panels") or []
+        if panel_index < len(panels):
+            panel = panels[panel_index]
+            panel["include"] = False
+            panel["exclusion_reason"] = (
+                "collage" if "collage" in reason else
+                "diagram" if "diagram" in reason or "chart" in reason else
+                "normal_control" if "control" in reason or "normal" in reason else
+                "poor_quality" if "crop" in reason or "bounds" in reason else
+                "not_patient_image"
+            )
+            panel["curation_reason"] = reason
+        conn.execute(
+            "UPDATE figures SET vision_json=? WHERE figure_id=?",
+            (db.to_json(vision), figure["figure_id"]),
+        )
     fig_xml_id = figure["figure_id"].split(":", 1)[1]
     effective_license = figure["effective_license"]
     license_url = (
@@ -421,11 +453,13 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
     )
     authors, author_count, journal_name = prepared["attrib"]
 
-    stats = {"panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0}
+    stats = {"panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0,
+             "excluded": len(prepared.get("curation_exclusions", []))}
     seen_sha: set[str] = set()
 
     rel_orig, orig_data = prepared["original_file"]
-    _write_file(data_dir, rel_orig, orig_data)
+    if prepared["panels"]:
+        _write_file(data_dir, rel_orig, orig_data)
 
     for item in prepared["panels"]:
         panel = item["panel"]
@@ -700,7 +734,12 @@ def run(args) -> int:
                     stats = _apply_prepared(
                         conn, figure, article_rows[figure["pmcid"]], outcome, data_dir
                     )
-                    db.set_status(conn, "figures", figure["figure_id"], "stored", error=None)
+                    final_status = (
+                        "vision_rejected"
+                        if stats["panels"] == 0 and stats["excluded"]
+                        else "stored"
+                    )
+                    db.set_status(conn, "figures", figure["figure_id"], final_status, error=None)
             except Exception as exc:  # noqa: BLE001 - per-figure isolation
                 _store_error(figure, exc)
                 continue

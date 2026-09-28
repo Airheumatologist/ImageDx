@@ -17,7 +17,7 @@ import json
 import logging
 import re
 
-from . import config, db, diseases, llm, pmc
+from . import config, curation, db, diseases, llm, pmc
 from .prompts import P2
 
 logger = logging.getLogger(__name__)
@@ -167,6 +167,8 @@ def _batch_payload(rows) -> str:
             "label": row["label"],
             "caption": (row["caption"] or "")[:CAPTION_MAX_CHARS],
             "in_text_mentions": db.from_json(row["in_text_mentions_json"], []),
+            "article_title": row.get("_article_title") or "",
+            "article_disease_keys": row.get("_article_disease_keys") or [],
         }
         for row in rows
     ]
@@ -217,9 +219,19 @@ def _apply_batch(conn, rows, result, ctx=None) -> str | None:
         if figure_id not in batch_ids or figure_id in seen:
             continue
         route = item.get("route")
+        row = rows_by_id[figure_id]
+        deterministic_reason = curation.source_exclusion_reason(
+            {**row, "triage_json": None}, {"title": row.get("_article_title")}
+        )
         # Third-party material is a hard exclusion even when other P2 fields
         # conflict. Ambiguous internal classifications are retained for P3.
         if item.get("third_party"):
+            status = "caption_rejected"
+        elif deterministic_reason:
+            item = dict(item)
+            item["route_adjustment"] = f"deterministic_source_exclusion: {deterministic_reason}"
+            item["route"] = "drop"
+            item["reason"] = deterministic_reason
             status = "caption_rejected"
         elif route == "drop" and _contradictory_drop(conn, rows_by_id[figure_id], item, ctx):
             item = dict(item)
@@ -317,6 +329,22 @@ def run(args) -> int:
     if pmcid_filter:
         allowed = set(pmcid_filter)
         rows = [r for r in rows if r["pmcid"] in allowed]
+    # Give P2 the parent article context too: captions alone can be terse, but
+    # a broad article topic remains context only and cannot make a figure pass.
+    contextual_rows = []
+    for source in rows:
+        row = dict(source)
+        article = conn.execute(
+            "SELECT title,primary_disease_keys_json FROM articles WHERE pmcid=?",
+            (row["pmcid"],),
+        ).fetchone()
+        if article:
+            row["_article_title"] = article["title"] or ""
+            row["_article_disease_keys"] = db.from_json(
+                article["primary_disease_keys_json"], []
+            )
+        contextual_rows.append(row)
+    rows = contextual_rows
     batches = [rows[i : i + BATCH_SIZE] for i in range(0, len(rows), BATCH_SIZE)]
 
     if args.dry_run:

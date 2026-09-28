@@ -55,7 +55,7 @@ def _article(conn, pmcid="PMC1"):
     conn.execute(
         "INSERT OR REPLACE INTO articles (pmcid, title, journal, year, doi, status, "
         "license_code, license_url, study_region, primary_disease_keys_json) "
-        "VALUES (?, 'T', 'J', 2024, '10.1/x', 'parsed', 'cc-by', "
+        "VALUES (?, 'Dermatomyositis clinical review', 'J', 2024, '10.1/x', 'parsed', 'cc-by', "
         "'https://creativecommons.org/licenses/by/4.0/', 'Spain (article metadata)', "
         "'[\"dm\"]')",
         (pmcid,),
@@ -69,7 +69,7 @@ def _figure(conn, status="vision_accepted", vision=None, fmt="png", license_code
     conn.execute(
         "INSERT OR REPLACE INTO figures (figure_id, pmcid, label, caption, status, "
         "image_url, image_format, effective_license, vision_json) "
-        "VALUES (?, 'PMC1', 'Figure 1', 'cap', ?, 'https://s3/x/f1.png', ?, ?, ?)",
+        "VALUES (?, 'PMC1', 'Figure 1', 'Clinical image of a patient with dermatomyositis.', ?, 'https://s3/x/f1.png', ?, ?, ?)",
         (fid, status, fmt, license_code, db.to_json(vision) if vision else None),
     )
     conn.commit()
@@ -207,7 +207,10 @@ def _parsed_article():
 
 
 def _vision(panels):
-    return {"figure_id": "PMC1:F1", "figure_is_compound": len(panels) > 1, "panels": panels}
+    return {
+        "figure_id": "PMC1:F1", "figure_is_compound": len(panels) > 1,
+        "panels": panels,
+    }
 
 
 def _panel(label, bbox, disease="dm", findings=None, proposed=None):
@@ -223,7 +226,7 @@ def _panel(label, bbox, disease="dm", findings=None, proposed=None):
     }
 
 
-def test_store_figure_writes_crops_and_rows(conn, vp_data_dir, monkeypatch):
+def test_store_figure_rejects_multi_panel_source(conn, vp_data_dir, monkeypatch):
     _article(conn)
     vision = _vision([
         _panel("A", [0.0, 0.0, 0.5, 0.5]),
@@ -232,30 +235,16 @@ def test_store_figure_writes_crops_and_rows(conn, vp_data_dir, monkeypatch):
     fig = _figure(conn, vision=vision)
     monkeypatch.setattr(pmc, "fetch_image_bytes", lambda ref: _png_bytes())
     stats = store.store_figure(conn, fig, _article(conn), _parsed_article(), vp_data_dir)
-    assert stats["panels"] == 2
-    rows = conn.execute("SELECT * FROM panels ORDER BY panel_id").fetchall()
-    assert len(rows) == 2
-    for r in rows:
-        assert (vp_data_dir / r["image_path"]).exists()
-        assert (vp_data_dir / r["thumb_path"]).exists()
-        assert r["attribution_text"].startswith("Doe and Roe. T.")
-        # compound figure -> the panel letter is kept in the citation
-        assert r["attribution_text"].rstrip(".").endswith(r["panel_label"])
-        assert json.loads(r["findings_json"])[0]["finding_key"] == "gottron_papules"
-        assert r["study_region"] == "Spain (article metadata)"
-        assert r["crop_mode"] == "panel"
-    assert (vp_data_dir / "figures" / "PMC1" / "f1.png").exists()
-    # only panels/, thumbs/, figures/ (plus the sqlite files) were written
-    top = {
-        p.relative_to(vp_data_dir).parts[0]
-        for p in vp_data_dir.rglob("*")
-        if p.is_file()
-    }
-    assert top - {"panels", "thumbs", "figures"} <= {
-        "visual_pilot.sqlite",
-        "visual_pilot.sqlite-wal",
-        "visual_pilot.sqlite-shm",
-    }
+    assert stats["panels"] == 0
+    assert stats["excluded"] == 2
+    assert conn.execute("SELECT COUNT(*) FROM panels").fetchone()[0] == 0
+    stored = db.from_json(conn.execute(
+        "SELECT vision_json FROM figures WHERE figure_id='PMC1:F1'"
+    ).fetchone()[0], {})
+    assert all(p["include"] is False for p in stored["panels"])
+    assert all("collage" in p["curation_reason"] for p in stored["panels"])
+    # Rejected sources leave no local figure or crop assets.
+    assert not (vp_data_dir / "figures" / "PMC1" / "f1.png").exists()
 
 
 def test_store_nd_license_whole_figure(conn, vp_data_dir, monkeypatch):

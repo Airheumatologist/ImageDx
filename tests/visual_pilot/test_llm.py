@@ -224,9 +224,10 @@ def _req(i):
 
 
 def test_input_hash_golden_values():
-    """C4 invariant: input_hash is byte-identical to the pre-change code.
+    """Cache identity is stable for a prompt and changes with revised prompts.
 
-    Golden digests were captured from the b87e626 hash path (unchanged by W0).
+    P1 retains the original digest; P2/P3 v3 intentionally invalidate old
+    judgments after the clinical publication policy changed.
     """
     client = llm.LLMClient(provider="opencode")
     image = llm.ImageInput(
@@ -254,9 +255,14 @@ def test_input_hash_golden_values():
     }
     assert hashes == {
         "p1": "12823cc4dfd929a47213daa432b10138afaf92c1fdc33db4c4836d4bc051eec1",
-        "p2": "86786291cfe3718a8682da343cd10c0db9d0b840f47f0382da41085a8f734c0d",
-        "p3": "3eeeafde065660bb572188f942b208eeb6ef849aae9530b4296e117ec8c881da",
+        "p2": "be660cad44f059b68dab5fdc2d961b2f9bf574079eed217fa95a34e87fc10193",
+        "p3": "0dc52a9403bec7cbe928f97d96c8f32e93e177e6396de87c9ef94de7782ee6d2",
     }
+    assert hashes['p3'] != client._input_hash(
+        'p3', 'space-bunny-free', 'p3.v1', P3.system,
+        'FIGURE PMC123:f1\nCAPTION: Figure 1. Clinical photograph of malar rash.',
+        [image],
+    )
 
 
 def test_timeout_seconds_configures_openai_client(monkeypatch):
@@ -588,4 +594,3 @@ def test_space_bunny_defaults_to_json_object(conn):
     assert calls[0]["response_format"] == {"type": "json_object"}
     assert "Strict Output Schema" in calls[0]["messages"][0]["content"]
     assert client._response_mode["stealth/space-bunny-alpha"] == "json_object"
-

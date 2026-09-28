@@ -11,44 +11,78 @@
     <h1>SLE vs dermatomyositis: skin</h1>
   </header>
   <main id="comparisons"></main>
-  <div id="lightbox" hidden>
-    <div class="lb-inner">
+  <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title" hidden>
+    <section class="lb-inner">
+      <button id="lb-close" class="lb-close" type="button" data-close-lightbox aria-label="Close image details">Close</button>
       <img id="lb-img" alt="">
-      <div id="lb-caption"></div>
-    </div>
+      <div class="lb-info"><h2 id="lb-title"></h2><div id="lb-details"></div></div>
+    </section>
   </div>
   <script>
     const lb = document.getElementById("lightbox");
-    lb.addEventListener("click", () => { lb.hidden = true; });
-    function openLightbox(src, caption) {
-      document.getElementById("lb-img").src = src;
-      document.getElementById("lb-caption").textContent = caption;
-      lb.hidden = false;
+    let previouslyFocused = null;
+    function closeLightbox() {
+      lb.hidden = true;
+      document.getElementById("lb-img").removeAttribute("src");
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    }
+    lb.addEventListener("click", e => { if (e.target === lb || e.target.closest("[data-close-lightbox]")) closeLightbox(); });
+    document.addEventListener("keydown", e => { if (!lb.hidden && e.key === "Escape") closeLightbox(); });
+    function label(p) {
+      return p.display_label || (p.findings || []).map(f => typeof f === "string" ? f : (f.label || f.key)).filter(Boolean).join(", ") || p.body_site || "Clinical image";
+    }
+    function openLightbox(p, src) {
+      previouslyFocused = document.activeElement;
+      const image = document.getElementById("lb-img"); image.src = p.image || src; image.alt = label(p);
+      document.getElementById("lb-title").textContent = label(p);
+      const details = document.getElementById("lb-details"); details.replaceChildren();
+      const add = (title, text, href, container = details) => {
+        if (!text) return;
+        const row = document.createElement("p"), strong = document.createElement("strong");
+        strong.textContent = `${title}: `; row.append(strong);
+        if (href) { const a = document.createElement("a"); a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = text; row.append(a); }
+        else row.append(document.createTextNode(text));
+        container.append(row);
+      };
+      const evidence = p.context || [p.figure_caption, ...(p.in_text_mentions || [])].filter(Boolean).join(" ");
+      add("Context", evidence.length > 650 ? `${evidence.slice(0, 647).trimEnd()}…` : evidence);
+      const sources = p.source_variants?.length ? p.source_variants : [p];
+      const uniqueSources = [...new Map(sources.map(source => {
+        const key = [source.article_url || source.doi_url, source.article_title, source.copyright || source.attribution_text, source.license_url, source.license_code].join("|");
+        return [key, source];
+      })).values()];
+      const statedAge = age => Boolean(age) && !["unknown", "not stated", "unspecified", "not reported", "not available", "n/a", "na"].includes(String(age).trim().toLowerCase());
+      const ages = [...new Set(sources.map(source => source.age_group_label).filter(statedAge))];
+      const ageValues = ages.length ? ages : [p.age_group_label].filter(statedAge);
+      if (ageValues.length) add(ageValues.length > 1 ? "Age groups noted" : "Age group noted", ageValues.join(" · "));
+      const locations = [...new Set(sources.map(source => source.country).filter(Boolean))];
+      const locationValues = locations.length ? locations : [p.country || p.study_region].filter(Boolean);
+      if (locationValues.length) add(locationValues.length > 1 ? "Countries/regions listed in article metadata" : "Country/region listed in article metadata", locationValues.join(" · "));
+      if (uniqueSources.length) {
+        const heading = document.createElement("h3"); heading.className = "source-heading";
+        heading.textContent = uniqueSources.length === 1 ? "Source" : "Sources"; details.append(heading);
+      }
+      uniqueSources.forEach(source => {
+        const section = document.createElement("section"); section.className = "source-item";
+        add("Article", source.article_title || "Article source", source.article_url || source.doi_url, section);
+        const attribution = source.copyright || source.attribution_text;
+        if (attribution) add("Copyright & attribution", attribution, null, section);
+        if (source.license_code || source.license_url) add("License", source.license_code || "License details", source.license_url, section);
+        if (source.figure_label) add("Figure", source.figure_label, null, section);
+        details.append(section);
+      });
+      lb.hidden = false; document.getElementById("lb-close").focus();
     }
     function card(p) {
       const d = document.createElement("div");
       d.className = "panel-card";
       const img = p.thumb || p.image;
-      d.innerHTML = `
-        ${img ? `<img class="thumb" src="${img}" alt="${p.panel_label || ""}">` : ""}
-        <div class="card-body">
-          <div class="badges">
-            ${p.typicality ? `<span class="badge t-${p.typicality}">${p.typicality}</span>` : ""}
-            ${p.skin_tone ? `<span class="badge">${p.skin_tone}</span>` : ""}
-          </div>
-          <div class="findings">${(p.findings || []).map(f => (typeof f === "string" ? f : f.key)).join(", ")}</div>
-          <div class="meta">${p.subtype || ""} ${p.body_site || ""}</div>
-          ${(p.caption_variants || [p.figure_caption]).filter(Boolean).map(cap =>
-            `<div class="caption">${[p.figure_label, cap].filter(Boolean).join(" — ")}</div>`).join("")}
-          ${(p.attribution_variants || [p.attribution_text || ""]).map(a =>
-            `<div class="attrib">${a}
-              ${p.doi_url ? `<a href="${p.doi_url}" target="_blank" rel="noopener">DOI</a>` : ""}
-            </div>`).join("")}
-        </div>`;
-      if (p.image) d.querySelector(".thumb").addEventListener("click", () => {
-        const cap = [p.figure_label, p.figure_caption].filter(Boolean).join(" — ");
-        openLightbox(p.image, [cap, p.attribution_text || ""].filter(Boolean).join("\n\n"));
-      });
+      if (!img) return d;
+      const button = document.createElement("button"); button.type = "button"; button.className = "card-open";
+      button.setAttribute("aria-label", `Open image: ${label(p)}`);
+      const image = document.createElement("img"); image.className = "thumb"; image.src = img; image.alt = "";
+      const title = document.createElement("span"); title.className = "card-label"; title.textContent = label(p);
+      button.append(image, title); button.addEventListener("click", () => openLightbox(p, img)); d.append(button);
       return d;
     }
     fetch("/api/compare/sle-dm-skin").then(r => r.json()).then(pairs => {

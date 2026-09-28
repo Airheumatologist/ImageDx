@@ -1,6 +1,7 @@
 """Stage 8 viewer tests — FastAPI TestClient on the synthetic seed dataset."""
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -25,6 +26,36 @@ def client(tmp_path):
     seed_mod = _load_seed_module()
     data_dir = tmp_path / "vp_synth"
     seed_mod.seed(data_dir)
+    import sqlite3
+    seeded_db = sqlite3.connect(data_dir / "visual_pilot.sqlite")
+    # Synthetic fixtures represent preselected full-panel crops; provide the
+    # bounds required by the same eligibility policy used for real records.
+    seeded_db.execute(
+        "UPDATE panels SET bbox_json='[0.05,0.05,0.95,0.95]' WHERE bbox_json IS NULL"
+    )
+    for figure_id, in seeded_db.execute("SELECT DISTINCT figure_id FROM panels"):
+        findings = []
+        for (raw,) in seeded_db.execute("SELECT findings_json FROM panels WHERE figure_id=?", (figure_id,)):
+            for item in json.loads(raw or "[]"):
+                key = item.get("finding_key") if isinstance(item, dict) else item
+                label = seeded_db.execute(
+                    "SELECT label FROM findings_vocab WHERE finding_key=?", (key,)
+                ).fetchone()
+                if label:
+                    findings.append(label[0].split("(", 1)[0])
+        if findings:
+            seeded_db.execute(
+                "UPDATE figures SET caption=caption || ' ' || ? WHERE figure_id=?",
+                ("; ".join(dict.fromkeys(findings)), figure_id),
+            )
+    seeded_db.execute(
+        "UPDATE figures SET caption=caption || CASE "
+        "WHEN EXISTS (SELECT 1 FROM panels p WHERE p.figure_id=figures.figure_id AND p.disease_key='dm') THEN ' Dermatomyositis.' "
+        "WHEN EXISTS (SELECT 1 FROM panels p WHERE p.figure_id=figures.figure_id AND p.disease_key='as') THEN ' Axial spondyloarthritis.' "
+        "ELSE ' Systemic lupus erythematosus.' END"
+    )
+    seeded_db.commit()
+    seeded_db.close()
     from src.visual_pilot.viewer import create_app
 
     with TestClient(create_app(str(data_dir))) as c:
@@ -58,6 +89,10 @@ def test_panels_all_have_attribution(client):
         for p in data["panels"]:
             assert p["attribution_text"], p["panel_id"]
             assert p["doi_url"] or p["attribution_text"]
+            assert p["display_label"]
+            assert p["article_title"]
+            assert p["article_url"]
+            assert p["copyright"] == p["attribution_text"]
 
 
 def test_panels_expose_figure_label_caption(client):
@@ -73,6 +108,42 @@ def test_panels_expose_figure_label_caption(client):
 
 def _fkeys(panel):
     return {f["key"] for f in panel["findings"]}
+
+
+def test_subacute_caption_does_not_match_acute_group():
+    from src.visual_pilot.viewer.app import _clinical_group
+
+    assert _clinical_group({
+        'figure_caption': 'Annular plaques in subacute cutaneous lupus erythematosus.',
+        'findings': [],
+    }) == 'SCLE'
+
+
+def test_caption_label_keeps_depiction_without_trailing_age():
+    from src.visual_pilot.viewer.app import _caption_label
+
+    assert _caption_label(
+        'Clinical example of a case with erythematous plaque on the right cheek '
+        'of a 25-year-old female.'
+    ) == 'Erythematous plaque on the right cheek'
+
+
+def test_caption_label_removes_patient_and_diagnostic_context():
+    from src.visual_pilot.viewer.app import _caption_label
+
+    captions = [
+        (
+            'Subtle annular plaques on the left upper extremity of this female patient '
+            'diagnosed with subacute cutaneous lupus erythematosus.'
+        ),
+        (
+            "Coin-shaped erythematous plaques seen on this female patient's left cheek, "
+            'biopsy results consistent with discoid lupus.'
+        ),
+    ]
+    assert _caption_label(captions[0]) == "Subtle annular plaques on the left upper extremity"
+    assert _caption_label(captions[1]) == "Coin-shaped erythematous plaques on the left cheek"
+    assert all(len(_caption_label(caption)) <= 90 for caption in captions)
 
 
 def test_panel_filters(client):
@@ -126,6 +197,89 @@ def test_tab_assignment(client):
     assert si_mri == ["si_mri"]
     eye = [p["tab"] for p in as_ if "anterior_uveitis" in _fkeys(p)]
     assert eye == ["eye"]
+
+
+def test_sle_vascular_findings_ignore_model_subtype_and_histology_mucosa(client):
+    import sqlite3
+
+    db_path = client.app.state.data_dir / "visual_pilot.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE panels SET subtype='acle', findings_json='[{\"finding_key\":\"raynaud_phenomenon\",\"evidence\":\"caption says Raynaud phenomenon\"}]' "
+        "WHERE panel_id=(SELECT panel_id FROM panels WHERE disease_key='sle' AND modality='clinical_photo' LIMIT 1)"
+    )
+    conn.execute(
+        "UPDATE figures SET caption='Cutaneous vasculitis and Raynaud phenomenon in systemic lupus erythematosus.' "
+        "WHERE figure_id=(SELECT figure_id FROM panels WHERE disease_key='sle' AND modality='clinical_photo' LIMIT 1)"
+    )
+    conn.commit()
+    conn.close()
+
+    panels = client.get("/api/diseases/sle/panels").json()["panels"]
+    vascular = next(p for p in panels if "raynaud_phenomenon" in _fkeys(p))
+    assert vascular["clinical_group"] == "Vascular findings"
+    assert vascular["tab"] == "skin"
+    assert vascular["clinical_tab"] == "skin"
+
+    from src.visual_pilot.viewer.app import assign_tab, _categories
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    categories = _categories(conn)
+    conn.close()
+    histology_oral = {"modality": "histology_he", "body_site": "oral mucosa", "findings": [{"key": "oral_ulcer"}]}
+    assert assign_tab(histology_oral, __import__("src.visual_pilot.viewer.app", fromlist=["TABS"]).TABS["sle"], categories) == "other"
+
+
+def test_caption_label_skips_demographic_lead_in_and_wrong_finding_label():
+    from src.visual_pilot.viewer.app import _caption_label, _clinical_group, _finding_supported
+
+    caption = (
+        "An 18-year-old female with SLE, diagnosed at age 16, presents acutely. "
+        "CT shows bilateral ground-glass opacities and consolidation."
+    )
+    assert _caption_label(caption).startswith("CT shows bilateral")
+    tumid_caption = "Erythematous, edematous, urticarial plaque on the right cheek."
+    malar = {"key": "malar_rash", "label": "Malar rash", "evidence": "plaque on cheek"}
+    assert not _finding_supported(malar, tumid_caption.casefold(), ["malar rash", "malar_rash"])
+    assert _clinical_group({"figure_caption": tumid_caption, "findings": []}) == "Other skin findings"
+
+
+def test_skin_routing_uses_internal_tags_but_hides_unsupported_label(client):
+    import sqlite3
+
+    db_path = client.app.state.data_dir / "visual_pilot.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE figures SET caption='Annular plaques in subacute cutaneous lupus erythematosus.' "
+        "WHERE figure_id=(SELECT figure_id FROM panels WHERE disease_key='sle' AND findings_json LIKE '%scle_annular%' LIMIT 1)"
+    )
+    conn.commit()
+    conn.close()
+    panels = client.get("/api/diseases/sle/panels").json()["panels"]
+    panel = next(p for p in panels if "scle_annular" not in _fkeys(p) and "Annular plaques" in p["display_label"])
+    assert panel["tab"] == "skin"
+    assert panel["clinical_group"] == "SCLE"
+
+
+def test_pediatric_tab_is_cross_cutting_and_uses_stored_age_group(client):
+    import sqlite3
+
+    tabs = client.get("/api/diseases/sle/tabs").json()
+    pediatric = next(t for t in tabs if t["key"] == "pediatric")
+    assert pediatric["cross_cutting"] is True
+    db_path = client.app.state.data_dir / "visual_pilot.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE panels SET age_group='adolescent' WHERE panel_id=(SELECT panel_id FROM panels WHERE disease_key='sle' LIMIT 1)")
+    conn.execute(
+        "UPDATE figures SET caption=caption || ' Adolescent patient.' "
+        "WHERE figure_id=(SELECT figure_id FROM panels WHERE disease_key='sle' LIMIT 1)"
+    )
+    conn.commit()
+    conn.close()
+    panel = client.get("/api/diseases/sle/panels").json()["panels"][0]
+    assert panel["pediatric"] is True
+    assert panel["age_group_label"] == "Adolescent"
+    assert panel["clinical_tab"] == panel["tab"]
 
 
 # ---------------------------------------------------------------------------
@@ -194,6 +348,7 @@ def test_duplicate_sha_panels_collapse_to_one_card(client):
     dup = [p for p in panels if "shared_gottron" in (p["image"] or "")]
     assert len(dup) == 1, "two panel rows sharing a sha256 render as one card"
     assert len(dup[0]["attribution_variants"]) == 2
+    assert len(dup[0]["source_variants"]) == 2
     assert set(dup[0]["panel_ids"]) == {"PMC9000002:F2:pA", "PMC9000002:F2:pB"}
 
 

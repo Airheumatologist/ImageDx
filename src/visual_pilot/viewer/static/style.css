@@ -33,39 +33,44 @@ header a { color: #3b6fd4; text-decoration: none; }
 .group-header { font-size: 1.05rem; margin: 22px 0 10px; text-transform: uppercase; letter-spacing: .04em; color: #445; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
 .panel-card { background: #fff; border: 1px solid #dfe3ea; border-radius: 10px; overflow: hidden; }
-.panel-card .thumb { width: 100%; height: 170px; object-fit: cover; cursor: zoom-in; display: block; background: #eceff3; }
-.card-body { padding: 10px 12px 12px; font-size: .82rem; }
-.badges { margin-bottom: 6px; }
-.badge {
-  display: inline-block; font-size: .7rem; padding: 2px 7px; margin: 0 4px 4px 0;
-  border-radius: 999px; background: #eceff3; color: #445;
+.panel-card:hover { border-color: #aebee3; box-shadow: 0 3px 12px #24355b12; }
+.card-open {
+  display: flex; flex-direction: column; width: 100%; height: 100%; padding: 0; border: 0;
+  background: transparent; color: inherit; text-align: left; cursor: zoom-in; font: inherit;
 }
-.badge.t-classic { background: #d7ecd7; color: #205020; }
-.badge.t-variant { background: #fdf0d0; color: #7a5a00; }
-.badge.t-atypical { background: #f6dcdc; color: #803030; }
-.findings { font-weight: 600; margin-bottom: 4px; }
-.meta { color: #667; margin-bottom: 3px; }
-.caption { color: #445; font-size: .78rem; margin-top: 6px; }
-.attrib { color: #889; font-size: .74rem; margin-top: 7px; border-top: 1px solid #eef; padding-top: 6px; }
-.attrib a { color: #3b6fd4; margin-left: 6px; }
+.card-open:focus-visible, .tab:focus-visible, .lb-close:focus-visible { outline: 3px solid #3b6fd4; outline-offset: 2px; }
+.panel-card .thumb { width: 100%; height: 190px; object-fit: contain; display: block; background: #f1f2f5; }
+.card-label { display: block; padding: 12px 14px 14px; font-size: .95rem; line-height: 1.35; font-weight: 650; }
 .empty { color: #889; }
 
-#key-findings { padding: 0 28px 40px; max-width: 900px; }
-#key-findings ul { padding-left: 18px; }
-#key-findings li { margin-bottom: 10px; }
-.freq { color: #3b6fd4; }
-blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 3px solid #dfe3ea; color: #556; font-size: .85rem; }
-
 #lightbox {
-  position: fixed; inset: 0; background: rgba(10, 12, 20, .82);
-  display: flex; align-items: center; justify-content: center; z-index: 50;
+  position: fixed; inset: 0; background: rgba(10, 12, 20, .86);
+  display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px;
 }
 #lightbox[hidden] { display: none; }
-.lb-inner { max-width: 88vw; max-height: 88vh; text-align: center; }
-#lb-img { max-width: 88vw; max-height: 78vh; border-radius: 6px; }
-#lb-caption { color: #dde; margin-top: 10px; font-size: .85rem; white-space: pre-line; }
+.lb-inner {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .8fr);
+  gap: 22px; align-items: center; width: min(1120px, 96vw); max-height: 92vh; padding: 52px 22px 22px;
+  border-radius: 12px; background: #fff; text-align: left; overflow: auto;
+}
+#lb-img { display: block; max-width: 100%; max-height: 78vh; object-fit: contain; justify-self: center; border-radius: 6px; background: #f1f2f5; }
+.lb-close { position: absolute; top: 14px; right: 16px; padding: 7px 12px; border: 1px solid #dfe3ea; border-radius: 6px; background: #fff; cursor: pointer; }
+.lb-info { color: #1c2333; align-self: start; }
+.lb-info h2 { margin: 0 0 14px; font-size: 1.15rem; }
+#lb-details p { margin: 0 0 12px; color: #566; font-size: .9rem; line-height: 1.45; }
+#lb-details strong { color: #283248; }
+#lb-details a { color: #315fb8; }
+.source-heading { margin: 18px 0 8px; font-size: .95rem; }
+.source-item { padding: 9px 0 2px; border-top: 1px solid #e7eaf0; }
+.source-item h4 { margin: 0 0 8px; font-size: .88rem; line-height: 1.35; }
+.source-item p { margin-bottom: 8px !important; overflow-wrap: anywhere; }
 
 .comparison { padding: 8px 28px 30px; }
 .comparison h2 { font-size: 1.1rem; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 700px) {
+  .lb-inner { display: block; width: 100%; padding: 54px 16px 18px; }
+  #lb-img { max-height: 55vh; margin: 0 auto 18px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
 .side h3 { font-size: .95rem; color: #445; }

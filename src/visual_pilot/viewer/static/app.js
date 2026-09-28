@@ -1,174 +1,315 @@
-/* Disease page: tabs, filters, grouped panel cards, key findings. */
-const state = { tab: null, tabs: [], panels: [], vocab: [] };
-
+/* Disease page: clean image cards with source details available on demand. */
+const state = { tab: null, tabs: [], panels: [], vocab: [], hasPediatric: null, tabFilters: {}, loading: false };
+const FILTER_IDS = ["f-subtype", "f-modality", "f-finding", "f-typicality", "f-skin-tone"];
+let panelsRequest = 0;
 const $ = (id) => document.getElementById(id);
-const q = (sel) => document.querySelector(sel);
-
 const lb = $("lightbox");
-lb.addEventListener("click", () => { lb.hidden = true; });
-function openLightbox(src, caption) {
-  $("lb-img").src = src;
-  $("lb-caption").textContent = caption;
+let previouslyFocused = null;
+
+function setText(el, value) {
+  if (value) el.textContent = value;
+  return el;
+}
+
+function closeLightbox() {
+  if (lb.hidden) return;
+  lb.hidden = true;
+  $("lb-img").removeAttribute("src");
+  if (previouslyFocused?.isConnected) previouslyFocused.focus();
+}
+
+lb.addEventListener("click", (event) => {
+  if (event.target === lb || event.target.closest("[data-close-lightbox]")) closeLightbox();
+});
+document.addEventListener("keydown", (event) => {
+  if (lb.hidden) return;
+  if (event.key === "Escape") { event.preventDefault(); closeLightbox(); }
+  if (event.key === "Tab") {
+    const focusable = [...lb.querySelectorAll("button, a[href]")].filter(el => !el.disabled);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+});
+
+function openLightbox(panel, src) {
+  previouslyFocused = document.activeElement;
+  const image = $("lb-img");
+  image.src = panel.image || src;
+  image.alt = displayLabel(panel);
+  $("lb-title").textContent = displayLabel(panel);
+
+  const details = $("lb-details");
+  details.replaceChildren();
+  const add = (label, value, href) => {
+    if (!value) return;
+    const row = document.createElement("p");
+    const heading = document.createElement("strong");
+    heading.textContent = `${label}: `;
+    row.append(heading);
+    if (href) {
+      const link = document.createElement("a");
+      link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer";
+      link.textContent = value; row.append(link);
+    } else row.append(document.createTextNode(value));
+    details.append(row);
+  };
+
+  const sources = panel.source_variants?.length ? panel.source_variants : [panel];
+  const uniqueSources = [];
+  const seen = new Set();
+  for (const source of sources) {
+    const identity = [source.article_url || source.doi_url, source.article_title, source.copyright || source.attribution_text, source.license_url, source.license_code].join("|");
+    if (!seen.has(identity)) { seen.add(identity); uniqueSources.push(source); }
+  }
+  const ages = [...new Set(sources.map(source => source.age_group_label).filter(isStatedAgeLabel))];
+  const ageValues = ages.length ? ages : [panel.age_group_label].filter(isStatedAgeLabel);
+  if (ageValues.length) add(ageValues.length > 1 ? "Age groups noted" : "Age group noted", ageValues.map(humanize).join(" · "));
+  const locations = [...new Set(sources.map(source => source.country).filter(Boolean))];
+  const locationValues = locations.length ? locations : [panel.country || panel.study_region].filter(Boolean);
+  if (locationValues.length) add(locationValues.length > 1 ? "Countries/regions listed in article metadata" : "Country/region listed in article metadata", locationValues.join(" · "));
+  const context = panel.context || compactContext(panel);
+  add("Context", context);
+  if (uniqueSources.length) {
+    const heading = document.createElement("h3");
+    heading.className = "source-heading";
+    heading.textContent = uniqueSources.length === 1 ? "Source" : "Sources";
+    details.append(heading);
+  }
+  uniqueSources.forEach(source => {
+    const section = document.createElement("section");
+    section.className = "source-item";
+    addSourceRow(section, "Article", source.article_title || "Article source", source.article_url || source.doi_url);
+    const attribution = source.copyright || source.attribution_text;
+    if (attribution) addSourceRow(section, "Copyright & attribution", attribution);
+    if (source.license_code || source.license_url) {
+      addSourceRow(section, "License", source.license_code || "License details", source.license_url);
+    }
+    if (source.figure_label) addSourceRow(section, "Figure", source.figure_label);
+    details.append(section);
+  });
+
   lb.hidden = false;
+  $("lb-close").focus();
+}
+
+function isStatedAgeLabel(age) {
+  return Boolean(age) && !["unknown", "not stated", "unspecified", "not reported", "not available", "n/a", "na"].includes(String(age).trim().toLowerCase());
+}
+
+function addSourceRow(container, label, value, href) {
+  if (!value) return;
+  const row = document.createElement("p");
+  const heading = document.createElement("strong");
+  heading.textContent = `${label}: `;
+  row.append(heading);
+  if (href) {
+    const link = document.createElement("a");
+    link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer";
+    link.textContent = value; row.append(link);
+  } else row.append(document.createTextNode(value));
+  container.append(row);
+}
+
+function compactContext(panel) {
+  const parts = [];
+  const caption = (panel.caption_variants || [panel.figure_caption]).filter(Boolean).join(" ");
+  const mention = (panel.in_text_mentions || []).filter(Boolean).join(" ");
+  const evidence = [caption, mention].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  if (evidence) parts.push(evidence.length > 650 ? `${evidence.slice(0, 647).trimEnd()}…` : evidence);
+  return parts.join(" · ");
+}
+
+function humanize(value) {
+  return String(value || "").replace(/[_-]+/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function displayLabel(panel) {
+  if (panel.display_label) return panel.display_label;
+  const findings = (panel.findings || []).map(f => typeof f === "string" ? f : (f.label || humanize(f.key)));
+  return findings.filter(Boolean).join(", ") || humanize(panel.body_site || panel.modality || "Clinical image");
 }
 
 function filters() {
   const p = new URLSearchParams();
   for (const [k, id] of [["subtype", "f-subtype"], ["modality", "f-modality"],
-    ["finding", "f-finding"], ["typicality", "f-typicality"], ["skin_tone", "f-skin-tone"]]) {
+    ["finding", "f-finding"], ["typicality", "f-typicality"]]) {
     const v = $(id).value;
     if (v) p.set(k, v);
   }
   return p;
 }
 
-function findingKeys(p) {
-  return (p.findings || []).map(f => (typeof f === "string" ? f : f.key));
+function rememberFilters() {
+  state.tabFilters[state.tab] = Object.fromEntries(FILTER_IDS.map(id => [id, $(id).value]));
 }
 
-function groupName(p, groupBy) {
-  if (groupBy === "subtype") return p.subtype || "other";
-  if (groupBy === "stage") return p.stage || "unknown";
-  if (groupBy === "finding") return findingKeys(p)[0] || "other";
+function restoreFilters(tab) {
+  const values = state.tabFilters[tab] || {};
+  for (const id of FILTER_IDS) $(id).value = values[id] || "";
+}
+
+function isPediatric(panel) {
+  if (panel.pediatric === true) return true;
+  const ages = [...(panel.age_group_variants || []), panel.age_group, panel.age_group_label].filter(Boolean);
+  return ages.some(age => String(age).toLowerCase().split(/[\s/,;|]+/).some(part =>
+    ["child", "children", "pediatric", "paediatric", "infant", "adolescent"].includes(part)));
+}
+
+function groupName(panel, groupBy) {
+  if (state.tab === "pediatric") {
+    if (panel.clinical_group) return panel.clinical_group;
+    const clinicalTab = panel.clinical_tab || panel.tab;
+    return state.tabs.find(tab => tab.key === clinicalTab)?.label || "Pediatric manifestations";
+  }
+  if (groupBy === "clinical_group" && panel.clinical_group) return panel.clinical_group;
+  if (groupBy === "clinical_group") return "Other";
+  if (groupBy === "subtype") return panel.subtype || "other";
+  if (groupBy === "stage") return panel.stage || "unknown";
+  if (groupBy === "finding") return ((panel.findings || [])[0] || {}).key || "other";
   return null;
 }
 
 function render() {
-  const tabs = state.tabs;
-  const active = tabs.find(t => t.key === state.tab);
+  const active = state.tabs.find(t => t.key === state.tab);
   $("f-skin-tone").hidden = !(active && active.skin_tone_filter);
-
+  if (state.hasPediatric !== null) {
+    const pediatricTab = $("tabs").querySelector('[data-tab-key="pediatric"]');
+    if (pediatricTab) pediatricTab.hidden = !state.hasPediatric;
+  }
   let panels = state.panels;
-  if (state.tab !== "all" && active) panels = panels.filter(p => p.tab === state.tab);
+  if (state.tab === "pediatric") panels = panels.filter(isPediatric);
+  else if (state.tab !== "all" && active) panels = panels.filter(p => p.tab === state.tab);
   if (state.tab === "other") panels = panels.filter(p => p.tab === "other");
+  // Skin tone is local to views that expose this filter. Keep the complete
+  // result set so switching sections never inherits a hidden skin filter.
+  const skinTone = $("f-skin-tone").value;
+  if (active?.skin_tone_filter && skinTone) panels = panels.filter(p => p.skin_tone === skinTone);
 
   const content = $("content");
-  content.innerHTML = "";
+  content.replaceChildren();
+  if (state.loading) { content.innerHTML = "<p class='empty'>Loading images…</p>"; return; }
   if (!panels.length) { content.innerHTML = "<p class='empty'>No panels in this view.</p>"; return; }
-
-  const groupBy = active && active.group_by;
+  const groupBy = state.tab === "pediatric" ? "clinical_tab" : active && active.group_by;
   if (!groupBy) { content.appendChild(grid(panels)); return; }
 
-  const order = (active.group_order || []).map(s => s.toLowerCase());
+  const order = (active?.group_order || []).map(s => s.toLowerCase());
   const buckets = {};
-  for (const p of panels) {
-    const g = groupName(p, groupBy);
-    (buckets[g] = buckets[g] || []).push(p);
+  for (const panel of panels) {
+    const name = groupName(panel, groupBy) || (state.tab === "pediatric" ? "Pediatric manifestations" : "Other");
+    (buckets[name] = buckets[name] || []).push(panel);
   }
   const names = Object.keys(buckets).sort((a, b) => {
     const ia = order.indexOf(a.toLowerCase()), ib = order.indexOf(b.toLowerCase());
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
   });
   for (const name of names) {
-    const h = document.createElement("h2");
-    h.className = "group-header";
-    h.textContent = name;
-    content.appendChild(h);
-    content.appendChild(grid(buckets[name]));
+    const heading = document.createElement("h2");
+    heading.className = "group-header";
+    heading.textContent = name;
+    content.append(heading, grid(buckets[name]));
   }
-}
-
-function captionTexts(p) {
-  const captions = (p.caption_variants || [p.figure_caption]).filter(Boolean);
-  return captions.map(cap => [p.figure_label, cap].filter(Boolean).join(" — "));
 }
 
 function grid(panels) {
-  const g = document.createElement("div");
-  g.className = "grid";
-  for (const p of panels) {
-    const c = document.createElement("div");
-    c.className = "panel-card";
-    const img = p.thumb || p.image;
-    c.innerHTML = `
-      ${img ? `<img class="thumb" src="${img}" alt="${p.panel_label || ""}">` : ""}
-      <div class="card-body">
-        <div class="badges">
-          ${p.typicality ? `<span class="badge t-${p.typicality}">${p.typicality}</span>` : ""}
-          ${p.skin_tone ? `<span class="badge">skin: ${p.skin_tone}</span>` : ""}
-          ${p.subtype ? `<span class="badge">${p.subtype}</span>` : ""}
-        </div>
-        <div class="findings">${findingKeys(p).join(", ")}</div>
-        <div class="meta">
-          ${[p.disease_key, p.modality, p.body_site, p.stage, p.age_group].filter(Boolean).join(" · ")}
-        </div>
-        ${p.stated_ethnicity ? `<div class="meta">stated ethnicity: ${p.stated_ethnicity}</div>` : ""}
-        ${p.study_region ? `<div class="meta">${p.study_region}</div>` : ""}
-        ${captionTexts(p).map(cap => `<div class="caption">${cap}</div>`).join("")}
-        ${(p.attribution_variants || [p.attribution_text || ""]).map(a =>
-          `<div class="attrib">${a}
-            ${p.doi_url ? `<a href="${p.doi_url}" target="_blank" rel="noopener">DOI</a>` : ""}
-          </div>`).join("")}
-      </div>`;
-    if (img) c.querySelector(".thumb").addEventListener("click", () => {
-      const parts = [...captionTexts(p), ...(p.in_text_mentions || [])];
-      parts.push((p.attribution_text || "") + (p.doi_url ? " — " + p.doi_url : ""));
-      openLightbox(p.image || img, parts.filter(Boolean).join("\n\n"));
-    });
-    g.appendChild(c);
+  const gridEl = document.createElement("div");
+  gridEl.className = "grid";
+  for (const panel of panels) {
+    const src = panel.thumb || panel.image;
+    if (!src) continue;
+    const card = document.createElement("article");
+    card.className = "panel-card";
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "card-open";
+    open.setAttribute("aria-label", `Open image: ${displayLabel(panel)}`);
+    const image = document.createElement("img");
+    image.className = "thumb";
+    image.src = src;
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    const label = document.createElement("span");
+    label.className = "card-label";
+    label.textContent = displayLabel(panel);
+    open.append(image, label);
+    open.addEventListener("click", () => openLightbox(panel, src));
+    card.append(open);
+    gridEl.append(card);
   }
-  return g;
+  return gridEl;
 }
 
 function loadPanels() {
-  return fetch(`/api/diseases/${DISEASE}/panels?` + filters())
-    .then(r => r.json()).then(d => { state.panels = d.panels; render(); });
+  const params = filters();
+  const request = ++panelsRequest;
+  state.loading = true;
+  render();
+  return fetch(`/api/diseases/${DISEASE}/panels?` + params)
+    .then(r => r.json()).then(d => {
+      // A previous tab or filter request must not replace the current view.
+      if (request !== panelsRequest) return;
+      state.loading = false;
+      state.panels = d.panels;
+      if (!params.toString() && state.hasPediatric === null) state.hasPediatric = d.panels.some(isPediatric);
+      render();
+    }).catch(() => {
+      if (request !== panelsRequest) return;
+      state.loading = false;
+      state.panels = [];
+      render();
+      $("content").innerHTML = "<p class='empty'>Images could not be loaded. Try changing a filter or switching sections.</p>";
+    });
 }
 
 Promise.all([
   fetch("/api/diseases").then(r => r.json()),
   fetch(`/api/diseases/${DISEASE}/tabs`).then(r => r.json()),
-  fetch(`/api/diseases/${DISEASE}/findings`).then(r => r.json()),
   fetch(`/api/vocab?disease=${DISEASE}`).then(r => r.json()),
-]).then(([diseases, tabs, findings, vocab]) => {
-  const d = diseases.find(x => x.key === DISEASE) || {};
-  $("title").textContent = `${d.name || DISEASE} — visual library`;
-
+]).then(([diseases, tabs, vocab]) => {
+  const disease = diseases.find(x => x.key === DISEASE) || {};
+  $("title").textContent = `${disease.name || DISEASE} — visual library`;
   state.tabs = [{ key: "all", label: "All" }, ...tabs, { key: "other", label: "Other" }];
   state.tab = "all";
   const nav = $("tabs");
-  for (const t of state.tabs) {
-    const b = document.createElement("button");
-    b.textContent = t.label;
-    b.className = t.key === state.tab ? "tab active" : "tab";
-    b.addEventListener("click", () => {
-      state.tab = t.key;
-      nav.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      render();
+  for (const tab of state.tabs) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.tabKey = tab.key;
+    button.textContent = tab.label;
+      button.className = tab.key === state.tab ? "tab active" : "tab";
+    if (tab.key === "pediatric" && state.hasPediatric === false) button.hidden = true;
+    button.setAttribute("aria-pressed", String(tab.key === state.tab));
+    button.addEventListener("click", () => {
+      if (state.tab === tab.key) return;
+      rememberFilters();
+      state.tab = tab.key;
+      restoreFilters(tab.key);
+      nav.querySelectorAll(".tab").forEach(el => { el.classList.remove("active"); el.setAttribute("aria-pressed", "false"); });
+      button.classList.add("active"); button.setAttribute("aria-pressed", "true");
+      loadPanels();
     });
-    nav.appendChild(b);
+    nav.append(button);
   }
-
-  for (const s of d.subtypes || []) {
-    const o = document.createElement("option");
-    o.value = s.key; o.textContent = s.label;
-    $("f-subtype").appendChild(o);
+  for (const subtype of disease.subtypes || []) {
+    const option = document.createElement("option"); option.value = subtype.key; option.textContent = subtype.label;
+    $("f-subtype").append(option);
   }
-  const modalities = ["clinical_photo", "dermoscopy", "capillaroscopy", "histology_he",
-    "histology_ihc", "immunofluorescence", "radiograph", "ct", "mri", "ultrasound",
-    "echo", "pet", "endoscopy", "ophthalmic", "gross", "other"];
-  for (const m of modalities) {
-    const o = document.createElement("option"); o.value = m; o.textContent = m;
-    $("f-modality").appendChild(o);
+  const modalities = ["clinical_photo", "dermoscopy", "capillaroscopy", "histology_he", "histology_ihc", "immunofluorescence", "radiograph", "ct", "mri", "ultrasound", "echo", "pet", "endoscopy", "ophthalmic", "gross", "other"];
+  for (const modality of modalities) {
+    const option = document.createElement("option"); option.value = modality; option.textContent = humanize(modality);
+    $("f-modality").append(option);
   }
   state.vocab = vocab;
-  for (const v of vocab) {
-    const o = document.createElement("option"); o.value = v.finding_key; o.textContent = v.label;
-    $("f-finding").appendChild(o);
+  for (const item of vocab) {
+    const option = document.createElement("option"); option.value = item.finding_key; option.textContent = item.label;
+    $("f-finding").append(option);
   }
-  for (const id of ["f-subtype", "f-modality", "f-finding", "f-typicality", "f-skin-tone"])
-    $(id).addEventListener("change", loadPanels);
-
-  const ul = q("#key-findings ul");
-  for (const f of findings) {
-    const li = document.createElement("li");
-    li.innerHTML = `<b>${f.finding_key || "—"}</b>
-      ${f.frequency_text ? ` <span class="freq">${f.frequency_text}</span>` : ""}
-      ${f.quote ? `<blockquote>${f.quote}</blockquote>` : ""}`;
-    ul.appendChild(li);
-  }
-  if (!findings.length) ul.innerHTML = "<li>none extracted yet</li>";
-
+  for (const id of FILTER_IDS) $(id).addEventListener("change", () => {
+    rememberFilters();
+    if (id === "f-skin-tone") render();
+    else loadPanels();
+  });
   loadPanels();
 });

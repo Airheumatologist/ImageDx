@@ -331,7 +331,7 @@ def _stored_panel_counts(conn, disease_key: str) -> dict[str, int]:
     """Count stored panels per approved finding for coverage-aware queries."""
     counts: dict[str, int] = {}
     for row in conn.execute(
-        "SELECT findings_json FROM panels WHERE disease_key = ?", (disease_key,)
+        "SELECT findings_json FROM published_panels WHERE disease_key = ?", (disease_key,)
     ):
         for finding in db.from_json(row["findings_json"], []) or []:
             key = finding.get("finding_key") if isinstance(finding, dict) else finding

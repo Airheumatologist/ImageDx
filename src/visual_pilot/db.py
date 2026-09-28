@@ -135,6 +135,24 @@ CREATE TABLE IF NOT EXISTS disease_findings (
     created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Reversible publication exclusions. Original judgments, rows and files are
+-- retained; a review applies only to the exact image that was audited.
+CREATE TABLE IF NOT EXISTS panel_curation (
+    panel_id        TEXT PRIMARY KEY REFERENCES panels(panel_id),
+    image_sha256    TEXT NOT NULL,
+    decision        TEXT NOT NULL CHECK (decision = 'exclude'),
+    reason          TEXT NOT NULL,
+    policy_version  TEXT NOT NULL,
+    reviewed_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE VIEW IF NOT EXISTS published_panels AS
+SELECT p.* FROM panels p WHERE NOT EXISTS (
+    SELECT 1 FROM panel_curation pc
+    WHERE pc.panel_id = p.panel_id AND pc.decision = 'exclude'
+      AND pc.image_sha256 = COALESCE(p.sha256, '')
+);
+
 CREATE TABLE IF NOT EXISTS llm_calls (
     call_id           INTEGER PRIMARY KEY AUTOINCREMENT,
     stage             TEXT NOT NULL,
@@ -166,6 +184,7 @@ _PK_COLUMNS = {
     "panels": "panel_id",
     "disease_findings": "id",
     "llm_calls": "call_id",
+    "panel_curation": "panel_id",
 }
 
 def connect(db_path: str | Path | None = None) -> sqlite3.Connection:

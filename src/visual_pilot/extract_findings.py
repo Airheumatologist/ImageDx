@@ -289,7 +289,7 @@ def rebuild_image_rows(conn) -> int:
     conn.execute("DELETE FROM disease_findings WHERE source = 'image'")
     n = 0
     for row in conn.execute(
-        "SELECT pmcid, disease_key, subtype, findings_json FROM panels "
+        "SELECT pmcid, disease_key, subtype, findings_json FROM published_panels "
         "WHERE disease_key IS NOT NULL"
     ):
         for finding in db.from_json(row["findings_json"], []):

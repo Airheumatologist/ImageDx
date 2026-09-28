@@ -93,7 +93,7 @@ def _snapshot(conn, disease_key: str) -> tuple[set[str], set[str]]:
     hashes = {
         r["sha256"]
         for r in conn.execute(
-            "SELECT DISTINCT sha256 FROM panels WHERE disease_key=? "
+            "SELECT DISTINCT sha256 FROM published_panels WHERE disease_key=? "
             "AND sha256 IS NOT NULL AND sha256 != ''",
             (disease_key,),
         )
@@ -113,7 +113,7 @@ def _snapshot(conn, disease_key: str) -> tuple[set[str], set[str]]:
             "SELECT DISTINCT CASE WHEN je.type='object' "
             "THEN json_extract(je.value,'$.finding_key') "
             "ELSE je.value END AS k "
-            "FROM panels p, json_each(CASE WHEN json_valid(p.findings_json) "
+            "FROM published_panels p, json_each(CASE WHEN json_valid(p.findings_json) "
             "THEN CASE WHEN json_type(p.findings_json)='array' "
             "THEN p.findings_json ELSE '[]' END ELSE '[]' END) je "
             "WHERE p.disease_key=?",

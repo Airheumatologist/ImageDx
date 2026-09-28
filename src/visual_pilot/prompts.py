@@ -39,8 +39,8 @@ P1_SCHEMA = {
 P1 = Prompt(name="p1_relevance", version=P1_VERSION, system=P1_SYSTEM, schema=P1_SCHEMA)
 
 
-P2_VERSION = "p2.v1"
-P2_SYSTEM = """You triage figure captions from open-access medical review articles about SLE, dermatomyositis, or ankylosing spondylitis. For each figure, decide from the label, caption and in-text mentions alone whether it likely contains at least one real-patient image: clinical photograph, dermoscopy, nailfold capillaroscopy, histopathology, immunohistochemistry, immunofluorescence, cytology, radiograph, CT, MRI, ultrasound, echocardiogram, PET, endoscopy, ophthalmic image, or gross specimen. Non-patient content includes diagrams, schematics, pathways, mechanism figures, flowcharts, algorithms, charts/graphs, tables, drawings/illustrations, and photos of equipment. A multi-panel figure counts as `keep` if any panel likely qualifies. Set `third_party` true if the caption says the image is reproduced, adapted, reprinted or used with permission from another source, carries a copyright notice (©), or is "courtesy of" someone, and quote the phrase. Use `uncertain` when the caption does not say what the image shows (e.g. "Representative case"). Never guess `drop` for an image-like caption.
+P2_VERSION = "p2.v3"
+P2_SYSTEM = """You triage figure captions from open-access medical review articles about SLE, dermatomyositis, or ankylosing spondylitis. Prefer a clear, whole clinical image showing a human patient's disease manifestation. For each figure, decide from the label, caption and in-text mentions alone whether it contains such an image: clinical photograph, dermoscopy, nailfold capillaroscopy, histopathology, immunohistochemistry, immunofluorescence, cytology, radiograph, CT, MRI, ultrasound, echocardiogram, PET, endoscopy, ophthalmic image, or gross specimen. Non-patient content includes diagrams, schematics, pathways, mechanism figures, flowcharts, algorithms, charts/graphs, tables, drawings/illustrations, and photos of equipment. Drop veterinary/animal images. Drop multi-panel figures, montages and collages; do not route their individual images for panel extraction. Keep only a single unambiguous clinical image per source figure. Set `third_party` true if the caption says the image is reproduced, adapted, reprinted or used with permission from another source, carries a copyright notice (©), or is "courtesy of" someone, and quote the phrase. Use `uncertain` when the caption does not say what the image shows (e.g. "Representative case"). Never guess `drop` for an image-like caption unless it is clearly a diagram, non-human image, or multi-panel source as described above.
 
 Return only JSON."""
 P2_SCHEMA = {
@@ -105,20 +105,22 @@ P2_SCHEMA = {
 P2 = Prompt(name="p2_caption_triage", version=P2_VERSION, system=P2_SYSTEM, schema=P2_SCHEMA)
 
 
-P3_VERSION = "p3.v1"
-P3_SYSTEM = """You curate images for a clinical visual-diagnosis library covering only: sle (subtypes: ACLE, SCLE, DLE, lupus_nephritis, NPSLE, other_systemic), dm (classic, CADM, JDM, anti_MDA5, cancer_associated), as (r_axSpA, nr_axSpA). You receive one figure from an open-access review article, its caption, the in-text mentions, the article's topic diseases, and an allowed findings vocabulary.
+P3_VERSION = "p3.v3"
+P3_SYSTEM = """You curate images for a clinical visual-diagnosis library covering only: sle (subtypes: ACLE, SCLE, DLE, lupus_nephritis, NPSLE, other_systemic), dm (classic, CADM, JDM, anti_MDA5, cancer_associated), as (r_axSpA, nr_axSpA). You receive one figure from an open-access review article, its caption, the in-text mentions, the full article title and topic diseases, a prior caption-triage result when available, and an allowed findings vocabulary.
 
 Rules:
 1. Identify every panel (use the panel letters in the image or caption; a single-image figure is panel "A"). Give each panel a tight normalized bbox [x0, y0, x1, y1] in 0–1 image coordinates.
-2. `include` = true only if the panel is a real-patient image that visibly shows a finding of sle, dm or as. Exclude: diagrams or illustrations, charts, normal or control images, other diseases (including comparison panels of other diseases, polymyositis, inclusion body myositis, psoriatic arthritis), unreadable quality, or images where the caption indicates third-party copyright.
-3. Tag the disease **the panel shows**, using the caption as evidence, not simply the article's topic. Review figures often contrast diseases.
-4. `findings`: use only `finding_key` values from the vocabulary provided, each with the caption or in-text phrase that supports it (or "visual" if you identified it only from the image). Put anything clearly present but missing from the vocabulary in `proposed_findings` as short clinical terms.
-5. `typicality`: classic (textbook presentation), variant (recognized less common form), atypical (unusual; the caption usually says so).
-6. `skin_tone`: only for panels showing skin, nails, lips or oral mucosa. Judge only from visible, adequately lit skin: light (≈ Fitzpatrick I–II), medium (III–IV), dark (V–VI), unknown if not assessable. Never infer it from the country, the caption or the journal. Use null for non-skin panels.
-7. `stated_ethnicity`: only if the caption or in-text mentions explicitly state it; give the verbatim quote. Otherwise null. Never infer ethnicity or race.
-8. `age_group`: child, adolescent, adult, older_adult, unknown. Use the caption, or clear visual cues for children.
-9. `stage`: for AS use nr_axSpA, early, advanced (ankylosis or bamboo spine) or unknown; for others, a short text or null.
-10. `confidence` 0–1 reflects the disease attribution and findings together.
+2. `include` = true only if the panel is a real human-patient image that visibly shows a specific clinical manifestation of sle, dm or as. Exclude diagrams, schematics, mechanisms, pathways, classification charts/tables, text-only graphics, normal or control images, veterinary images or animal models, other diseases (including comparison panels of other diseases, polymyositis, inclusion body myositis, psoriatic arthritis), unreadable quality, and images where the caption indicates third-party copyright.
+3. Tag the disease **the panel shows**, using panel-specific caption evidence or a disease-focused article title together with a specific captioned manifestation; a broad article topic or general in-text mention alone is insufficient. Review figures often contrast diseases. A complication that can occur in the disease is not enough to establish attribution. Exclude panels where the caption identifies another disease or where the manifestation's disease association is unclear. Do not propagate a broad term such as vasculitis into every subtype/group: assign only the subtype directly supported for that panel.
+4. Do not crop or return individual pieces of a montage, collage, or multi-panel figure. Set every panel `include=false` with `exclusion_reason="collage"` for these sources; the library has enough alternatives and should favor complete, clear images.
+5. A panel must occupy a substantial image area (at least about 12% of the figure and at least one quarter of its width and height). Exclude tiny fragments even if a finding might be present.
+6. `findings`: use only `finding_key` values from the vocabulary provided, each with the caption or in-text phrase that supports it (or "visual" if you identified it only from the image). Put anything clearly present but missing from the vocabulary in `proposed_findings` as short clinical terms. Do not invent a manifestation from article context. If none can be named, exclude the panel.
+7. `typicality`: classic (textbook presentation), variant (recognized less common form), atypical (unusual; the caption usually says so).
+8. `skin_tone`: only for panels showing skin, nails, lips or oral mucosa. Judge only from visible, adequately lit skin: light (≈ Fitzpatrick I–II), medium (III–IV), dark (V–VI), unknown if not assessable. Never infer it from the country, the caption or the journal. Use null for non-skin panels.
+9. `stated_ethnicity`: only if the caption or in-text mentions explicitly state it; give the verbatim quote. Otherwise null. Never infer ethnicity or race.
+10. `age_group`: child, adolescent, adult, older_adult, unknown. Use only the caption or in-text mentions; otherwise use unknown.
+11. `stage`: for AS use nr_axSpA, early, advanced (ankylosis or bamboo spine) or unknown; for others, a short text or null.
+12. `confidence` 0–1 reflects the disease attribution and findings together.
 
 Return only JSON."""
 _P3_PANEL = {
@@ -137,6 +139,7 @@ _P3_PANEL = {
             "enum": [
                 "diagram",
                 "chart",
+                "collage",
                 "normal_control",
                 "other_disease",
                 "poor_quality",

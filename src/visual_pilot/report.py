@@ -129,9 +129,12 @@ def funnel(conn, disease_key: str | None = None) -> dict:
     panel_params = (disease_key,) if disease_key else ()
     panel_rows = _rows(
         conn,
-        f"SELECT p.sha256 FROM panels p {panels_where}",
+        f"SELECT p.sha256 FROM published_panels p {panels_where}",
         panel_params,
     )
+    stored_panels = conn.execute(
+        f"SELECT COUNT(*) FROM panels p {panels_where}", panel_params,
+    ).fetchone()[0]
     return {
         "articles": articles,
         "figures": figures,
@@ -141,20 +144,22 @@ def funnel(conn, disease_key: str | None = None) -> dict:
         "triaged_categories": _triaged_categories(conn),
         "vision_exclusions": exclusions,
         "panels": len(panel_rows),
+        "stored_panels": stored_panels,
+        "excluded_panels": stored_panels - len(panel_rows),
         "unique_images": len({r["sha256"] for r in panel_rows if r["sha256"]}),
     }
 
 
 def panel_distribution(conn) -> dict:
     dist = {
-        "by_modality": _counts_by(conn, "panels", "modality"),
-        "by_subtype": _counts_by(conn, "panels", "subtype"),
-        "by_disease": _counts_by(conn, "panels", "disease_key"),
+        "by_modality": _counts_by(conn, "published_panels", "modality"),
+        "by_subtype": _counts_by(conn, "published_panels", "subtype"),
+        "by_disease": _counts_by(conn, "published_panels", "disease_key"),
         "by_finding": {},
         "skin_tone": {},
     }
     findings: Counter[str] = Counter()
-    for row in conn.execute("SELECT findings_json FROM panels"):
+    for row in conn.execute("SELECT findings_json FROM published_panels"):
         for f in db.from_json(row["findings_json"], []):
             key = f.get("finding_key") if isinstance(f, dict) else f
             if key:
@@ -162,7 +167,7 @@ def panel_distribution(conn) -> dict:
     dist["by_finding"] = dict(findings.most_common())
     skin_rows = _rows(
         conn,
-        "SELECT disease_key, skin_tone FROM panels WHERE modality IN "
+        "SELECT disease_key, skin_tone FROM published_panels WHERE modality IN "
         "('clinical_photo','dermoscopy','capillaroscopy') OR skin_tone IS NOT NULL",
     )
     tones: dict[str, Counter] = {}
@@ -175,7 +180,7 @@ def panel_distribution(conn) -> dict:
 def zero_image_findings(conn) -> dict[str, list[str]]:
     """Approved vocab findings with no panel per disease."""
     used: dict[str, set[str]] = {}
-    for row in conn.execute("SELECT disease_key, findings_json FROM panels"):
+    for row in conn.execute("SELECT disease_key, findings_json FROM published_panels"):
         for f in db.from_json(row["findings_json"], []):
             key = f.get("finding_key") if isinstance(f, dict) else f
             if key:
@@ -196,7 +201,7 @@ def cost_summary(conn) -> dict:
         "FROM llm_calls GROUP BY stage ORDER BY stage",
     )
     total = sum(s["cost"] for s in stages)
-    panels = conn.execute("SELECT COUNT(*) n FROM panels").fetchone()["n"]
+    panels = conn.execute("SELECT COUNT(*) n FROM published_panels").fetchone()["n"]
     return {
         "per_stage": stages,
         "total_usd": round(total, 6),
@@ -223,7 +228,7 @@ def access_failures(conn) -> dict:
 # Spot-check sheets
 # ---------------------------------------------------------------------------
 def _spot_accepted_html(conn) -> str:
-    panels = _rows(conn, "SELECT * FROM panels ORDER BY disease_key, panel_id")
+    panels = _rows(conn, "SELECT * FROM published_panels ORDER BY disease_key, panel_id")
     cards = []
     for p in panels:
         findings = ", ".join(

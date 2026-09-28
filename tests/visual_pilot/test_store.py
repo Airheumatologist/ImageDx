@@ -46,7 +46,7 @@ def _article(conn, pmcid="PMC1", persisted=True):
         "INSERT OR REPLACE INTO articles (pmcid, title, journal, year, doi, status, "
         "license_code, license_url, study_region, primary_disease_keys_json, "
         "authors_json, author_count, journal_name, s3_prefix, media_files_json) "
-        "VALUES (?, 'T', 'J', 2024, '10.1/x', 'parsed', 'cc-by', "
+        "VALUES (?, 'Dermatomyositis clinical review', 'J', 2024, '10.1/x', 'parsed', 'cc-by', "
         "'https://creativecommons.org/licenses/by/4.0/', 'Spain (article metadata)', "
         "'[\"dm\"]', ?, ?, ?, ?, ?)",
         (
@@ -68,7 +68,7 @@ def _figure(conn, fid="PMC1:F1", pmcid="PMC1", url="https://s3/x/f1.png",
     conn.execute(
         "INSERT OR REPLACE INTO figures (figure_id, pmcid, label, caption, status, "
         "image_url, image_format, effective_license, vision_json, sha256) "
-        "VALUES (?, ?, 'Figure 1', 'cap', ?, ?, 'png', ?, ?, ?)",
+        "VALUES (?, ?, 'Figure 1', 'Clinical image of a patient with dermatomyositis.', ?, ?, 'png', ?, ?, ?)",
         (fid, pmcid, status, url, license_code,
          db.to_json(vision) if vision else None, sha256),
     )
@@ -90,7 +90,10 @@ def _panel(label, bbox, disease="dm", findings=None, proposed=None):
 
 
 def _vision(panels, fid="PMC1:F1"):
-    return {"figure_id": fid, "figure_is_compound": len(panels) > 1, "panels": panels}
+    return {
+        "figure_id": fid, "figure_is_compound": len(panels) > 1,
+        "panels": panels,
+    }
 
 
 def _mock_bundle(monkeypatch, calls=None):
@@ -248,7 +251,7 @@ def test_store_attribution_from_persisted_fields(conn, vp_data_dir, monkeypatch)
     # authors_json ["Doe","Roe"] + author_count 2 -> "Doe and Roe."
     # journal column 'J' wins over journal_name, matching the old
     # `article["journal"] or parsed.journal_name` expression.
-    assert attrib.startswith("Doe and Roe. T. J 2024.")
+    assert attrib.startswith("Doe and Roe. Dermatomyositis clinical review. J 2024.")
 
 
 def test_store_attribution_jats_fallback(conn, vp_data_dir, monkeypatch):
@@ -261,7 +264,7 @@ def test_store_attribution_jats_fallback(conn, vp_data_dir, monkeypatch):
     assert len(calls) == 1
     attrib = conn.execute("SELECT attribution_text FROM panels").fetchone()[0]
     # Fixture XML: first author Smith of 4, journal kept from the row ('J').
-    assert attrib.startswith("Smith et al. T. J 2024.")
+    assert attrib.startswith("Smith et al. Dermatomyositis clinical review. J 2024.")
 
 
 def test_store_attribution_fallback_uses_hints(conn, vp_data_dir, monkeypatch):
@@ -321,8 +324,7 @@ def test_store_concurrency_cap(conn, vp_data_dir, monkeypatch):
 
 
 def _seed_parity_case(conn):
-    """Mixed fixture set: crop panels + proposals, in-run dedup, ND
-    whole-figure, a fetch error. Returns {url_basename: bytes}."""
+    """Single-image figures: one cropped panel, whole-figure dedup, ND, error."""
     diseases.seed(conn)
     blobs = {
         "multi.png": _png_bytes(color=(10, 20, 30)),
@@ -335,11 +337,7 @@ def _seed_parity_case(conn):
         conn, fid="PMC1:F1", pmcid="PMC1", url="https://s3/x/multi.png",
         sha256=hashlib.sha256(blobs["multi.png"]).hexdigest(),
         vision=_vision(
-            [
-                _panel("A", [0.0, 0.0, 0.5, 0.5], proposed=["new_sign_x"]),
-                _panel("B", [0.6, 0.6, 1.0, 1.0]),
-                _panel("C", [0.6, 0.6, 1.0, 1.0]),  # identical crop -> dedup
-            ],
+            [_panel("A", [0.0, 0.0, 0.5, 0.5], proposed=["new_sign_x"])],
             fid="PMC1:F1",
         ),
     )
@@ -429,7 +427,7 @@ def test_store_parallel_matches_sequential(conn, vp_data_dir, monkeypatch, tmp_p
         for r in conn.execute("SELECT DISTINCT crop_mode FROM panels")
     }
     assert modes == {"panel", "whole_figure"}
-    assert dedup_rows >= 3  # F1 C-panel + F2/F3 whole-figure
+    assert dedup_rows >= 2  # F2/F3 whole-figure deduplication
 
 
 def test_store_rerun_is_idempotent(conn, vp_data_dir, monkeypatch):
@@ -474,3 +472,25 @@ def test_store_dedup_across_runs(conn, vp_data_dir, monkeypatch):
     assert len(rows) == 2
     assert rows[0]["image_path"] == rows[1]["image_path"]
     assert len(list((vp_data_dir / "panels").rglob("*.png"))) == 1
+
+
+def test_store_marks_compound_source_rejected_with_reason(conn, vp_data_dir, monkeypatch):
+    _article(conn)
+    vision = _vision([
+        _panel("A", [0, 0, 0.5, 0.5]),
+        _panel("B", [0.5, 0.5, 1, 1]),
+    ])
+    _figure(conn, vision=vision)
+    _mock_bundle(monkeypatch)
+    monkeypatch.setattr(pmc, "fetch_image_bytes", lambda ref: _png_bytes())
+
+    assert store.run(_args()) == 0
+    row = conn.execute(
+        "SELECT status, vision_json FROM figures WHERE figure_id='PMC1:F1'"
+    ).fetchone()
+    assert row["status"] == "vision_rejected"
+    stored = db.from_json(row["vision_json"], {})
+    assert all(panel["include"] is False for panel in stored["panels"])
+    assert all("collage" in panel["curation_reason"] for panel in stored["panels"])
+    assert conn.execute("SELECT COUNT(*) FROM panels").fetchone()[0] == 0
+    assert len(list((vp_data_dir / "panels").rglob("*.png"))) == 0
