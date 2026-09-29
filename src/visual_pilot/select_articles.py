@@ -11,6 +11,12 @@ plain RRF (k=60) into ``retrieval_score``.
 Publication-type exclusions are applied in Python (``passes_type_filter``);
 licenses join via ``pmc.get_license`` on a thread pool; relevance is the
 title rule, else prompt P1 on ``Title: ... / Abstract: ...``.
+
+The license filter runs before the ``--limit`` cap: every type-passed
+article is persisted as a candidate, then candidates are license-checked
+in finding-lane priority order (``license_priority_order``) until each
+disease accumulates ``limit`` license-passing articles. Rejected licenses
+therefore free their slot instead of shrinking the pool that reaches P1.
 """
 
 from __future__ import annotations
@@ -41,6 +47,10 @@ METADATA_BATCH_SIZE = 100
 # per-namespace permits ("requires N permits, max is 16"), so every
 # multi_query batch is capped at this many subqueries.
 MULTI_QUERY_BATCH = 16
+# License outcomes are applied in chunks of this size so per-disease
+# license-passing quotas can stop the pass between chunks (overshoot is at
+# most one chunk per disease).
+LICENSE_CHUNK = 128
 DEFAULT_CAP = 150
 ABSTRACT_MAX_CHARS = 4000
 
@@ -259,6 +269,59 @@ def shortlist_articles(
         for candidate in info.get("manifestation_candidates", [])
     ]
     return selected, len(type_passed), selected_candidates
+
+
+def license_priority_order(type_passed: list[tuple[str, dict]]) -> list[str]:
+    """License-check order for a disease's type-passed candidates.
+
+    Finding lanes interleave round-robin (best rank first within a lane) so
+    every undercovered manifestation lands inside the licensed window before
+    the remaining articles follow in global RRF order.
+    """
+    lane_candidates: dict[str, dict[str, dict]] = {}
+    for pmcid, info in type_passed:
+        for candidate in info.get("manifestation_candidates", []):
+            finding_key = str(candidate.get("finding_key") or "")
+            if not finding_key:
+                continue
+            lane = lane_candidates.setdefault(finding_key, {})
+            prior = lane.get(pmcid)
+            if prior is None or int(candidate.get("best_rank") or 0) < int(
+                prior.get("best_rank") or 0
+            ):
+                lane[pmcid] = {**candidate, "pmcid": pmcid}
+    lane_items = {
+        finding_key: sorted(
+            candidates.values(),
+            key=lambda item: (
+                int(item.get("best_rank") or 0),
+                -float(item.get("retrieval_score") or 0),
+                str(item["pmcid"]),
+            ),
+        )
+        for finding_key, candidates in lane_candidates.items()
+    }
+    order: list[str] = []
+    seen: set[str] = set()
+    lane_positions = {finding_key: 0 for finding_key in lane_items}
+    while True:
+        made_progress = False
+        for finding_key, candidates in lane_items.items():
+            position = lane_positions[finding_key]
+            while position < len(candidates) and candidates[position]["pmcid"] in seen:
+                position += 1
+            lane_positions[finding_key] = position
+            if position >= len(candidates):
+                continue
+            pmcid = candidates[position]["pmcid"]
+            lane_positions[finding_key] += 1
+            order.append(pmcid)
+            seen.add(pmcid)
+            made_progress = True
+        if not made_progress:
+            break
+    order.extend(pmcid for pmcid, _ in type_passed if pmcid not in seen)
+    return order
 
 
 def rrf_scores(
@@ -1393,15 +1456,18 @@ def run(args) -> int:
 
     all_rows = _rank_jobs(ns, flat_jobs, flat_contexts, billing_counters)
 
+    license_order: dict[str, list[str]] = {}
     for key in disease_keys:
         start, jobs, contexts = disease_slices[key]
         articles = _fuse_rows(jobs, contexts, all_rows[start : start + len(jobs)])
-        # Type filtering precedes the cap. With a cap, round-robin finding
-        # reservations protect undercovered manifestation lanes before the
-        # remaining slots go to global RRF order.
+        # Every type-passed article is shortlisted; the license pass below
+        # admits candidates in finding-lane priority order until the disease
+        # reaches ``limit`` license-passing articles, so the cap applies
+        # after the license filter rather than before it.
         ranked, n_type_passed, selected_manifestations = shortlist_articles(
-            articles, limit, config.VP_MANIFESTATION_QUOTA
+            articles, None, config.VP_MANIFESTATION_QUOTA
         )
+        license_order[key] = license_priority_order(ranked)
         manifestation_records.extend(
             {**candidate, "disease_key": key}
             for candidate in selected_manifestations
@@ -1428,11 +1494,13 @@ def run(args) -> int:
         retrieval_counts[key] = {
             "candidates": len(articles),
             "after_type_filter": n_type_passed,
-            "selected": len(ranked),
+            # Refined to the actual license-passing count after the license
+            # pass; the dry-run path reports the license target instead.
+            "selected": min(limit, n_type_passed) if limit else n_type_passed,
         }
         print(
-            f"[{key}] {len(articles)} candidates, {n_type_passed} pass type filter, "
-            f"{len(ranked)} selected"
+            f"[{key}] {len(articles)} candidates, {n_type_passed} pass type filter; "
+            f"license target: {limit or n_type_passed} license-passing"
         )
 
     if args.dry_run:
@@ -1481,17 +1549,40 @@ def run(args) -> int:
         # outcomes on this thread while each ``license_ok`` result streams a
         # P1 request into ``client.iter_many`` — LLM calls for cleared
         # articles start while later licenses are still being fetched.
+        #
+        # The license filter precedes the ``--limit`` cap: each disease's
+        # candidates are checked in license_priority_order until ``limit``
+        # of its shortlisted articles are license-passing, so rejections
+        # release their slot to the next candidate instead of shrinking the
+        # pool that reaches P1.
         # ------------------------------------------------------------------
-        pending_license = [
+        status_map = {
+            row["pmcid"]: row["status"]
+            for row in conn.execute("SELECT pmcid, status FROM articles")
+        }
+        pending_license = {
             row["pmcid"]
             for row in conn.execute(
                 "SELECT pmcid, primary_disease_keys_json FROM articles "
                 "WHERE status = 'candidate'"
             )
             if _in_scope(row)
-        ]
+        }
         if pending_license:
-            print(f"license: {len(pending_license)} candidate articles")
+            target = (
+                f"; target: {limit} license-passing per disease" if limit else ""
+            )
+            print(f"license: {len(pending_license)} candidate articles{target}")
+
+        # License-passing shortlist members per disease — the quota bounding
+        # each disease's license expansion under a finite --limit.
+        license_ok_counts = {
+            key: sum(
+                status_map.get(pmcid) in _LICENSE_PASSED
+                for pmcid in license_order[key]
+            )
+            for key in disease_keys
+        }
 
         # Rows already license_ok from earlier runs are eligible for P1
         # immediately, before this pass's licensing starts.
@@ -1538,37 +1629,68 @@ def run(args) -> int:
             abstracts[pmcid] = abstract
             return abstract
 
-        # License fetches are submitted eagerly so they run while the
-        # pre-cleared P1 requests above are still being consumed.
-        license_iter = None
+        # License fetches are submitted in bounded chunks so a disease stops
+        # expanding once its license-passing quota is met; ``_p1_feed``
+        # applies each chunk's outcomes before pulling the next, keeping
+        # license work and P1 calls overlapped.
         if pending_license:
             license_pool = ThreadPoolExecutor(
                 max_workers=config.VP_FETCH_CONCURRENCY
             )
-            license_iter = license_pool.map(join_license, pending_license)
+
+        def _license_iter():
+            """Yield chunks of (pmcid, outcome) in license-priority order.
+
+            Each disease's queue is built when its turn starts, so articles
+            already resolved while licensing an earlier disease are skipped;
+            in-scope candidates no current shortlist ranked run last.
+            """
+            if license_pool is None:
+                return
+            queued: set[str] = set()
+            for key in disease_keys:
+                queue = [
+                    pmcid
+                    for pmcid in license_order[key]
+                    if status_map.get(pmcid) == "candidate" and pmcid not in queued
+                ]
+                queued.update(queue)
+                for offset in range(0, len(queue), LICENSE_CHUNK):
+                    if limit is not None and license_ok_counts[key] >= limit:
+                        break
+                    yield list(
+                        license_pool.map(
+                            join_license, queue[offset : offset + LICENSE_CHUNK]
+                        )
+                    )
+            tail = sorted(pending_license - queued)
+            for offset in range(0, len(tail), LICENSE_CHUNK):
+                yield list(
+                    license_pool.map(
+                        join_license, tail[offset : offset + LICENSE_CHUNK]
+                    )
+                )
 
         submitted: list[str] = []  # BatchResult.index -> pmcid
 
         def _p1_feed():
             """Yield P1 requests: pre-cleared rows first, then each article
-            as its license outcome lands (pool.map order = submission order).
-            License DB writes happen here, on the calling thread."""
+            as its license chunk lands. License DB writes happen here, on
+            the calling thread."""
             for row in rows:
                 submitted.append(row["pmcid"])
                 yield _p1_request(row["title"] or "", abstracts.get(row["pmcid"], ""))
-            if license_iter is None:
-                return
-            applied = 0
-            for pmcid, outcome in license_iter:
-                status = apply_license(conn, pmcid, outcome)
-                applied += 1
-                if applied % 200 == 0:
-                    conn.commit()
-                if status != "license_ok":
-                    continue
-                submitted.append(pmcid)
-                yield _p1_request(_title_for(pmcid), _abstract_for(pmcid))
-            conn.commit()
+            for chunk in _license_iter():
+                for pmcid, outcome in chunk:
+                    status = apply_license(conn, pmcid, outcome)
+                    status_map[pmcid] = status
+                    if status != "license_ok":
+                        continue
+                    for key in (retrieved.get(pmcid) or {}).get("keys") or ():
+                        license_ok_counts[key] += 1
+                    submitted.append(pmcid)
+                    yield _p1_request(_title_for(pmcid), _abstract_for(pmcid))
+                conn.commit()
 
         budget_hits = 0
         print(f"relevance: {len(rows)} pre-cleared + licensed articles through P1")
@@ -1608,6 +1730,12 @@ def run(args) -> int:
                     None,
                 )
         conn.commit()
+        for key in disease_keys:
+            retrieval_counts[key]["selected"] = license_ok_counts[key]
+            print(
+                f"[{key}] {license_ok_counts[key]} articles pass license filter"
+                + (f" (target {limit})" if limit else "")
+            )
         if budget_hits:
             print(
                 f"LLM budget exhausted: {budget_hits} articles left at "

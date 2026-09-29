@@ -126,9 +126,10 @@ VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
 # Max in-flight P3 vision-judge calls (W6). The W11 probe's "keep 4" result
 # was measured on DeepInfra GLM; on OpenRouter stealth/space-bunny-alpha
 # throughput scales with concurrency and rate limits are generous.
-VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 8))
-# Max in-flight P1 relevance calls (W4); defaults to VP_CONCURRENCY.
-VP_P1_CONCURRENCY = max(1, _env_int("VP_P1_CONCURRENCY", VP_CONCURRENCY))
+VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 16))
+# Max in-flight P1 relevance calls (W4); defaults above VP_CONCURRENCY since
+# high-volume runs push thousands of cheap P1 calls through OpenRouter.
+VP_P1_CONCURRENCY = max(1, _env_int("VP_P1_CONCURRENCY", 32))
 # Per-request LLM timeout for the P3 judge (W6).
 VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
 # Retries on HTTP 429 for provider calls (W3).

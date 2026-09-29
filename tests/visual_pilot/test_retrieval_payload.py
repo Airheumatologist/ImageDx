@@ -223,3 +223,25 @@ def test_excluded_publication_types_do_not_consume_limit_and_none_keeps_all():
     all_selected, all_passed, _ = select_articles.shortlist_articles(articles, limit=None)
     assert [pmcid for pmcid, _ in all_selected] == ["PMC-review-1", "PMC-review-2"]
     assert all_passed == 2
+
+
+def test_license_priority_order_interleaves_lanes_then_rrf_tail():
+    articles = {
+        "PMC-a1": _candidate(0.9, finding="lane_a", rank=1),
+        "PMC-b1": _candidate(0.8, finding="lane_b", rank=1),
+        "PMC-a2": _candidate(0.7, finding="lane_a", rank=2),
+        "PMC-plain": _candidate(0.6),
+    }
+    type_passed, _, _ = select_articles.shortlist_articles(articles, limit=None)
+    order = select_articles.license_priority_order(type_passed)
+    assert order == ["PMC-a1", "PMC-b1", "PMC-a2", "PMC-plain"]
+
+
+def test_license_priority_order_dedupes_shared_lane_candidates():
+    articles = {
+        "PMC-shared": _candidate(0.9, finding=["lane_a", "lane_b"], rank=1),
+        "PMC-b": _candidate(0.5, finding="lane_b", rank=2),
+    }
+    type_passed, _, _ = select_articles.shortlist_articles(articles, limit=None)
+    order = select_articles.license_priority_order(type_passed)
+    assert order == ["PMC-shared", "PMC-b"]

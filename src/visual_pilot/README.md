@@ -71,14 +71,17 @@ sequential fallback otherwise). Only shortlisted unique PMCIDs are hydrated
 with citation metadata and abstracts in bounded batches; page-content evidence
 queries request passage and section fields without abstracts.
 
-With finite `--limit`, publication type filtering happens before the cap. The
-shortlist first reserves distinct candidates round-robin across finding lanes,
-up to `VP_MANIFESTATION_QUOTA` (default 20 unique articles per finding), then
-fills remaining slots by global RRF. Selected finding ranks are persisted in
-`manifestation_candidates`; the downstream queue tracks per-finding lane
-status in `manifestation_lanes`. Logical Turbopuffer bytes queried and returned,
-request count, and query count are printed and recorded under
-`_turbopuffer_billing` in `reports/stage2_counts.json`.
+With finite `--limit`, publication type filtering and the license filter both
+happen before the cap: `--limit` is the per-disease target for *license-passing*
+articles, not raw candidates. Every type-passed article is persisted as a
+candidate, then license checks run in finding-lane order — candidates
+interleaved round-robin across findings by best rank, followed by global RRF —
+until the disease reaches its target (or the pool is exhausted), so rejected
+licenses free their slot instead of shrinking the relevance pool. Finding
+ranks are persisted in `manifestation_candidates`; the downstream queue tracks
+per-finding lane status in `manifestation_lanes`. Logical Turbopuffer bytes
+queried and returned, request count, and query count are printed and recorded
+under `_turbopuffer_billing` in `reports/stage2_counts.json`.
 
 Report and viewer rebuild one deterministic primary representative for each
 covered approved disease/finding pair while retaining all eligible alternatives.
@@ -90,9 +93,11 @@ bounded JATS caption check; figure ranking orders the vision queue by image
 relevance and coverage gaps. Each `run-all` batch is triaged, judged, and stored
 before the next batch is selected. It continues while a
 batch adds distinct stored images or covers new approved findings, stopping
-after two empty-yield batches. `--batch-size`, `--max-articles`,
-`--max-runtime-seconds`, and `--zero-yield-batches` set safety limits. A
-standalone `parse` invocation processes one ranked batch and can be rerun.
+after two empty-yield batches. `--batch-size` (default 200), `--max-articles`
+(default 6000/disease), `--max-runtime-seconds` (default 4h), and
+`--zero-yield-batches` set safety limits — the defaults are sized for
+high-volume runs since the LLM stages run on a free model. A standalone
+`parse` invocation processes one ranked batch and can be rerun.
 
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
 `VP_JUDGE_MODEL` (all default to `stealth/space-bunny-alpha` on OpenRouter),

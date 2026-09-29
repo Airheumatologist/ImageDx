@@ -486,7 +486,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="all",
         help="disease scope (default: all)",
     )
-    shared.add_argument("--limit", type=int, default=None, help="max items to process")
+    shared.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="max items to process (select: license-passing articles per disease)",
+    )
     shared.add_argument(
         "--dry-run",
         action="store_true",
@@ -505,16 +510,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="legacy stage-2 report threshold; parse uses yield batches",
     )
     shared.add_argument(
-        "--batch-size", type=int, default=100,
-        help="articles per disease in a visual-yield expansion batch (default: 100)",
+        "--batch-size", type=int, default=200,
+        help="articles per disease in a visual-yield expansion batch (default: 200)",
     )
     shared.add_argument(
-        "--max-articles", type=int, default=1200,
-        help="safety limit on articles processed per disease per run (default: 1200)",
+        "--max-articles", type=int, default=6000,
+        help="safety limit on articles processed per disease per run (default: 6000)",
     )
     shared.add_argument(
-        "--max-runtime-seconds", type=int, default=900,
-        help="runtime safety limit for parse/run-all expansion (default: 900)",
+        "--max-runtime-seconds", type=int, default=14400,
+        help="runtime safety limit for parse/run-all expansion (default: 14400)",
     )
     shared.add_argument(
         "--zero-yield-batches", type=int, default=2,

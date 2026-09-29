@@ -36,8 +36,8 @@ from . import manifestation_queue
 logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 50
-DEFAULT_MAX_ARTICLES = 600
-DEFAULT_MAX_RUNTIME_SECONDS = 900
+DEFAULT_MAX_ARTICLES = 2000
+DEFAULT_MAX_RUNTIME_SECONDS = 3600
 
 # Caption-peek results (bundle + parsed article), bounded LRU. Peeked but
 # unselected bundles are kept across select_batch calls (C6) so a later batch
