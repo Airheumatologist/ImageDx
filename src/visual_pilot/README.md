@@ -58,7 +58,7 @@ text finding records. The image audit and page/media QA are recorded in
 `data/visual_pilot/reports/regeneration_summary.md`. Psoriasis has 29
 published panels; its tabs display image sections with content plus an Eye
 article-evidence section for documented uveitis. No psoriasis ocular photo
-passed the current review-article, license, and single-panel criteria.
+passed the current review-article, license, and publication criteria.
 
 Article selection queries every approved, disease-specific finding by default.
 `VP_VISUAL_QUERY_CAP=0` means all findings; a positive cap bounds the set and
@@ -77,7 +77,10 @@ articles, not raw candidates. Every type-passed article is persisted as a
 candidate, then license checks run in finding-lane order — candidates
 interleaved round-robin across findings by best rank, followed by global RRF —
 until the disease reaches its target (or the pool is exhausted), so rejected
-licenses free their slot instead of shrinking the relevance pool. Finding
+licenses free their slot instead of shrinking the relevance pool. Licenses come
+from Europe PMC `searchPOST` core records (batched, final); when an article has
+no Europe PMC record the S3 metadata/JATS lookup decides instead, and its S3
+location hints are then resolved at parse time. Finding
 ranks are persisted in `manifestation_candidates`; the downstream queue tracks
 per-finding lane status in `manifestation_lanes`. Logical Turbopuffer bytes
 queried and returned, request count, and query count are printed and recorded
@@ -109,6 +112,44 @@ Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
 `config.py`; the primary LLM provider is OpenRouter (`VP_LLM_PROVIDER=openrouter`),
 while DeepInfra is used only for query embeddings.
 
+## Whole-figure plates and coverage targets
+
+Since `clinical-panels.v5`, a multi-panel figure whose panels are all
+human-patient images of the same configured disease is stored once as a
+whole-figure plate (`panel_label='whole'`, `crop_mode='whole_figure'`,
+`bbox=[0,0,1,1]`). Per-panel judge labels stay in `vision_json` as
+classification metadata; tiles are never cropped. A plate depicting one
+approved finding (`plate_kind='same_finding'`) credits that pair once;
+a plate depicting several (`plate_kind='combined'`, listed only under
+"Combined views" in the viewer) credits no pair — its findings live in
+`plate_findings_json`. Unlabeled single-disease plates, plates mixing a
+patient image with a chart/diagram, and multi-disease plates stay
+unpublished.
+
+`requeue-plates` (`--disease`, `--pmcids`, `--dry-run`) recomputes plates
+deterministically for license-allowed `vision_rejected` compound figures —
+no LLM calls — and flips publishable ones to `vision_accepted` for `store`;
+`run-all` runs it per disease before its resume stages.
+`triage --retriage-montages` returns caption-rejected montage/collage drops
+whose reason also names a patient-image modality to `pending` once per P2
+version, so the judge can evaluate them under the whole-plate rule.
+
+Coverage is measured as distinct published images per approved
+(disease, finding) pair (sha256-distinct), targeting
+`VP_FINDING_IMAGE_TARGET` (default 10, CLI `--finding-image-target`). A
+finding lane is `covered` only at target; `run-all` stops a disease after
+`--zero-yield-batches` empty batches only when no pair is under target.
+Recommended growth run:
+`run-all --disease all --limit 2500 --budget-usd X` (`--limit` is the
+per-disease license-passing article target, not a candidate cap). Two extra
+lanes feed under-target pairs: a caption-rescue lane license-checks and
+caption-peeks persisted `candidate` articles during selection (settings
+`VP_CAPTION_RESCUE_PEEK` and `VP_CAPTION_RESCUE_MIN_CAPTIONS`), and
+`VP_TARGETED_SYNONYM_QUERIES` emits
+extra per-synonym retrieval queries for findings still under target. The report's
+"Per-pair image coverage" section shows the images/pair histogram and
+per-disease under-target pairs.
+
 ## Stage 0 findings
 
 _Checked 2026-09-25 on 10 real PMC OA review articles (SLE/DM/AS), with
@@ -122,9 +163,11 @@ were retired during the 2026-09-27 data cleanup._
   `{pmcid}.{version}/` containing `{pmcid}.{version}.json` (metadata incl.
   license + `media_urls`), `.xml`, `.txt`, `.pdf` and the figure files under
   their real names.
-- **License source (chosen):** the per-article metadata JSON
-  (`license_code`, `is_pmc_openaccess`) — spec option (c). Fallback: the
-  `<permissions>` license ref in the JATS XML. Normalized to
+- **License source (chosen):** Europe PMC `searchPOST` core records
+  (`license` field, `VP_EPMC_LICENSE_BATCH` PMCIDs per call,
+  `VP_EPMC_CONCURRENCY` calls in flight) — treated as final. The per-article
+  S3 metadata JSON (`license_code`) / JATS `<permissions>` path is used only
+  when Europe PMC returns no record for an article. Normalized to
   `cc0|cc-by|cc-by-sa|cc-by-nd|cc-by-nc*|other|none` by
   `pmc.normalize_license` (`license_allows` → `crop` / `whole_figure` /
   excluded per §2).

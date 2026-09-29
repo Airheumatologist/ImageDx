@@ -10,8 +10,10 @@ per-article version dirs::
     {pmcid}.{version}/{pmcid}.{version}.txt/.pdf
     {pmcid}.{version}/{figure files}           images under real filenames
 
-License source (chosen): the per-article metadata JSON (``license_code``),
-with the JATS ``<permissions>`` block as fallback.
+License source (chosen): Europe PMC ``searchPOST`` core records (``license``
+field, batched) treated as final; the per-article S3 metadata JSON
+(``license_code``) and JATS ``<permissions>`` block serve only articles
+Europe PMC does not answer.
 Figure access (chosen): direct public HTTPS S3 URLs (spec preference 1).
 Fallbacks: Europe PMC fullTextXML for the XML itself; unresolved graphics get
 ``needs_bytes`` (the Europe PMC ``/bin/`` endpoint returns 403).
@@ -32,11 +34,13 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import os
 import re
 import threading
 import time
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from pathlib import PurePosixPath
@@ -48,8 +52,11 @@ from PIL import Image
 
 from . import config, timing
 
+logger = logging.getLogger(__name__)
+
 S3_BASE = "https://pmc-oa-opendata.s3.amazonaws.com"
 EPMC_REST = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+EPMC_SEARCH_POST = f"{EPMC_REST}/searchPOST"
 S3_XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 
 USER_AGENT = "TurboRAG-visual-pilot/0.1 (local research tool)"
@@ -179,21 +186,32 @@ def set_http_client(client: httpx.Client | None) -> None:
 
 def _request(url: str, *, max_retries: int = 4) -> httpx.Response:
     """GET with per-host rate limiting and backoff on 429/5xx."""
+    return _with_retries(lambda: http_client().get(url), url, max_retries=max_retries)
+
+
+def _post(url: str, data: dict, *, max_retries: int = 4) -> httpx.Response:
+    """POST form fields with the same limiting/backoff as ``_request``."""
+    return _with_retries(
+        lambda: http_client().post(url, data=data), url, max_retries=max_retries
+    )
+
+
+def _with_retries(fetch: Callable[[], httpx.Response], url: str, *, max_retries: int = 4) -> httpx.Response:
     host = urlparse(url).netloc
     started = time.monotonic()
     try:
-        return _request_inner(url, host, max_retries=max_retries)
+        return _request_inner(fetch, url, host, max_retries=max_retries)
     finally:
         # W0/C7: total fetch wall time per host (includes retries/backoff).
         timing.record("http_fetch", time.monotonic() - started, host=host)
 
 
-def _request_inner(url: str, host: str, *, max_retries: int = 4) -> httpx.Response:
+def _request_inner(fetch: Callable[[], httpx.Response], url: str, host: str, *, max_retries: int = 4) -> httpx.Response:
     last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         RATE_LIMITER.wait(host)
         try:
-            resp = http_client().get(url)
+            resp = fetch()
         except httpx.TransportError as exc:
             last_exc = exc
             resp = None
@@ -339,6 +357,61 @@ def _iter_xml_licenses(xml_text: str):
         href = lic.get("{http://www.w3.org/1999/xlink}href") or lic.get("href")
         ltype = lic.get("license-type")
         yield href, ltype
+
+
+def get_licenses_epmc(pmcids: Iterable[str]) -> dict[str, LicenseInfo]:
+    """Licenses for many articles from one Europe PMC ``searchPOST`` call
+    per ``VP_EPMC_LICENSE_BATCH`` PMCIDs (final license source).
+
+    Only PMCIDs Europe PMC answered appear in the result: a missing record
+    or a batch still failing after retries contributes nothing (the caller
+    falls back per article). Core records carry ``license`` and
+    ``isOpenAccess``; ``lite`` does not, so core is required.
+    """
+    ids = list(dict.fromkeys(str(p) for p in pmcids if p))
+    if not ids:
+        return {}
+    batch = max(1, int(getattr(config, "VP_EPMC_LICENSE_BATCH", 100)))
+    workers = max(1, int(getattr(config, "VP_EPMC_CONCURRENCY", 4)))
+    chunks = [ids[i : i + batch] for i in range(0, len(ids), batch)]
+
+    def _fetch(chunk: list[str]) -> dict:
+        try:
+            resp = _post(
+                EPMC_SEARCH_POST,
+                {
+                    "query": "PMCID:(" + " OR ".join(chunk) + ")",
+                    "resultType": "core",
+                    "format": "json",
+                    "pageSize": "1000",
+                },
+            )
+            records = resp.json().get("resultList", {}).get("result", [])
+        except (PmcError, ValueError, AttributeError) as exc:
+            timing.count("epmc_license_batch_failed")
+            logger.debug("Europe PMC license batch of %d failed: %s", len(chunk), exc)
+            return {}
+        wanted = set(chunk)
+        return {
+            rec["pmcid"]: rec
+            for rec in records
+            if rec.get("pmcid") in wanted
+        }
+
+    out: dict[str, LicenseInfo] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for records in pool.map(_fetch, chunks):
+            for rec in records.values():
+                raw = rec.get("license")
+                code = normalize_license(raw)
+                out[rec["pmcid"]] = LicenseInfo(
+                    code=code,
+                    url=license_url_for(code, raw),
+                    oa_subset="oa" if rec.get("isOpenAccess") == "Y" else None,
+                    raw=raw,
+                    source="epmc",
+                )
+    return out
 
 
 # -----------------------------------------------------------------------------

@@ -112,6 +112,20 @@ VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 0))
 # Per-finding candidate reservation quota when --limit caps stage-2 articles.
 VP_MANIFESTATION_QUOTA = max(0, _env_int("VP_MANIFESTATION_QUOTA", 20))
+# Distinct published images targeted per approved (disease, finding) pair.
+# A pair's lane is "covered" only once it reaches this count (W4).
+VP_FINDING_IMAGE_TARGET = max(1, _env_int("VP_FINDING_IMAGE_TARGET", 10))
+# Persisted-candidate caption rescue lane (W6): top-N candidate rows peeked
+# per batch (0 disables) and confirming captions required for those rescues.
+VP_CAPTION_RESCUE_PEEK = max(0, _env_int("VP_CAPTION_RESCUE_PEEK", 50))
+VP_CAPTION_RESCUE_MIN_CAPTIONS = max(1, _env_int("VP_CAPTION_RESCUE_MIN_CAPTIONS", 2))
+# Extra per-synonym visual queries emitted for under-target findings (W7);
+# 0 disables targeted synonym expansion.
+VP_TARGETED_SYNONYM_QUERIES = max(0, _env_int("VP_TARGETED_SYNONYM_QUERIES", 3))
+# Europe PMC batched article-license source (final; S3 is fallback only):
+# PMCIDs per searchPOST call and concurrent batch calls in flight.
+VP_EPMC_LICENSE_BATCH = max(1, _env_int("VP_EPMC_LICENSE_BATCH", 100))
+VP_EPMC_CONCURRENCY = max(1, _env_int("VP_EPMC_CONCURRENCY", 4))
 
 # -----------------------------------------------------------------------------
 # Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults

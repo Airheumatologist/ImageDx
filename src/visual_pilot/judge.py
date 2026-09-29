@@ -9,7 +9,8 @@ so a rerun with unchanged inputs hits the cache and makes zero LLM calls.
 P3's output is post-validated (unknown finding keys -> proposed_findings,
 non-pilot disease -> excluded, bbox clamped/swapped) and stored in
 ``figures.vision_json``; the figure becomes ``vision_accepted`` when at
-least one panel is included, else ``vision_rejected``. Fetch/LLM failures
+least one panel is included or its whole-figure plate is publishable, else
+``vision_rejected``. Fetch/LLM failures
 become ``vision_error`` (attempts-bounded retries on later runs).
 
 Scheduling (plan §5 W6): a fetch pool of ``VP_FETCH_CONCURRENCY`` workers
@@ -32,6 +33,7 @@ from functools import lru_cache
 from PIL import Image
 
 from . import config, curation, db, diseases, llm, originals, pmc
+from . import manifestation_queue
 from .prompts import P3
 
 MAX_ATTEMPTS = 3
@@ -89,12 +91,10 @@ def _load_priority_context(conn) -> dict:
     vocabulary = [dict(row) for row in conn.execute(
         "SELECT finding_key,label,synonyms_json,disease_keys_json FROM findings_vocab WHERE approved=1"
     )]
-    coverage: dict[str, set[str]] = {}
-    for row in conn.execute("SELECT disease_key,findings_json FROM published_panels"):
-        coverage.setdefault(row["disease_key"], set()).update(
-            f["finding_key"] for f in db.from_json(row["findings_json"], []) or []
-            if isinstance(f, dict) and f.get("finding_key")
-        )
+    coverage = {
+        key: manifestation_queue.published_coverage(conn, key)
+        for key in diseases.DISEASE_KEYS
+    }
     return {"vocabulary": vocabulary, "coverage": coverage}
 
 
@@ -164,7 +164,13 @@ def figure_priority(conn, figure: dict, article: dict, context: dict | None = No
             found_for_disease = _figure_findings(conn, key, combined, context["vocabulary"])
             matched_findings |= found_for_disease
             matched_finding_pairs |= {(key, finding) for finding in found_for_disease}
-            known = context["coverage"].get(key, set())
+            # A finding counts as covered only once it reaches the per-pair
+            # distinct-image target (VP_FINDING_IMAGE_TARGET).
+            counts = context["coverage"].get(key, {})
+            known = {
+                finding for finding, n in counts.items()
+                if n >= config.VP_FINDING_IMAGE_TARGET
+            }
             coverage_bonus += min(1.0, 0.7 * len(found_for_disease - known))
     coverage_bonus = min(2.0, coverage_bonus)
     finding_score = min(1.8, 0.9 * len(matched_finding_pairs))
@@ -277,6 +283,7 @@ def post_validate(
     figure: dict | None = None,
     article: dict | None = None,
     image_size: tuple[int, int] | None = None,
+    allowed_by_disease: dict[str, set[str]] | None = None,
 ) -> dict:
     out = dict(result)
     panels = []
@@ -331,6 +338,14 @@ def post_validate(
                 panel["curation_reason"] = reason
         panels.append(panel)
     out["panels"] = panels
+    if figure is not None and article is not None:
+        plate = curation.evaluate_plate(
+            out, figure, article, allowed_by_disease or {}, image_size
+        )
+        if plate is not None:
+            out["plate"] = plate
+        else:
+            out.pop("plate", None)
     return out
 
 
@@ -349,6 +364,9 @@ def _curation_reason_key(reason: str) -> str:
 
 def figure_status(result: dict) -> str:
     if any(p.get("include") for p in result.get("panels") or []):
+        return "vision_accepted"
+    plate = result.get("plate") or {}
+    if plate.get("include"):
         return "vision_accepted"
     return "vision_rejected"
 
@@ -422,7 +440,8 @@ def run(args) -> int:
         concurrency=config.VP_JUDGE_CONCURRENCY,
         timeout_seconds=config.VP_JUDGE_TIMEOUT_SECONDS,
     )
-    totals = {"accepted": 0, "rejected": 0, "errors": 0}
+    allowed_by_disease = curation.approved_findings_by_disease(conn)
+    totals = {"accepted": 0, "rejected": 0, "errors": 0, "plates": 0}
     reasons: Counter = Counter()
     budget_hit = False
 
@@ -519,6 +538,7 @@ def run(args) -> int:
                 res.parsed or {}, fig["_valid_keys"],
                 figure=fig, article=articles[fig["pmcid"]],
                 image_size=fig.get("_image_size"),
+                allowed_by_disease=allowed_by_disease,
             )
             status = figure_status(parsed)
             sha256 = hashlib.sha256(fig["_original"]).hexdigest()
@@ -537,6 +557,8 @@ def run(args) -> int:
                 # every other outcome are dropped immediately below.
                 originals.put(fig["figure_id"], sha256, fig["_original"])
                 totals["accepted"] += 1
+                if (parsed.get("plate") or {}).get("include"):
+                    totals["plates"] += 1
             else:
                 totals["rejected"] += 1
                 for panel in parsed.get("panels") or []:
@@ -554,8 +576,9 @@ def run(args) -> int:
         print(f"LLM budget exhausted (${client.spent_usd:.4f}); stopping cleanly. Rerun to resume.")
 
     summary = (
-        f"judge: {totals['accepted']} accepted, {totals['rejected']} rejected, "
-        f"{totals['errors']} errors, spend=${client.spent_usd:.4f}"
+        f"judge: {totals['accepted']} accepted ({totals['plates']} whole-figure "
+        f"plates), {totals['rejected']} rejected, {totals['errors']} errors, "
+        f"spend=${client.spent_usd:.4f}"
     )
     if reasons:
         summary += " | rejections: " + ", ".join(
@@ -563,4 +586,96 @@ def run(args) -> int:
         )
     print(summary)
     conn.close()
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Whole-figure plate requeue (no LLM calls; deterministic re-evaluation)
+# ---------------------------------------------------------------------------
+def requeue_plates(conn, disease=None, pmcids=None, dry_run=False) -> dict:
+    """Re-evaluate ``vision_rejected`` compound figures under the v5 plate
+    policy and requeue publishable single-disease plates.
+
+    The stored ``vision_json`` is reused verbatim — per-panel labels are not
+    touched, no LLM call and no image fetch happens. Every license-allowed
+    compound figure gets its plate recomputed into ``vision_json["plate"]``;
+    figures whose plate is publishable flip to ``vision_accepted`` so the
+    store stage materializes the whole-figure image.
+    """
+    allowed_by_disease = curation.approved_findings_by_disease(conn)
+    rows = db.rows_with_status(conn, "figures", "vision_rejected", disease=disease)
+    wanted = set(pmcids) if pmcids else None
+    counts: dict = {
+        "examined": 0,
+        "requeued": 0,
+        "plate_class": Counter(),
+        "plate_kind": Counter(),
+        "radiology": Counter(),
+    }
+    for source in rows:
+        row = dict(source)
+        if wanted is not None and row["pmcid"] not in wanted:
+            continue
+        vision = db.from_json(row.get("vision_json"), {}) or {}
+        if not (
+            vision.get("figure_is_compound") is True
+            or len(vision.get("panels") or []) > 1
+        ):
+            continue
+        article = conn.execute(
+            "SELECT * FROM articles WHERE pmcid=?", (row["pmcid"],)
+        ).fetchone()
+        license_code = row.get("effective_license") or (
+            article["license_code"] if article else None
+        )
+        if pmc.license_allows(license_code) is None:
+            continue
+        counts["examined"] += 1
+        plate = curation.evaluate_plate(
+            vision, row, dict(article) if article else {}, allowed_by_disease
+        )
+        if plate is None:
+            continue
+        counts["plate_class"][plate["plate_class"]] += 1
+        counts["plate_kind"][plate["plate_kind"]] += 1
+        counts["radiology"]["radiology" if plate.get("radiology") else "non_radiology"] += 1
+        if dry_run:
+            counts["requeued"] += int(bool(plate.get("include")))
+            continue
+        vision["plate"] = plate
+        if plate.get("include"):
+            db.set_status(
+                conn, "figures", row["figure_id"], "vision_accepted",
+                vision_json=db.to_json(vision), error=None,
+            )
+            counts["requeued"] += 1
+        else:
+            conn.execute(
+                "UPDATE figures SET vision_json=?, updated_at=datetime('now') "
+                "WHERE figure_id=?",
+                (db.to_json(vision), row["figure_id"]),
+            )
+    if not dry_run:
+        conn.commit()
+    return {
+        "examined": counts["examined"],
+        "requeued": counts["requeued"],
+        "plate_class": dict(counts["plate_class"].most_common()),
+        "plate_kind": dict(counts["plate_kind"].most_common()),
+        "radiology": dict(counts["radiology"].most_common()),
+    }
+
+
+def run_requeue_plates(args) -> int:
+    conn = db.init_db()
+    try:
+        result = requeue_plates(
+            conn,
+            disease=None if args.disease == "all" else args.disease,
+            pmcids=getattr(args, "pmcids", None),
+            dry_run=bool(args.dry_run),
+        )
+    finally:
+        conn.close()
+    print(json.dumps(result, indent=1, sort_keys=True))
     return 0

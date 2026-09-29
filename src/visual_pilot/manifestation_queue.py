@@ -4,25 +4,35 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from . import db
+from . import config, db
 
 
 def published_coverage(conn, disease_key: str) -> dict[str, int]:
-    """Count published panels per finding for one disease."""
-    counts: dict[str, int] = defaultdict(int)
+    """Count distinct published images per finding for one disease.
+
+    Two panel rows sharing a sha256 count once; rows with an empty sha256
+    fall back to their panel_id so they still count individually.
+    """
+    images: dict[str, set[str]] = defaultdict(set)
     for row in conn.execute(
-        "SELECT findings_json FROM published_panels WHERE disease_key=?",
+        "SELECT panel_id, sha256, findings_json FROM published_panels WHERE disease_key=?",
         (disease_key,),
     ):
+        image = row["sha256"] or row["panel_id"]
         for value in db.from_json(row["findings_json"], []) or []:
             key = value.get("finding_key") if isinstance(value, dict) else value
             if key:
-                counts[str(key)] += 1
-    return dict(counts)
+                images[str(key)].add(image)
+    return {key: len(ids) for key, ids in images.items()}
 
 
-def sync_candidates(conn, disease_key: str) -> set[str]:
-    """Refresh lane definitions and import finding-keyed retrieval evidence."""
+def sync_candidates(conn, disease_key: str) -> dict[str, int]:
+    """Refresh lane definitions and import finding-keyed retrieval evidence.
+
+    Returns ``{finding_key: count}`` for findings under the per-pair image
+    target (config.VP_FINDING_IMAGE_TARGET), zero included.
+    """
+    target = config.VP_FINDING_IMAGE_TARGET
     vocab = {
         row["finding_key"]: set(db.from_json(row["disease_keys_json"], []) or [])
         for row in conn.execute(
@@ -32,7 +42,7 @@ def sync_candidates(conn, disease_key: str) -> set[str]:
     coverage = published_coverage(conn, disease_key)
     findings = sorted(key for key, diseases in vocab.items() if disease_key in diseases)
     for finding_key in findings:
-        covered = coverage.get(finding_key, 0) > 0
+        covered = coverage.get(finding_key, 0) >= target
         conn.execute(
             "INSERT INTO manifestation_lanes(disease_key,finding_key,status,last_outcome) "
             "VALUES(?,?,?,?) ON CONFLICT(disease_key,finding_key) DO UPDATE SET "
@@ -44,7 +54,7 @@ def sync_candidates(conn, disease_key: str) -> set[str]:
         )
 
     for finding_key, n_panels in coverage.items():
-        if n_panels:
+        if n_panels >= target:
             conn.execute(
                 "UPDATE manifestation_candidates SET status='covered',last_outcome='published_panel_exists', "
                 "updated_at=datetime('now') WHERE disease_key=? AND finding_key=?",
@@ -77,7 +87,7 @@ def sync_candidates(conn, disease_key: str) -> set[str]:
             ) or (rank == prior[0] and (score or 0) > (prior[2] or 0)):
                 best[finding_key] = (rank, item.get("query"), score)
         for finding_key, (rank, query, score) in best.items():
-            if coverage.get(finding_key, 0):
+            if coverage.get(finding_key, 0) >= target:
                 status = "covered"
                 outcome = "published_panel_exists"
             elif rank is not None or query or score is not None:
@@ -102,6 +112,18 @@ def sync_candidates(conn, disease_key: str) -> set[str]:
                 (disease_key, finding_key, article["pmcid"], query, rank, score, status, outcome),
             )
 
+    # Under-target findings reopen their 'covered' candidates first, so the
+    # durable-outcome updates below still re-terminate parsed/errored rows.
+    for finding_key in findings:
+        if coverage.get(finding_key, 0) >= target:
+            continue
+        conn.execute(
+            "UPDATE manifestation_candidates SET status='pending', "
+            "last_outcome='reopened_below_target', updated_at=datetime('now') "
+            "WHERE disease_key=? AND finding_key=? AND status='covered'",
+            (disease_key, finding_key),
+        )
+
     # Reflect durable article outcomes, and retire lanes whose candidate pool
     # contains no article that can be selected by the current parser.
     conn.execute(
@@ -125,7 +147,7 @@ def sync_candidates(conn, disease_key: str) -> set[str]:
             (f"article_{article_status}", disease_key, article_status),
         )
     for finding_key in findings:
-        if coverage.get(finding_key, 0):
+        if coverage.get(finding_key, 0) >= target:
             continue
         eligible = conn.execute(
             "SELECT COUNT(*) n FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
@@ -149,21 +171,31 @@ def sync_candidates(conn, disease_key: str) -> set[str]:
                 (disease_key, finding_key),
             )
     conn.commit()
-    return {key for key in findings if coverage.get(key, 0) == 0}
+    return {key: coverage.get(key, 0) for key in findings if coverage.get(key, 0) < target}
 
 
 def reserve_batch(conn, disease_key: str, ranked: list[dict], batch_size: int,
-                  uncovered: set[str], *, persist: bool = True) -> list[dict]:
+                  uncovered: set[str] | dict[str, int], *, persist: bool = True) -> list[dict]:
     """Reserve lane slots round-robin, then fill spare capacity globally.
 
-    An article appearing in several finding queues occupies one batch slot and
-    marks each matching lane candidate selected, so it can advance several
-    lanes without being parsed twice.
+    ``uncovered`` is a set of under-target findings or the
+    ``{finding_key: count}`` dict from ``sync_candidates``/``coverage_gaps``;
+    with a dict, thinnest lanes reserve first. An article appearing in several
+    finding queues occupies one batch slot and marks each matching lane
+    candidate selected, so it can advance several lanes without being parsed
+    twice.
     """
     capacity = max(0, int(batch_size))
     if not capacity or not ranked:
         return []
-    lanes = sorted(uncovered)
+    if isinstance(uncovered, dict):
+        lanes = [
+            key for key, _count in sorted(
+                uncovered.items(), key=lambda item: (item[1], item[0])
+            )
+        ]
+    else:
+        lanes = sorted(uncovered)
     candidate_sets: dict[str, set[str]] = {}
     for finding_key in lanes:
         candidate_sets[finding_key] = {
@@ -250,7 +282,9 @@ def record_article_outcome(conn, pmcid: str, outcome: str) -> None:
 def record_published_outcomes(conn, disease_key: str) -> None:
     """Mark finding lanes covered from the publication view after store."""
     coverage = published_coverage(conn, disease_key)
-    for finding_key in coverage:
+    for finding_key, count in coverage.items():
+        if count < config.VP_FINDING_IMAGE_TARGET:
+            continue
         conn.execute(
             "UPDATE manifestation_candidates SET status='covered',last_outcome='published_panel_created', "
             "updated_at=datetime('now') WHERE disease_key=? AND finding_key=?",

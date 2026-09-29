@@ -470,7 +470,12 @@ def _panel_json(
     categories: dict[str, str],
     terms: dict[str, list[str]],
 ) -> dict:
+    plate_kind = row["plate_kind"] if "plate_kind" in row.keys() else None
     raw = db.from_json(row["findings_json"], [])
+    if plate_kind == "combined" and "plate_findings_json" in row.keys():
+        # A combined plate stores no per-finding credit; display and routing
+        # use its full approved-findings list instead.
+        raw = db.from_json(row["plate_findings_json"], []) or raw
     findings = []
     routing_findings = []
     modality = _norm(row["modality"])
@@ -549,6 +554,9 @@ def _panel_json(
         "figure_id": row["figure_id"],
         "pmcid": row["pmcid"],
         "panel_label": row["panel_label"],
+        "plate_kind": plate_kind,
+        "plate_findings": db.from_json(row["plate_findings_json"], [])
+        if plate_kind and "plate_findings_json" in row.keys() else None,
         "disease_key": row["disease_key"],
         "subtype": row["subtype"],
         "modality": row["modality"],
@@ -785,6 +793,7 @@ def _collapse_duplicates(panels: list[dict]) -> list[dict]:
         existing["_routing_findings"] = sorted(
             _routing_finding_keys(existing) | _routing_finding_keys(p)
         )
+        existing["plate_kind"] = existing.get("plate_kind") or p.get("plate_kind")
         # Merge tag union fields when the duplicate adds information.
         for field in ("disease_key", "subtype", "stage"):
             if existing.get(field) != p.get(field):

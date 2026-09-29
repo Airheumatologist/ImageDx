@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS panels (
     annotations_present    INTEGER,
     bbox_json              TEXT,
     crop_mode              TEXT,
+    plate_kind             TEXT,
+    plate_findings_json    TEXT,
     confidence             REAL,
     rationale              TEXT,
     image_path             TEXT,
@@ -251,6 +253,7 @@ def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
         conn = connect()
     conn.executescript(SCHEMA)
     _migrate_articles(conn)
+    _migrate_panels(conn)
     _migrate_manifestation_representatives(conn)
     conn.commit()
     return conn
@@ -289,6 +292,38 @@ def _migrate_articles(conn: sqlite3.Connection) -> None:
     for column, statement in wanted.items():
         if column not in existing:
             conn.execute(statement)
+
+
+_PANEL_MIGRATIONS = (
+    "ALTER TABLE panels ADD COLUMN plate_kind TEXT",
+    "ALTER TABLE panels ADD COLUMN plate_findings_json TEXT",
+)
+
+
+def _migrate_panels(conn: sqlite3.Connection) -> None:
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(panels)")}
+    if not existing:
+        return
+    wanted = {
+        "plate_kind": _PANEL_MIGRATIONS[0],
+        "plate_findings_json": _PANEL_MIGRATIONS[1],
+    }
+    changed = False
+    for column, statement in wanted.items():
+        if column not in existing:
+            conn.execute(statement)
+            changed = True
+    if changed:
+        # SQLite does not re-resolve the '*' in a stored view definition, so
+        # recreate published_panels for the new columns to be visible.
+        conn.execute("DROP VIEW IF EXISTS published_panels")
+        conn.execute(
+            "CREATE VIEW published_panels AS "
+            "SELECT p.* FROM panels p WHERE NOT EXISTS ("
+            "SELECT 1 FROM panel_curation pc "
+            "WHERE pc.panel_id = p.panel_id AND pc.decision = 'exclude' "
+            "AND pc.image_sha256 = COALESCE(p.sha256, ''))"
+        )
 
 
 def _migrate_manifestation_representatives(conn: sqlite3.Connection) -> None:

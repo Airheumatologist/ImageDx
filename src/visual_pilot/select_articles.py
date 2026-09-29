@@ -27,7 +27,7 @@ import re
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 
-from . import config, db, diseases, llm, pmc
+from . import config, db, diseases, llm, pmc, timing
 from .prompts import P1
 
 logger = logging.getLogger(__name__)
@@ -47,10 +47,12 @@ METADATA_BATCH_SIZE = 100
 # per-namespace permits ("requires N permits, max is 16"), so every
 # multi_query batch is capped at this many subqueries.
 MULTI_QUERY_BATCH = 16
-# License outcomes are applied in chunks of this size so per-disease
-# license-passing quotas can stop the pass between chunks (overshoot is at
-# most one chunk per disease).
-LICENSE_CHUNK = 128
+# License outcomes are applied in chunks of VP_EPMC_LICENSE_BATCH *
+# VP_EPMC_CONCURRENCY (one Europe PMC batch per in-flight worker) so
+# per-disease license-passing quotas can stop the pass between chunks
+# (overshoot is at most one chunk per disease). Computed at use time.
+def _license_chunk() -> int:
+    return config.VP_EPMC_LICENSE_BATCH * config.VP_EPMC_CONCURRENCY
 DEFAULT_CAP = 150
 ABSTRACT_MAX_CHARS = 4000
 
@@ -451,6 +453,7 @@ def visual_queries_for_disease(
 
     subtypes = disease.get("subtypes", [])
     out = []
+    seen_queries: set[str] = set()
     for item in selected:
         finding = str(item.get("label") or item.get("finding_key") or "")
         modality = _CATEGORY_MODALITY[item["category"]]
@@ -500,13 +503,49 @@ def visual_queries_for_disease(
                 " ".join(distinct_synonyms), modality,
             ) if part
         )
-        out.append({
-            "query": query,
-            "finding_key": str(item.get("finding_key") or ""),
-            "finding": finding,
-            "modality": modality,
-            "category": item["category"],
-        })
+        if query not in seen_queries:
+            seen_queries.add(query)
+            out.append({
+                "query": query,
+                "finding_key": str(item.get("finding_key") or ""),
+                "finding": finding,
+                "modality": modality,
+                "category": item["category"],
+            })
+        # W7: under-target findings get extra queries, one per synonym not
+        # already used in this finding's base query.
+        if (
+            coverage_counts.get(str(item.get("finding_key") or ""), 0)
+            >= config.VP_FINDING_IMAGE_TARGET
+        ):
+            continue
+        used = {str(term).strip() for term in distinct_synonyms}
+        used.add(finding)
+        added = 0
+        for term in item.get("synonyms", []):
+            if added >= config.VP_TARGETED_SYNONYM_QUERIES:
+                break
+            term = str(term).strip()
+            if not term or term in used or term.casefold() == finding.casefold():
+                continue
+            if len(term) > 80:
+                term = term[:80].rsplit(" ", 1)[0]
+            query = " ".join(
+                part for part in (disease["name"], subtype, term, modality) if part
+            )
+            used.add(term)
+            if query in seen_queries:
+                continue
+            seen_queries.add(query)
+            out.append({
+                "query": query,
+                "finding_key": str(item.get("finding_key") or ""),
+                "finding": finding,
+                "modality": modality,
+                "category": item["category"],
+                "targeted": True,
+            })
+            added += 1
     return out
 
 
@@ -530,16 +569,10 @@ def _visual_findings_from_db(conn) -> list[dict]:
 
 
 def _stored_panel_counts(conn, disease_key: str) -> dict[str, int]:
-    """Count stored panels per approved finding for coverage-aware queries."""
-    counts: dict[str, int] = {}
-    for row in conn.execute(
-        "SELECT findings_json FROM published_panels WHERE disease_key = ?", (disease_key,)
-    ):
-        for finding in db.from_json(row["findings_json"], []) or []:
-            key = finding.get("finding_key") if isinstance(finding, dict) else finding
-            if key:
-                counts[str(key)] = counts.get(str(key), 0) + 1
-    return counts
+    """Distinct published images per approved finding for coverage-aware queries."""
+    from . import manifestation_queue
+
+    return manifestation_queue.published_coverage(conn, disease_key)
 
 
 # ---------------------------------------------------------------------------
@@ -1154,6 +1187,48 @@ def join_license(pmcid: str) -> tuple[str, dict]:
     }
 
 
+def join_licenses(pmcids: list[str], pool=None) -> list[tuple[str, dict]]:
+    """License many articles: Europe PMC batched lookups are the final
+    source; the S3 join_license path fills only PMCIDs Europe PMC did not
+    answer (availability fallback, never a confirmation check).
+
+    No DB access. Input order is preserved. EPMC outcomes carry the same
+    fields as join_license minus the s3_prefix/media_files hint keys, so
+    apply_license leaves those columns untouched for EPMC-sourced rows.
+    """
+    epmc = pmc.get_licenses_epmc(pmcids)
+    outcomes: dict[str, dict] = {}
+    missing: list[str] = []
+    for pmcid in pmcids:
+        lic = epmc.get(pmcid)
+        if lic is None:
+            missing.append(pmcid)
+            continue
+        allows = pmc.license_allows(lic.code)
+        outcomes[pmcid] = {
+            "status": "license_ok" if allows else "license_rejected",
+            "license_code": lic.code,
+            "license_url": lic.url,
+            "oa_subset": lic.oa_subset,
+            "license_source": "epmc",
+            "error": None,
+        }
+    timing.count("license_source", len(outcomes), source="epmc")
+    if missing:
+        if pool is not None:
+            fallback = pool.map(join_license, missing)
+        else:
+            with ThreadPoolExecutor(
+                max_workers=config.VP_FETCH_CONCURRENCY
+            ) as local:
+                fallback = local.map(join_license, missing)
+        for pmcid, outcome in fallback:
+            outcome["license_source"] = "s3_fallback"
+            outcomes[pmcid] = outcome
+        timing.count("license_source", len(missing), source="s3_fallback")
+    return [(pmcid, outcomes[pmcid]) for pmcid in pmcids]
+
+
 def apply_license(conn, pmcid: str, outcome: dict) -> str:
     fields = {
         "relevance_reason": outcome.get("error")
@@ -1583,6 +1658,7 @@ def run(args) -> int:
             )
             for key in disease_keys
         }
+        license_sources: dict[str, int] = {"epmc": 0, "s3_fallback": 0}
 
         # Rows already license_ok from earlier runs are eligible for P1
         # immediately, before this pass's licensing starts.
@@ -1647,6 +1723,7 @@ def run(args) -> int:
             """
             if license_pool is None:
                 return
+            license_chunk = _license_chunk()
             queued: set[str] = set()
             for key in disease_keys:
                 queue = [
@@ -1655,20 +1732,16 @@ def run(args) -> int:
                     if status_map.get(pmcid) == "candidate" and pmcid not in queued
                 ]
                 queued.update(queue)
-                for offset in range(0, len(queue), LICENSE_CHUNK):
+                for offset in range(0, len(queue), license_chunk):
                     if limit is not None and license_ok_counts[key] >= limit:
                         break
-                    yield list(
-                        license_pool.map(
-                            join_license, queue[offset : offset + LICENSE_CHUNK]
-                        )
+                    yield join_licenses(
+                        queue[offset : offset + license_chunk], license_pool
                     )
             tail = sorted(pending_license - queued)
-            for offset in range(0, len(tail), LICENSE_CHUNK):
-                yield list(
-                    license_pool.map(
-                        join_license, tail[offset : offset + LICENSE_CHUNK]
-                    )
+            for offset in range(0, len(tail), license_chunk):
+                yield join_licenses(
+                    tail[offset : offset + license_chunk], license_pool
                 )
 
         submitted: list[str] = []  # BatchResult.index -> pmcid
@@ -1682,6 +1755,7 @@ def run(args) -> int:
                 yield _p1_request(row["title"] or "", abstracts.get(row["pmcid"], ""))
             for chunk in _license_iter():
                 for pmcid, outcome in chunk:
+                    license_sources[outcome.get("license_source") or "epmc"] += 1
                     status = apply_license(conn, pmcid, outcome)
                     status_map[pmcid] = status
                     if status != "license_ok":
@@ -1730,6 +1804,11 @@ def run(args) -> int:
                     None,
                 )
         conn.commit()
+        if any(license_sources.values()):
+            print(
+                "license source: "
+                f"epmc={license_sources['epmc']} s3_fallback={license_sources['s3_fallback']}"
+            )
         for key in disease_keys:
             retrieval_counts[key]["selected"] = license_ok_counts[key]
             print(

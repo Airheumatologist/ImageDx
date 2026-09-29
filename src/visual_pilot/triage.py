@@ -39,6 +39,21 @@ _PATIENT_IMAGE_CATEGORIES = {
     "immunofluorescence", "radiology", "ultrasound", "echo",
     "endoscopy", "ophthalmic", "gross", "mixed",
 }
+# W2 montage retriage: caption drops that mention a multi-panel/montage
+# layout AND a patient-image modality return to pending under P2.v5, which
+# judges a single-disease collage as one whole figure.
+MONTAGE = re.compile(
+    r"multi[- ]?panel|montage|collage|composite|compound|multiple panels|several panels",
+    re.I,
+)
+_MONTAGE_MODALITY = re.compile(
+    r"clinical photo|photograph|dermoscop|capillaroscop|histolog|histopath|"
+    r"biopsy|immunohisto|immunofluoresc|cytolog|radiograph|x-ray|\bct\b|"
+    r"computed tomograph|\bmri\b|magnetic resonance|ultrasound|sonograph|"
+    r"echocardiog|\bpet\b|endoscop|ophthalm|fundus|stain|imaging",
+    re.I,
+)
+_MONTAGE_CATEGORIES = {"diagram", "chart", "flowchart", "table", "illustration", "other"}
 _KNOWN_OTHER_DISEASE_CUES = (
     "systemic sclerosis", "rheumatoid arthritis", "psoriatic arthritis",
     "polymyositis", "inclusion body myositis", "healthy control",
@@ -260,6 +275,11 @@ def _apply_batch(conn, rows, result, ctx=None) -> str | None:
         if status is None:
             continue  # unknown route -> counts as missing
         seen.add(figure_id)
+        prior = db.from_json(rows_by_id[figure_id].get("triage_json"), {}) or {}
+        if prior.get("montage_retriage") and not item.get("montage_retriage"):
+            # Keep the W2 marker so a re-dropped montage is not requeued again.
+            item = dict(item)
+            item["montage_retriage"] = prior["montage_retriage"]
         db.set_status(
             conn, "figures", figure_id, status, triage_json=db.to_json(item)
         )
@@ -285,6 +305,62 @@ def _print_summary(conn) -> None:
         reason = triage.get("reason") or "unknown"
         reasons[reason] = reasons.get(reason, 0) + 1
     print(f"caption rejections by reason: {reasons}")
+
+
+def requeue_montage_rejections(conn, disease=None, pmcids=None, dry_run=False) -> int:
+    """Requeue caption_rejected montage/collage drops for the v5 whole-plate
+    policy. A drop qualifies only when its reason names a multi-panel layout
+    AND a patient-image modality (or the model still assigned a patient-image
+    category). Rows already requeued for this P2 version are skipped via the
+    ``montage_retriage`` marker kept in triage_json.
+    """
+    rows = db.rows_with_status(conn, "figures", "caption_rejected", disease=disease)
+    wanted = set(pmcids) if pmcids else None
+    count = 0
+    for source in rows:
+        row = dict(source)
+        if wanted is not None and row["pmcid"] not in wanted:
+            continue
+        item = db.from_json(row.get("triage_json"), {}) or {}
+        if (
+            item.get("source") == "parse"
+            or item.get("third_party")
+            or not row.get("image_url")
+            or item.get("is_real_patient_image") is False
+            or str(item.get("route_adjustment") or "").startswith("deterministic_source_exclusion")
+            or item.get("category") in _MONTAGE_CATEGORIES
+            or item.get("montage_retriage") == P2.version
+        ):
+            continue
+        reason = str(item.get("reason") or "")
+        if not MONTAGE.search(reason):
+            continue
+        if not (
+            _MONTAGE_MODALITY.search(reason)
+            or item.get("category") in _PATIENT_IMAGE_CATEGORIES
+        ):
+            continue
+        article = conn.execute(
+            "SELECT license_code FROM articles WHERE pmcid=?", (row["pmcid"],)
+        ).fetchone()
+        license_code = row.get("effective_license") or (
+            article["license_code"] if article else None
+        )
+        if pmc.license_allows(license_code) is None:
+            continue
+        count += 1
+        if dry_run:
+            continue
+        db.set_status(
+            conn, "figures", row["figure_id"], "pending",
+            attempts=0,
+            triage_json=db.to_json(
+                {"montage_retriage": P2.version, "previous": item}
+            ),
+        )
+    if count and not dry_run:
+        conn.commit()
+    return count
 
 
 def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=False, ctx=None) -> int:
@@ -330,6 +406,13 @@ def run(args) -> int:
     if disease is not None and disease not in diseases.DISEASE_KEYS:
         print(f"unknown disease {disease!r}")
         return 2
+    if getattr(args, "retriage_montages", False):
+        montages = requeue_montage_rejections(
+            conn, disease=disease, pmcids=getattr(args, "pmcids", None),
+            dry_run=bool(args.dry_run),
+        )
+        verb = "would requeue" if args.dry_run else "requeued"
+        print(f"triage: {verb} {montages} montage caption rejection(s)")
     revisited = revisit_conflicting_rejections(
         conn, disease=disease, pmcids=getattr(args, "pmcids", None),
         dry_run=bool(args.dry_run), ctx=ctx,

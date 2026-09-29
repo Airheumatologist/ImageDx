@@ -132,8 +132,8 @@ def _bundle_and_parsed(article_row) -> tuple[object, jats.ParsedArticle]:
     return bundle, jats.parse_article(bundle.xml_text)
 
 
-def coverage_gaps(conn, disease_key: str) -> set[str]:
-    """Approved findings not yet represented by a stored panel for disease."""
+def coverage_gaps(conn, disease_key: str) -> dict[str, int]:
+    """Under-target approved findings -> current distinct-image count."""
     wanted = {
         r["finding_key"]
         for r in conn.execute(
@@ -143,9 +143,9 @@ def coverage_gaps(conn, disease_key: str) -> set[str]:
             (disease_key,),
         )
     }
-    found: set[str] = set()
-    found.update(manifestation_queue.published_coverage(conn, disease_key))
-    return wanted - found
+    counts = manifestation_queue.published_coverage(conn, disease_key)
+    target = config.VP_FINDING_IMAGE_TARGET
+    return {key: counts.get(key, 0) for key in wanted if counts.get(key, 0) < target}
 
 
 def _caption_candidates(article_row: dict, disease_key: str) -> list[dict] | None:
@@ -187,13 +187,15 @@ def _strong_visual_passage(article_row: dict, disease_key: str) -> bool:
     return False
 
 
-def _rescue_if_caption_matches(conn, article_row: dict, disease_key: str) -> bool:
-    """Allow a licensed review through when a specific target-disease figure does."""
+def _rescue_if_caption_matches(
+    conn, article_row: dict, disease_key: str, min_captions: int = 1
+) -> bool:
+    """Allow a licensed review through when enough target-disease figures do."""
     if pmc.license_allows(article_row.get("license_code")) is None:
         return False
     captions = article_row.get("caption_candidates") or []
-    confirms_target = any(
-        signal["useful"] and (signal["disease_hits"] or signal["finding_hits"])
+    confirming = sum(
+        bool(signal["useful"] and (signal["disease_hits"] or signal["finding_hits"]))
         for signal in (
             article_rank.caption_signal(
                 caption.get("caption", ""),
@@ -203,7 +205,7 @@ def _rescue_if_caption_matches(conn, article_row: dict, disease_key: str) -> boo
             for caption in captions
         )
     )
-    if not confirms_target:
+    if confirming < min_captions:
         return False
     keys = set(db.from_json(article_row.get("primary_disease_keys_json"), []) or [])
     keys.add(disease_key)
@@ -222,6 +224,69 @@ def _rescue_if_caption_matches(conn, article_row: dict, disease_key: str) -> boo
     return True
 
 
+def _rescue_persisted_candidates(conn, disease_key, gaps, pmcids) -> list[dict]:
+    """W6 caption-rescue lane over persisted ``candidate`` articles.
+
+    License-checks the strongest candidate rows (review-filtered at
+    retrieval, type-filtered at persistence) that carry strong visual passage
+    evidence, then rescues the license-passing ones whose captions confirm at
+    least ``VP_CAPTION_RESCUE_MIN_CAPTIONS`` target-disease figures. Only
+    called on the persisting selection path — it writes license outcomes and
+    relevance flips.
+    """
+    from . import select_articles
+
+    peek = config.VP_CAPTION_RESCUE_PEEK
+    if not peek:
+        return []
+    rows = [
+        dict(row)
+        for row in db.rows_with_status(
+            conn, "articles", "candidate", disease=disease_key
+        )
+    ]
+    if pmcids is not None:
+        rows = [row for row in rows if row["pmcid"] in pmcids]
+    for row in rows:
+        row["matched_passages"] = db.from_json(
+            row.get("retrieval_evidence_json"), []
+        ) or []
+    rows = [row for row in rows if _strong_visual_passage(row, disease_key)]
+    if not rows:
+        return []
+    ranked = article_rank.rank_articles(rows, disease_key, coverage_gaps=gaps)
+    shortlist = [row for row, _score in ranked[:peek]]
+    outcomes = select_articles.join_licenses([row["pmcid"] for row in shortlist])
+    licensed = []
+    for row, (pmcid, outcome) in zip(shortlist, outcomes):
+        select_articles.apply_license(conn, pmcid, outcome)
+        fresh = conn.execute(
+            "SELECT status, license_code FROM articles WHERE pmcid=?", (pmcid,)
+        ).fetchone()
+        if fresh is not None:
+            row["status"] = fresh["status"]
+            row["license_code"] = fresh["license_code"]
+        if row.get("status") == "license_ok":
+            licensed.append(row)
+    conn.commit()
+    if not licensed:
+        return []
+    with ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY) as pool:
+        caption_results = list(
+            pool.map(lambda row: _caption_candidates(row, disease_key), licensed)
+        )
+    rescued = []
+    for row, candidates in zip(licensed, caption_results):
+        if candidates is not None:
+            row["caption_candidates"] = candidates
+        if _rescue_if_caption_matches(
+            conn, row, disease_key,
+            min_captions=config.VP_CAPTION_RESCUE_MIN_CAPTIONS,
+        ):
+            rescued.append(row)
+    return rescued
+
+
 def ranked_pending_articles(
     conn,
     disease_key: str,
@@ -229,6 +294,7 @@ def ranked_pending_articles(
     gaps=None,
     pmcids: set[str] | None = None,
     peek_limit: int = 100,
+    persist: bool = True,
 ) -> list[dict]:
     """Rerank relevant candidates with bounded JATS caption evidence."""
     rows = [
@@ -273,8 +339,12 @@ def ranked_pending_articles(
     for (row, _score), candidates in zip(shortlisted, caption_results):
         if candidates is not None:
             row["caption_candidates"] = candidates
-        if row.get("status") != "relevant" and _rescue_if_caption_matches(conn, row, disease_key):
+        if row.get("status") != "relevant" and _rescue_if_caption_matches(conn, row, disease_key, min_captions=1):
             rescues.add(row["pmcid"])
+    if persist:
+        rows.extend(
+            _rescue_persisted_candidates(conn, disease_key, current_gaps, pmcids)
+        )
     rows = [row for row in rows if row.get("status") == "relevant"]
     return [
         row
@@ -301,6 +371,7 @@ def select_batch(
         gaps=gaps,
         pmcids=pmcids,
         peek_limit=(min(max(0, batch_size * 2), 100) if peek_captions else 0),
+        persist=persist,
     )
     selected = manifestation_queue.reserve_batch(
         conn, disease_key, ranked, batch_size, gaps, persist=persist

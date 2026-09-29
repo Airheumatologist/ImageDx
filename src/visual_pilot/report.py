@@ -17,7 +17,7 @@ import json
 from collections import Counter
 
 from . import config, db, diseases
-from . import representatives
+from . import manifestation_queue, representatives
 
 _COUNTS_FILE = "stage2_counts.json"
 
@@ -73,6 +73,7 @@ def _vision_funnel(conn, fig_where: str, params: tuple) -> tuple[dict, dict]:
     """Cumulative vision outcome per figure, derived from vision_json."""
     out = {"accepted": 0, "rejected": 0, "errors": 0, "pending": 0}
     exclusions: Counter[str] = Counter()
+    plate_classes: Counter[str] = Counter()
     rows = conn.execute(
         "SELECT f.vision_json, f.status FROM figures f "
         "JOIN articles a ON a.pmcid = f.pmcid WHERE 1=1" + fig_where,
@@ -87,13 +88,17 @@ def _vision_funnel(conn, fig_where: str, params: tuple) -> tuple[dict, dict]:
                 out["pending"] += 1
             continue
         panels = vision.get("panels") or []
-        if any(p.get("include") for p in panels):
+        plate = vision.get("plate") or {}
+        if plate.get("plate_class"):
+            plate_classes[plate["plate_class"]] += 1
+        if any(p.get("include") for p in panels) or plate.get("include"):
             out["accepted"] += 1
         else:
             out["rejected"] += 1
         for panel in panels:
             if not panel.get("include"):
                 exclusions[panel.get("exclusion_reason") or "unspecified"] += 1
+    out["plate_classes"] = dict(plate_classes.most_common())
     return out, dict(exclusions.most_common())
 
 
@@ -176,6 +181,71 @@ def panel_distribution(conn) -> dict:
         tones.setdefault(r["disease_key"] or "?", Counter())[r["skin_tone"] or "unknown"] += 1
     dist["skin_tone"] = {k: dict(v) for k, v in tones.items()}
     return dist
+
+
+_PAIR_BUCKETS = ("0", "1", "2", "3", "4", "5-6", "7-9", ">=10")
+
+
+def _pair_bucket(count: int) -> str:
+    if count >= 10:
+        return ">=10"
+    if count >= 7:
+        return "7-9"
+    if count >= 5:
+        return "5-6"
+    return str(count)
+
+
+def pair_coverage(conn) -> dict:
+    """Distinct published images per approved (disease, finding) pair.
+
+    A same_finding plate credits its single pair; a combined plate credits
+    none (its findings live only in plate_findings_json), matching every
+    other findings_json reader.
+    """
+    target = config.VP_FINDING_IMAGE_TARGET
+    pairs: dict[str, dict[str, int]] = {}
+    for row in conn.execute(
+        "SELECT finding_key, disease_keys_json FROM findings_vocab WHERE approved=1"
+    ):
+        for dk in db.from_json(row["disease_keys_json"], []) or []:
+            pairs.setdefault(str(dk), {})[row["finding_key"]] = 0
+    plates: dict[str, Counter] = {}
+    for row in conn.execute(
+        "SELECT disease_key, plate_kind, COUNT(*) n FROM published_panels "
+        "WHERE plate_kind IS NOT NULL GROUP BY disease_key, plate_kind"
+    ):
+        plates.setdefault(row["disease_key"] or "", Counter())[row["plate_kind"]] += row["n"]
+    histogram: Counter[str] = Counter()
+    per_disease: dict[str, dict] = {}
+    for dk, findings in sorted(pairs.items()):
+        counts = manifestation_queue.published_coverage(conn, dk)
+        under = []
+        at_target = zero = 0
+        for finding_key in findings:
+            count = counts.get(finding_key, 0)
+            findings[finding_key] = count
+            histogram[_pair_bucket(count)] += 1
+            if count >= target:
+                at_target += 1
+            elif count == 0:
+                zero += 1
+            if count < target:
+                under.append({"finding_key": finding_key, "images": count})
+        under.sort(key=lambda item: (item["images"], item["finding_key"]))
+        per_disease[dk] = {
+            "pairs": len(findings),
+            "pairs_at_target": at_target,
+            "zero_image_pairs": zero,
+            "same_finding_plates": plates.get(dk, Counter()).get("same_finding", 0),
+            "combined_plates": plates.get(dk, Counter()).get("combined", 0),
+            "under_target": under,
+        }
+    return {
+        "target": target,
+        "histogram": {bucket: histogram.get(bucket, 0) for bucket in _PAIR_BUCKETS},
+        "per_disease": per_disease,
+    }
 
 
 def zero_image_findings(conn) -> dict[str, list[str]]:
@@ -320,6 +390,7 @@ def run(args) -> int:
     funnels["all"] = funnel(conn)
     dist = panel_distribution(conn)
     zero = zero_image_findings(conn)
+    pairs = pair_coverage(conn)
     costs = cost_summary(conn)
     failures = access_failures(conn)
     representative_stats = representative_summary(conn)
@@ -329,6 +400,7 @@ def run(args) -> int:
         "funnel": funnels,
         "panel_distribution": dist,
         "zero_image_findings": zero,
+        "pair_coverage": pairs,
         "costs": costs,
         "access_failures": failures,
         "representatives": {**representative_stats, "rebuild": representative_rebuild},
@@ -357,6 +429,22 @@ def run(args) -> int:
     md += ["", "## Panel distribution", ""]
     for k, v in dist.items():
         md.append(f"### {k}\n```json\n{json.dumps(v, indent=1)}\n```")
+    md += ["", "## Per-pair image coverage", ""]
+    md.append(f"Distinct published images per approved (disease, finding) pair; target = {pairs['target']}.")
+    md.append("")
+    md.append("| images/pair | pairs |")
+    md.append("|---|---|")
+    for bucket, n in pairs["histogram"].items():
+        md.append(f"| {bucket} | {n} |")
+    md += ["", "| disease | pairs | ≥ target | zero | same-finding plates | combined plates |",
+           "|---|---|---|---|---|---|"]
+    for dk, entry in pairs["per_disease"].items():
+        md.append(
+            f"| {dk} | {entry['pairs']} | {entry['pairs_at_target']} | "
+            f"{entry['zero_image_pairs']} | {entry['same_finding_plates']} | "
+            f"{entry['combined_plates']} |"
+        )
+    md += ["", "### Under-target pairs", f"```json\n{json.dumps({dk: e['under_target'] for dk, e in pairs['per_disease'].items()}, indent=1)}\n```"]
     md += ["", "## Zero-image vocab findings", f"```json\n{json.dumps(zero, indent=1)}\n```"]
     md += ["", "## Costs", f"```json\n{json.dumps(costs, indent=1)}\n```"]
     md += ["", "## Access failures", f"```json\n{json.dumps(failures, indent=1)}\n```"]

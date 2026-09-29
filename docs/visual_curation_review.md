@@ -25,6 +25,17 @@ or control images, specific manifestations, and disease attribution. This is a
 conservative publication policy: a hidden image can still be valid in another
 context, and automated checks do not constitute an exhaustive clinical review.
 
+Since policy `clinical-panels.v5`, a multi-panel figure whose panels are all
+human-patient images of the same configured disease is published once as a
+whole-figure "plate" (`crop_mode=whole_figure`, `panel_label=whole`), never
+split into per-panel crops. When its panels depict one approved finding, the
+plate is filed in that finding's group and counts once toward it; when they
+depict several approved findings of the disease, the plate appears only in a
+"Combined views" group and is not credited to each finding. Plates with no
+approved finding, plates mixing patient images with charts or diagrams, and
+plates spanning multiple diseases stay unpublished, and individual tiles of
+a compound figure are never cropped.
+
 `python3 -m src.visual_pilot.curation_audit` produces a local audit without
 changing source rows. `--apply` backs up SQLite and records hash-bound exclusions
 in `panel_curation`. Original image files, panel rows and model judgments remain

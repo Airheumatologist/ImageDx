@@ -158,6 +158,7 @@ function isPediatric(panel) {
 }
 
 function groupName(panel, groupBy) {
+  if (panel.plate_kind === "combined") return "Combined views";
   if (state.tab === "pediatric") {
     if (panel.clinical_group) return panel.clinical_group;
     const clinicalTab = panel.clinical_tab || panel.tab;
@@ -194,7 +195,18 @@ function render() {
   if (state.loading) { content.innerHTML = "<p class='empty'>Loading images…</p>"; return; }
   if (!panels.length) { content.innerHTML = "<p class='empty'>No panels in this view.</p>"; return; }
   const groupBy = state.tab === "pediatric" ? "clinical_tab" : active && active.group_by;
-  if (!groupBy) { content.appendChild(grid(panels)); return; }
+  if (!groupBy) {
+    const combined = panels.filter(p => p.plate_kind === "combined");
+    const rest = panels.filter(p => p.plate_kind !== "combined");
+    if (rest.length) content.appendChild(grid(rest));
+    if (combined.length) {
+      const heading = document.createElement("h2");
+      heading.className = "group-header";
+      heading.textContent = "Combined views";
+      content.append(heading, grid(combined));
+    }
+    return;
+  }
 
   const order = (active?.group_order || []).map(s => s.toLowerCase());
   const buckets = {};
@@ -203,6 +215,8 @@ function render() {
     (buckets[name] = buckets[name] || []).push(panel);
   }
   const names = Object.keys(buckets).sort((a, b) => {
+    if (a === "Combined views") return 1;
+    if (b === "Combined views") return -1;
     const ia = order.indexOf(a.toLowerCase()), ib = order.indexOf(b.toLowerCase());
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
   });

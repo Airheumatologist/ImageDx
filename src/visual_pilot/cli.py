@@ -334,6 +334,22 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
         for disease_key in disease_keys:
             scoped.disease = disease_key
             scoped.pmcids = sorted(requested_pmcids) if requested_pmcids is not None else None
+            # v5 plates: deterministically requeue license-allowed compound
+            # figures already vision_rejected before stage resumes.
+            requeue_conn = db.connect()
+            try:
+                requeued = judge.requeue_plates(
+                    requeue_conn,
+                    disease=disease_key,
+                    pmcids=scoped.pmcids,
+                )
+            finally:
+                requeue_conn.close()
+            if requeued["requeued"]:
+                print(
+                    f"run-all: {disease_key} requeued {requeued['requeued']} "
+                    "whole-figure plate(s)"
+                )
             for name in ("triage", "judge", "store"):
                 remaining = _remaining_budget()
                 if remaining is not None and remaining <= 0:
@@ -431,8 +447,18 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
             else:
                 state["zero_yield_batches"] += 1
                 if state["zero_yield_batches"] >= zero_yield_limit:
-                    print(f"run-all: {disease_key} stopped after {state['zero_yield_batches']} consecutive zero-yield batches")
-                    continue  # finished: marginal yield fell
+                    # W4: keep the disease in rotation while any approved pair
+                    # is still under the per-finding image target.
+                    gaps = parse_stage.coverage_gaps(read_conn, disease_key)
+                    if gaps:
+                        print(
+                            f"run-all: {disease_key} {state['zero_yield_batches']} "
+                            f"zero-yield batches but {len(gaps)} pairs under "
+                            f"{config.VP_FINDING_IMAGE_TARGET} images; continuing"
+                        )
+                    else:
+                        print(f"run-all: {disease_key} stopped after {state['zero_yield_batches']} consecutive zero-yield batches")
+                        continue  # finished: marginal yield fell
             if state["processed"] < per_disease_cap:
                 pending_diseases.append(disease_key)
 
@@ -466,6 +492,7 @@ COMMANDS: dict[str, CommandFn | None] = {
     "parse": _lazy("parse"),
     "triage": _lazy("triage"),
     "judge": _lazy("judge"),
+    "requeue-plates": _lazy("judge", "run_requeue_plates"),
     "store": _lazy("store"),
     "extract": _lazy("extract_findings"),
     "report": _lazy("report"),
@@ -523,7 +550,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     shared.add_argument(
         "--zero-yield-batches", type=int, default=2,
-        help="stop a disease after this many consecutive batches add no images or findings",
+        help="stop a disease after this many consecutive batches add no images "
+        "or findings, only when no approved pair remains under "
+        "--finding-image-target images",
+    )
+    shared.add_argument(
+        "--finding-image-target", type=int, default=None,
+        help="distinct published images targeted per approved (disease, finding) "
+        "pair (default: VP_FINDING_IMAGE_TARGET=10)",
     )
     shared.add_argument(
         "--pmcids",
@@ -536,6 +570,12 @@ def build_parser() -> argparse.ArgumentParser:
     subs = {}
     for name in COMMANDS:
         subs[name] = subparsers.add_parser(name, parents=[shared])
+    subs["triage"].add_argument(
+        "--retriage-montages",
+        action="store_true",
+        help="requeue caption_rejected montage/collage figures for the "
+        "whole-figure plate policy before triaging pending rows",
+    )
     subs["store"].add_argument(
         "--refresh",
         action="store_true",
@@ -574,6 +614,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if getattr(args, "finding_image_target", None) is not None:
+        config.VP_FINDING_IMAGE_TARGET = max(1, args.finding_image_target)
     fn = COMMANDS.get(args.command)
     if fn is None:
         return _cmd_not_implemented(args)

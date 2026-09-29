@@ -3,18 +3,25 @@
 This policy is shared by the live judge and the viewer's persisted-row audit.
 It deliberately favors a clean library over preserving uncertain crops: source
 figures that are collages, diagrams, charts or veterinary material are not
-split into guessed subpanels.
+split into guessed subpanels. A single-disease collage is kept whole as one
+plate and never split into crops; mixed or multi-disease compound figures
+stay unpublished.
 """
 
 from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from functools import lru_cache
 
 from . import diseases
 
-POLICY_VERSION = "clinical-panels.v4"
+POLICY_VERSION = "clinical-panels.v5"
+
+# Stored whole-figure rows carry this panel_label and crop_mode whole_figure.
+PLATE_LABEL = "whole"
+RADIOLOGY_MODALITIES = {"radiograph", "ct", "mri", "ultrasound", "echo", "pet"}
 
 # Figure-wide language. Captions and titles are stronger evidence than the
 # article's general disease context, which must never make an unrelated visual
@@ -140,11 +147,14 @@ def _findings(panel: dict) -> list:
     value = _get(panel, "findings")
     if value is None:
         value = _json_value(_get(panel, "findings_json"), [])
+    plate_findings = _get(panel, "plate_findings")
+    if plate_findings is None:
+        plate_findings = _json_value(_get(panel, "plate_findings_json"), [])
     proposed = _get(panel, "proposed_findings")
     if proposed is None:
         proposed = []
     out = []
-    for item in value or []:
+    for item in [*(value or []), *(plate_findings or [])]:
         if isinstance(item, dict):
             out.extend((_text(item.get("finding_key")), _text(item.get("evidence"))))
         else:
@@ -152,6 +162,168 @@ def _findings(panel: dict) -> list:
     if isinstance(proposed, list):
         out.extend(_text(item) for item in proposed)
     return [v for v in out if v]
+
+
+def approved_findings_by_disease(conn) -> dict[str, set[str]]:
+    """Approved finding keys per disease from findings_vocab."""
+    allowed: dict[str, set[str]] = {}
+    for row in conn.execute(
+        "SELECT finding_key, disease_keys_json FROM findings_vocab WHERE approved=1"
+    ):
+        for key in _json_value(row["disease_keys_json"], []) or []:
+            allowed.setdefault(str(key), set()).add(row["finding_key"])
+    return allowed
+
+
+def plate_structure(vision) -> dict | None:
+    """Classify a compound figure's panels for the whole-figure plate policy.
+
+    Returns None for a non-compound judgment, else
+    ``{"plate_class", "disease_key", "patient_panels"}``.
+    """
+    vision = _json_value(vision, {}) or {}
+    panels = vision.get("panels") or []
+    if vision.get("figure_is_compound") is not True and len(panels) <= 1:
+        return None
+    pilot = set(diseases.DISEASE_KEYS)
+
+    def _patient(panel: dict) -> bool:
+        return (
+            _get(panel, "exclusion_reason") in (None, "collage")
+            and _get(panel, "modality") not in (None, "", "other")
+            and _get(panel, "disease_key") in pilot
+        )
+
+    patient = [p for p in panels if _patient(p)]
+    diseases_seen = {_get(p, "disease_key") for p in patient}
+    if any(_get(p, "exclusion_reason") == "other_disease" for p in panels) or len(diseases_seen) > 1:
+        plate_class = "multi_disease"
+    elif any(
+        _get(p, "exclusion_reason") not in (None, "collage", "other_disease")
+        or _get(p, "modality") in (None, "", "other")
+        for p in panels
+    ):
+        plate_class = "mixed_non_patient"
+    elif len(patient) < 2:
+        plate_class = "too_few_patient_panels"
+    elif len(patient) != len(panels):
+        plate_class = "unattributed_panel"
+    else:
+        plate_class = "single_disease"
+    return {
+        "plate_class": plate_class,
+        "disease_key": next(iter(diseases_seen)) if len(diseases_seen) == 1 else None,
+        "patient_panels": patient,
+    }
+
+
+def evaluate_plate(
+    vision: dict,
+    figure: dict | None,
+    article: dict | None,
+    allowed_by_disease: dict[str, set[str]],
+    image_size: tuple[int, int] | None = None,
+) -> dict | None:
+    """Build the deterministic whole-figure plate record for a compound
+    judgment; None for non-compound figures. ``plate["include"]`` marks a
+    publishable single-disease plate; the full approved finding list lives in
+    ``plate_findings`` regardless of kind.
+    """
+    vision = _json_value(vision, {}) or {}
+    structure = plate_structure(vision)
+    if structure is None:
+        return None
+    panels = vision.get("panels") or []
+    patient = structure["patient_panels"]
+    labels = [str(_get(p, "panel_label") or "?") for p in panels]
+    modalities = [str(_get(p, "modality")) for p in patient]
+    modality_counts = Counter(modalities)
+    modality = max(dict.fromkeys(modalities), key=modality_counts.get, default=None)
+
+    def _common(key, default=None):
+        values = {_get(p, key) for p in patient}
+        return values.pop() if len(values) == 1 else default
+
+    allowed = allowed_by_disease.get(structure["disease_key"]) or set()
+    plate_findings = []
+    seen: set[str] = set()
+    for panel in patient:
+        for item in _get(panel, "findings") or []:
+            key = item.get("finding_key") if isinstance(item, dict) else item
+            if not key or key in seen or key not in allowed:
+                continue
+            seen.add(key)
+            plate_findings.append({
+                "finding_key": key,
+                "evidence": item.get("evidence", "") if isinstance(item, dict) else "",
+            })
+    if not plate_findings:
+        plate_kind, findings = "unlabeled", []
+    elif len(plate_findings) == 1:
+        plate_kind, findings = "same_finding", list(plate_findings)
+    else:
+        plate_kind, findings = "combined", []
+
+    rationale = f"Whole-figure plate of {len(panels)} panels ({', '.join(labels)})."
+    parts = " ".join(
+        f"{label}: {_text(_get(panel, 'rationale'))}"
+        for label, panel in zip(labels, panels)
+        if _get(panel, "rationale")
+    )
+    rationale = (rationale + " " + parts).strip()
+    if len(rationale) > 1000:
+        rationale = rationale[:997].rsplit(" ", 1)[0] + "..."
+
+    plate_class = structure["plate_class"]
+    if plate_class != "single_disease":
+        include, reason = False, f"multi-panel plate: {plate_class}"
+    elif plate_kind == "unlabeled":
+        include, reason = False, "unlabeled single-disease plate"
+    else:
+        include, reason = True, None
+    plate = {
+        "panel_label": PLATE_LABEL,
+        "bbox": [0, 0, 1, 1],
+        "crop_mode": "whole_figure",
+        "plate_class": plate_class,
+        "plate_kind": plate_kind,
+        "source_panels": labels,
+        "disease_key": structure["disease_key"],
+        "modality": modality,
+        "plate_modalities": sorted(set(modalities)),
+        "radiology": bool(patient) and all(m in RADIOLOGY_MODALITIES for m in modalities),
+        "subtype": _common("subtype"),
+        "body_site": _common("body_site"),
+        "typicality": _common("typicality"),
+        "stage": _common("stage"),
+        "stated_ethnicity": _common("stated_ethnicity"),
+        "stated_ethnicity_quote": _common("stated_ethnicity_quote"),
+        "age_group": _common("age_group", "unknown"),
+        "skin_tone": _common("skin_tone"),
+        "annotations_present": any(_get(p, "annotations_present") for p in patient),
+        "confidence": min((_get(p, "confidence") or 0 for p in patient), default=0),
+        "findings": findings,
+        "plate_findings": plate_findings,
+        "proposed_findings": list(dict.fromkeys(
+            str(v) for p in patient for v in (_get(p, "proposed_findings") or [])
+        )),
+        "rationale": rationale,
+        "include": include,
+        "exclusion_reason": reason,
+    }
+    if include:
+        gate = exclusion_reason(
+            plate,
+            {**dict(figure or {}), "vision_json": vision},
+            article or {},
+            image_size=image_size,
+            allowed_findings=allowed_by_disease.get(structure["disease_key"]),
+        )
+        if gate:
+            plate["include"] = False
+            plate["exclusion_reason"] = gate
+            plate["plate_class"] = "caption_gate"
+    return plate
 
 
 def source_exclusion_reason(figure: dict, article: dict | None = None) -> str | None:
@@ -194,13 +366,29 @@ def exclusion_reason(
         reason = _get(panel, "exclusion_reason")
         return str(reason or "model excluded panel").replace("_", " ")
 
-    if _get(figure, "figure_is_compound") is True or _get(figure, "compound") is True:
-        return "multi-panel collage; skip whole source"
     vision = _json_value(_get(figure, "vision_json"), {}) or {}
-    if vision.get("figure_is_compound") is True or len(vision.get("panels") or []) > 1:
-        return "multi-panel collage; skip whole source"
-    if (_get(figure, "vision_panel_count") or 0) > 1:
-        return "multi-panel collage; skip whole source"
+    compound = (
+        _get(figure, "figure_is_compound") is True
+        or _get(figure, "compound") is True
+        or vision.get("figure_is_compound") is True
+        or len(vision.get("panels") or []) > 1
+        or (_get(figure, "vision_panel_count") or 0) > 1
+    )
+    if compound:
+        # Tiles/snippets of a compound figure are never published; only the
+        # whole-figure plate can pass, and only for a single-disease plate
+        # that carries an approved finding.
+        plate_kind = _get(panel, "plate_kind")
+        if plate_kind is None or _get(panel, "crop_mode") != "whole_figure":
+            return "multi-panel collage; skip whole source"
+        if plate_kind == "unlabeled":
+            return "unlabeled single-disease plate"
+        structure = plate_structure(vision)
+        plate_class = structure["plate_class"] if structure else "not_compound"
+        if plate_class != "single_disease":
+            return f"multi-panel plate: {plate_class}"
+        if structure["disease_key"] != _get(panel, "disease_key"):
+            return "multi-panel plate: disease mismatch"
 
     source_reason = source_exclusion_reason(figure, article)
     if source_reason:
@@ -269,9 +457,12 @@ def exclusion_reason(
         raw = _get(panel, "findings")
         if raw is None:
             raw = _json_value(_get(panel, "findings_json"), [])
+        plate_raw = _get(panel, "plate_findings")
+        if plate_raw is None:
+            plate_raw = _json_value(_get(panel, "plate_findings_json"), [])
         keys = {
             str(item.get("finding_key") if isinstance(item, dict) else item)
-            for item in (raw or [])
+            for item in [*(raw or []), *(plate_raw or [])]
         }
         if not keys & allowed_findings:
             return "no finding approved for this disease"

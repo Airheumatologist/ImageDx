@@ -10,7 +10,10 @@ normalized bbox (2% padding of the original size, clamped), capped at
 (default WebP q90) to ``panels/{disease}/{modality}/{panel_id}.{ext}``
 with a 400px WebP thumb in ``thumbs/``. ``whole_figure`` crop mode applies
 to ND licenses, missing or tiny (<3%) bboxes and >30% overlaps between
-included panels. When ``figures.sha256`` is set the bytes must match it; a
+included panels, and to ``vision_json["plate"]`` — the v5 whole-figure
+record for a publishable single-disease compound figure, stored once with
+``panel_label='whole'`` and its findings in ``plate_findings_json``. When
+``figures.sha256`` is set the bytes must match it; a
 mismatch is a store error (the figure stays ``vision_accepted``) rather
 than silently storing different pixels.
 
@@ -180,8 +183,11 @@ def attribution_text(
 
 
 def panel_suffix(vision: dict, panel_label: str | None) -> str:
-    """Letter appended to the figure citation: omitted only for a
-    non-compound figure whose vision_json has exactly one panel."""
+    """Letter appended to the figure citation: omitted for a non-compound
+    figure whose vision_json has exactly one panel, and for the
+    whole-figure plate (cited as "Figure N.")."""
+    if panel_label == curation.PLATE_LABEL:
+        return ""
     panels = vision.get("panels") or []
     if not vision.get("figure_is_compound") and len(panels) == 1:
         return ""
@@ -437,6 +443,41 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
                         "rel_thumb": f"thumbs/{pid}.webp",
                     }
                 )
+            plate = vision.get("plate") or {}
+            if plate.get("include"):
+                # Same write-boundary recheck as panels, then store the whole
+                # figure once — capped, encoded and thumbed like a panel.
+                reason = curation.exclusion_reason(
+                    plate, figure, article_row, image_size=(width, height)
+                )
+                if reason:
+                    curation_exclusions.append(("plate", reason))
+                else:
+                    crop = _cap_edge(img, config.VP_PANEL_MAX_EDGE)
+                    img_bytes, img_ext = _encode_panel(crop)
+                    thumb_io = io.BytesIO()
+                    thumb = crop.copy()
+                    thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
+                    thumb.save(thumb_io, format="WEBP", quality=80, method=6)
+                    pid = panel_id_for(
+                        figure["pmcid"], fig_xml_id, curation.PLATE_LABEL
+                    )
+                    modality = plate.get("modality") or "other"
+                    panels.append(
+                        {
+                            "panel": plate,
+                            "mode": "whole_figure",
+                            "img_bytes": img_bytes,
+                            "thumb": thumb_io.getvalue(),
+                            "sha": hashlib.sha256(img_bytes).hexdigest(),
+                            "width": crop.width,
+                            "height": crop.height,
+                            "pid": pid,
+                            "modality": modality,
+                            "rel_img": f"panels/{plate['disease_key']}/{modality}/{pid}{img_ext}",
+                            "rel_thumb": f"thumbs/{pid}.webp",
+                        }
+                    )
             if attrib is None:
                 attrib = _attribution_source(article_row)
             return {
@@ -467,6 +508,15 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
         # The report is tied to the exact stored vision panel ordering and is
         # retained with the judgment for diagnosis. The DB audit remains the
         # source of reversible publication exclusions for existing rows.
+        if panel_index == "plate":
+            plate = vision.get("plate") or {}
+            plate["include"] = False
+            plate["exclusion_reason"] = reason
+            conn.execute(
+                "UPDATE figures SET vision_json=? WHERE figure_id=?",
+                (db.to_json(vision), figure["figure_id"]),
+            )
+            continue
         panels = vision.get("panels") or []
         if panel_index < len(panels):
             panel = panels[panel_index]
@@ -543,15 +593,17 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
             figure["label"] or fig_xml_id,
             panel_suffix(vision, panel.get("panel_label")),
         )
+        plate_kind = panel.get("plate_kind")
         conn.execute(
             "INSERT OR REPLACE INTO panels (panel_id, figure_id, pmcid, panel_label, "
             "disease_key, subtype, modality, body_site, findings_json, typicality, "
             "stage, age_group, skin_tone, stated_ethnicity, stated_ethnicity_quote, "
             "study_region, annotations_present, bbox_json, crop_mode, confidence, "
             "rationale, image_path, thumb_path, width, height, sha256, "
-            "attribution_text, license_code, license_url, source_url) "
+            "attribution_text, license_code, license_url, source_url, "
+            "plate_kind, plate_findings_json) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-            "?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 item["pid"],
                 figure["figure_id"],
@@ -583,6 +635,8 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
                 effective_license,
                 license_url,
                 f"https://pmc.ncbi.nlm.nih.gov/articles/{figure['pmcid']}/",
+                plate_kind,
+                db.to_json(panel.get("plate_findings")) if plate_kind else None,
             ),
         )
         stats["panels"] += 1
@@ -635,6 +689,9 @@ def refresh_panel_metadata(conn) -> dict:
 
         vision = db.from_json(figure["vision_json"], {}) or {}
         vision_by_label = {p.get("panel_label"): p for p in vision.get("panels") or []}
+        plate = vision.get("plate")
+        if isinstance(plate, dict):
+            vision_by_label[curation.PLATE_LABEL] = plate
         effective_license = figure["effective_license"]
         license_url = (
             article["license_url"]
