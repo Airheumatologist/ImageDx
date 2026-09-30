@@ -34,6 +34,7 @@ from PIL import Image
 
 from . import config, curation, db, diseases, llm, originals, pmc
 from . import manifestation_queue
+from .demographics import resolve_age
 from .prompts import P3
 
 MAX_ATTEMPTS = 3
@@ -289,6 +290,10 @@ def post_validate(
     panels = []
     for panel in result.get("panels") or []:
         panel = dict(panel)
+        if figure is not None:
+            age = resolve_age(figure)
+            panel["age_group"] = age["age_group"]
+            panel["age_evidence"] = age["evidence"]
         # bbox: clamp to [0,1]; swap inverted corners.
         bbox = list(panel.get("bbox") or [])
         if len(bbox) == 4:
@@ -343,6 +348,7 @@ def post_validate(
             out, figure, article, allowed_by_disease or {}, image_size
         )
         if plate is not None:
+            plate["age_group"] = resolve_age(figure)["age_group"]
             out["plate"] = plate
         else:
             out.pop("plate", None)

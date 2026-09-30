@@ -95,7 +95,7 @@ class RepresentativeSelectionTests(unittest.TestCase):
             conn.execute("INSERT INTO articles (pmcid, title) VALUES ('PMC_test', 'Cutaneous lupus')")
             conn.execute(
                 "INSERT INTO figures (figure_id, pmcid, label, caption, effective_license, status) "
-                "VALUES ('PMC_test:fig1', 'PMC_test', 'Figure 1', 'Malar rash in systemic lupus erythematosus', 'CC-BY', 'stored')"
+                "VALUES ('PMC_test:fig1', 'PMC_test', 'Figure 1', 'Malar rash in a 23-year-old patient with systemic lupus erythematosus', 'CC-BY', 'stored')"
             )
             conn.execute(
                 "INSERT INTO panels (panel_id, figure_id, pmcid, disease_key, modality, body_site, "

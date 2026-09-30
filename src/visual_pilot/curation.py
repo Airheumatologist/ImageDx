@@ -15,9 +15,9 @@ import re
 from collections import Counter
 from functools import lru_cache
 
-from . import diseases
+from . import diseases, demographics
 
-POLICY_VERSION = "clinical-panels.v5"
+POLICY_VERSION = "clinical-panels.v6-age-evidence"
 
 # Stored whole-figure rows carry this panel_label and crop_mode whole_figure.
 PLATE_LABEL = "whole"
@@ -365,6 +365,9 @@ def exclusion_reason(
     if not _get(panel, "include", True):
         reason = _get(panel, "exclusion_reason")
         return str(reason or "model excluded panel").replace("_", " ")
+
+    if demographics.resolve_age(figure)["age_group"] == "unknown":
+        return "patient age unclear or unsupported by source"
 
     vision = _json_value(_get(figure, "vision_json"), {}) or {}
     compound = (

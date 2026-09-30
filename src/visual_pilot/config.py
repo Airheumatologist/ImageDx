@@ -126,6 +126,12 @@ VP_TARGETED_SYNONYM_QUERIES = max(0, _env_int("VP_TARGETED_SYNONYM_QUERIES", 3))
 # PMCIDs per searchPOST call and concurrent batch calls in flight.
 VP_EPMC_LICENSE_BATCH = max(1, _env_int("VP_EPMC_LICENSE_BATCH", 100))
 VP_EPMC_CONCURRENCY = max(1, _env_int("VP_EPMC_CONCURRENCY", 4))
+# Pair ranking enriches only the bounded caption shortlist, never the corpus.
+VP_RANK_METADATA_TTL_DAYS = max(1, _env_int("VP_RANK_METADATA_TTL_DAYS", 7))
+VP_PAIR_SEMANTIC_RERANK = os.getenv("VP_PAIR_SEMANTIC_RERANK", "1") != "0"
+# Explicit editorial preferences keyed by journal ISSN (values clamped to 0..1).
+# Empty by default: journal identity is not itself evidence of quality.
+VP_JOURNAL_PREFERENCES = os.getenv("VP_JOURNAL_PREFERENCES", "{}")
 
 # -----------------------------------------------------------------------------
 # Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults

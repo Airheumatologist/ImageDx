@@ -13,7 +13,8 @@ per-article version dirs::
 License source (chosen): Europe PMC ``searchPOST`` core records (``license``
 field, batched) treated as final; the per-article S3 metadata JSON
 (``license_code``) and JATS ``<permissions>`` block serve only articles
-Europe PMC does not answer.
+Europe PMC does not answer or returns without a license field. Explicit
+Europe PMC license restrictions are never overridden by this fallback.
 Figure access (chosen): direct public HTTPS S3 URLs (spec preference 1).
 Fallbacks: Europe PMC fullTextXML for the XML itself; unresolved graphics get
 ``needs_bytes`` (the Europe PMC ``/bin/`` endpoint returns 403).

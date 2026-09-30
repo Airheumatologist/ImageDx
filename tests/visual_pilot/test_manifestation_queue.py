@@ -56,9 +56,9 @@ def test_coverage_uses_published_panels(tmp_path):
         "INSERT INTO panel_curation(panel_id,image_sha256,decision,reason,policy_version) "
         "VALUES('p1','abc','exclude','reviewed','v1')"
     )
-    assert parse.coverage_gaps(conn, "d1") == {"f1"}
+    assert parse.coverage_gaps(conn, "d1") == {"f1": 0}
     conn.execute("DELETE FROM panel_curation WHERE panel_id='p1'")
-    assert parse.coverage_gaps(conn, "d1") == set()
+    assert parse.coverage_gaps(conn, "d1") == {"f1": 1}
     conn.close()
 
 
@@ -105,7 +105,7 @@ def test_candidate_statuses_resume_without_reselecting_parsed_articles(tmp_path)
     conn = _db(tmp_path)
     _seed_lane(conn)
     _article(conn, "PMC1", [{"finding_key": "f1", "query": "disease finding", "rank": 2}])
-    assert manifestation_queue.sync_candidates(conn, "d1") == {"f1"}
+    assert manifestation_queue.sync_candidates(conn, "d1") == {"f1": 0}
     manifestation_queue.record_article_outcome(conn, "PMC1", "parsed")
     manifestation_queue.sync_candidates(conn, "d1")
     row = conn.execute("SELECT status,last_outcome FROM manifestation_candidates").fetchone()

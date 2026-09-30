@@ -325,9 +325,20 @@ def ranked_pending_articles(
         row for row in rescue_rows if _strong_visual_passage(row, disease_key)
     ]
     rows.extend(rescue_rows)
+    from . import pair_rank, source_quality
+
+    source_quality.attach_cached(conn, rows)
+    rows = [row for row in rows
+            if not source_quality.quality_signal(row.get("source_metadata"))["retracted"]]
     current_gaps = gaps if gaps is not None else coverage_gaps(conn, disease_key)
     initial = article_rank.rank_articles(rows, disease_key, coverage_gaps=current_gaps)
-    shortlisted = initial[: max(0, peek_limit)]
+    # Each deficit lane gets caption inspection before spare global slots.
+    shortlist_rows = pair_rank.caption_shortlist(
+        conn, [row for row, _ in initial], disease_key, current_gaps, max(0, peek_limit)
+    )
+    source_quality.enrich_shortlist(conn, shortlist_rows, persist=persist)
+    shortlisted = [(row, {}) for row in shortlist_rows
+                   if not source_quality.quality_signal(row.get("source_metadata"))["retracted"]]
     rescues: set[str] = set()
     with ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY) as pool:
         caption_results = list(
@@ -342,10 +353,17 @@ def ranked_pending_articles(
         if row.get("status") != "relevant" and _rescue_if_caption_matches(conn, row, disease_key, min_captions=1):
             rescues.add(row["pmcid"])
     if persist:
-        rows.extend(
-            _rescue_persisted_candidates(conn, disease_key, current_gaps, pmcids)
-        )
-    rows = [row for row in rows if row.get("status") == "relevant"]
+        rescued = _rescue_persisted_candidates(conn, disease_key, current_gaps, pmcids)
+        source_quality.attach_cached(conn, rescued)
+        if peek_limit > 0:
+            source_quality.enrich_shortlist(conn, rescued, persist=persist)
+        rows.extend(rescued)
+        if peek_limit > 0:
+            shortlist_rows.extend(rescued)
+    rows = [row for row in rows if row.get("status") == "relevant"
+            and not source_quality.quality_signal(row.get("source_metadata"))["retracted"]]
+    pair_rank.rank_pairs(conn, rows, disease_key, current_gaps,
+                         semantic_rows=shortlist_rows, persist=persist)
     return [
         row
         for row, _score in article_rank.rank_articles(

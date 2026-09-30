@@ -489,6 +489,8 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
 COMMANDS: dict[str, CommandFn | None] = {
     "init": _cmd_init,
     "select": _lazy("select_articles"),
+    "resume-selection": _lazy("select_articles", "run_resume"),
+    "audit-licenses": _lazy("select_articles", "run_license_audit"),
     "parse": _lazy("parse"),
     "triage": _lazy("triage"),
     "judge": _lazy("judge"),
@@ -570,6 +572,8 @@ def build_parser() -> argparse.ArgumentParser:
     subs = {}
     for name in COMMANDS:
         subs[name] = subparsers.add_parser(name, parents=[shared])
+    for name in ('resume-selection', 'audit-licenses'):
+        subs[name].add_argument('--finding', help='restrict to a persisted manifestation lane')
     subs["triage"].add_argument(
         "--retriage-montages",
         action="store_true",

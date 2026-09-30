@@ -8,15 +8,16 @@ AND ``has_full_text = true``. Rows are chunk-level: each ranked list is
 collapsed to per-pmcid best rank and all lists for a disease are fused with
 plain RRF (k=60) into ``retrieval_score``.
 
-Publication-type exclusions are applied in Python (``passes_type_filter``);
-licenses join via ``pmc.get_license`` on a thread pool; relevance is the
-title rule, else prompt P1 on ``Title: ... / Abstract: ...``.
+Publication-type exclusions are applied in Python (``passes_type_filter``).
+Batched Europe PMC licenses use a public PMC fallback for absent metadata;
+every license-cleared article goes through prompt P1.
 
 The license filter runs before the ``--limit`` cap: every type-passed
 article is persisted as a candidate, then candidates are license-checked
 in finding-lane priority order (``license_priority_order``) until each
-disease accumulates ``limit`` license-passing articles. Rejected licenses
-therefore free their slot instead of shrinking the pool that reaches P1.
+disease accumulates ``limit`` license-passing articles. Undercovered finding
+lanes can continue beyond that quota until usable candidate targets are met.
+Verdicts and queue stop reasons are checkpointed incrementally.
 """
 
 from __future__ import annotations
@@ -24,10 +25,11 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 
-from . import config, db, diseases, llm, pmc, timing
+from . import config, db, diseases, llm, pmc, timing, queue_state
 from .prompts import P1
 
 logger = logging.getLogger(__name__)
@@ -1168,9 +1170,9 @@ def join_license(pmcid: str) -> tuple[str, dict]:
     """Fetch one license (no DB access — safe on the worker pool)."""
     try:
         lic = pmc.get_license(pmcid)
-    except Exception as exc:  # noqa: BLE001 - any PMC error rejects the article
+    except Exception as exc:  # noqa: BLE001 - access errors remain retryable
         return pmcid, {
-            "status": "license_rejected",
+            "status": "candidate",
             "error": str(exc),
         }
     allows = pmc.license_allows(lic.code)
@@ -1178,6 +1180,7 @@ def join_license(pmcid: str) -> tuple[str, dict]:
         "status": "license_ok" if allows else "license_rejected",
         "license_code": lic.code,
         "license_url": lic.url,
+        "license_raw": lic.raw,
         "oa_subset": lic.oa_subset,
         # C3 hints (W4b): persisted on the article row so parse can use the
         # hinted get_article_bundle path and skip re-listing the S3 dir.
@@ -1189,8 +1192,8 @@ def join_license(pmcid: str) -> tuple[str, dict]:
 
 def join_licenses(pmcids: list[str], pool=None) -> list[tuple[str, dict]]:
     """License many articles: Europe PMC batched lookups are the final
-    source; the S3 join_license path fills only PMCIDs Europe PMC did not
-    answer (availability fallback, never a confirmation check).
+    source; the S3 join_license path fills only missing records or absent
+    license fields (availability fallback, never a confirmation check).
 
     No DB access. Input order is preserved. EPMC outcomes carry the same
     fields as join_license minus the s3_prefix/media_files hint keys, so
@@ -1201,7 +1204,7 @@ def join_licenses(pmcids: list[str], pool=None) -> list[tuple[str, dict]]:
     missing: list[str] = []
     for pmcid in pmcids:
         lic = epmc.get(pmcid)
-        if lic is None:
+        if lic is None or not lic.raw:
             missing.append(pmcid)
             continue
         allows = pmc.license_allows(lic.code)
@@ -1211,6 +1214,7 @@ def join_licenses(pmcids: list[str], pool=None) -> list[tuple[str, dict]]:
             "license_url": lic.url,
             "oa_subset": lic.oa_subset,
             "license_source": "epmc",
+            "license_raw": lic.raw,
             "error": None,
         }
     timing.count("license_source", len(outcomes), source="epmc")
@@ -1224,13 +1228,16 @@ def join_licenses(pmcids: list[str], pool=None) -> list[tuple[str, dict]]:
                 fallback = local.map(join_license, missing)
         for pmcid, outcome in fallback:
             outcome["license_source"] = "s3_fallback"
+            outcome['fallback_reason'] = 'missing_epmc_license' if pmcid in epmc else 'missing_epmc_record'
             outcomes[pmcid] = outcome
         timing.count("license_source", len(missing), source="s3_fallback")
     return [(pmcid, outcomes[pmcid]) for pmcid in pmcids]
 
 
 def apply_license(conn, pmcid: str, outcome: dict) -> str:
+    from . import queue_state
     fields = {
+        "error": outcome.get("error"),
         "relevance_reason": outcome.get("error")
         or f"license:{outcome.get('license_code')}",
     }
@@ -1253,6 +1260,14 @@ def apply_license(conn, pmcid: str, outcome: dict) -> str:
             oa_subset=outcome.get("oa_subset"),
         )
     db.set_status(conn, "articles", pmcid, outcome["status"], **fields)
+    status = outcome['status']
+    queue_state.record(conn, pmcid, 'license', 'error' if status == 'candidate' else 'complete',
+                       'access_error' if status == 'candidate' else
+                       'missing_license' if outcome.get('license_code') in (None, 'none') else
+                       'allowed' if status == 'license_ok' else 'disallowed_license',
+                       source=outcome.get('license_source', 's3_fallback'),
+                       license_code=outcome.get('license_code'), license_raw=outcome.get('license_raw'),
+                       fallback_reason=outcome.get('fallback_reason'), error=outcome.get('error'))
     return outcome["status"]
 
 
@@ -1279,12 +1294,264 @@ def apply_relevance(
     conn, pmcid: str, status: str, reason: str | None, keys: list[str] | None
 ) -> None:
     fields: dict = {
+        "error": None,
         "relevance_decision": "relevant" if status == "relevant" else "irrelevant",
         "relevance_reason": reason,
     }
     if keys:
         fields["primary_disease_keys_json"] = db.to_json(sorted(keys))
     db.set_status(conn, "articles", pmcid, status, **fields)
+
+
+def process_relevance(conn, client, requests, submitted) -> dict:
+    """Checkpoint completion-order results, including failures, one at a time."""
+    from . import queue_state
+    counts = {"completed": 0, "errors": 0, "budget": 0}
+    try:
+        for result in client.iter_many(requests):
+            pmcid = submitted[result.index]
+            with client._lock:
+                if result.error is not None:
+                    budget = isinstance(result.error, llm.BudgetExceeded)
+                    counts['budget' if budget else 'errors'] += 1
+                    conn.execute("UPDATE articles SET error=?,updated_at=datetime('now') WHERE pmcid=?",
+                                 (str(result.error), pmcid))
+                    queue_state.record(conn, pmcid, 'relevance', 'deferred' if budget else 'error',
+                                       'budget' if budget else 'provider_error', error=str(result.error))
+                else:
+                    parsed = result.parsed or {}
+                    keys = [k for k in parsed.get('primary_disease_keys', []) if k in PILOT_KEYS]
+                    relevant = _p1_relevant(parsed)
+                    apply_relevance(conn, pmcid, 'relevant' if relevant else 'irrelevant',
+                                    parsed.get('reason') or 'p1_verdict', keys if relevant else None)
+                    queue_state.record(conn, pmcid, 'relevance', 'complete',
+                                       'relevant' if relevant else 'irrelevant')
+                    counts['completed'] += 1
+                conn.commit()
+    except BaseException as exc:
+        with client._lock:
+            for pmcid in submitted:
+                row = conn.execute('SELECT status FROM articles WHERE pmcid=?', (pmcid,)).fetchone()
+                if row and row['status'] == 'license_ok':
+                    state = conn.execute("SELECT status FROM article_queue_state WHERE pmcid=? AND stage='relevance'", (pmcid,)).fetchone()
+                    if state is None or state['status'] == 'running':
+                        queue_state.record(conn, pmcid, 'relevance', 'deferred',
+                                           'interruption' if isinstance(exc, (KeyboardInterrupt, SystemExit)) else 'feed_error',
+                                           error=str(exc))
+            conn.commit()
+        raise
+    return counts
+
+
+def needs_manifestation_licenses(conn, disease_key: str, finding_keys=None) -> bool:
+    """Continue past a disease quota while deficient lanes lack usable candidates."""
+    from . import manifestation_queue
+    coverage = manifestation_queue.published_coverage(conn, disease_key)
+    for row in conn.execute("SELECT finding_key,disease_keys_json FROM findings_vocab WHERE approved=1"):
+        finding = row['finding_key']
+        if finding_keys is not None and finding not in finding_keys:
+            continue
+        if disease_key not in db.from_json(row['disease_keys_json'], []):
+            continue
+        if coverage.get(finding, 0) >= config.VP_FINDING_IMAGE_TARGET:
+            continue
+        available = conn.execute(
+            "SELECT COUNT(*) FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
+            "WHERE mc.disease_key=? AND mc.finding_key=? AND (a.status='license_ok' OR "
+            "(a.status='relevant' AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) WHERE value=?)))",
+            (disease_key, finding, disease_key),
+        ).fetchone()[0]
+        if available >= max(1, config.VP_MANIFESTATION_QUOTA):
+            continue
+        if conn.execute(
+            "SELECT 1 FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
+            "WHERE mc.disease_key=? AND mc.finding_key=? AND a.status='candidate' LIMIT 1",
+            (disease_key, finding),
+        ).fetchone():
+            return True
+    return False
+
+
+def _queue_rows(conn, args, statuses):
+    where = ['a.status IN (%s)' % ','.join('?' for _ in statuses)]
+    params = list(statuses)
+    finding = getattr(args, 'finding', None)
+    if finding:
+        clause = 'mc.pmcid=a.pmcid AND mc.finding_key=?'
+        params.append(finding)
+        if args.disease != 'all':
+            clause += ' AND mc.disease_key=?'
+            params.append(args.disease)
+        where.append('EXISTS (SELECT 1 FROM manifestation_candidates mc WHERE ' + clause + ')')
+    elif args.disease != 'all':
+        where.append("(EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) WHERE value=?) "
+                     "OR EXISTS (SELECT 1 FROM manifestation_candidates mc WHERE mc.pmcid=a.pmcid AND mc.disease_key=?))")
+        params.extend([args.disease, args.disease])
+    if args.pmcids:
+        where.append('a.pmcid IN (%s)' % ','.join('?' for _ in args.pmcids))
+        params.extend(args.pmcids)
+    return [dict(r) for r in conn.execute(
+        'SELECT a.* FROM articles a WHERE ' + ' AND '.join(where) +
+        " ORDER BY (a.error IS NOT NULL) DESC, a.retrieval_score DESC,a.pmcid", params)]
+
+
+def _queue_backup(conn, name):
+    import sqlite3
+    from datetime import datetime, timezone
+    path = config.reports_dir() / f"pre_{name}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}.sqlite"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(path) as backup:
+        conn.backup(backup)
+    return str(path)
+
+
+def _save_queue_report(conn, args, name, **details):
+    rows = _queue_rows(conn, args, ['candidate','license_ok','license_rejected','relevant','irrelevant','parsed','parse_error'])
+    ids = {r['pmcid'] for r in rows}
+    states = [dict(r) for r in conn.execute('SELECT * FROM article_queue_state') if r['pmcid'] in ids]
+    from collections import Counter
+    report = {'disease': args.disease, 'finding': getattr(args,'finding',None),
+              'article_statuses': dict(Counter(r['status'] for r in rows)),
+              'relevant_for_disease': sum(r['status']=='relevant' and (args.disease=='all' or args.disease in db.from_json(r['primary_disease_keys_json'], [])) for r in rows),
+              'queue_outcomes': dict(Counter(f"{r['stage']}:{r['status']}:{r['reason']}" for r in states)),
+              'states': states, **details}
+    path = config.reports_dir() / f'{name}_{args.disease}_{getattr(args,"finding",None) or "all"}.json'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2) + '\n')
+    print(json.dumps({k:v for k,v in report.items() if k not in ('states','decisions')}, indent=2))
+    print(f'Queue report: {path}')
+
+
+def run_license_audit(args):
+    """Recheck unrecognized licenses; explicit NC licenses are not overridden."""
+    conn = db.init_db()
+    try:
+        rows = [r for r in _queue_rows(conn,args,['license_rejected']) if r['license_code'] in (None,'none','other')]
+        if args.limit is not None:
+            rows = rows[:args.limit]
+        if args.dry_run:
+            print(f'Would audit {len(rows)} unrecognized licenses')
+            return 0
+        backup = _queue_backup(conn,'license_audit')
+        decisions = []
+        with ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY) as pool:
+            for start in range(0,len(rows),config.VP_EPMC_LICENSE_BATCH):
+                chunk = rows[start:start + config.VP_EPMC_LICENSE_BATCH]
+                for pmcid,outcome in join_licenses([r['pmcid'] for r in chunk],pool):
+                    prior = next(r for r in chunk if r['pmcid']==pmcid)
+                    apply_license(conn,pmcid,outcome)
+                    decisions.append({'pmcid':pmcid,'previous_license':prior['license_code'],**outcome})
+                    conn.commit()
+        _save_queue_report(conn,args,'license_audit',backup_path=backup,decisions=decisions,
+                           audited=len(decisions),recovered=sum(r['status']=='license_ok' for r in decisions))
+        return 0
+    finally:
+        conn.close()
+
+
+def run_resume(args):
+    """Resume persisted queues without repeating retrieval or completed verdicts."""
+    conn = db.init_db()
+    submitted = []
+    client = llm.LLMClient(db_conn=conn,budget_usd=args.budget_usd,
+                           concurrency=min(8,config.VP_P1_CONCURRENCY),timeout_seconds=60)
+    max_requests = args.limit if args.limit is not None else args.max_articles
+    started = time.monotonic()
+    try:
+        licensed = _queue_rows(conn,args,['license_ok'])
+        candidates = _queue_rows(conn,args,['candidate'])
+        if args.dry_run:
+            print(f'Would resume {len(licensed)} licensed articles and up to {len(candidates)} unchecked candidates; max {max_requests} relevance calls')
+            return 0
+        backup = _queue_backup(conn,'queue_resume')
+        # Previous active submissions have no durable verdict and are retryable.
+        for row in licensed:
+            queue_state.record(conn,row['pmcid'],'relevance','queued','resume_pending')
+        conn.commit()
+        retriever = _make_retriever()
+        abstracts = fetch_abstracts(retriever.ns_pmc,[r['pmcid'] for r in licensed[:max_requests]]) if licensed else {}
+
+        def request(row):
+            abstract = abstracts.get(row['pmcid'])
+            if abstract is None:
+                abstract = abstract_for(retriever.ns_pmc,row['pmcid'])
+            with client._lock:
+                queue_state.record(conn,row['pmcid'],'relevance','running','submitted')
+                conn.commit()
+            submitted.append(row['pmcid'])
+            return _p1_request(row['title'] or '',abstract)
+
+        def stop_reason():
+            if time.monotonic() - started >= args.max_runtime_seconds:
+                return 'runtime_limit'
+            if args.budget_usd is not None and client.spent_usd >= args.budget_usd:
+                return 'budget'
+            if len(submitted) >= max_requests:
+                return 'request_limit'
+            return None
+
+        def feed():
+            for row in licensed:
+                reason = stop_reason()
+                if reason:
+                    with client._lock:
+                        for remaining in licensed:
+                            if remaining['pmcid'] not in submitted:
+                                queue_state.record(conn,remaining['pmcid'],'relevance','deferred',reason)
+                        for remaining in candidates:
+                            queue_state.record(conn,remaining['pmcid'],'license','deferred',reason)
+                        conn.commit()
+                    return
+                yield request(row)
+            with ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY) as pool:
+                for start in range(0,len(candidates),20):
+                    reason = stop_reason()
+                    findings = {args.finding} if args.finding else None
+                    if not reason and args.disease != 'all' and not needs_manifestation_licenses(conn,args.disease,findings):
+                        reason = 'manifestation_candidate_target'
+                    if reason:
+                        with client._lock:
+                            for remaining in candidates[start:]:
+                                queue_state.record(conn,remaining['pmcid'],'license','deferred',reason)
+                            conn.commit()
+                        return
+                    chunk = candidates[start:start+20]
+                    outcomes = join_licenses([r['pmcid'] for r in chunk],pool)
+                    accepted = []
+                    with client._lock:
+                        for pmcid,outcome in outcomes:
+                            if apply_license(conn,pmcid,outcome)=='license_ok':
+                                accepted.append(next(r for r in chunk if r['pmcid']==pmcid))
+                        conn.commit()
+                    for row in accepted:
+                        reason = stop_reason()
+                        if reason:
+                            with client._lock:
+                                for remaining in accepted:
+                                    if remaining['pmcid'] not in submitted:
+                                        queue_state.record(conn,remaining['pmcid'],'relevance','deferred',reason)
+                                for remaining in candidates[start+20:]:
+                                    queue_state.record(conn,remaining['pmcid'],'license','deferred',reason)
+                                conn.commit()
+                            return
+                        yield request(row)
+
+        completed = process_relevance(conn,client,feed(),submitted)
+        _save_queue_report(conn,args,'queue_resume',backup_path=backup,
+                           checkpoints=completed,submitted=len(submitted),spent_usd=client.spent_usd)
+        return 1 if completed['errors'] else 0
+    except BaseException as exc:
+        for row in _queue_rows(conn,args,['license_ok','candidate']):
+            state = conn.execute('SELECT status FROM article_queue_state WHERE pmcid=? AND stage=?',
+                                 (row['pmcid'],'relevance' if row['status']=='license_ok' else 'license')).fetchone()
+            if state is None or state['status'] in ('queued','running'):
+                queue_state.record(conn,row['pmcid'],'relevance' if row['status']=='license_ok' else 'license',
+                                   'deferred','interruption' if isinstance(exc,(KeyboardInterrupt,SystemExit)) else 'feed_error',
+                                   error=str(exc))
+        conn.commit()
+        raise
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -1643,6 +1910,12 @@ def run(args) -> int:
             )
             if _in_scope(row)
         }
+        with client._lock:
+            for pmcid in pending_license:
+                queue_state.record(conn, pmcid, 'license', 'queued', 'awaiting_license')
+            for row in conn.execute("SELECT pmcid FROM article_queue_state WHERE stage='relevance' AND status='running'"):
+                queue_state.record(conn, row['pmcid'], 'relevance', 'deferred', 'previous_run_incomplete')
+            conn.commit()
         if pending_license:
             target = (
                 f"; target: {limit} license-passing per disease" if limit else ""
@@ -1732,14 +2005,37 @@ def run(args) -> int:
                     if status_map.get(pmcid) == "candidate" and pmcid not in queued
                 ]
                 queued.update(queue)
+                checked = 0
                 for offset in range(0, len(queue), license_chunk):
-                    if limit is not None and license_ok_counts[key] >= limit:
+                    stop_reason = None
+                    with client._lock:
+                        if args.budget_usd is not None and client.spent_usd >= args.budget_usd:
+                            stop_reason = 'budget'
+                        elif checked >= getattr(args, 'max_articles', 6000):
+                            stop_reason = 'safety_limit'
+                        elif limit is not None and license_ok_counts[key] >= limit and not needs_manifestation_licenses(conn, key):
+                            stop_reason = 'quota'
+                        if stop_reason:
+                            for pmcid in queue[offset:]:
+                                queue_state.record(conn, pmcid, 'license', 'deferred', stop_reason,
+                                                   disease_key=key, license_target=limit)
+                            conn.commit()
+                    if stop_reason:
                         break
+                    checked += len(queue[offset : offset + license_chunk])
                     yield join_licenses(
                         queue[offset : offset + license_chunk], license_pool
                     )
             tail = sorted(pending_license - queued)
             for offset in range(0, len(tail), license_chunk):
+                with client._lock:
+                    stopped = args.budget_usd is not None and client.spent_usd >= args.budget_usd
+                    if stopped:
+                        for pmcid in tail[offset:]:
+                            queue_state.record(conn, pmcid, 'license', 'deferred', 'budget')
+                        conn.commit()
+                if stopped:
+                    break
                 yield join_licenses(
                     tail[offset : offset + license_chunk], license_pool
                 )
@@ -1751,12 +2047,27 @@ def run(args) -> int:
             as its license chunk lands. License DB writes happen here, on
             the calling thread."""
             for row in rows:
+                with client._lock:
+                    if args.budget_usd is not None and client.spent_usd >= args.budget_usd:
+                        for remaining in rows:
+                            if remaining['pmcid'] not in submitted:
+                                queue_state.record(conn, remaining['pmcid'], 'relevance', 'deferred', 'budget')
+                        for remaining in pending_license:
+                            queue_state.record(conn, remaining, 'license', 'deferred', 'budget')
+                        conn.commit()
+                        return
+                    queue_state.record(conn, row['pmcid'], 'relevance', 'running', 'submitted')
+                    conn.commit()
                 submitted.append(row["pmcid"])
                 yield _p1_request(row["title"] or "", abstracts.get(row["pmcid"], ""))
             for chunk in _license_iter():
                 for pmcid, outcome in chunk:
                     license_sources[outcome.get("license_source") or "epmc"] += 1
-                    status = apply_license(conn, pmcid, outcome)
+                    with client._lock:
+                        status = apply_license(conn, pmcid, outcome)
+                        if status == 'license_ok':
+                            queue_state.record(conn, pmcid, 'relevance', 'running', 'submitted')
+                        conn.commit()
                     status_map[pmcid] = status
                     if status != "license_ok":
                         continue
@@ -1764,45 +2075,14 @@ def run(args) -> int:
                         license_ok_counts[key] += 1
                     submitted.append(pmcid)
                     yield _p1_request(_title_for(pmcid), _abstract_for(pmcid))
-                conn.commit()
+                with client._lock:
+                    conn.commit()
 
         budget_hits = 0
         print(f"relevance: {len(rows)} pre-cleared + licensed articles through P1")
-        results = client.call_many(_p1_feed())
-        for index, result in enumerate(results):
-            pmcid = submitted[index]
-            if result.error is not None:
-                if isinstance(result.error, llm.BudgetExceeded):
-                    budget_hits += 1  # stays license_ok; rerun to resume
-                else:
-                    conn.execute(
-                        "UPDATE articles SET error = ?, "
-                        "updated_at = datetime('now') WHERE pmcid = ?",
-                        (str(result.error), pmcid),
-                    )
-                continue
-            parsed = result.parsed or {}
-            keys = [
-                k
-                for k in (parsed.get("primary_disease_keys") or [])
-                if k in PILOT_KEYS
-            ]
-            if _p1_relevant(parsed):
-                apply_relevance(
-                    conn,
-                    pmcid,
-                    "relevant",
-                    parsed.get("reason") or "p1_relevant",
-                    keys,
-                )
-            else:
-                apply_relevance(
-                    conn,
-                    pmcid,
-                    "irrelevant",
-                    parsed.get("reason") or f"p1_{parsed.get('decision')}",
-                    None,
-                )
+        completed = process_relevance(conn, client, _p1_feed(), submitted)
+        budget_hits = completed['budget']
+        print(f"relevance checkpoints: {completed}")
         conn.commit()
         if any(license_sources.values()):
             print(
@@ -1829,6 +2109,11 @@ def run(args) -> int:
     finally:
         if license_pool is not None:
             license_pool.shutdown(wait=True)
+        # A hard interruption leaves a durable reason rather than silently
+        # appearing as an active queue. Completed outcomes are never reset.
+        for pmcid in locals().get('pending_license', set()) | set(locals().get('submitted', [])):
+            conn.execute("UPDATE article_queue_state SET status='deferred',reason='interruption',updated_at=datetime('now') WHERE pmcid=? AND status IN ('running','queued')", (pmcid,))
+        conn.commit()
 
     # ------------------------------------------------------------------
     # 7. Counts checkpoint.

@@ -207,6 +207,20 @@ def reserve_batch(conn, disease_key: str, ranked: list[dict], batch_size: int,
             )
         }
 
+    # Pair ordering replaces the old disease-global order *inside* each lane.
+    # Unknown metadata/semantic failures retain deterministic fallback scores.
+    from . import pair_rank, source_quality
+
+    ranked = [row for row in ranked
+              if not source_quality.quality_signal(row.get("source_metadata"))["retracted"]]
+    lane_ranked = {
+        finding: sorted((row for row in ranked if row["pmcid"] in candidate_sets[finding]),
+                        key=lambda row: pair_rank.sort_key(row, finding), reverse=True)
+        if any(finding in row.get("pair_rankings", {}) for row in ranked)
+        else [row for row in ranked if row["pmcid"] in candidate_sets[finding]]
+        for finding in lanes
+    }
+
     selected: list[dict] = []
     selected_ids: set[str] = set()
     selected_lanes: dict[str, set[str]] = defaultdict(set)
@@ -216,7 +230,7 @@ def reserve_batch(conn, disease_key: str, ranked: list[dict], batch_size: int,
         for finding_key in lanes:
             if finding_key not in remaining_lanes or len(selected) >= capacity:
                 continue
-            candidate = next((row for row in ranked
+            candidate = next((row for row in lane_ranked[finding_key]
                               if row["pmcid"] in candidate_sets[finding_key]), None)
             if candidate is None:
                 remaining_lanes.discard(finding_key)

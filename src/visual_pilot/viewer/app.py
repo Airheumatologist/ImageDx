@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import config, db, representatives
+from .. import config, db, representatives, demographics
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
@@ -380,8 +380,8 @@ def _eye_evidence(conn, disease: str) -> list[dict]:
             break
     return result
 
-# Pediatric is a cross-cutting view: the frontend filters explicit age_group
-# values while each returned panel also keeps its regular clinical_tab/group.
+# Pediatric is a cross-cutting view of source-validated patient age; each
+# returned panel also keeps its regular clinical_tab/group.
 for _tabs in TABS.values():
     _tabs.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
 GENERIC_TABS.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
@@ -517,8 +517,7 @@ def _panel_json(
     if not context and mentions:
         context = str(mentions[0]).strip()
     context = " ".join(context.split())
-    if len(context) > 320:
-        context = context[:317].rsplit(" ", 1)[0] + "…"
+    context_summary = context if len(context) <= 320 else context[:317].rsplit(" ", 1)[0] + "…"
     findings = [f for f in findings if f["source_supported"]]
     shown_label = ", ".join(dict.fromkeys(f["label"] for f in findings))
     article_title = row["article_title"] if "article_title" in row.keys() else None
@@ -531,9 +530,10 @@ def _panel_json(
     article_url = f"https://doi.org/{row['doi']}" if row["doi"] else (
         f"https://pmc.ncbi.nlm.nih.gov/articles/{row['pmcid']}/" if row["pmcid"] else row["source_url"]
     )
-    age_group = _norm(row["age_group"])
-    age_group_supported = _age_group_supported(row["age_group"], source_text)
-    age_group_label = _age_group_label(row["age_group"]) if age_group_supported else "Not stated"
+    age = demographics.resolve_age({"caption": caption, "in_text_mentions": mentions})
+    age_group = age["age_group"]
+    age_group_supported = age_group != "unknown"
+    age_group_label = _age_group_label(age_group) if age_group_supported else "Not stated"
     country = row["study_region"] or (row["article_country"] if "article_country" in row.keys() else None)
     source_variant = {
         "article_title": article_title,
@@ -542,6 +542,9 @@ def _panel_json(
         "license_url": license_url,
         "license_code": row["license_code"],
         "context": context,
+        "context_summary": context_summary,
+        "figure_caption": caption,
+        "age_evidence": age["evidence"],
         "country": country,
         "age_group_label": age_group_label,
         "age_group_metadata_label": _age_group_label(row["age_group"]),
@@ -565,7 +568,7 @@ def _panel_json(
         "sha256": row["sha256"],
         "typicality": row["typicality"],
         "stage": row["stage"],
-        "age_group": row["age_group"],
+        "age_group": age_group,
         "skin_tone": row["skin_tone"],
         "stated_ethnicity": row["stated_ethnicity"],
         "stated_ethnicity_quote": row["stated_ethnicity_quote"],
@@ -585,8 +588,11 @@ def _panel_json(
         "country": country,
         "display_label": shown_label or _caption_label(caption) or row["body_site"] or row["modality"] or "Clinical image",
         "context": context,
+        "context_summary": context_summary,
+        "age_evidence": age["evidence"],
+        "patient_age_years": age["patient_age_years"],
         "age_group_label": age_group_label,
-        "age_group_variants": [row["age_group"]] if row["age_group"] else [],
+        "age_group_variants": [age_group] if age_group_supported else [],
         "pediatric": _is_pediatric(age_group),
         "source_variant": source_variant,
         "source_variants": [source_variant],
@@ -626,21 +632,6 @@ def _age_group_label(age_group) -> str:
         "child": "Child", "children": "Child", "pediatric": "Pediatric",
         "paediatric": "Pediatric", "adolescent": "Adolescent", "infant": "Infant",
     }.get(normalized, age_group or "Unknown")
-
-
-def _age_group_supported(age_group, source_text: str) -> bool:
-    normalized = _norm(age_group)
-    terms = {
-        "child": ("child", "children", "pediatric", "paediatric"),
-        "children": ("child", "children", "pediatric", "paediatric"),
-        "pediatric": ("child", "children", "pediatric", "paediatric"),
-        "paediatric": ("child", "children", "pediatric", "paediatric"),
-        "adolescent": ("adolescent", "teenage", "teenager"),
-        "infant": ("infant", "newborn", "neonate"),
-        "adult": ("adult",),
-        "older_adult": ("older adult", "elderly", "aged"),
-    }.get(normalized, ())
-    return any(term in source_text for term in terms)
 
 
 def _finding_supported(finding: dict, source_text: str, terms: list[str]) -> bool:
@@ -753,6 +744,7 @@ def _exclude_curated(conn, rows: list[sqlite3.Row], panels: list[dict],
             figure = {
                 "label": row["figure_label"],
                 "caption": row["figure_caption"],
+                "in_text_mentions_json": row["in_text_mentions_json"],
                 "triage_json": row["figure_triage_json"] if "figure_triage_json" in row.keys() else None,
                 "vision_json": row["figure_vision_json"] if "figure_vision_json" in row.keys() else None,
                 "effective_license": row["figure_license"] if "figure_license" in row.keys() else None,

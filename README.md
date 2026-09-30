@@ -330,6 +330,28 @@ python3 -m src.visual_pilot.cli report
 python3 -m src.visual_pilot.cli serve --port 8765    # browse the library
 ```
 
+Resume article licensing and relevance without repeating retrieval:
+
+```bash
+python3 -m src.visual_pilot.cli audit-licenses --disease as --finding anterior_uveitis
+python3 -m src.visual_pilot.cli resume-selection --disease as --finding anterior_uveitis \
+  --limit 500 --budget-usd 1 --max-runtime-seconds 900
+```
+
+The audit rechecks unrecognized licenses, using public PMC metadata when Europe
+PMC omits its license field. Explicit noncommercial restrictions stay excluded;
+access failures remain retryable. Both commands back up SQLite and write reports
+under `data/visual_pilot/reports/`. `--dry-run` previews the scope. For
+`resume-selection`, `--limit` caps relevance requests, including retries.
+
+Each completed relevance verdict is saved immediately. `article_queue_state`
+records failures and deferrals for budget, quota, runtime, request limits, or
+interruption. A disease's licensing quota can expand while an undercovered
+manifestation lacks `VP_MANIFESTATION_QUOTA` usable, unparsed candidates;
+articles relevant only to other diseases do not fill that target. This candidate
+target differs from the published-image target. Completed article verdicts are
+preserved on resume, and licensing can resume as the candidate pool is processed.
+
 See `src/visual_pilot/README.md` for stage details, env vars, and stage-0
 findings.
 

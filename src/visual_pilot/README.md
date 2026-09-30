@@ -110,7 +110,60 @@ Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
 `VP_MANIFESTATION_QUOTA` (default 20), `VP_DATA_DIR`. Provider keys come from `.env`
 (`OPENROUTER_API_KEY`, `DEEPINFRA_API_KEY`, `TURBOPUFFER_API_KEY`) via
 `config.py`; the primary LLM provider is OpenRouter (`VP_LLM_PROVIDER=openrouter`),
-while DeepInfra is used only for query embeddings.
+while DeepInfra supplies query and pair-ranking embeddings.
+
+## Disease–manifestation ranking and Europe PMC source signals
+
+The parser reserves candidates using a separate score for every actual
+`(disease_key, finding_key, pmcid)` lane. Caption peeks are allocated round-robin
+across deficit lanes before filling spare slots by global visual-yield rank.
+The normal bound is `min(batch_size * 2, 100)` articles, plus the existing
+licensed caption-rescue lane (up to `VP_CAPTION_RESCUE_PEEK`, default 50).
+Candidates beyond that bound receive explicitly reported lexical fallback
+scores. Setting `peek_captions=False` performs no new source or semantic calls.
+
+Eligible captions explicitly showing the disease and manifestation in the
+same sentence/panel receive the highest evidence tier. Separate labeled panels
+do not establish that relationship. Within each tier, real cosine similarity
+between the disease–manifestation query and actual article title, abstract,
+retrieved passages and eligible captions provides semantic reranking using
+`EMBEDDING_MODEL` (default `BAAI/bge-m3`). Retrieval query strings are excluded
+from article text. Embedding responses are cached by model and text hash;
+provider failure, missing credentials, disabled semantics and candidates
+outside the shortlist have recorded fallback reasons. These scores prioritize
+review work; the existing figure licensing, patient-age and publication gates
+still decide whether an image can be published.
+
+Only the bounded shortlist is refreshed from Europe PMC `searchPOST` core
+records. `article_source_metadata` caches journal title/abbreviation/ISSN,
+publication types/date, citation count, and retraction evidence for seven days.
+Known cached retractions are excluded even outside the refresh shortlist;
+positive retraction publication types or correction links also exclude new
+candidates. `not_flagged` means Europe PMC has not flagged a retraction, not a
+guarantee that none exists. A failed refresh retains previous metadata and its
+known retraction flags, while missing/failed records are retried next time.
+
+Citation impact uses bounded `log1p(citations / publication_age_years) / 3`
+(maximum 2 points, age floored at one year), plus a 0.25-point Review preference.
+Missing dates/counts contribute no citation points. This is age-adjusted
+Europe PMC citation coverage, **not field/year-normalized impact**. Europe PMC
+does not supply journal impact factors or a journal reputation score in core
+records. Journal identity therefore receives no automatic prestige score.
+An explicit editorial preference can be configured by ISSN with
+`VP_JOURNAL_PREFERENCES='{"1234-5678":0.75}'`; each weight is clamped to 0–1,
+and the default `{}` gives no journal preference. All source terms are secondary
+and cannot lift a generic paper above an explicit pair-image evidence tier.
+
+`article_pair_rankings.scoring_json` records the evidence tier, individual score
+components, semantic model/status/query, cosine similarity, source metadata,
+timestamp and impact limitations. `ranking_embeddings` stores successful
+vectors. Set `VP_PAIR_SEMANTIC_RERANK=0` to disable semantic calls, and
+`VP_RANK_METADATA_TTL_DAYS` to adjust the metadata freshness interval.
+
+Supported fields and citation coverage are described in the official
+[Europe PMC REST API](https://europepmc.org/RestfulWebService),
+[core-field reference](https://europepmc.org/docs/EBI_Europe_PMC_Web_Service_Reference.pdf),
+and [citation-count help](https://europepmc.org/help).
 
 ## Whole-figure plates and coverage targets
 

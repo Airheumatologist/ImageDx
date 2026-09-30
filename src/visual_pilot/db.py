@@ -66,6 +66,29 @@ CREATE TABLE IF NOT EXISTS articles (
     updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS article_source_metadata (
+    pmcid TEXT PRIMARY KEY REFERENCES articles(pmcid),
+    source TEXT NOT NULL,
+    metadata_json TEXT NOT NULL,
+    fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS article_pair_rankings (
+    disease_key TEXT NOT NULL,
+    finding_key TEXT NOT NULL,
+    pmcid TEXT NOT NULL REFERENCES articles(pmcid),
+    scoring_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (disease_key, finding_key, pmcid)
+);
+
+CREATE TABLE IF NOT EXISTS ranking_embeddings (
+    cache_key TEXT PRIMARY KEY,
+    model TEXT NOT NULL,
+    vector_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS figures (
     figure_id            TEXT PRIMARY KEY,
     pmcid                TEXT NOT NULL REFERENCES articles(pmcid),
@@ -219,6 +242,16 @@ CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pending
     ON manifestation_candidates(disease_key, finding_key, status, best_rank);
 CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pmcid
     ON manifestation_candidates(pmcid, status);
+
+CREATE TABLE IF NOT EXISTS article_queue_state (
+    pmcid TEXT NOT NULL REFERENCES articles(pmcid),
+    stage TEXT NOT NULL,
+    status TEXT NOT NULL,
+    reason TEXT,
+    details_json TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (pmcid, stage)
+);
 """
 
 _PK_COLUMNS = {
