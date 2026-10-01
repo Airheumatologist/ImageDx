@@ -47,10 +47,12 @@ def test_multi_query_projection_limits_order_and_finding_provenance(monkeypatch)
         ["disease synonym"],
         [{
             "query": "disease rash clinical photograph",
+            "disease_key": "d1",
             "finding_key": "erythema",
             "finding": "erythema",
             "modality": "clinical photograph",
         }],
+        disease_key="d1",
         billing_counters=counters,
     )
 
@@ -67,6 +69,7 @@ def test_multi_query_projection_limits_order_and_finding_provenance(monkeypatch)
     assert "abstract" not in queries[1]["include_attributes"]
     assert list(result) == ["PMC0", "PMC1", "PMC2"]
     assert result["PMC2"]["manifestation_candidates"] == [{
+        "disease_key": "d1",
         "finding_key": "erythema",
         "pmcid": "PMC2",
         "query": "disease rash clinical photograph",
@@ -74,6 +77,10 @@ def test_multi_query_projection_limits_order_and_finding_provenance(monkeypatch)
         "retrieval_score": 1 / (select_articles.RRF_K + 1),
     }]
     assert result["PMC2"]["matched_passages"][0]["finding_key"] == "erythema"
+    assert result["PMC2"]["matched_passages"][0]["disease_key"] == "d1"
+    # Synonym-bucket passages keep disease context without a finding pair.
+    assert result["PMC1"]["matched_passages"][0]["disease_key"] == "d1"
+    assert result["PMC1"]["matched_passages"][0]["finding_key"] == ""
     assert counters == {
         "requests": 1,
         "queries": 3,
@@ -123,6 +130,8 @@ def test_metadata_hydration_batches_unique_pmcs_and_candidate_upsert_keeps_best_
     conn.execute("""CREATE TABLE manifestation_candidates (
         disease_key TEXT, finding_key TEXT, pmcid TEXT, query TEXT,
         best_rank INTEGER, retrieval_score REAL, status TEXT DEFAULT 'pending',
+        provenance_status TEXT NOT NULL DEFAULT 'unresolved',
+        provenance_disease_key TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(disease_key, finding_key, pmcid))""")
     records = [{
@@ -131,12 +140,17 @@ def test_metadata_hydration_batches_unique_pmcs_and_candidate_upsert_keeps_best_
     }, {
         "disease_key": "ra", "finding_key": "erythema", "pmcid": "PMC1",
         "query": "worse", "best_rank": 4, "retrieval_score": 1 / 64,
+    }, {
+        # No disease provenance: never written as a pair candidate.
+        "finding_key": "erythema", "pmcid": "PMC1",
+        "query": "unscoped", "best_rank": 1, "retrieval_score": 1 / 61,
     }]
     assert select_articles.upsert_manifestation_candidates(conn, records) == 2
     row = conn.execute(
-        "SELECT finding_key, query, best_rank, status FROM manifestation_candidates"
+        "SELECT finding_key, query, best_rank, status, provenance_status, "
+        "provenance_disease_key FROM manifestation_candidates"
     ).fetchone()
-    assert row == ("erythema", "better", 2, "pending")
+    assert row == ("erythema", "better", 2, "pending", "explicit", "ra")
 
 
 def test_weighted_rrf_is_deterministic_and_deduplicates_per_list():

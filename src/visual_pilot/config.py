@@ -112,9 +112,53 @@ VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
 VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 0))
 # Per-finding candidate reservation quota when --limit caps stage-2 articles.
 VP_MANIFESTATION_QUOTA = max(0, _env_int("VP_MANIFESTATION_QUOTA", 20))
-# Distinct published images targeted per approved (disease, finding) pair.
-# A pair's lane is "covered" only once it reaches this count (W4).
-VP_FINDING_IMAGE_TARGET = max(1, _env_int("VP_FINDING_IMAGE_TARGET", 10))
+# Per-pair gallery coverage band for the balanced pair search. FLOOR is the
+# minimum distinct published images a (disease, finding) lane must retain,
+# TARGET is the coverage goal at which a lane counts as covered, and
+# GALLERY_CAP bounds only the published gallery; every eligible surplus image
+# remains stored as an uncapped reserve. Unlike the clamped VP_* ints above,
+# malformed values raise instead of silently falling back.
+def _coverage_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer") from None
+
+
+VP_FINDING_IMAGE_FLOOR = _coverage_int("VP_FINDING_IMAGE_FLOOR", 3)
+VP_FINDING_IMAGE_TARGET = _coverage_int("VP_FINDING_IMAGE_TARGET", 10)
+VP_FINDING_GALLERY_CAP = _coverage_int("VP_FINDING_GALLERY_CAP", 20)
+
+
+def validate_coverage_settings() -> tuple[int, int, int]:
+    if not (
+        1
+        <= VP_FINDING_IMAGE_FLOOR
+        <= VP_FINDING_IMAGE_TARGET
+        <= VP_FINDING_GALLERY_CAP
+    ):
+        raise ValueError(
+            "Coverage settings must satisfy 1 <= VP_FINDING_IMAGE_FLOOR "
+            "<= VP_FINDING_IMAGE_TARGET <= VP_FINDING_GALLERY_CAP"
+        )
+    return (
+        VP_FINDING_IMAGE_FLOOR,
+        VP_FINDING_IMAGE_TARGET,
+        VP_FINDING_GALLERY_CAP,
+    )
+
+
+validate_coverage_settings()
+
+# Balanced pair-search policy identity and schedule. These are fixed by the
+# policy and deliberately not env-overridable; policy_version is recorded on
+# every pair_search_attempts row and lanes' search_policy_version.
+PAIR_SEARCH_POLICY_VERSION = "balanced-pair-search.v1"
+PAIR_SEARCH_DEPTHS = (300, 600, 1200)
+PAIR_SEARCH_VARIANTS_PER_ROUND = 6
 # Persisted-candidate caption rescue lane (W6): top-N candidate rows peeked
 # per batch (0 disables) and confirming captions required for those rescues.
 VP_CAPTION_RESCUE_PEEK = max(0, _env_int("VP_CAPTION_RESCUE_PEEK", 50))

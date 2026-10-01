@@ -2,37 +2,40 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
-
 from . import config, db
 
 
 def published_coverage(conn, disease_key: str) -> dict[str, int]:
-    """Count distinct published images per finding for one disease.
+    """Distinct *published* gallery images per approved finding.
 
-    Two panel rows sharing a sha256 count once; rows with an empty sha256
-    fall back to their panel_id so they still count individually.
+    Delegates to the frozen gallery snapshot so coverage counts the same
+    grouped representatives the viewer publishes — eligible reserves and
+    duplicate aliases never inflate a lane's count. Every approved pair is
+    present, including empty ones.
     """
-    images: dict[str, set[str]] = defaultdict(set)
-    for row in conn.execute(
-        "SELECT panel_id, sha256, findings_json FROM published_panels WHERE disease_key=?",
-        (disease_key,),
-    ):
-        image = row["sha256"] or row["panel_id"]
-        for value in db.from_json(row["findings_json"], []) or []:
-            key = value.get("finding_key") if isinstance(value, dict) else value
-            if key:
-                images[str(key)].add(image)
-    return {key: len(ids) for key, ids in images.items()}
+    from . import gallery
+
+    snapshot = gallery.coverage_snapshot(conn, disease_key)
+    return {
+        finding_key: int(record.get("published_distinct") or 0)
+        for finding_key, record in (snapshot.get(disease_key) or {}).items()
+    }
 
 
 def sync_candidates(conn, disease_key: str) -> dict[str, int]:
     """Refresh lane definitions and import finding-keyed retrieval evidence.
 
-    Returns ``{finding_key: count}`` for findings under the per-pair image
-    target (config.VP_FINDING_IMAGE_TARGET), zero included.
+    Only evidence carrying explicit ``disease_key`` provenance activates a
+    lane candidate — legacy ambiguous rows stay retained but unresolved and
+    are never inferred from query text or article membership. Lane status is
+    ``covered`` only at the published-gallery cap; tiers between target and
+    cap remain open as expanding. Returns ``{finding_key:
+    published_distinct}`` for findings under the cap, zero included.
     """
-    target = config.VP_FINDING_IMAGE_TARGET
+    from . import coverage as coverage_mod
+
+    _floor, _target, cap = config.validate_coverage_settings()
+    policy_version = config.PAIR_SEARCH_POLICY_VERSION
     vocab = {
         row["finding_key"]: set(db.from_json(row["disease_keys_json"], []) or [])
         for row in conn.execute(
@@ -41,25 +44,62 @@ def sync_candidates(conn, disease_key: str) -> dict[str, int]:
     }
     coverage = published_coverage(conn, disease_key)
     findings = sorted(key for key, diseases in vocab.items() if disease_key in diseases)
+    lanes = {
+        row["finding_key"]: dict(row)
+        for row in conn.execute(
+            "SELECT * FROM manifestation_lanes WHERE disease_key=?", (disease_key,)
+        )
+    }
     for finding_key in findings:
-        covered = coverage.get(finding_key, 0) >= target
+        count = coverage.get(finding_key, 0)
+        status = "covered" if count >= cap else "open"
+        outcome = "published_panel_exists" if status == "covered" else None
+        tier = coverage_mod.coverage_tier(count)
+        lane = lanes.get(finding_key)
+        if lane is None:
+            conn.execute(
+                "INSERT INTO manifestation_lanes"
+                "(disease_key,finding_key,status,last_outcome,tier,"
+                " last_published_distinct,search_policy_version) "
+                "VALUES(?,?,?,?,?,?,?)",
+                (disease_key, finding_key, status, outcome, tier, count,
+                 policy_version),
+            )
+            continue
+        # A search plan exhausted under an older policy version reopens;
+        # other persisted blocks (paused/exhausted) survive the refresh.
+        blocked = lane.get("blocked_reason")
+        if blocked == "search_plan_exhausted" and (
+            lane.get("search_policy_version") or ""
+        ) != policy_version:
+            blocked = None
+        # last_published_distinct tracks the CURRENT count (a curation drop
+        # reopens the lane); the reduction timestamp only moves forward.
+        prior_count = int(lane.get("last_published_distinct") or 0)
+        last_published, reduced_at = count, count > prior_count
         conn.execute(
-            "INSERT INTO manifestation_lanes(disease_key,finding_key,status,last_outcome) "
-            "VALUES(?,?,?,?) ON CONFLICT(disease_key,finding_key) DO UPDATE SET "
-            "status=excluded.status,last_outcome=CASE WHEN excluded.status='covered' "
-            "THEN 'published_panel_exists' ELSE manifestation_lanes.last_outcome END, "
-            "updated_at=datetime('now')",
-            (disease_key, finding_key, "covered" if covered else "open",
-             "published_panel_exists" if covered else None),
+            "UPDATE manifestation_lanes SET status=?, "
+            "last_outcome=CASE WHEN ?='covered' THEN 'published_panel_exists' "
+            "ELSE last_outcome END, tier=?, last_published_distinct=?, "
+            "last_deficit_reduction_at=CASE WHEN ? THEN datetime('now') "
+            "ELSE last_deficit_reduction_at END, blocked_reason=?, "
+            "updated_at=datetime('now') "
+            "WHERE disease_key=? AND finding_key=?",
+            (
+                status, status, tier, last_published, reduced_at, blocked,
+                disease_key, finding_key,
+            ),
         )
 
     for finding_key, n_panels in coverage.items():
-        if n_panels >= target:
+        if n_panels >= cap:
             conn.execute(
                 "UPDATE manifestation_candidates SET status='covered',last_outcome='published_panel_exists', "
-                "updated_at=datetime('now') WHERE disease_key=? AND finding_key=?",
+                "updated_at=datetime('now') WHERE disease_key=? AND finding_key=? "
+                "AND provenance_status='explicit'",
                 (disease_key, finding_key),
             )
+
     for article in conn.execute(
         "SELECT pmcid,retrieval_score,retrieval_evidence_json FROM articles"
     ):
@@ -67,6 +107,10 @@ def sync_candidates(conn, disease_key: str) -> dict[str, int]:
         best: dict[str, tuple[int | None, str | None, float | None]] = {}
         for item in evidence:
             if not isinstance(item, dict):
+                continue
+            # Explicit pair provenance only; legacy items without a disease
+            # key stay unresolved rather than activating this disease's lane.
+            if str(item.get("disease_key") or "") != disease_key:
                 continue
             finding_key = str(item.get("finding_key") or "")
             if not finding_key or disease_key not in vocab.get(finding_key, set()):
@@ -87,19 +131,17 @@ def sync_candidates(conn, disease_key: str) -> dict[str, int]:
             ) or (rank == prior[0] and (score or 0) > (prior[2] or 0)):
                 best[finding_key] = (rank, item.get("query"), score)
         for finding_key, (rank, query, score) in best.items():
-            if coverage.get(finding_key, 0) >= target:
+            if coverage.get(finding_key, 0) >= cap:
                 status = "covered"
                 outcome = "published_panel_exists"
-            elif rank is not None or query or score is not None:
-                status = "pending"
-                outcome = None
             else:
                 status = "pending"
                 outcome = None
             conn.execute(
                 "INSERT INTO manifestation_candidates "
-                "(disease_key,finding_key,pmcid,query,best_rank,retrieval_score,status,last_outcome) "
-                "VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(disease_key,finding_key,pmcid) "
+                "(disease_key,finding_key,pmcid,query,best_rank,retrieval_score,status,last_outcome,"
+                "provenance_status,provenance_disease_key) "
+                "VALUES(?,?,?,?,?,?,?,?,'explicit',?) ON CONFLICT(disease_key,finding_key,pmcid) "
                 "DO UPDATE SET query=COALESCE(excluded.query,manifestation_candidates.query), "
                 "best_rank=CASE WHEN excluded.best_rank IS NULL THEN manifestation_candidates.best_rank "
                 "WHEN manifestation_candidates.best_rank IS NULL THEN excluded.best_rank "
@@ -108,177 +150,216 @@ def sync_candidates(conn, disease_key: str) -> dict[str, int]:
                 "COALESCE(excluded.retrieval_score,0)), "
                 "status=CASE WHEN manifestation_candidates.status IN ('parsed','parse_error','covered') "
                 "THEN manifestation_candidates.status ELSE excluded.status END, "
+                "provenance_status='explicit', "
+                "provenance_disease_key=excluded.provenance_disease_key, "
                 "updated_at=datetime('now')",
-                (disease_key, finding_key, article["pmcid"], query, rank, score, status, outcome),
+                (disease_key, finding_key, article["pmcid"], query, rank, score, status, outcome,
+                 disease_key),
             )
 
-    # Under-target findings reopen their 'covered' candidates first, so the
+    # Under-cap findings reopen their 'covered' candidates first, so the
     # durable-outcome updates below still re-terminate parsed/errored rows.
     for finding_key in findings:
-        if coverage.get(finding_key, 0) >= target:
+        if coverage.get(finding_key, 0) >= cap:
             continue
         conn.execute(
             "UPDATE manifestation_candidates SET status='pending', "
-            "last_outcome='reopened_below_target', updated_at=datetime('now') "
-            "WHERE disease_key=? AND finding_key=? AND status='covered'",
+            "last_outcome='reopened_below_cap', updated_at=datetime('now') "
+            "WHERE disease_key=? AND finding_key=? AND status='covered' "
+            "AND provenance_status='explicit'",
             (disease_key, finding_key),
         )
 
-    # Reflect durable article outcomes, and retire lanes whose candidate pool
-    # contains no article that can be selected by the current parser.
+    # Reflect durable article outcomes on explicit candidates only —
+    # unresolved legacy rows stay retained and untouched, never reset.
     conn.execute(
         "UPDATE manifestation_candidates SET status='parsed',last_outcome='article_already_parsed', "
-        "updated_at=datetime('now') WHERE disease_key=? AND pmcid IN "
+        "updated_at=datetime('now') WHERE disease_key=? AND provenance_status='explicit' "
+        "AND pmcid IN "
         "(SELECT pmcid FROM articles WHERE status='parsed') AND status NOT IN ('covered')",
         (disease_key,),
     )
     conn.execute(
         "UPDATE manifestation_candidates SET status='parse_error',last_outcome='article_parse_error', "
-        "updated_at=datetime('now') WHERE disease_key=? AND pmcid IN "
+        "updated_at=datetime('now') WHERE disease_key=? AND provenance_status='explicit' AND pmcid IN "
         "(SELECT pmcid FROM articles WHERE status='parse_error') AND status NOT IN ('covered')",
         (disease_key,),
     )
     for article_status in ("license_rejected", "irrelevant"):
         conn.execute(
             "UPDATE manifestation_candidates SET status='exhausted',last_outcome=?, "
-            "updated_at=datetime('now') WHERE disease_key=? AND pmcid IN "
+            "updated_at=datetime('now') WHERE disease_key=? AND provenance_status='explicit' "
+            "AND pmcid IN "
             "(SELECT pmcid FROM articles WHERE status=?) "
             "AND status NOT IN ('covered','parsed','parse_error')",
             (f"article_{article_status}", disease_key, article_status),
         )
-    for finding_key in findings:
-        if coverage.get(finding_key, 0) >= target:
-            continue
-        eligible = conn.execute(
-            "SELECT COUNT(*) n FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
+    # A relevant article whose primary disease keys form a NON-EMPTY set
+    # lacking this pair's disease can never satisfy the lane — terminate it.
+    # A NULL/empty set is unlabeled (attribution not yet recorded), not an
+    # affirmative exclusion, so it does not terminate the candidate.
+    conn.execute(
+        "UPDATE manifestation_candidates SET status='exhausted', "
+        "last_outcome='article_other_disease', updated_at=datetime('now') "
+        "WHERE disease_key=? AND provenance_status='explicit' "
+        "AND status IN ('pending','selected') AND pmcid IN "
+        "(SELECT pmcid FROM articles WHERE status='relevant' "
+        "AND EXISTS (SELECT 1 FROM json_each(primary_disease_keys_json)) "
+        "AND NOT EXISTS "
+        "(SELECT 1 FROM json_each(primary_disease_keys_json) WHERE value=?))",
+        (disease_key, disease_key),
+    )
+    conn.commit()
+    return {
+        key: coverage.get(key, 0)
+        for key in findings
+        if coverage.get(key, 0) < cap
+    }
+
+
+def actionable_lanes(snapshot, disease_keys=None) -> list[dict]:
+    """Global deficit-first lane order from the settled scheduling policy."""
+    from . import scheduling_policy
+
+    return scheduling_policy.actionable_lanes(snapshot, disease_keys)
+
+
+def _lane_pool(conn, disease_key: str, finding_key: str, ranked: list[dict]) -> list[dict]:
+    """Relevant, explicitly-provenanced candidates for one lane, pair-ranked."""
+    candidate_ids = {
+        row["pmcid"]
+        for row in conn.execute(
+            "SELECT mc.pmcid FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
             "WHERE mc.disease_key=? AND mc.finding_key=? AND a.status='relevant' "
-            "AND mc.status IN ('pending','selected')",
-            (disease_key, finding_key),
+            "AND mc.status IN ('pending','selected') "
+            "AND mc.provenance_status='explicit' "
+            "AND mc.provenance_disease_key=mc.disease_key "
+            # A non-empty primary-disease set that lacks this disease is an
+            # affirmative exclusion; NULL/empty is unlabeled, not an
+            # exclusion, so it does not disqualify the pair. Explicit pair
+            # provenance stays strictly required either way.
+            "AND (NOT EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json)) "
+            "OR EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) "
+            "WHERE value=?))",
+            (disease_key, finding_key, disease_key),
+        )
+    }
+    rows = [row for row in ranked if row["pmcid"] in candidate_ids]
+    # Pair ordering replaces the old disease-global order *inside* each lane.
+    if any(finding_key in (row.get("pair_rankings") or {}) for row in rows):
+        from . import pair_rank
+
+        rows = sorted(
+            rows, key=lambda row: pair_rank.sort_key(row, finding_key),
+            reverse=True,
+        )
+    return rows
+
+
+def _persist_global_reservation(conn, selected: list[dict]) -> None:
+    """Mark served candidates/lanes; shared articles advance every lane.
+
+    Each chosen article gets the next global service sequence, applied to
+    every lane it serves, so batch-size-one calls and cross-run fairness
+    share one durable ordering.
+    """
+    for row in selected:
+        sequence = conn.execute(
+            "SELECT COALESCE(MAX(last_served_sequence), 0) + 1 AS n "
+            "FROM manifestation_lanes"
         ).fetchone()["n"]
-        if not eligible:
+        pmcid = row["pmcid"]
+        for disease_key, finding_key in row.get("service_pairs") or []:
             conn.execute(
-                "UPDATE manifestation_lanes SET status='exhausted', "
-                "last_outcome=CASE WHEN EXISTS (SELECT 1 FROM manifestation_candidates mc "
-                "WHERE mc.disease_key=? AND mc.finding_key=?) THEN 'all_candidates_terminal' "
-                "ELSE 'no_retrieved_candidates' END, updated_at=datetime('now') "
-                "WHERE disease_key=? AND finding_key=? AND status!='covered'",
-                (disease_key, finding_key, disease_key, finding_key),
+                "UPDATE manifestation_candidates SET status='selected', "
+                "last_outcome='selected_for_lane', updated_at=datetime('now') "
+                "WHERE disease_key=? AND finding_key=? AND pmcid=? "
+                "AND status IN ('pending','selected') "
+                "AND provenance_status='explicit'",
+                (disease_key, finding_key, pmcid),
             )
-        else:
             conn.execute(
-                "UPDATE manifestation_lanes SET status='open',last_outcome=COALESCE(last_outcome,'candidates_available'), "
-                "updated_at=datetime('now') WHERE disease_key=? AND finding_key=? AND status!='covered'",
-                (disease_key, finding_key),
+                "UPDATE manifestation_lanes SET status='open', "
+                "last_outcome='batch_reserved', last_served_sequence=?, "
+                "selected_count=selected_count+1, updated_at=datetime('now') "
+                "WHERE disease_key=? AND finding_key=?",
+                (sequence, disease_key, finding_key),
             )
     conn.commit()
-    return {key: coverage.get(key, 0) for key in findings if coverage.get(key, 0) < target}
+
+
+def reserve_global_batch(
+    conn,
+    ranked_by_disease: dict[str, list[dict]],
+    batch_size: int,
+    *,
+    persist: bool = True,
+    disease_keys=None,
+    snapshot=None,
+) -> list[dict]:
+    """Reserve one global batch across the highest-tier actionable lanes.
+
+    Candidate pools contain only relevant articles whose lane candidate rows
+    carry explicit provenance matching the pair's disease. A shared PMCID
+    consumes one slot and serves every matching lane; spare capacity is
+    never filled with articles unrelated to an actionable lane.
+    """
+    from . import gallery, scheduling_policy, source_quality
+
+    capacity = max(0, int(batch_size))
+    if not capacity:
+        return []
+    snapshot = snapshot if snapshot is not None else gallery.coverage_snapshot(conn)
+    lanes = scheduling_policy.actionable_lanes(snapshot, disease_keys)
+    if not lanes:
+        return []
+    pools: dict[tuple[str, str], list[dict]] = {}
+    for lane in lanes:
+        disease_key, finding_key = lane["disease_key"], lane["finding_key"]
+        ranked = [
+            row for row in (ranked_by_disease.get(disease_key) or [])
+            if not source_quality.quality_signal(row.get("source_metadata"))["retracted"]
+        ]
+        pool = _lane_pool(conn, disease_key, finding_key, ranked)
+        if pool:
+            pools[(disease_key, finding_key)] = pool
+    selected = scheduling_policy.reserve_plan(lanes, pools, capacity)
+    if persist and selected:
+        _persist_global_reservation(conn, selected)
+    return selected
 
 
 def reserve_batch(conn, disease_key: str, ranked: list[dict], batch_size: int,
-                  uncovered: set[str] | dict[str, int], *, persist: bool = True) -> list[dict]:
-    """Reserve lane slots round-robin, then fill spare capacity globally.
+                  uncovered: set[str] | dict[str, int] | None, *, persist: bool = True) -> list[dict]:
+    """Single-disease compatibility wrapper over the global reservation.
 
-    ``uncovered`` is a set of under-target findings or the
+    ``uncovered`` is a set of under-cap findings or the
     ``{finding_key: count}`` dict from ``sync_candidates``/``coverage_gaps``;
-    with a dict, thinnest lanes reserve first. An article appearing in several
-    finding queues occupies one batch slot and marks each matching lane
-    candidate selected, so it can advance several lanes without being parsed
-    twice.
+    it scopes which of the disease's actionable lanes may reserve. Spare
+    capacity is never filled with articles unrelated to an actionable lane.
     """
+    from . import gallery, scheduling_policy, source_quality
+
     capacity = max(0, int(batch_size))
-    if not capacity or not ranked:
+    if not capacity:
         return []
-    if isinstance(uncovered, dict):
-        lanes = [
-            key for key, _count in sorted(
-                uncovered.items(), key=lambda item: (item[1], item[0])
-            )
-        ]
-    else:
-        lanes = sorted(uncovered)
-    candidate_sets: dict[str, set[str]] = {}
-    for finding_key in lanes:
-        candidate_sets[finding_key] = {
-            row["pmcid"] for row in conn.execute(
-                "SELECT mc.pmcid FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
-                "WHERE mc.disease_key=? AND mc.finding_key=? AND a.status='relevant' "
-                "AND mc.status IN ('pending','selected','exhausted')",
-                (disease_key, finding_key),
-            )
-        }
-
-    # Pair ordering replaces the old disease-global order *inside* each lane.
-    # Unknown metadata/semantic failures retain deterministic fallback scores.
-    from . import pair_rank, source_quality
-
-    ranked = [row for row in ranked
-              if not source_quality.quality_signal(row.get("source_metadata"))["retracted"]]
-    lane_ranked = {
-        finding: sorted((row for row in ranked if row["pmcid"] in candidate_sets[finding]),
-                        key=lambda row: pair_rank.sort_key(row, finding), reverse=True)
-        if any(finding in row.get("pair_rankings", {}) for row in ranked)
-        else [row for row in ranked if row["pmcid"] in candidate_sets[finding]]
-        for finding in lanes
-    }
-
-    selected: list[dict] = []
-    selected_ids: set[str] = set()
-    selected_lanes: dict[str, set[str]] = defaultdict(set)
-    remaining_lanes = set(lanes)
-    while len(selected) < capacity and remaining_lanes:
-        progressed = False
-        for finding_key in lanes:
-            if finding_key not in remaining_lanes or len(selected) >= capacity:
-                continue
-            candidate = next((row for row in lane_ranked[finding_key]
-                              if row["pmcid"] in candidate_sets[finding_key]), None)
-            if candidate is None:
-                remaining_lanes.discard(finding_key)
-                continue
-            pmcid = candidate["pmcid"]
-            if pmcid in selected_ids:
-                selected_lanes[pmcid].add(finding_key)
-                remaining_lanes.discard(finding_key)
-                progressed = True
-                continue
-            selected.append(candidate)
-            selected_ids.add(pmcid)
-            selected_lanes[pmcid].add(finding_key)
-            # One slot satisfies this lane's first-turn reservation; later
-            # turns can allocate further articles if batch capacity remains.
-            candidate_sets[finding_key].discard(pmcid)
-            progressed = True
-        if not progressed:
-            break
-
-    # Fill unused slots with the existing global ranking, preserving its
-    # caption peek, rescue rules, and tie-break behavior.
-    for row in ranked:
-        if len(selected) >= capacity:
-            break
-        if row["pmcid"] not in selected_ids:
-            selected.append(row)
-            selected_ids.add(row["pmcid"])
-
-    if persist and selected_ids:
-        for pmcid in selected_ids:
-            conn.execute(
-                "UPDATE manifestation_candidates SET status='selected', "
-                "last_outcome=CASE WHEN finding_key IN (%s) THEN 'selected_for_lane' "
-                "ELSE 'shared_article_selected' END, updated_at=datetime('now') "
-                "WHERE disease_key=? AND pmcid=? AND status IN ('pending','selected','exhausted')"
-                % (",".join("?" for _ in lanes) or "NULL"),
-                (*lanes, disease_key, pmcid),
-            )
-        for finding_key in lanes:
-            if any(finding_key in selected_lanes[p] for p in selected_ids):
-                conn.execute(
-                    "UPDATE manifestation_lanes SET status='open',last_outcome='batch_reserved', "
-                    "selected_count=selected_count+1,updated_at=datetime('now') "
-                    "WHERE disease_key=? AND finding_key=?",
-                    (disease_key, finding_key),
-                )
-        conn.commit()
+    snapshot = gallery.coverage_snapshot(conn)
+    lanes = actionable_lanes(snapshot, [disease_key])
+    if uncovered is not None:
+        wanted = set(uncovered)
+        lanes = [lane for lane in lanes if lane["finding_key"] in wanted]
+    clean = [
+        row for row in ranked
+        if not source_quality.quality_signal(row.get("source_metadata"))["retracted"]
+    ]
+    pools: dict[tuple[str, str], list[dict]] = {}
+    for lane in lanes:
+        pool = _lane_pool(conn, disease_key, lane["finding_key"], clean)
+        if pool:
+            pools[(disease_key, lane["finding_key"])] = pool
+    selected = scheduling_policy.reserve_plan(lanes, pools, capacity)
+    if persist and selected:
+        _persist_global_reservation(conn, selected)
     return selected
 
 
@@ -287,7 +368,7 @@ def record_article_outcome(conn, pmcid: str, outcome: str) -> None:
     status = "parsed" if outcome == "parsed" else "parse_error" if outcome == "parse_error" else "pending"
     conn.execute(
         "UPDATE manifestation_candidates SET status=?,last_outcome=?,updated_at=datetime('now') "
-        "WHERE pmcid=? AND status!='covered'",
+        "WHERE pmcid=? AND status!='covered' AND provenance_status='explicit'",
         (status, f"article_{outcome}", pmcid),
     )
     conn.commit()
@@ -295,18 +376,20 @@ def record_article_outcome(conn, pmcid: str, outcome: str) -> None:
 
 def record_published_outcomes(conn, disease_key: str) -> None:
     """Mark finding lanes covered from the publication view after store."""
+    _floor, _target, cap = config.validate_coverage_settings()
     coverage = published_coverage(conn, disease_key)
     for finding_key, count in coverage.items():
-        if count < config.VP_FINDING_IMAGE_TARGET:
+        if count < cap:
             continue
         conn.execute(
             "UPDATE manifestation_candidates SET status='covered',last_outcome='published_panel_created', "
-            "updated_at=datetime('now') WHERE disease_key=? AND finding_key=?",
+            "updated_at=datetime('now') WHERE disease_key=? AND finding_key=? "
+            "AND provenance_status='explicit'",
             (disease_key, finding_key),
         )
         conn.execute(
             "UPDATE manifestation_lanes SET status='covered',last_outcome='published_panel_created', "
-            "updated_at=datetime('now') WHERE disease_key=? AND finding_key=?",
+            "tier='full',updated_at=datetime('now') WHERE disease_key=? AND finding_key=?",
             (disease_key, finding_key),
         )
     conn.commit()

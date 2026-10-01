@@ -418,6 +418,8 @@ def visual_queries_for_disease(
         return []
     if disease_key not in PILOT_KEYS:
         return []
+    from . import pair_terms
+
     diseases_data = diseases_data or diseases.load_diseases()
     findings = findings if findings is not None else diseases.load_findings_vocab()
     disease = diseases_data[disease_key]
@@ -459,8 +461,9 @@ def visual_queries_for_disease(
     for item in selected:
         finding = str(item.get("label") or item.get("finding_key") or "")
         modality = _CATEGORY_MODALITY[item["category"]]
+        pair_synonyms = pair_terms.finding_synonyms(disease_key, item)
         finding_text = " ".join(
-            [finding, str(item.get("finding_key") or ""), *item.get("synonyms", [])]
+            [finding, str(item.get("finding_key") or ""), *pair_synonyms]
         ).lower()
         subtype = ""
         for candidate in subtypes:
@@ -489,7 +492,7 @@ def visual_queries_for_disease(
             r"[a-z0-9]+", f"{disease['name']} {subtype} {finding}".casefold()
         ))
         distinct_synonyms = []
-        for term in item.get("synonyms", []):
+        for term in pair_synonyms:
             term = str(term).strip()
             tokens = set(re.findall(r"[a-z0-9]+", term.casefold()))
             if not term or not tokens or len(tokens & base_tokens) / len(tokens) > 0.5:
@@ -509,6 +512,7 @@ def visual_queries_for_disease(
             seen_queries.add(query)
             out.append({
                 "query": query,
+                "disease_key": disease_key,
                 "finding_key": str(item.get("finding_key") or ""),
                 "finding": finding,
                 "modality": modality,
@@ -524,7 +528,7 @@ def visual_queries_for_disease(
         used = {str(term).strip() for term in distinct_synonyms}
         used.add(finding)
         added = 0
-        for term in item.get("synonyms", []):
+        for term in pair_synonyms:
             if added >= config.VP_TARGETED_SYNONYM_QUERIES:
                 break
             term = str(term).strip()
@@ -541,6 +545,7 @@ def visual_queries_for_disease(
             seen_queries.add(query)
             out.append({
                 "query": query,
+                "disease_key": disease_key,
                 "finding_key": str(item.get("finding_key") or ""),
                 "finding": finding,
                 "modality": modality,
@@ -769,7 +774,9 @@ def retrieve_for_disease(
     for synonym, embedding in zip(synonyms, embeddings):
         if embedding is None:
             logger.info("no embedding for %r; dense ANN skipped", synonym)
-    jobs, contexts = _job_specs(synonyms, embeddings, visual_queries)
+    jobs, contexts = _job_specs(
+        synonyms, embeddings, visual_queries, disease_key=disease_key
+    )
     all_rows = _rank_jobs(ns, jobs, contexts, billing_counters)
     return _fuse_rows(jobs, contexts, all_rows)
 
@@ -778,9 +785,13 @@ def _job_specs(
     synonyms: list[str],
     embeddings: list,
     visual_queries: list[dict[str, str]] | None,
+    *,
+    disease_key: str | None = None,
 ) -> tuple[list[tuple[list, int]], list[dict]]:
     """Build the query jobs in issue order, keeping the context each job's
-    rows need for the downstream merge (query kind, evidence metadata)."""
+    rows need for the downstream merge (query kind, evidence metadata).
+    ``disease_key`` is recorded on every context so evidence and
+    manifestation candidates carry explicit disease provenance."""
     jobs: list[tuple[list, int]] = []
     contexts: list[dict] = []
     for synonym, embedding in zip(synonyms, embeddings):
@@ -796,6 +807,7 @@ def _job_specs(
                 {
                     "query": synonym,
                     "query_kind": "synonym",
+                    "disease_key": disease_key,
                     "modality": "",
                     "finding": "",
                 }
@@ -809,6 +821,7 @@ def _job_specs(
             {
                 "query": query,
                 "query_kind": "visual",
+                "disease_key": spec.get("disease_key") or disease_key,
                 "finding_key": str(spec.get("finding_key") or ""),
                 "modality": str(spec.get("modality") or ""),
                 "finding": str(spec.get("finding") or ""),
@@ -857,6 +870,7 @@ def _fuse_rows(
                 and context.get("finding_key")
             ):
                 manifestation_candidates.append({
+                    "disease_key": context.get("disease_key"),
                     "finding_key": context["finding_key"],
                     "pmcid": pmcid,
                     "query": context["query"],
@@ -869,6 +883,7 @@ def _fuse_rows(
             evidence.setdefault(pmcid, []).append({
                 "query": context["query"],
                 "query_kind": context["query_kind"],
+                "disease_key": context.get("disease_key"),
                 "finding_key": context.get("finding_key", ""),
                 "text": passage[:MAX_EVIDENCE_TEXT_CHARS],
                 "section": str(row.get("section_title") or ""),
@@ -893,12 +908,23 @@ def _fuse_rows(
     return out
 
 
+def _evidence_identity(item: dict) -> tuple[str, str, str, str]:
+    """Passage identity: pair provenance + section + text (legacy items
+    without disease provenance keep an empty leading key)."""
+    return (
+        str(item.get("disease_key") or ""),
+        str(item.get("finding_key") or ""),
+        str(item.get("section") or ""),
+        str(item.get("text") or ""),
+    )
+
+
 def _select_evidence(evidence: list[dict]) -> list[dict]:
     """Keep a bounded mix, reserving at least one slot for visual query hits."""
-    best_by_passage: dict[tuple[str, str], dict] = {}
+    best_by_passage: dict[tuple[str, str, str, str], dict] = {}
     for item in evidence:
-        identity = (str(item.get("section") or ""), str(item.get("text") or ""))
-        if not identity[1]:
+        identity = _evidence_identity(item)
+        if not identity[3]:
             continue
         prior = best_by_passage.get(identity)
         item_is_visual = item.get("query_kind") == "visual"
@@ -919,13 +945,9 @@ def _select_evidence(evidence: list[dict]) -> list[dict]:
     visual_slots = min(len(visual), max(1, MAX_EVIDENCE_PER_ARTICLE // 2))
     selected = visual[:visual_slots] + general[: MAX_EVIDENCE_PER_ARTICLE - visual_slots]
     if len(selected) < MAX_EVIDENCE_PER_ARTICLE:
-        selected_ids = {
-            (str(item.get("section") or ""), str(item.get("text") or ""))
-            for item in selected
-        }
+        selected_ids = {_evidence_identity(item) for item in selected}
         selected.extend(
-            item for item in ranked
-            if (str(item.get("section") or ""), str(item.get("text") or "")) not in selected_ids
+            item for item in ranked if _evidence_identity(item) not in selected_ids
         )
     return selected[:MAX_EVIDENCE_PER_ARTICLE]
 
@@ -1021,13 +1043,14 @@ def fetch_abstracts(ns, pmcids: list[str]) -> dict[str, str]:
 
 
 def _merge_evidence(existing: list[dict], incoming: list[dict]) -> list[dict]:
-    """Merge cross-disease evidence by passage while keeping the strongest hit."""
-    merged: dict[tuple[str, str], dict] = {}
+    """Merge evidence by (disease, finding, section, text) while keeping the
+    strongest hit — passages belonging to a different pair never collapse."""
+    merged: dict[tuple[str, str, str, str], dict] = {}
     for item in [*(existing or []), *(incoming or [])]:
         text = str(item.get("text") or "").strip()
         if not text:
             continue
-        identity = (str(item.get("section") or ""), text)
+        identity = _evidence_identity({**item, "text": text})
         prior = merged.get(identity)
         if (
             prior is None
@@ -1138,30 +1161,70 @@ def upsert_manifestation_candidates(conn, candidates: list[dict]) -> int:
     article_ids = {
         row[0] for row in conn.execute("SELECT pmcid FROM articles")
     }
+    columns = {
+        row[1]
+        for row in conn.execute("PRAGMA table_info(manifestation_candidates)")
+    }
+    has_provenance = {"provenance_status", "provenance_disease_key"} <= columns
     written = 0
     for item in candidates:
         if (
-            not item.get("finding_key")
+            not item.get("disease_key")
+            or not item.get("finding_key")
             or not item.get("pmcid")
             or item["pmcid"] not in article_ids
         ):
             continue
-        conn.execute(
-            "INSERT INTO manifestation_candidates "
-            "(disease_key, finding_key, pmcid, query, best_rank, retrieval_score) "
-            "VALUES (?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(disease_key, finding_key, pmcid) DO UPDATE SET "
-            "query=CASE WHEN excluded.best_rank < manifestation_candidates.best_rank "
-            "THEN excluded.query ELSE manifestation_candidates.query END, "
-            "retrieval_score=CASE WHEN excluded.best_rank < manifestation_candidates.best_rank "
-            "THEN excluded.retrieval_score ELSE manifestation_candidates.retrieval_score END, "
-            "best_rank=MIN(manifestation_candidates.best_rank, excluded.best_rank), "
-            "updated_at=datetime('now')",
-            (
-                item["disease_key"], item["finding_key"], item["pmcid"], item["query"],
-                int(item["best_rank"]), float(item["retrieval_score"]),
-            ),
-        )
+        if has_provenance:
+            conn.execute(
+                "INSERT INTO manifestation_candidates "
+                "(disease_key, finding_key, pmcid, query, best_rank, retrieval_score, "
+                "provenance_status, provenance_disease_key) "
+                "VALUES (?, ?, ?, ?, ?, ?, 'explicit', ?) "
+                "ON CONFLICT(disease_key, finding_key, pmcid) DO UPDATE SET "
+                "query=CASE WHEN excluded.best_rank IS NOT NULL AND "
+                "(manifestation_candidates.best_rank IS NULL OR "
+                "excluded.best_rank < manifestation_candidates.best_rank) "
+                "THEN excluded.query ELSE manifestation_candidates.query END, "
+                "retrieval_score=CASE WHEN excluded.best_rank IS NOT NULL AND "
+                "(manifestation_candidates.best_rank IS NULL OR "
+                "excluded.best_rank < manifestation_candidates.best_rank) "
+                "THEN excluded.retrieval_score ELSE manifestation_candidates.retrieval_score END, "
+                "best_rank=CASE WHEN excluded.best_rank IS NULL THEN manifestation_candidates.best_rank "
+                "WHEN manifestation_candidates.best_rank IS NULL THEN excluded.best_rank "
+                "ELSE MIN(manifestation_candidates.best_rank, excluded.best_rank) END, "
+                "provenance_status='explicit', "
+                "provenance_disease_key=excluded.provenance_disease_key, "
+                "updated_at=datetime('now')",
+                (
+                    item["disease_key"], item["finding_key"], item["pmcid"],
+                    item["query"], int(item["best_rank"]),
+                    float(item["retrieval_score"]), item["disease_key"],
+                ),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO manifestation_candidates "
+                "(disease_key, finding_key, pmcid, query, best_rank, retrieval_score) "
+                "VALUES (?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(disease_key, finding_key, pmcid) DO UPDATE SET "
+                "query=CASE WHEN excluded.best_rank IS NOT NULL AND "
+                "(manifestation_candidates.best_rank IS NULL OR "
+                "excluded.best_rank < manifestation_candidates.best_rank) "
+                "THEN excluded.query ELSE manifestation_candidates.query END, "
+                "retrieval_score=CASE WHEN excluded.best_rank IS NOT NULL AND "
+                "(manifestation_candidates.best_rank IS NULL OR "
+                "excluded.best_rank < manifestation_candidates.best_rank) "
+                "THEN excluded.retrieval_score ELSE manifestation_candidates.retrieval_score END, "
+                "best_rank=CASE WHEN excluded.best_rank IS NULL THEN manifestation_candidates.best_rank "
+                "WHEN manifestation_candidates.best_rank IS NULL THEN excluded.best_rank "
+                "ELSE MIN(manifestation_candidates.best_rank, excluded.best_rank) END, "
+                "updated_at=datetime('now')",
+                (
+                    item["disease_key"], item["finding_key"], item["pmcid"], item["query"],
+                    int(item["best_rank"]), float(item["retrieval_score"]),
+                ),
+            )
         written += 1
     return written
 
@@ -1346,6 +1409,7 @@ def process_relevance(conn, client, requests, submitted) -> dict:
 def needs_manifestation_licenses(conn, disease_key: str, finding_keys=None) -> bool:
     """Continue past a disease quota while deficient lanes lack usable candidates."""
     from . import manifestation_queue
+    _floor, _target, cap = config.validate_coverage_settings()
     coverage = manifestation_queue.published_coverage(conn, disease_key)
     for row in conn.execute("SELECT finding_key,disease_keys_json FROM findings_vocab WHERE approved=1"):
         finding = row['finding_key']
@@ -1353,11 +1417,13 @@ def needs_manifestation_licenses(conn, disease_key: str, finding_keys=None) -> b
             continue
         if disease_key not in db.from_json(row['disease_keys_json'], []):
             continue
-        if coverage.get(finding, 0) >= config.VP_FINDING_IMAGE_TARGET:
+        if coverage.get(finding, 0) >= cap:
             continue
         available = conn.execute(
             "SELECT COUNT(*) FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
-            "WHERE mc.disease_key=? AND mc.finding_key=? AND (a.status='license_ok' OR "
+            "WHERE mc.disease_key=? AND mc.finding_key=? "
+            "AND mc.provenance_status='explicit' "
+            "AND mc.provenance_disease_key=mc.disease_key AND (a.status='license_ok' OR "
             "(a.status='relevant' AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) WHERE value=?)))",
             (disease_key, finding, disease_key),
         ).fetchone()[0]
@@ -1365,11 +1431,502 @@ def needs_manifestation_licenses(conn, disease_key: str, finding_keys=None) -> b
             continue
         if conn.execute(
             "SELECT 1 FROM manifestation_candidates mc JOIN articles a USING(pmcid) "
-            "WHERE mc.disease_key=? AND mc.finding_key=? AND a.status='candidate' LIMIT 1",
+            "WHERE mc.disease_key=? AND mc.finding_key=? AND a.status='candidate' "
+            "AND mc.provenance_status='explicit' "
+            "AND mc.provenance_disease_key=mc.disease_key LIMIT 1",
             (disease_key, finding),
         ).fetchone():
             return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# Bounded per-pair replenishment (search_policy is the settled authority)
+# ---------------------------------------------------------------------------
+def _attempt_query(ns, spec, counters=None) -> list[dict]:
+    """Issue exactly the request a settled attempt spec describes — once.
+
+    Depth, rank_by, filters and attributes are used unchanged. Unlike the
+    broad initial retrieval, replenishment never falls back to a split or
+    altered filter: ANY provider rejection (including an unsupported ``Or``)
+    propagates so the attempt is recorded as a retryable retrieval error.
+    """
+    return _ns_query(
+        ns, spec["rank_by"], spec["filters"], spec["depth"],
+        counters, spec["include_attributes"],
+    )
+
+
+def _attempt_begin(conn, spec) -> None:
+    """Durable 'started' row — committed before the provider call so an
+    interrupted attempt stays resumable on the same ledger key."""
+    conn.execute(
+        "INSERT INTO pair_search_attempts "
+        "(disease_key, finding_key, policy_version, round_no, query, "
+        "query_filter_hash, filters_json, depth, status, started_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'started', datetime('now')) "
+        "ON CONFLICT(disease_key, finding_key, policy_version, round_no, "
+        "query_filter_hash, depth) DO UPDATE SET "
+        "status='started', error=NULL, "
+        "started_at=datetime('now'), completed_at=NULL",
+        (
+            spec["disease_key"], spec["finding_key"], spec["policy_version"],
+            spec["round_no"], spec["query"], spec["query_filter_hash"],
+            spec["filters_json"], spec["depth"],
+        ),
+    )
+    conn.commit()
+
+
+def _attempt_record(
+    conn, spec, status, *, returned=None, outcomes=None, error=None, new_ids=None
+) -> None:
+    sets = ["status=?", "error=?"]
+    values: list = [status, error]
+    # completed_at marks full hydration only; 'retrieved'/'error' rows stay
+    # open so a later invocation resumes them on the same ledger key.
+    if status == "completed":
+        sets.append("completed_at=datetime('now')")
+    if returned is not None:
+        sets.append("returned_pmcids_json=?")
+        values.append(db.to_json(returned))
+    if new_ids is not None:
+        sets.append("new_pmcids_json=?")
+        values.append(db.to_json(new_ids))
+    if outcomes is not None:
+        sets.append("pending_outcomes_json=?")
+        values.append(json.dumps(outcomes, default=str))
+    conn.execute(
+        "UPDATE pair_search_attempts SET " + ", ".join(sets) + " "
+        "WHERE disease_key=? AND finding_key=? AND policy_version=? "
+        "AND round_no=? AND query_filter_hash=? AND depth=?",
+        (
+            *values, spec["disease_key"], spec["finding_key"],
+            spec["policy_version"], spec["round_no"], spec["query_filter_hash"],
+            spec["depth"],
+        ),
+    )
+    conn.commit()
+
+
+def _refresh_attempt_outcomes(conn, spec) -> None:
+    """Update a completed attempt's outcome map to current article statuses.
+
+    ``retrieval_rows`` and prior statuses are preserved; type-rejected IDs
+    keep their marker, and never-persisted IDs read ``missing``.
+    """
+    row = conn.execute(
+        "SELECT returned_pmcids_json, pending_outcomes_json FROM pair_search_attempts "
+        "WHERE disease_key=? AND finding_key=? AND policy_version=? AND round_no=? "
+        "AND query_filter_hash=? AND depth=?",
+        (
+            spec["disease_key"], spec["finding_key"], spec["policy_version"],
+            spec["round_no"], spec["query_filter_hash"], spec["depth"],
+        ),
+    ).fetchone()
+    if row is None:
+        return
+    stored = db.from_json(row["pending_outcomes_json"], {}) or {}
+    outcomes = stored.get("outcomes") or {}
+    for pmcid in db.from_json(row["returned_pmcids_json"], []) or []:
+        current = conn.execute(
+            "SELECT status FROM articles WHERE pmcid=?", (pmcid,)
+        ).fetchone()
+        if current is not None:
+            outcomes[pmcid] = current["status"]
+        elif pmcid not in outcomes:
+            outcomes[pmcid] = "missing"
+    stored["outcomes"] = outcomes
+    _attempt_record(conn, spec, "completed", outcomes=stored)
+
+
+def _hydrate_attempt(conn, ns, disease_key, finding_key, spec, rows, counters):
+    """Persist one attempt's rows as explicit pair candidates.
+
+    Rows are type-filtered by the existing review gate, hydrated for
+    metadata, upserted as article shortlist rows with pair-scoped evidence,
+    then recorded on the pair with explicit provenance. Returns
+    ``(new_ids, outcomes)`` — the PMCIDs newly recorded for this pair
+    (candidate rows that already existed never count as new) and the
+    current per-PMCID outcome map for the attempt ledger.
+    """
+    per_pmcid: dict[str, list[tuple[int, dict]]] = {}
+    order: list[str] = []
+    for rank, row in enumerate(rows, start=1):
+        pmcid = str(row.get("pmcid") or "")
+        if not pmcid:
+            continue
+        if pmcid not in per_pmcid:
+            per_pmcid[pmcid] = []
+            order.append(pmcid)
+        per_pmcid[pmcid].append((rank, row))
+
+    typed = [
+        pmcid
+        for pmcid in order
+        if passes_type_filter(
+            per_pmcid[pmcid][0][1].get("publication_type") or [],
+            per_pmcid[pmcid][0][1].get("article_type"),
+        )
+    ]
+    metadata = hydrate_metadata(ns, typed, counters) if typed else {}
+    existing = {
+        row["pmcid"]
+        for row in conn.execute(
+            "SELECT pmcid FROM manifestation_candidates "
+            "WHERE disease_key=? AND finding_key=?",
+            (disease_key, finding_key),
+        )
+    }
+    records = []
+    for pmcid in typed:
+        hits = per_pmcid[pmcid]
+        attrs = {**hits[0][1], **(metadata.get(pmcid) or {})}
+        passages = [
+            {
+                "disease_key": disease_key,
+                "finding_key": finding_key,
+                "query": spec["query"],
+                "query_kind": "pair_search",
+                "text": str(row.get("page_content") or "").strip()[:MAX_EVIDENCE_TEXT_CHARS],
+                "section": str(row.get("section_title") or ""),
+                "section_type": str(row.get("section_type") or ""),
+                "modality": "",
+                "finding": finding_key,
+                "rank": rank,
+                "score": 1.0 / (RRF_K + rank),
+            }
+            for rank, row in hits
+            if str(row.get("page_content") or "").strip()
+        ]
+        upsert_candidate(
+            conn, pmcid, attrs,
+            1.0 / (RRF_K + hits[0][0]), {disease_key}, passages,
+        )
+        records.append({
+            "disease_key": disease_key,
+            "finding_key": finding_key,
+            "pmcid": pmcid,
+            "query": spec["query"],
+            "best_rank": hits[0][0],
+            "retrieval_score": 1.0 / (RRF_K + hits[0][0]),
+        })
+    upsert_manifestation_candidates(conn, records)
+    conn.commit()
+
+    # Every returned PMCID maps to its actual current article status; rows
+    # rejected by the type filter or never persisted read explicitly.
+    outcomes: dict[str, str] = {}
+    statuses = {
+        row["pmcid"]: row["status"]
+        for row in conn.execute(
+            "SELECT pmcid, status FROM articles WHERE pmcid IN "
+            f"({','.join('?' for _ in typed)})",
+            typed,
+        )
+    } if typed else {}
+    typed_set = set(typed)
+    for pmcid in order:
+        if pmcid not in typed_set:
+            outcomes[pmcid] = "type_rejected"
+        else:
+            outcomes[pmcid] = statuses.get(pmcid, "missing")
+    new_ids = [record["pmcid"] for record in records if record["pmcid"] not in existing]
+    return new_ids, outcomes
+
+
+def replenish_pair(
+    conn,
+    disease_key: str,
+    finding_key: str,
+    *,
+    round_no: int,
+    dry_run: bool = False,
+    budget_usd=None,
+    max_runtime_seconds=None,
+    max_articles=None,
+) -> dict:
+    """Bounded per-pair replenishment via the settled search policy.
+
+    Each invocation first drains the pair's explicit pending candidates
+    (license, then P1 relevance); any article reaching ``relevant`` returns
+    ``pending_work`` for the caller to parse. Only then does the round's
+    unattempted search specs run exactly as ``search_policy`` defines them —
+    query, filters, depth and attributes unchanged. Ledgered attempts resume
+    after interruption: ``retrieved`` attempts re-hydrate their stored rows
+    without re-querying, and ``completed`` attempts never fire again.
+    Provider errors mark the attempt ``error`` — resumable, never proof the
+    corpus is exhausted. Optional limits of 0 pause immediately; they are
+    checked before every provider call, never clamped.
+    """
+    from . import search_policy
+
+    started = time.monotonic()
+    counters = {
+        "requests": 0,
+        "queries": 0,
+        "billable_logical_bytes_queried": 0,
+        "billable_logical_bytes_returned": 0,
+    }
+    specs = search_policy.attempt_specs(conn, disease_key, finding_key, round_no)
+    pending = search_policy.pending_candidates(conn, disease_key, finding_key)
+    # ``processed`` tracks every unique PMCID that consumed provider work in
+    # this invocation — drained pending candidates AND hydrated search rows —
+    # so ``max_articles`` bounds the whole set once per article. ``drained``
+    # is the narrower set that completed the license+P1 path here; only it
+    # suppresses re-draining (a hydrated candidate still gets drained).
+    state = {"queries": 0, "processed": set(), "drained": set(),
+             "new_candidates": 0}
+    holders = {"retriever": None, "client": None}
+
+    if dry_run:
+        return {
+            "new_candidates": 0,
+            "pending_candidates": len(pending),
+            "queries_attempted": 0,
+            "status": "dry_run",
+            "reason": None,
+            "processed_pmcids": [],
+            "spent_usd": 0.0,
+            "plan": [
+                {
+                    "query": spec["query"],
+                    "depth": spec["depth"],
+                    "round_no": spec["round_no"],
+                    "attempted": (
+                        spec["prior_attempt"]["status"]
+                        if spec["prior_attempt"]
+                        else None
+                    ),
+                }
+                for spec in specs
+            ],
+        }
+
+    def _result(status, reason=None):
+        return {
+            "new_candidates": state["new_candidates"],
+            "pending_candidates": len(
+                search_policy.pending_candidates(conn, disease_key, finding_key)
+            ),
+            "queries_attempted": state["queries"],
+            "status": status,
+            "reason": reason,
+            "processed_pmcids": sorted(state["processed"]),
+            "spent_usd": (
+                holders["client"].spent_usd if holders["client"] else 0.0
+            ),
+        }
+
+    def _limit_reason():
+        if (
+            max_runtime_seconds is not None
+            and time.monotonic() - started >= max_runtime_seconds
+        ):
+            return "runtime_limit"
+        if (
+            budget_usd is not None
+            and holders["client"] is not None
+            and holders["client"].spent_usd >= budget_usd
+        ):
+            return "budget"
+        if budget_usd is not None and budget_usd <= 0:
+            return "budget"
+        if max_articles is not None and len(state["processed"]) >= max_articles:
+            return "article_limit"
+        return None
+
+    def _ns():
+        if holders["retriever"] is None:
+            holders["retriever"] = _make_retriever()
+        return holders["retriever"].ns_pmc
+
+    def _client():
+        if holders["client"] is None:
+            holders["client"] = llm.LLMClient(
+                db_conn=conn,
+                budget_usd=budget_usd,
+                concurrency=min(8, config.VP_P1_CONCURRENCY),
+                timeout_seconds=60,
+            )
+        return holders["client"]
+
+    def _refresh_pending():
+        nonlocal pending
+        pending = search_policy.pending_candidates(conn, disease_key, finding_key)
+        return pending
+
+    def _drain_pending():
+        """License + P1 the pair's pending candidates under hard caps.
+
+        One unique article is counted once even when it consumes both a
+        license and a P1 call; limits are checked before every provider
+        step. Provider/access failures leave the row's status untouched so
+        a later invocation resumes it — the caller must never advance the
+        search while candidates remain unfinished.
+        """
+        _refresh_pending()
+        for row in pending:
+            pmcid = row["pmcid"]
+            status = row["status"]
+            if status == "relevant" or pmcid in state["drained"]:
+                continue
+            reason = _limit_reason()
+            if reason:
+                return reason
+            # From here this unique article consumes provider work (license
+            # and/or abstract+P1 calls); count it once toward the limit.
+            state["processed"].add(pmcid)
+            if status == "candidate":
+                try:
+                    checked, outcome = join_license(pmcid)
+                except Exception as exc:  # noqa: BLE001 - resumable access error
+                    return f"access_error: {exc}"
+                try:
+                    status = apply_license(conn, checked, outcome)
+                except Exception as exc:  # noqa: BLE001 - resumable access error
+                    return f"access_error: {exc}"
+                conn.commit()
+                if status == "candidate":
+                    # join_license reports unresolved access as a row, not an
+                    # exception — still a retryable access error.
+                    detail = outcome.get("error") or "license access unresolved"
+                    return f"access_error: {detail}"
+            if status == "license_ok":
+                reason = _limit_reason()
+                if reason:
+                    return reason
+                try:
+                    abstracts = fetch_abstracts(_ns(), [pmcid])
+                except Exception as exc:  # noqa: BLE001 - resumable access error
+                    return f"access_error: {exc}"
+                reason = _limit_reason()
+                if reason:
+                    return reason
+                try:
+                    counts = process_relevance(
+                        conn,
+                        _client(),
+                        iter([
+                            _p1_request(
+                                row["title"] or "", abstracts.get(pmcid, "")
+                            )
+                        ]),
+                        [pmcid],
+                    )
+                except llm.BudgetExceeded:
+                    return "budget"
+                except Exception as exc:  # noqa: BLE001 - resumable provider error
+                    return f"provider_error: {exc}"
+                if counts.get("budget"):
+                    return "budget"
+                if counts.get("errors"):
+                    return f"provider_error: {counts['errors']} relevance call(s) failed"
+                current = conn.execute(
+                    "SELECT status FROM articles WHERE pmcid=?", (pmcid,)
+                ).fetchone()
+                status = current["status"] if current else status
+            state["drained"].add(pmcid)
+            # Newly relevant work is handed back immediately rather than
+            # spending more of the bounded budget on other pending rows.
+            if status == "relevant":
+                _refresh_pending()
+                return None
+        _refresh_pending()
+        return None
+
+    def _pending_gate(pause):
+        """Relevant work wins, then the drain's pause reason, then any
+        unfinished candidates — a search never completes while rows remain."""
+        _refresh_pending()
+        if any(row["status"] == "relevant" for row in pending):
+            return _result("pending_work", reason="relevant_pending")
+        if pause:
+            return _result("paused", reason=pause)
+        if pending:
+            return _result("paused", reason="pending_candidates")
+        return None
+
+    # Relevant pending work is handed back for parsing immediately — before
+    # drains or any new retrieval; a paused limit never swallows it.
+    if any(row["status"] == "relevant" for row in pending):
+        return _result("pending_work", reason="relevant_pending")
+    gate = _pending_gate(_drain_pending())
+    if gate:
+        return gate
+
+    for spec in specs:
+        prior = spec["prior_attempt"] or {}
+        if prior.get("status") == "completed":
+            continue
+        if prior.get("status") == "retrieved":
+            # Resume from the stored raw rows; no provider call is issued.
+            stored = db.from_json(prior.get("pending_outcomes_json"), {}) or {}
+            rows = stored.get("retrieval_rows") or []
+        else:
+            reason = _limit_reason()
+            if reason:
+                return _result("paused", reason=reason)
+            _attempt_begin(conn, spec)
+            state["queries"] += 1  # issued calls count, even failed ones
+            try:
+                rows = _attempt_query(_ns(), spec, counters)
+            except Exception as exc:  # noqa: BLE001 - retryable provider error
+                _attempt_record(conn, spec, "error", error=str(exc))
+                return _result("retrieval_error", reason=str(exc))
+            returned = list(
+                dict.fromkeys(
+                    str(r.get("pmcid") or "") for r in rows if r.get("pmcid")
+                )
+            )
+            _attempt_record(
+                conn, spec, "retrieved", returned=returned,
+                outcomes={"retrieval_rows": rows, "outcomes": {}},
+            )
+            conn.execute(
+                "UPDATE manifestation_lanes SET last_search_at=datetime('now') "
+                "WHERE disease_key=? AND finding_key=?",
+                (disease_key, finding_key),
+            )
+            conn.commit()
+        reason = _limit_reason()
+        if reason:
+            return _result("paused", reason=reason)
+        try:
+            new_ids, outcomes = _hydrate_attempt(
+                conn, _ns(), disease_key, finding_key, spec, rows, counters
+            )
+        except Exception as exc:  # noqa: BLE001 - hydration failure stays resumable
+            # Keep status 'retrieved' with the raw rows intact; record the
+            # error so the next invocation resumes hydration, not the query.
+            _attempt_record(conn, spec, "retrieved", error=f"hydration_error: {exc}")
+            return _result("retrieval_error", reason=f"hydration_error: {exc}")
+        state["new_candidates"] += len(new_ids)
+        # Metadata hydration touched every type-passed row — count each
+        # unique PMCID once toward the invocation's article limit. Hydrated
+        # rows are NOT drained yet: the _drain_pending pass below licenses
+        # and P1-checks them before any further search spec fires.
+        state["processed"].update(
+            pmcid
+            for pmcid, outcome in outcomes.items()
+            if outcome != "type_rejected"
+        )
+        _attempt_record(
+            conn, spec, "completed", new_ids=new_ids,
+            outcomes={"retrieval_rows": rows, "outcomes": outcomes},
+        )
+        gate = _pending_gate(_drain_pending())
+        _refresh_attempt_outcomes(conn, spec)
+        if gate:
+            return gate
+
+    gate = _pending_gate(None)
+    if gate:
+        return gate
+    next_round = search_policy.next_round(conn, disease_key, finding_key)
+    if next_round is None:
+        return _result("search_plan_exhausted", reason="all_rounds_complete")
+    return _result("round_complete", reason=f"next_round={next_round}")
 
 
 def _queue_rows(conn, args, statuses):
@@ -1424,14 +1981,20 @@ def _save_queue_report(conn, args, name, **details):
 
 def run_license_audit(args):
     """Recheck unrecognized licenses; explicit NC licenses are not overridden."""
+    if args.dry_run:
+        # Dry-run exits before opening the DB or any client: describe the
+        # planned scope only.
+        print(
+            f'Would audit unrecognized licenses '
+            f'(disease={args.disease}, limit={args.limit}); '
+            f'no DB reads/writes, no provider calls'
+        )
+        return 0
     conn = db.init_db()
     try:
         rows = [r for r in _queue_rows(conn,args,['license_rejected']) if r['license_code'] in (None,'none','other')]
         if args.limit is not None:
             rows = rows[:args.limit]
-        if args.dry_run:
-            print(f'Would audit {len(rows)} unrecognized licenses')
-            return 0
         backup = _queue_backup(conn,'license_audit')
         decisions = []
         with ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY) as pool:
@@ -1451,6 +2014,16 @@ def run_license_audit(args):
 
 def run_resume(args):
     """Resume persisted queues without repeating retrieval or completed verdicts."""
+    if args.dry_run:
+        # Dry-run exits before opening the DB or instantiating clients:
+        # describe the planned scope only.
+        max_requests = args.limit if args.limit is not None else args.max_articles
+        print(
+            f'Would resume licensed articles and unchecked candidates '
+            f'(disease={args.disease}, max {max_requests} relevance calls); '
+            f'no DB reads/writes, no provider calls'
+        )
+        return 0
     conn = db.init_db()
     submitted = []
     client = llm.LLMClient(db_conn=conn,budget_usd=args.budget_usd,
@@ -1460,9 +2033,6 @@ def run_resume(args):
     try:
         licensed = _queue_rows(conn,args,['license_ok'])
         candidates = _queue_rows(conn,args,['candidate'])
-        if args.dry_run:
-            print(f'Would resume {len(licensed)} licensed articles and up to {len(candidates)} unchecked candidates; max {max_requests} relevance calls')
-            return 0
         backup = _queue_backup(conn,'queue_resume')
         # Previous active submissions have no durable verdict and are retryable.
         for row in licensed:
@@ -1728,6 +2298,22 @@ def run_recheck_title_rule(args, conn) -> int:
 # Stage entry point
 # ---------------------------------------------------------------------------
 def run(args) -> int:
+    if getattr(args, "dry_run", False):
+        # Dry-run exits before opening the DB, building a retriever, or any
+        # provider call: describe the planned scope only.
+        keys = (
+            list(diseases.DISEASE_KEYS)
+            if args.disease == "all"
+            else [args.disease]
+        )
+        print(
+            f"dry-run: would run select for diseases={keys}, "
+            f"limit={getattr(args, 'limit', None)}, "
+            f"max_articles={getattr(args, 'max_articles', None)}, "
+            f"budget_usd={getattr(args, 'budget_usd', None)}"
+        )
+        print("dry-run: no DB reads/writes, no retrieval, no LLM calls")
+        return 0
     conn = db.init_db()
     if getattr(args, "recheck_title_rule", False):
         try:
@@ -1791,7 +2377,9 @@ def run(args) -> int:
         for synonym, embedding in zip(synonyms, embeddings):
             if embedding is None:
                 logger.info("no embedding for %r; dense ANN skipped", synonym)
-        jobs, contexts = _job_specs(synonyms, embeddings, specs[key]["visual_queries"])
+        jobs, contexts = _job_specs(
+            synonyms, embeddings, specs[key]["visual_queries"], disease_key=key
+        )
         disease_slices[key] = (len(flat_jobs), jobs, contexts)
         flat_jobs.extend(jobs)
         flat_contexts.extend(contexts)
@@ -1844,13 +2432,6 @@ def run(args) -> int:
             f"[{key}] {len(articles)} candidates, {n_type_passed} pass type filter; "
             f"license target: {limit or n_type_passed} license-passing"
         )
-
-    if args.dry_run:
-        print(json.dumps(retrieval_counts, indent=1))
-        print(f"Turbopuffer billing: {json.dumps(billing_counters, sort_keys=True)}")
-        print("dry-run: no DB writes, no LLM calls")
-        conn.close()
-        return 0
 
     # ------------------------------------------------------------------
     # 4. Insert candidates (INSERT OR IGNORE; resumable).

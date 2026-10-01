@@ -13,9 +13,25 @@ def conn(tmp_path):
 
 
 def seed(conn, key, finding="anterior_uveitis"):
+    # Post-C5 contract: lane candidates carry explicit pair provenance, and
+    # the approved finding vocabulary defines the lane itself.
+    conn.execute(
+        "INSERT OR IGNORE INTO diseases(disease_key,name) "
+        "VALUES('as','Ankylosing spondylitis')"
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO findings_vocab"
+        "(finding_key,disease_keys_json,label,category,approved) "
+        "VALUES(?, '[\"as\"]', ?, 'eye', 1)",
+        (finding, finding.replace("_", " ")),
+    )
     conn.execute("INSERT OR IGNORE INTO articles(pmcid,status) VALUES(?,'relevant')", (key,))
-    conn.execute("INSERT OR IGNORE INTO manifestation_candidates(disease_key,finding_key,pmcid) "
-                 "VALUES('as',?,?)", (finding, key))
+    conn.execute(
+        "INSERT OR IGNORE INTO manifestation_candidates"
+        "(disease_key,finding_key,pmcid,provenance_status,provenance_disease_key) "
+        "VALUES('as',?,?,'explicit','as')",
+        (finding, key),
+    )
 
 
 def eye_article(key):

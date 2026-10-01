@@ -5,7 +5,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from src.visual_pilot import curation, db, diseases
+from balanced_fixtures import add_article, add_figure, add_panel, make_db
+from src.visual_pilot import curation, diseases
 from src.visual_pilot.demographics import resolve_age
 from src.visual_pilot.viewer.app import create_app
 
@@ -44,18 +45,23 @@ class AgeEvidenceTests(unittest.TestCase):
 
     def test_api_corrects_adult_and_excludes_unknown_across_views(self):
         with tempfile.TemporaryDirectory() as directory:
-            conn = db.connect(Path(directory) / db.config.DB_FILENAME)
-            db.init_db(conn)
+            data_dir = Path(directory)
+            conn = make_db(data_dir)
             diseases.seed(conn)
-            conn.execute("INSERT INTO articles (pmcid,title) VALUES ('PMCage','Systemic lupus erythematosus')")
+            add_article(conn, 'PMCage', title='Systemic lupus erythematosus')
             caption = 'Malar rash in a 23-year-old patient with systemic lupus erythematosus. ' + 'Detailed caption sentence. ' * 25 + 'Final caption sentence.'
             for key, age, text in [('adult', 'adolescent', caption),
                                    ('unknown', 'child', 'Malar rash in systemic lupus erythematosus.'),
                                    ('child', 'unknown', 'Malar rash in a 9-year-old patient with systemic lupus erythematosus.')]:
-                conn.execute('INSERT INTO figures (figure_id,pmcid,caption,status) VALUES (?,?,?,?)',
-                             (key, 'PMCage', text, 'stored'))
-                conn.execute('INSERT INTO panels (panel_id,figure_id,pmcid,disease_key,modality,body_site,findings_json,age_group,crop_mode,sha256,width,height) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-                             (key,key,'PMCage','sle','clinical_photo','face',json.dumps([{'finding_key':'malar_rash','evidence':'visual'}]),age,'whole_figure',key,900,900))
+                add_figure(conn, key, 'PMCage', caption=text)
+                add_panel(
+                    conn, data_dir, key, key, 'PMCage', 'sle',
+                    findings=('malar_rash',), sha256=key, width=900, height=900,
+                )
+                conn.execute(
+                    "UPDATE panels SET age_group=?, findings_json=? WHERE panel_id=?",
+                    (age, json.dumps([{'finding_key': 'malar_rash', 'evidence': 'visual'}]), key),
+                )
             conn.commit()
             conn.close()
             with TestClient(create_app(directory)) as client:

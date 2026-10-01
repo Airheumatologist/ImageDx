@@ -308,6 +308,14 @@ function loadPanels() {
       if (request !== panelsRequest) return;
       state.loading = false;
       state.panels = d.panels;
+      const reserves = Object.values(d.reserves || {}).reduce((sum, n) => sum + n, 0);
+      const note = $("reserves-note");
+      if (note) {
+        note.hidden = reserves === 0;
+        note.textContent = reserves
+          ? `${reserves} additional eligible image${reserves === 1 ? "" : "s"} held in reserve — galleries are capped at ${d.gallery_cap || 20} per finding.`
+          : "";
+      }
       if (!params.toString() && state.hasPediatric === null) state.hasPediatric = d.panels.some(isPediatric);
       render();
     }).catch(() => {

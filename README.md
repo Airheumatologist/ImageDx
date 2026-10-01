@@ -68,8 +68,9 @@ authoritative spec is `docs/visual_pilot_plan.md`.
               v
  +=====================================================================+
  | 7. REPORT      report.py (no LLM)                    -> reports/    |
- |    per-disease funnel, panel distributions, coverage gaps, cost     |
- |    ledger, access failures, HTML/CSV spot-check sheets              |
+ |    per-disease funnel, panel distributions, pair coverage           |
+ |    milestones + per-pair funnel, cost ledger, access failures,      |
+ |    HTML/CSV spot-check sheets                                       |
  +=====================================================================+
               |
               v
@@ -124,8 +125,10 @@ selection and recorded in `reports/stage2_counts.json` under
 `_turbopuffer_billing` (along with request and query counts).
 
 Report and viewer rebuild one deterministic primary representative for each
-covered approved disease/finding pair. All eligible alternatives remain in the
-library, and manual or locked selections are preserved.
+covered approved disease/finding pair, chosen from that pair's selected
+gallery (never from a reserve). All eligible alternatives remain in the
+library — published gallery images plus any reserves — and manual or locked
+selections are preserved.
 
 ### 2. `parse` — figure extraction (`parse.py`, `jats.py`, `pmc.py`)
 
@@ -233,6 +236,26 @@ zero-image vocabulary findings, skin-tone distribution, cost ledger,
 access failures, and human spot-check sheets (`spot_accepted.html`,
 `spot_caption_rejected.html` + CSVs).
 
+Two pair-coverage sections report every approved (disease, finding) pair —
+even pairs with zero articles or images — from the same frozen gallery
+snapshot the scheduler and viewer use:
+
+- `pair_coverage` — the milestone summary: legacy histogram buckets plus
+  `floor`/`target`/`cap` (defaults 3/10/20) and per-disease `pairs_at_floor`,
+  `pairs_at_target`, `pairs_full`, `zero_image_pairs`, `tier_counts`,
+  `under_target`, and plate counts;
+- `pair_funnel` — per pair: `retrieved_unique_articles`,
+  `licensed_articles`, `pair_supported_caption_figures`,
+  `eligible_distinct`, `published_distinct`, `reserve_distinct`,
+  `floor_deficit`/`target_deficit`/`cap_remaining`, `tier`, `milestone`,
+  `blocked_reason`, `attempted_strategies`, `last_deficit_reduction`,
+  `next_action`, `pending_work`, `unresolved_legacy_candidates`, structured
+  `rejection_categories` (license/third-party, review type, no patient
+  image, age unclear, attribution unclear/other disease, unsupported
+  finding, mixed plate, quality, retrieval error), and `selection_reserves`
+  (`distinct_groups`, `duplicate_or_diversity_rows`). Rejection categories
+  and reserves are separate concepts and are never merged.
+
 ### 8. `serve` — library viewer (`viewer/`, FastAPI)
 
 `python3 -m src.visual_pilot.cli serve --port 8765` starts a local
@@ -253,6 +276,47 @@ an existing library, run `python3 -m src.visual_pilot.curation_audit`; add
 `--apply` to back up SQLite and save reversible exclusions. The images and
 original judgments are retained. See [curation review](docs/visual_curation_review.md)
 for the diagnosis and audit details.
+
+## Balanced pair coverage (3/10/20)
+
+Coverage is measured per approved `(disease_key, finding_key)` pair by the
+selected gallery, not by retrieved articles or stored rows.
+
+- **Milestones.** `VP_FINDING_IMAGE_FLOOR` (default 3) is the initial
+  coverage milestone, `VP_FINDING_IMAGE_TARGET` (default 10) the expansion
+  goal, and `VP_FINDING_GALLERY_CAP` (default 20) the maximum published
+  gallery size per pair — across all modalities, tabs, and age groups, not
+  per tab. Ten is a milestone, not a ceiling; galleries may grow to 20 once
+  lower-coverage lanes are served. Inconsistent overrides
+  (`floor > target` or `target > cap`) fail loudly at startup.
+- **Gallery selection and reserves.** `gallery.select_gallery` collapses
+  identical hashes, documented same-patient/reuse groups, and
+  undocumented same-figure source families into distinct groups, then fills
+  the cap with a soft two-per-article preference before a score-ordered
+  second pass. Eligible surplus beyond the cap is stored as **reserves** —
+  retained and inspectable, never truncated, deleted, or counted as a
+  rejection. Modality/pediatric filters draw subsets of the same capped
+  gallery.
+- **Lane tiers and blocked reasons.** Each pair's lane is tiered by
+  published distinct count: `empty` (0), `below_floor` (1–2),
+  `below_target` (3–9), `expanding` (10–19), `full` (20). Lane rows
+  (`manifestation_lanes`) keep `status` (`open`/`covered`), `tier`,
+  `last_served_sequence`, `blocked_reason` (e.g. `search_plan_exhausted` or
+  a safety-limit pause), `search_policy_version`, and
+  `last_deficit_reduction_at`. A blocked lane reports its deficit honestly
+  instead of spinning or claiming coverage.
+- **`pair_search_attempts` ledger.** Bounded replenishment records each
+  disease-scoped query round: policy version, round, query/filter hash,
+  BM25 depth (300, 600, then 1200 — at most three automatic rounds per
+  policy version, ≤6 unattempted query variants per round), returned and
+  newly discovered PMCIDs, pending outcomes, errors, and completion time.
+  Completed attempts are never repeated; interrupted ones resume.
+- **Reporting.** `pilot_report.json` mirrors all of this under
+  `pair_coverage` and `pair_funnel` (field list in stage 7 above), and
+  `pilot_report.md` renders per-disease pair tables with honest blocked
+  reasons and next actions, plus a rejection-categories summary kept
+  separate from reserve counts. The viewer, scheduler, and report read the
+  same `gallery.coverage_snapshot`, so they agree on pair counts and IDs.
 
 ## Guarantees
 

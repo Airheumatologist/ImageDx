@@ -126,7 +126,10 @@ def test_manifestation_deficit_overrides_disease_quota(tmp_path,monkeypatch):
     conn.execute("INSERT INTO diseases(disease_key,name) VALUES('as','AS')")
     conn.execute("INSERT INTO findings_vocab(finding_key,disease_keys_json,label,category,approved) VALUES('uveitis','[\"as\"]','Uveitis','eye',1)")
     for pmcid in ('A','B','C'):
-        conn.execute("INSERT INTO manifestation_candidates(disease_key,finding_key,pmcid) VALUES('as','uveitis',?)",(pmcid,))
+        conn.execute(
+            "INSERT INTO manifestation_candidates"
+            "(disease_key,finding_key,pmcid,provenance_status,provenance_disease_key) "
+            "VALUES('as','uveitis',?,'explicit','as')", (pmcid,))
     conn.execute("UPDATE articles SET status='candidate' WHERE pmcid='C'")
     monkeypatch.setattr(config,'VP_MANIFESTATION_QUOTA',3)
     assert select_articles.needs_manifestation_licenses(conn,'as')

@@ -133,7 +133,7 @@ def _bundle_and_parsed(article_row) -> tuple[object, jats.ParsedArticle]:
 
 
 def coverage_gaps(conn, disease_key: str) -> dict[str, int]:
-    """Under-target approved findings -> current distinct-image count."""
+    """Approved findings under the gallery cap -> published distinct count."""
     wanted = {
         r["finding_key"]
         for r in conn.execute(
@@ -144,8 +144,8 @@ def coverage_gaps(conn, disease_key: str) -> dict[str, int]:
         )
     }
     counts = manifestation_queue.published_coverage(conn, disease_key)
-    target = config.VP_FINDING_IMAGE_TARGET
-    return {key: counts.get(key, 0) for key in wanted if counts.get(key, 0) < target}
+    cap = config.VP_FINDING_GALLERY_CAP
+    return {key: counts.get(key, 0) for key in wanted if counts.get(key, 0) < cap}
 
 
 def _caption_candidates(article_row: dict, disease_key: str) -> list[dict] | None:
@@ -603,6 +603,18 @@ def run(args) -> int:
     in_scope = (
         list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
     )
+    if getattr(args, "dry_run", False):
+        # Dry-run exits before db.init_db (its migrations write) and before
+        # any JATS fetch or client construction: describe scope only.
+        batch_size = max(1, int(getattr(args, "batch_size", None) or DEFAULT_BATCH_SIZE))
+        print(
+            f"dry-run: would reserve a parse batch for diseases={in_scope}, "
+            f"batch_size={batch_size}, "
+            f"max_articles={getattr(args, 'max_articles', None) or DEFAULT_MAX_ARTICLES}, "
+            f"pmcids={getattr(args, 'pmcids', None) or 'none'}"
+        )
+        print("dry-run: no DB reads/writes, no JATS fetches")
+        return 0
     conn = db.init_db()
     batch_size = max(1, int(getattr(args, "batch_size", None) or DEFAULT_BATCH_SIZE))
     max_articles = max(1, int(getattr(args, "max_articles", None) or DEFAULT_MAX_ARTICLES))
@@ -617,8 +629,6 @@ def run(args) -> int:
                 key,
                 min(max_articles, len(allowed)),
                 pmcids=allowed,
-                peek_captions=not args.dry_run,
-                persist=not args.dry_run,
             )
             for row in batch:
                 unique.setdefault(row["pmcid"], row)
@@ -631,24 +641,13 @@ def run(args) -> int:
             if room <= 0:
                 break
             for row in select_batch(
-                conn, key, min(batch_size, room), peek_captions=not args.dry_run,
-                persist=not args.dry_run,
+                conn, key, min(batch_size, room),
             ):
                 unique.setdefault(row["pmcid"], row)
         articles = list(unique.values())
     limit = getattr(args, "limit", None)
     if limit is not None:
         articles = articles[:limit]
-
-    if args.dry_run:
-        print(f"dry-run: {len(articles)} relevant articles in next ranked batch")
-        for row in articles[:20]:
-            score = article_rank.score_article(row, in_scope[0])["score"]
-            print(f"  {row['pmcid']}  visual-score={score:.2f}  {row['title']}")
-        if len(articles) > 20:
-            print(f"  ... and {len(articles) - 20} more")
-        conn.close()
-        return 0
 
     stats: dict[str, int] = {}
     started = time.monotonic()

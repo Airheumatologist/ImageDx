@@ -172,6 +172,8 @@ CREATE TABLE IF NOT EXISTS manifestation_candidates (
     retrieval_score REAL,
     status TEXT NOT NULL DEFAULT 'pending',
     last_outcome TEXT,
+    provenance_status TEXT NOT NULL DEFAULT 'unresolved',
+    provenance_disease_key TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     PRIMARY KEY(disease_key, finding_key, pmcid)
@@ -183,6 +185,14 @@ CREATE TABLE IF NOT EXISTS manifestation_lanes (
     status TEXT NOT NULL DEFAULT 'open',
     last_outcome TEXT,
     selected_count INTEGER NOT NULL DEFAULT 0,
+    tier TEXT NOT NULL DEFAULT 'empty',
+    last_served_sequence INTEGER NOT NULL DEFAULT 0,
+    blocked_reason TEXT,
+    search_policy_version TEXT,
+    last_deficit_reduction_at TEXT,
+    last_published_distinct INTEGER NOT NULL DEFAULT 0,
+    last_search_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     PRIMARY KEY(disease_key, finding_key)
 );
@@ -199,6 +209,28 @@ CREATE TABLE IF NOT EXISTS manifestation_representatives (
     PRIMARY KEY(disease_key, finding_key)
 );
 
+-- Balanced pair-search attempt ledger: one row per (disease, finding) query
+-- round/depth under a policy version; the UNIQUE key makes retries idempotent.
+CREATE TABLE IF NOT EXISTS pair_search_attempts (
+    attempt_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    disease_key TEXT NOT NULL,
+    finding_key TEXT NOT NULL,
+    policy_version TEXT NOT NULL,
+    round_no INTEGER NOT NULL,
+    query TEXT NOT NULL,
+    query_filter_hash TEXT NOT NULL,
+    filters_json TEXT NOT NULL,
+    depth INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'started',
+    returned_pmcids_json TEXT NOT NULL DEFAULT '[]',
+    new_pmcids_json TEXT NOT NULL DEFAULT '[]',
+    pending_outcomes_json TEXT NOT NULL DEFAULT '{}',
+    error TEXT,
+    started_at TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT,
+    UNIQUE(disease_key,finding_key,policy_version,round_no,query_filter_hash,depth)
+);
+
 -- Reversible publication exclusions. Original judgments, rows and files are
 -- retained; a review applies only to the exact image that was audited.
 CREATE TABLE IF NOT EXISTS panel_curation (
@@ -208,6 +240,18 @@ CREATE TABLE IF NOT EXISTS panel_curation (
     reason          TEXT NOT NULL,
     policy_version  TEXT NOT NULL,
     reviewed_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Human review resolving which patient/reuse group a panel belongs to; the
+-- reviewed image hash pins the review to the exact audited image.
+CREATE TABLE IF NOT EXISTS panel_identity_reviews (
+    panel_id TEXT PRIMARY KEY REFERENCES panels(panel_id),
+    patient_group_key TEXT,
+    reuse_group_key TEXT,
+    source_quote TEXT NOT NULL,
+    review_provenance TEXT NOT NULL,
+    reviewed_image_sha256 TEXT NOT NULL,
+    reviewed_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE VIEW IF NOT EXISTS published_panels AS
@@ -242,6 +286,8 @@ CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pending
     ON manifestation_candidates(disease_key, finding_key, status, best_rank);
 CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pmcid
     ON manifestation_candidates(pmcid, status);
+CREATE INDEX IF NOT EXISTS idx_pair_search_attempts_pair
+    ON pair_search_attempts(disease_key,finding_key,policy_version,round_no,status);
 
 CREATE TABLE IF NOT EXISTS article_queue_state (
     pmcid TEXT NOT NULL REFERENCES articles(pmcid),
@@ -263,6 +309,8 @@ _PK_COLUMNS = {
     "disease_findings": "id",
     "llm_calls": "call_id",
     "panel_curation": "panel_id",
+    "panel_identity_reviews": "panel_id",
+    "pair_search_attempts": "attempt_id",
 }
 
 def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
@@ -288,6 +336,8 @@ def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
     _migrate_articles(conn)
     _migrate_panels(conn)
     _migrate_manifestation_representatives(conn)
+    _migrate_manifestation_candidates(conn)
+    _migrate_manifestation_lanes(conn)
     conn.commit()
     return conn
 
@@ -399,6 +449,78 @@ def _migrate_manifestation_representatives(conn: sqlite3.Connection) -> None:
         conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
         conn.execute(f"RELEASE SAVEPOINT {savepoint}")
         raise
+
+
+# Balanced pair-search additions (W-coverage contracts). Rows predating the
+# provenance columns stay 'unresolved' until an explicit refresh activates
+# them; lane timestamps that did not happen stay NULL.
+_MANIFESTATION_CANDIDATE_MIGRATIONS = (
+    "ALTER TABLE manifestation_candidates "
+    "ADD COLUMN provenance_status TEXT NOT NULL DEFAULT 'unresolved'",
+    "ALTER TABLE manifestation_candidates "
+    "ADD COLUMN provenance_disease_key TEXT",
+)
+
+_MANIFESTATION_LANE_MIGRATIONS = (
+    "ALTER TABLE manifestation_lanes ADD COLUMN tier TEXT NOT NULL DEFAULT 'empty'",
+    "ALTER TABLE manifestation_lanes "
+    "ADD COLUMN last_served_sequence INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE manifestation_lanes ADD COLUMN blocked_reason TEXT",
+    "ALTER TABLE manifestation_lanes ADD COLUMN search_policy_version TEXT",
+    "ALTER TABLE manifestation_lanes ADD COLUMN last_deficit_reduction_at TEXT",
+    "ALTER TABLE manifestation_lanes "
+    "ADD COLUMN last_published_distinct INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE manifestation_lanes ADD COLUMN last_search_at TEXT",
+    # ADD COLUMN cannot carry a non-constant default, so created_at is added
+    # nullable and backfilled below.
+    "ALTER TABLE manifestation_lanes ADD COLUMN created_at TEXT",
+)
+
+
+def _migrate_manifestation_candidates(conn: sqlite3.Connection) -> None:
+    existing = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(manifestation_candidates)")
+    }
+    if not existing:
+        return
+    wanted = {
+        "provenance_status": _MANIFESTATION_CANDIDATE_MIGRATIONS[0],
+        "provenance_disease_key": _MANIFESTATION_CANDIDATE_MIGRATIONS[1],
+    }
+    for column, statement in wanted.items():
+        if column not in existing:
+            conn.execute(statement)
+
+
+def _migrate_manifestation_lanes(conn: sqlite3.Connection) -> None:
+    existing = {
+        row["name"] for row in conn.execute("PRAGMA table_info(manifestation_lanes)")
+    }
+    if not existing:
+        return
+    wanted = dict(zip(
+        (
+            "tier",
+            "last_served_sequence",
+            "blocked_reason",
+            "search_policy_version",
+            "last_deficit_reduction_at",
+            "last_published_distinct",
+            "last_search_at",
+            "created_at",
+        ),
+        _MANIFESTATION_LANE_MIGRATIONS,
+        strict=True,
+    ))
+    for column, statement in wanted.items():
+        if column not in existing:
+            conn.execute(statement)
+    if "created_at" not in existing:
+        conn.execute(
+            "UPDATE manifestation_lanes SET created_at = datetime('now') "
+            "WHERE created_at IS NULL"
+        )
 
 
 # -----------------------------------------------------------------------------

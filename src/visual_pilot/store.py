@@ -848,5 +848,13 @@ def run(args) -> int:
         f"({totals['whole_figure']} whole-figure, {totals['dedup']} deduped), "
         f"{totals['proposed']} proposed-finding upserts, {totals['errors']} errors"
     )
+    if totals["panels"]:
+        # Newly stored panels can change each pair's gallery lead; refresh
+        # the representative table so mappings never wait for report/startup.
+        # Storage itself is never capped — all eligible panels stay stored.
+        from . import representatives
+
+        changes = representatives.rebuild(conn)
+        print(f"store: representatives refreshed ({changes})")
     conn.close()
     return 0
