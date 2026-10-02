@@ -132,6 +132,10 @@ CREATE TABLE IF NOT EXISTS panels (
     crop_mode              TEXT,
     plate_kind             TEXT,
     plate_findings_json    TEXT,
+    display_title          TEXT,
+    display_description    TEXT,
+    display_section        TEXT,
+    display_subsection     TEXT,
     confidence             REAL,
     rationale              TEXT,
     image_path             TEXT,
@@ -390,6 +394,11 @@ def _migrate_figures(conn: sqlite3.Connection) -> None:
 _PANEL_MIGRATIONS = (
     "ALTER TABLE panels ADD COLUMN plate_kind TEXT",
     "ALTER TABLE panels ADD COLUMN plate_findings_json TEXT",
+    # Standalone title/description and viewer section written by the describe stage (P5).
+    "ALTER TABLE panels ADD COLUMN display_title TEXT",
+    "ALTER TABLE panels ADD COLUMN display_description TEXT",
+    "ALTER TABLE panels ADD COLUMN display_section TEXT",
+    "ALTER TABLE panels ADD COLUMN display_subsection TEXT",
 )
 
 
@@ -400,6 +409,10 @@ def _migrate_panels(conn: sqlite3.Connection) -> None:
     wanted = {
         "plate_kind": _PANEL_MIGRATIONS[0],
         "plate_findings_json": _PANEL_MIGRATIONS[1],
+        "display_title": _PANEL_MIGRATIONS[2],
+        "display_description": _PANEL_MIGRATIONS[3],
+        "display_section": _PANEL_MIGRATIONS[4],
+        "display_subsection": _PANEL_MIGRATIONS[5],
     }
     changed = False
     for column, statement in wanted.items():

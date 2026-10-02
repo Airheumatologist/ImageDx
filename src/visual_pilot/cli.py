@@ -142,7 +142,10 @@ def _cmd_run_all(args: argparse.Namespace) -> int:
                 rc = _stage("judge", pmcids, label)
                 if rc != 0:
                     return rc
-            return _stage("store", pmcids, label)
+            rc = _stage("store", pmcids, label)
+            if rc != 0:
+                return rc
+            return _stage("describe", pmcids, label)
 
         if args.pmcids:
             rc = _drain(list(args.pmcids), "explicit PMCIDs")
@@ -222,6 +225,7 @@ COMMANDS: dict[str, CommandFn | None] = {
     "requeue-plates": _lazy("judge", "run_requeue_plates"),
     "requeue-age-vetoes": _lazy("judge", "run_requeue_age_vetoes"),
     "store": _lazy("store"),
+    "describe": _lazy("describe"),
     "extract": _lazy("extract_findings"),
     "report": _lazy("report"),
     "serve": _lazy("viewer"),
@@ -322,6 +326,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--refresh",
         action="store_true",
         help="recompute panel attribution/subtype from stored vision_json",
+    )
+    subs["describe"].add_argument(
+        "--force",
+        action="store_true",
+        help="rewrite display captions that already exist",
     )
     subs["extract"].add_argument(
         "--force",

@@ -366,6 +366,7 @@ python3 -m src.visual_pilot.cli discover --disease sle --per-pair 25
 python3 -m src.visual_pilot.cli triage  --disease sle
 python3 -m src.visual_pilot.cli judge   --disease sle
 python3 -m src.visual_pilot.cli store   --disease sle
+python3 -m src.visual_pilot.cli describe --disease sle   # standalone captions + sections
 python3 -m src.visual_pilot.cli extract --disease sle
 python3 -m src.visual_pilot.cli report
 python3 -m src.visual_pilot.cli serve --port 8765    # browse the library

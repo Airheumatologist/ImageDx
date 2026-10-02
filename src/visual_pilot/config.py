@@ -81,6 +81,7 @@ VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "openrouter").strip().lower()
 VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "stealth/space-bunny-alpha")
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "stealth/space-bunny-alpha")
 VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "stealth/space-bunny-alpha")
+VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 # Stage-5 storage encoding. Panels are written lossy (WebP q90 by default)
 # capped at VP_PANEL_MAX_EDGE; the stored "original" is a display copy capped

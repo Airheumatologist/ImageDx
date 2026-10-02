@@ -337,6 +337,83 @@ def _tabs_for(key: str) -> list[dict]:
     return TABS.get(key, GENERIC_TABS)
 
 
+def _subsections(tab: dict) -> list[str] | None:
+    """Fixed subsection names for a tab; None when it is not subdivided.
+
+    ``group_order`` spelling variants (nr_axspa / nr-axSpA) collapse to the
+    last spelling. A ``finding``-grouped tab is subdivided by finding key.
+    """
+    if tab.get("group_by") == "finding":
+        return ["finding"]
+    names: dict[str, str] = {}
+    for name in tab.get("group_order") or ():
+        names[name.lower().replace("_", "-")] = name
+    return list(names.values()) or None
+
+
+# One-line meanings sent with fixed subsection names to the describe stage.
+_SUBSECTION_HINTS = {
+    "nr-axSpA": "non-radiographic axial SpA: no definite sacroiliitis on radiographs; MRI-only inflammation",
+    "early": "early radiographic disease: definite sacroiliitis or erosions without syndesmophytes or ankylosis",
+    "advanced": "advanced disease: syndesmophytes, bridging, ankylosis or bamboo spine",
+    "ACLE": "acute cutaneous lupus, e.g. malar (butterfly) rash",
+    "SCLE": "subacute cutaneous lupus: annular or papulosquamous lesions",
+    "DLE": "discoid (chronic cutaneous) lupus: scarring discoid plaques",
+    "Vascular findings": "vasculitis, Raynaud phenomenon, livedo reticularis, digital ulcers or gangrene",
+    "Other skin findings": "other skin manifestations",
+}
+
+
+def section_options(key: str) -> list[dict]:
+    """The disease's sections (tabs) and subsections, for the describe stage."""
+    options = []
+    for tab in _tabs_for(key):
+        if tab.get("cross_cutting") or "match" not in tab:
+            continue
+        alts = tab["match"].get("any_of", [])
+        options.append({
+            "key": tab["key"],
+            "label": tab["label"],
+            "image_types": sorted({m for alt in alts for m in alt.get("modalities", ())}),
+            "finding_categories": sorted({c for alt in alts for c in alt.get("categories", ())}),
+            "subsections": _subsections(tab),
+        })
+        if options[-1]["subsections"] and options[-1]["subsections"] != ["finding"]:
+            options[-1]["subsection_meanings"] = {
+                name: _SUBSECTION_HINTS[name]
+                for name in options[-1]["subsections"] if name in _SUBSECTION_HINTS
+            }
+    return options
+
+
+def route_panel(panel: dict, key: str, categories: dict[str, str]) -> None:
+    """Set ``tab``/``clinical_group`` (and the stage or lead finding for
+    stage/finding-grouped tabs), preferring the describe stage's choice
+    when it names a valid section and subsection, else the rule routing."""
+    tabs = _tabs_for(key)
+    by_key = {t["key"]: t for t in tabs if not t.get("cross_cutting") and "match" in t}
+    section = panel.get("display_section")
+    tab = by_key.get(section) if section else None
+    panel["tab"] = tab["key"] if tab else assign_tab(panel, tabs, categories)
+    tab = tab or by_key.get(panel["tab"])
+    subsection = panel.get("display_subsection")
+    group_by = tab.get("group_by") if tab else None
+    allowed = _subsections(tab) if tab else None
+    if group_by == "finding":
+        lead = [f for f in panel.get("findings", []) if f.get("key") == subsection]
+        if lead:
+            panel["findings"] = lead + [f for f in panel["findings"] if f is not lead[0]]
+        subsection = None
+    elif not allowed or subsection not in allowed:
+        subsection = None
+    if group_by == "stage" and subsection:
+        panel["stage"] = subsection
+    if key == "sle" and panel["tab"] == "skin":
+        panel["clinical_group"] = subsection or _clinical_group(panel)
+    else:
+        panel["clinical_group"] = None
+
+
 def _known_disease(conn, key: str) -> bool:
     return conn.execute(
         "SELECT 1 FROM diseases WHERE disease_key = ?", (key,)
@@ -518,6 +595,13 @@ def _panel_json(
     if not context and mentions:
         context = str(mentions[0]).strip()
     context = " ".join(context.split())
+    keys = row.keys()
+    display_title = (row["display_title"] or "").strip() if "display_title" in keys else ""
+    display_description = (row["display_description"] or "").strip() if "display_description" in keys else ""
+    if display_description:
+        context = display_description
+    display_section = row["display_section"] if "display_section" in keys else None
+    display_subsection = row["display_subsection"] if "display_subsection" in keys else None
     context_summary = context if len(context) <= 320 else context[:317].rsplit(" ", 1)[0] + "…"
     findings = [f for f in findings if f["source_supported"]]
     shown_label = ", ".join(dict.fromkeys(f["label"] for f in findings))
@@ -595,7 +679,9 @@ def _panel_json(
         "article_title": article_title,
         "article_tier": source_quality.article_tier(article_types, article_title),
         "country": country,
-        "display_label": shown_label or _caption_label(caption) or row["body_site"] or row["modality"] or "Clinical image",
+        "display_section": display_section,
+        "display_subsection": display_subsection,
+        "display_label": shown_label or display_title or _caption_label(caption) or row["body_site"] or row["modality"] or "Clinical image",
         "context": context,
         "context_summary": context_summary,
         "age_evidence": age["evidence"],
@@ -1062,7 +1148,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                 if pid in rows
             ]
             for panel in panels:
-                panel["tab"] = assign_tab(panel, tabs, categories)
+                route_panel(panel, key, categories)
 
             available = {panel["tab"] for panel in panels}
             if any(panel["pediatric"] for panel in panels):
@@ -1157,16 +1243,18 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             if typicality:
                 panels = [p for p in panels if _norm(p.get("typicality")) == _norm(typicality)]
             for p in panels:
-                p["tab"] = assign_tab(p, _tabs_for(key), categories)
+                route_panel(p, key, categories)
                 p["clinical_tab"] = p["tab"]
-                p["clinical_group"] = _clinical_group(p) if key == "sle" and p["tab"] == "skin" else None
                 p["source_variant"]["clinical_tab"] = p["clinical_tab"]
                 p["source_variant"]["clinical_group"] = p["clinical_group"]
             panels = _collapse_duplicates(panels)
             _mark_representatives(panels, representative_map)
             for p in panels:
                 p["clinical_tab"] = p["tab"]
-                p["clinical_group"] = _clinical_group(p) if key == "sle" and p["tab"] == "skin" else None
+                if key == "sle" and p["tab"] == "skin" and not p.get("clinical_group"):
+                    p["clinical_group"] = _clinical_group(p)
+                elif not (key == "sle" and p["tab"] == "skin"):
+                    p["clinical_group"] = None
                 p["pediatric"] = p.get("pediatric") or any(
                     _is_pediatric(age) for age in p.get("age_group_variants", [])
                 )

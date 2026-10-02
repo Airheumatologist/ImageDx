@@ -17,8 +17,8 @@ python3 -m src.visual_pilot.cli <stage> --disease all --limit N --dry-run --budg
 python3 -m src.visual_pilot.cli run-all --disease all --budget-usd X
 ```
 
-Stages: `init | discover | triage | judge | store | extract | report |
-serve | run-all`. Every stage is idempotent and resumes from the `status`
+Stages: `init | discover | triage | judge | store | describe | extract |
+report | serve | run-all`. Every stage is idempotent and resumes from the `status`
 column. Data lives under `data/visual_pilot/` (override with `VP_DATA_DIR`):
 `visual_pilot.sqlite`, `panels/`, `thumbs/`, `figures/`, `reports/`.
 
@@ -142,6 +142,29 @@ target. Recommended growth run:
 `run-all --disease all --per-pair 25 --max-rounds 3 --budget-usd X`. The
 report's "Per-pair image coverage" section shows the images/pair histogram
 and per-disease under-target pairs.
+
+## Display captions and sections (`describe`, prompt P5)
+
+Article captions are written for the article, with figure and panel letters,
+citation marks ("tendon.19 A"), cross-references and permission notes. After
+`store`, `describe` sends each new panel's caption, mentions, panel label and
+judge metadata, plus the disease's viewer sections, to P5
+(`VP_DESCRIBE_MODEL`, default `VP_EXTRACT_MODEL`). The model writes a
+standalone `display_title` and a 1–2 sentence `display_description` limited
+to that image, and picks `display_section` (a viewer tab key) and
+`display_subsection` (a listed group, such as an SLE skin group or an AS
+stage, or a finding key for finding-grouped tabs). Choices outside the listed
+options are stored as null. The viewer shows the description as Context, keeps
+the article caption under Source, and falls back to rule routing when no
+valid section was chosen. `run-all` runs it after every `store` batch; use
+`describe --force` to rewrite existing captions after a P5 change.
+
+Treatment images are excluded: caption triage (P2) drops before/after,
+drug-response, follow-up healing, intraoperative/postoperative, injection and
+device figures before download. P5 also returns `treatment_related`; a flagged
+panel gets a `panel_curation` exclusion (reason `treatment_related`) and its
+crop, thumbnail and figure original are deleted unless a published panel
+still uses them. Disease a drug caused (e.g. drug-induced lupus) is kept.
 
 ## Stage 0 findings
 
