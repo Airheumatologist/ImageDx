@@ -94,7 +94,7 @@ def _contains_any(text: str, terms, patterns: dict | None = None) -> bool:
 
 
 class _RunContext:
-    """Per-run routing caches for ``_explicit_target_visual`` (plan §5 W10, B10).
+    """Per-run routing caches for ``_explicit_target_visual``.
 
     Disease names/synonyms, approved ``findings_vocab`` rows, article disease
     keys and compiled term regexes are stable within a single ``run``/revisit
@@ -400,7 +400,7 @@ def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=Fals
 def run(args) -> int:
     conn = db.init_db()
     # One routing context per run: vocab rows, disease terms, article keys and
-    # compiled regexes are stable for the whole pass (plan §5 W10, B10).
+    # compiled regexes are stable for the whole pass.
     ctx = _RunContext(conn)
     disease = None if args.disease == "all" else args.disease
     if disease is not None and disease not in diseases.DISEASE_KEYS:

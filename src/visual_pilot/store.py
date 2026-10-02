@@ -26,7 +26,7 @@ earlier file but keep their own row, attribution and license. Proposed findings
 upsert into findings_vocab exactly once per figure (the vision_accepted ->
 stored transition is the only place they are counted).
 
-Scheduling (plan §5 W7): fetch + decode + crop + PNG/WebP encoding run on a
+Scheduling: fetch + decode + crop + PNG/WebP encoding run on a
 ``VP_FETCH_CONCURRENCY`` worker pool; file writes, the sha256 dedup check,
 panel inserts, proposal upserts and the ``vision_accepted -> stored`` flip
 are applied on the main thread in deterministic figure order, one
@@ -117,7 +117,7 @@ def overlap_ratio(a: list[float], b: list[float]) -> float:
 
 
 def decide_crop_modes(panels: list[dict], license_mode: str | None) -> list[str]:
-    """§5 stage 6 crop mode per panel ("panel" | "whole_figure").
+    """Crop mode per panel ("panel" | "whole_figure").
 
     ``panels`` is every panel of the figure (included or not) — the overlap
     rule compares against all of them. ``license_mode`` is the license's
@@ -198,12 +198,6 @@ def slugify(term: str) -> str:
     return re.sub(r"_+", "_", re.sub(r"[^a-z0-9]+", "_", term.strip().lower())).strip("_")
 
 
-def save_thumb(img: Image.Image, path: Path) -> None:
-    thumb = img.copy()
-    thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
-    thumb.save(path, format="WEBP", quality=80, method=6)
-
-
 def _cap_edge(img: Image.Image, max_edge: int) -> Image.Image:
     """Return ``img`` downscaled so the long edge is <= ``max_edge``
     (0 disables). Returns the same object when no resize is needed."""
@@ -266,16 +260,6 @@ def original_rel_path(figure: dict) -> str:
     """Data-dir-relative path of a figure's stored display original."""
     name = PurePosixPath(_original_basename(figure)).with_suffix(".webp").name
     return f"figures/{figure['pmcid']}/{name}"
-
-
-def write_original(original_bytes: bytes, figure: dict, data_dir: Path) -> str:
-    """Save the display copy of a figure original (see ``_encode_original``)."""
-    with Image.open(io.BytesIO(original_bytes)) as im:
-        rel, data = _encode_original(im.convert("RGB"), figure)
-    path = data_dir / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
-    return rel
 
 
 def upsert_proposed(conn, term: str, disease_key: str, modality: str | None) -> bool:
@@ -646,20 +630,6 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
         )
         stats["panels"] += 1
     return stats
-
-
-def store_figure(conn, figure: dict, article: dict, parsed: jats.ParsedArticle, data_dir: Path) -> dict:
-    """Write files + panel rows for one vision_accepted figure.
-
-    Sequential single-figure path (prepare + apply on the calling thread);
-    ``run()`` uses the same internals across a worker pool.
-    """
-    prepared = _prepare_figure(
-        figure,
-        article,
-        attrib=(parsed.authors, parsed.author_count, parsed.journal_name),
-    )
-    return _apply_prepared(conn, figure, article, prepared, data_dir)
 
 
 # ---------------------------------------------------------------------------

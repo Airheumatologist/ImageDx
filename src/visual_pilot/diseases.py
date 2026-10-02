@@ -16,7 +16,7 @@ from .db import to_json
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
-# findings_vocab.category enum per spec §4.
+# findings_vocab.category enum.
 FINDING_CATEGORIES = frozenset(
     {
         "skin",

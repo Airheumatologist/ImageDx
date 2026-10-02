@@ -25,10 +25,10 @@ a per-host token-bucket rate limiter (NCBI <=3 req/s, <=10 with
 ``config.VP_S3_RPS`` (default 20); other hosts ~5 req/s) plus retries on
 429/5xx.
 
-Contract C3 (docs/visual_pilot_plan.md §4): ``LicenseInfo`` carries the
-article's S3 ``prefix`` and ``media_files`` when they were already fetched;
-``get_article_bundle`` accepts those as hints to skip the bucket listing and
-metadata JSON while producing a resolver identical to the no-hint path.
+``get_article_bundle`` accepts the article's S3 ``prefix`` and
+``media_files`` as hints when they are already known, skipping the bucket
+listing and metadata JSON while producing a resolver identical to the no-hint
+path.
 """
 
 from __future__ import annotations
@@ -41,8 +41,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Iterable
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
@@ -57,7 +56,6 @@ logger = logging.getLogger(__name__)
 
 S3_BASE = "https://pmc-oa-opendata.s3.amazonaws.com"
 EPMC_REST = "https://www.ebi.ac.uk/europepmc/webservices/rest"
-EPMC_SEARCH_POST = f"{EPMC_REST}/searchPOST"
 S3_XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 
 USER_AGENT = "TurboRAG-visual-pilot/0.1 (local research tool)"
@@ -97,20 +95,6 @@ _LICENSE_CODES = (
     "cc-by-nc-sa",
     "cc-by-nc-nd",
 )
-
-
-@dataclass(frozen=True)
-class LicenseInfo:
-    code: str  # cc0|cc-by|cc-by-sa|cc-by-nd|cc-by-nc*|other|none
-    url: str | None
-    oa_subset: str | None  # "oa" when in the PMC open-access subset
-    raw: str | None = None
-    source: str | None = None  # which source produced it (s3_metadata|xml)
-    # C3 hints for get_article_bundle: the article's S3 dir and the image
-    # basenames in it, reused from the metadata/listing get_license already
-    # fetched (empty when the license came from the JATS fallback alone).
-    prefix: str | None = None
-    media_files: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -190,13 +174,6 @@ def _request(url: str, *, max_retries: int = 4) -> httpx.Response:
     return _with_retries(lambda: http_client().get(url), url, max_retries=max_retries)
 
 
-def _post(url: str, data: dict, *, max_retries: int = 4) -> httpx.Response:
-    """POST form fields with the same limiting/backoff as ``_request``."""
-    return _with_retries(
-        lambda: http_client().post(url, data=data), url, max_retries=max_retries
-    )
-
-
 def _with_retries(fetch: Callable[[], httpx.Response], url: str, *, max_retries: int = 4) -> httpx.Response:
     host = urlparse(url).netloc
     started = time.monotonic()
@@ -270,7 +247,7 @@ def normalize_license(raw: str | None) -> str:
 
 
 def license_allows(code: str) -> str | None:
-    """§2 license policy: crop | whole_figure | None (excluded)."""
+    """License policy: crop | whole_figure | None (excluded)."""
     if code in {"cc0", "cc-by", "cc-by-sa"}:
         return "crop"
     if code == "cc-by-nd":
@@ -289,130 +266,6 @@ def license_url_for(code: str, raw: str | None = None) -> str | None:
     if code.startswith("cc-"):
         return f"https://creativecommons.org/licenses/{code[3:]}/4.0/"
     return None
-
-
-def _license_hints(meta: dict | None, pmcid: str) -> dict:
-    """C3 hints for get_article_bundle from data get_license already fetched.
-
-    ``_figure_files`` reuses meta's ``media_urls`` or the (cached) bucket
-    listing, so this adds no requests to the unhinted path.
-    """
-    if meta:
-        prefix = _article_prefix(meta)
-        files = _figure_files(pmcid, meta)
-    else:
-        # No metadata JSON, but the listing was already fetched (cached).
-        prefix = _latest_prefix(pmcid)
-        files = _figure_files(pmcid, None)
-    return {"prefix": prefix, "media_files": tuple(sorted(files))}
-
-
-def get_license(pmcid: str) -> LicenseInfo:
-    """License for one article, from the S3 metadata JSON (fallback: JATS XML)."""
-    meta = _article_metadata(pmcid)
-    if meta is not None:
-        code = normalize_license(meta.get("license_code"))
-        if code != "none" or not meta.get("is_pmc_openaccess", True):
-            return LicenseInfo(
-                code=code,
-                url=license_url_for(code, meta.get("license_code")),
-                oa_subset="oa" if meta.get("is_pmc_openaccess") else None,
-                raw=meta.get("license_code"),
-                source="s3_metadata",
-                **_license_hints(meta, pmcid),
-            )
-    # Fallback: license declared in the article XML itself.
-    lic = _license_from_xml(pmcid)
-    if lic is not None:
-        return replace(lic, **_license_hints(meta, pmcid))
-    return LicenseInfo(code="none", url=None, oa_subset=None, raw=None, source="none")
-
-
-def _license_from_xml(pmcid: str) -> LicenseInfo | None:
-    try:
-        xml_text = _fetch_xml_text(pmcid)
-    except PmcError:
-        return None
-    for href, ltype in _iter_xml_licenses(xml_text):
-        raw = " ".join(part for part in (ltype, href) if part)
-        code = normalize_license(raw)
-        if code != "none":
-            return LicenseInfo(
-                code=code,
-                url=license_url_for(code, raw),
-                oa_subset="oa",
-                raw=raw,
-                source="xml",
-            )
-    return None
-
-
-def _iter_xml_licenses(xml_text: str):
-    try:
-        root = etree.fromstring(xml_text.encode("utf-8"))
-    except etree.XMLSyntaxError:
-        return
-    for lic in root.iter():
-        if etree.QName(lic).localname != "license":
-            continue
-        href = lic.get("{http://www.w3.org/1999/xlink}href") or lic.get("href")
-        ltype = lic.get("license-type")
-        yield href, ltype
-
-
-def get_licenses_epmc(pmcids: Iterable[str]) -> dict[str, LicenseInfo]:
-    """Licenses for many articles from one Europe PMC ``searchPOST`` call
-    per ``VP_EPMC_LICENSE_BATCH`` PMCIDs (final license source).
-
-    Only PMCIDs Europe PMC answered appear in the result: a missing record
-    or a batch still failing after retries contributes nothing (the caller
-    falls back per article). Core records carry ``license`` and
-    ``isOpenAccess``; ``lite`` does not, so core is required.
-    """
-    ids = list(dict.fromkeys(str(p) for p in pmcids if p))
-    if not ids:
-        return {}
-    batch = max(1, int(getattr(config, "VP_EPMC_LICENSE_BATCH", 100)))
-    workers = max(1, int(getattr(config, "VP_EPMC_CONCURRENCY", 4)))
-    chunks = [ids[i : i + batch] for i in range(0, len(ids), batch)]
-
-    def _fetch(chunk: list[str]) -> dict:
-        try:
-            resp = _post(
-                EPMC_SEARCH_POST,
-                {
-                    "query": "PMCID:(" + " OR ".join(chunk) + ")",
-                    "resultType": "core",
-                    "format": "json",
-                    "pageSize": "1000",
-                },
-            )
-            records = resp.json().get("resultList", {}).get("result", [])
-        except (PmcError, ValueError, AttributeError) as exc:
-            timing.count("epmc_license_batch_failed")
-            logger.debug("Europe PMC license batch of %d failed: %s", len(chunk), exc)
-            return {}
-        wanted = set(chunk)
-        return {
-            rec["pmcid"]: rec
-            for rec in records
-            if rec.get("pmcid") in wanted
-        }
-
-    out: dict[str, LicenseInfo] = {}
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        for records in pool.map(_fetch, chunks):
-            for rec in records.values():
-                raw = rec.get("license")
-                code = normalize_license(raw)
-                out[rec["pmcid"]] = LicenseInfo(
-                    code=code,
-                    url=license_url_for(code, raw),
-                    oa_subset="oa" if rec.get("isOpenAccess") == "Y" else None,
-                    raw=raw,
-                    source="epmc",
-                )
-    return out
 
 
 # -----------------------------------------------------------------------------
@@ -711,8 +564,3 @@ def to_data_url(mime: str, data: bytes) -> str:
     return f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
 
 
-def reset_caches() -> None:
-    """Drop the in-process caches (tests)."""
-    _article_metadata.cache_clear()
-    _article_bundle_cached.cache_clear()
-    _list_keys.cache_clear()

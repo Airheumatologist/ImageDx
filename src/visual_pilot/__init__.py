@@ -1,5 +1,4 @@
-"""Visual Findings Library: SLE, dermatomyositis, ankylosing spondylitis.
+"""Visual Findings Library pipeline for the pilot rheumatology diseases.
 
-Self-contained package; see docs/visual_pilot_plan.md for the authoritative
-spec.
+Self-contained package; see README.md for stages and settings.
 """

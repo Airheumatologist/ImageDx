@@ -1,6 +1,6 @@
 """SQLite schema and data access for the Visual Findings Library pilot.
 
-Schema follows docs/visual_pilot_plan.md §4 exactly. ``llm_calls`` doubles as
+``llm_calls`` doubles as
 the response cache (unique ``input_hash`` covers stage + model + payload) and
 the cost ledger.
 """
@@ -80,13 +80,6 @@ CREATE TABLE IF NOT EXISTS article_pair_rankings (
     scoring_json TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (disease_key, finding_key, pmcid)
-);
-
-CREATE TABLE IF NOT EXISTS ranking_embeddings (
-    cache_key TEXT PRIMARY KEY,
-    model TEXT NOT NULL,
-    vector_json TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS figures (
@@ -355,7 +348,7 @@ _ARTICLE_MIGRATIONS = (
     "ALTER TABLE articles ADD COLUMN study_region TEXT",
     "ALTER TABLE articles ADD COLUMN error TEXT",
     "ALTER TABLE articles ADD COLUMN retrieval_evidence_json TEXT NOT NULL DEFAULT '[]'",
-    # C2 additions (contract §4): S3 bundle + attribution metadata.
+    # S3 bundle + attribution metadata.
     "ALTER TABLE articles ADD COLUMN s3_prefix TEXT",
     "ALTER TABLE articles ADD COLUMN media_files_json TEXT",
     "ALTER TABLE articles ADD COLUMN authors_json TEXT",
@@ -612,7 +605,7 @@ def rows_with_status(
     """Rows whose status is in ``statuses``, optionally scoped to a disease.
 
     ``articles`` and ``figures`` carry their own status column; ``panels``
-    inherit the pipeline status of their parent figure (§4 gives panels no
+    inherit the pipeline status of their parent figure (panels have no
     status column). Disease scoping uses ``articles.primary_disease_keys_json``
     — directly for articles, via the article join for figures and panels.
     """
