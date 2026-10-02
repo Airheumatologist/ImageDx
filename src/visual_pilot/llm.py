@@ -28,6 +28,7 @@ from typing import Any
 
 import jsonschema
 import openai
+import httpx
 
 from . import config, db, timing
 from .prompts import Prompt
@@ -112,6 +113,10 @@ class LLMClient:
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
         self._lock = threading.Lock()
+        # Worker threads write llm_calls through the caller's connection under
+        # this lock; callers streaming iter_many must hold it for their own
+        # writes on that connection (see db_lock).
+        self._client_init_lock = threading.Lock()
         # Remember per model whether strict json_schema is accepted.
         self._response_mode: dict[str, str] = {}
 
@@ -257,14 +262,19 @@ class LLMClient:
                         results.append(
                             BatchResult(index=index, parsed=parsed, meta=meta)
                         )
-                # Free slots first so workers stay busy while results stream out.
-                _fill()
+                # Deliver completed results before advancing the request feed.
+                # A failing/interrupted producer must not lose these verdicts.
                 yield from results
+                _fill()
 
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
     def _openai(self) -> openai.OpenAI:
+        with self._client_init_lock:
+            return self._initialize_openai()
+
+    def _initialize_openai(self) -> openai.OpenAI:
         if self._client is None:
             if not self.api_key:
                 raise LLMError(
@@ -304,6 +314,17 @@ class LLMClient:
                 "images": [im.identity() for im in images],
             },
         )
+
+    @property
+    def db_lock(self) -> threading.Lock:
+        """Lock guarding the shared ``db_conn``.
+
+        ``iter_many`` workers insert and commit ``llm_calls`` rows on the
+        caller's connection; a caller writing to the same connection while
+        results stream must hold this lock, or a worker commit can end the
+        caller's transaction between its writes and its own commit.
+        """
+        return self._lock
 
     def _cache_lookup(self, input_hash: str):
         if self.conn is None:
@@ -370,13 +391,20 @@ class LLMClient:
                 response_format=_response_format_for(target_mode, schema),
                 **extra_kwargs,
             )
-            if getattr(res, "choices", None) is None:
+            if not getattr(res, "choices", None):
                 err = getattr(res, "error", None) or "empty choices returned"
-                raise openai.InternalServerError(
-                    f"provider error: {err}",
-                    response=getattr(res, "_response", None),
-                    body=None,
-                )
+                code = err.get("code") if isinstance(err, dict) else None
+                status = int(code) if str(code).isdigit() and 400 <= int(code) <= 599 else 502
+                response = getattr(res, "_response", None)
+                if not isinstance(response, httpx.Response):
+                    response = httpx.Response(status, request=httpx.Request(
+                        "POST", self.base_url.rstrip('/') + '/chat/completions'))
+                error_class = {
+                    400: openai.BadRequestError, 401: openai.AuthenticationError,
+                    403: openai.PermissionDeniedError, 404: openai.NotFoundError,
+                    422: openai.UnprocessableEntityError, 429: openai.RateLimitError,
+                }.get(status, openai.InternalServerError if status >= 500 else openai.APIStatusError)
+                raise error_class(f"provider error: {err}", response=response, body=err)
             return res
 
         try:

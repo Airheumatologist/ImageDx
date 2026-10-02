@@ -16,19 +16,14 @@ import html
 import json
 from collections import Counter
 
-from . import config, db, diseases
-from . import manifestation_queue, representatives
+from . import config, coverage, db, diseases, gallery, pair_reporting, publication
+from . import representatives
 
 _COUNTS_FILE = "stage2_counts.json"
 
 
 def _rows(conn, sql, params=()):
     return [dict(r) for r in conn.execute(sql, params)]
-
-
-def _counts_by(conn, table, column, where=""):
-    sql = f"SELECT {column} AS k, COUNT(*) AS n FROM {table} {where} GROUP BY {column}"
-    return {str(r["k"]): r["n"] for r in conn.execute(sql)}
 
 
 def _triaged_categories(conn) -> dict[str, int]:
@@ -156,96 +151,45 @@ def funnel(conn, disease_key: str | None = None) -> dict:
     }
 
 
-def panel_distribution(conn) -> dict:
-    dist = {
-        "by_modality": _counts_by(conn, "published_panels", "modality"),
-        "by_subtype": _counts_by(conn, "published_panels", "subtype"),
-        "by_disease": _counts_by(conn, "published_panels", "disease_key"),
-        "by_finding": {},
-        "skin_tone": {},
-    }
-    findings: Counter[str] = Counter()
-    for row in conn.execute("SELECT findings_json FROM published_panels"):
-        for f in db.from_json(row["findings_json"], []):
-            key = f.get("finding_key") if isinstance(f, dict) else f
-            if key:
-                findings[key] += 1
-    dist["by_finding"] = dict(findings.most_common())
-    skin_rows = _rows(
-        conn,
-        "SELECT disease_key, skin_tone FROM published_panels WHERE modality IN "
-        "('clinical_photo','dermoscopy','capillaroscopy') OR skin_tone IS NOT NULL",
-    )
-    tones: dict[str, Counter] = {}
-    for r in skin_rows:
-        tones.setdefault(r["disease_key"] or "?", Counter())[r["skin_tone"] or "unknown"] += 1
-    dist["skin_tone"] = {k: dict(v) for k, v in tones.items()}
-    return dist
+def panel_distribution(conn, *, snapshot=None, records=None) -> dict:
+    """Distribution over the default published library (gallery rows).
+
+    ``by_finding`` counts ``published_distinct`` per approved pair from the
+    same frozen gallery snapshot the scheduler and viewer use — never raw
+    finding tags on stored rows. ``by_modality``/``by_subtype``/
+    ``by_disease``/``skin_tone`` count the published library rows (selected
+    pair representatives plus Combined views), not reserves.
+    """
+    if snapshot is None:
+        snapshot = gallery.coverage_snapshot(conn)
+    if records is None:
+        records = publication.panel_records(conn)
+    rows = pair_reporting.library_rows(conn, snapshot=snapshot, records=records)
+    return pair_reporting.distribution(rows, snapshot)
 
 
-_PAIR_BUCKETS = ("0", "1", "2", "3", "4", "5-6", "7-9", ">=10")
-
-
-def _pair_bucket(count: int) -> str:
-    if count >= 10:
-        return ">=10"
-    if count >= 7:
-        return "7-9"
-    if count >= 5:
-        return "5-6"
-    return str(count)
-
-
-def pair_coverage(conn) -> dict:
+def pair_coverage(conn, *, snapshot=None) -> dict:
     """Distinct published images per approved (disease, finding) pair.
 
-    A same_finding plate credits its single pair; a combined plate credits
-    none (its findings live only in plate_findings_json), matching every
-    other findings_json reader.
+    Pair counts, histogram buckets, and floor/target/cap milestones come
+    from ``pair_reporting.pair_summary`` over the same frozen gallery
+    snapshot the scheduler and viewer consume, so all three agree on pair
+    counts. The legacy per-disease same_finding/combined plate counts are
+    folded into the summary rather than dropped.
     """
-    target = config.VP_FINDING_IMAGE_TARGET
-    pairs: dict[str, dict[str, int]] = {}
-    for row in conn.execute(
-        "SELECT finding_key, disease_keys_json FROM findings_vocab WHERE approved=1"
-    ):
-        for dk in db.from_json(row["disease_keys_json"], []) or []:
-            pairs.setdefault(str(dk), {})[row["finding_key"]] = 0
+    if snapshot is None:
+        snapshot = gallery.coverage_snapshot(conn)
+    summary = pair_reporting.pair_summary(snapshot)
     plates: dict[str, Counter] = {}
     for row in conn.execute(
         "SELECT disease_key, plate_kind, COUNT(*) n FROM published_panels "
         "WHERE plate_kind IS NOT NULL GROUP BY disease_key, plate_kind"
     ):
         plates.setdefault(row["disease_key"] or "", Counter())[row["plate_kind"]] += row["n"]
-    histogram: Counter[str] = Counter()
-    per_disease: dict[str, dict] = {}
-    for dk, findings in sorted(pairs.items()):
-        counts = manifestation_queue.published_coverage(conn, dk)
-        under = []
-        at_target = zero = 0
-        for finding_key in findings:
-            count = counts.get(finding_key, 0)
-            findings[finding_key] = count
-            histogram[_pair_bucket(count)] += 1
-            if count >= target:
-                at_target += 1
-            elif count == 0:
-                zero += 1
-            if count < target:
-                under.append({"finding_key": finding_key, "images": count})
-        under.sort(key=lambda item: (item["images"], item["finding_key"]))
-        per_disease[dk] = {
-            "pairs": len(findings),
-            "pairs_at_target": at_target,
-            "zero_image_pairs": zero,
-            "same_finding_plates": plates.get(dk, Counter()).get("same_finding", 0),
-            "combined_plates": plates.get(dk, Counter()).get("combined", 0),
-            "under_target": under,
-        }
-    return {
-        "target": target,
-        "histogram": {bucket: histogram.get(bucket, 0) for bucket in _PAIR_BUCKETS},
-        "per_disease": per_disease,
-    }
+    for dk, entry in summary["per_disease"].items():
+        entry["same_finding_plates"] = plates.get(dk, Counter()).get("same_finding", 0)
+        entry["combined_plates"] = plates.get(dk, Counter()).get("combined", 0)
+    return summary
 
 
 def zero_image_findings(conn) -> dict[str, list[str]]:
@@ -388,12 +332,19 @@ def run(args) -> int:
 
     funnels = {key: funnel(conn, key) for key in diseases.DISEASE_KEYS}
     funnels["all"] = funnel(conn)
-    dist = panel_distribution(conn)
     zero = zero_image_findings(conn)
-    pairs = pair_coverage(conn)
     costs = cost_summary(conn)
     failures = access_failures(conn)
     representative_stats = representative_summary(conn)
+
+    # All pair metrics read the same frozen gallery snapshot the scheduler
+    # and viewer consume, taken inside one consistent read transaction.
+    with coverage.consistent_read(conn):
+        snapshot = gallery.coverage_snapshot(conn)
+        records = publication.panel_records(conn)
+        pairs = pair_coverage(conn, snapshot=snapshot)
+        dist = panel_distribution(conn, snapshot=snapshot, records=records)
+        pair_funnels = pair_reporting.pair_funnel(conn, snapshot=snapshot, records=records)
 
     report = {
         "stage2_counts": stage2,
@@ -401,6 +352,7 @@ def run(args) -> int:
         "panel_distribution": dist,
         "zero_image_findings": zero,
         "pair_coverage": pairs,
+        "pair_funnel": pair_funnels,
         "costs": costs,
         "access_failures": failures,
         "representatives": {**representative_stats, "rebuild": representative_rebuild},
@@ -430,21 +382,63 @@ def run(args) -> int:
     for k, v in dist.items():
         md.append(f"### {k}\n```json\n{json.dumps(v, indent=1)}\n```")
     md += ["", "## Per-pair image coverage", ""]
-    md.append(f"Distinct published images per approved (disease, finding) pair; target = {pairs['target']}.")
+    md.append(
+        "Distinct published images per approved (disease, finding) pair; "
+        f"floor = {pairs['floor']}, target = {pairs['target']}, cap = {pairs['cap']}. "
+        "Counts come from the same gallery snapshot the scheduler and viewer use."
+    )
     md.append("")
     md.append("| images/pair | pairs |")
     md.append("|---|---|")
     for bucket, n in pairs["histogram"].items():
         md.append(f"| {bucket} | {n} |")
-    md += ["", "| disease | pairs | ≥ target | zero | same-finding plates | combined plates |",
-           "|---|---|---|---|---|---|"]
+    md += ["", "| disease | pairs | ≥ floor | ≥ target | full | zero | same-finding plates | combined plates |",
+           "|---|---|---|---|---|---|---|---|"]
     for dk, entry in pairs["per_disease"].items():
         md.append(
-            f"| {dk} | {entry['pairs']} | {entry['pairs_at_target']} | "
+            f"| {dk} | {entry['pairs']} | {entry['pairs_at_floor']} | "
+            f"{entry['pairs_at_target']} | {entry['pairs_full']} | "
             f"{entry['zero_image_pairs']} | {entry['same_finding_plates']} | "
             f"{entry['combined_plates']} |"
         )
     md += ["", "### Under-target pairs", f"```json\n{json.dumps({dk: e['under_target'] for dk, e in pairs['per_disease'].items()}, indent=1)}\n```"]
+    md += ["", "## Per-pair funnel", ""]
+    md.append(
+        "Every approved pair is listed, even with zero articles or images. "
+        "Rejection categories count eligibility failures only; selection "
+        "reserves are eligible images retained beyond the gallery cap — "
+        "stored, never rejected or deleted."
+    )
+    for dk in sorted(pair_funnels):
+        findings = pair_funnels[dk]
+        md += ["", f"### {dk}", ""]
+        md.append(
+            "| finding | retrieved | licensed | supported figs | published | "
+            "eligible | reserves | tier / milestone | blocked | next action |"
+        )
+        md.append("|---|---|---|---|---|---|---|---|---|---|")
+        rejected_totals: Counter[str] = Counter()
+        reserve_groups = reserve_rows = 0
+        for fk, rec in sorted(findings.items()):
+            md.append(
+                f"| {fk} | {rec['retrieved_unique_articles']} | "
+                f"{rec['licensed_articles']} | "
+                f"{rec['pair_supported_caption_figures']} | "
+                f"{rec['published_distinct']} | {rec['eligible_distinct']} | "
+                f"{rec['reserve_distinct']} | "
+                f"{rec['tier']} / {rec['milestone']} | "
+                f"{rec['blocked_reason'] or '—'} | {rec['next_action']} |"
+            )
+            rejected_totals.update(rec["rejection_categories"])
+            reserve_groups += rec["selection_reserves"]["distinct_groups"]
+            reserve_rows += rec["selection_reserves"]["duplicate_or_diversity_rows"]
+        md += ["", "Rejection categories (eligibility failures):",
+               f"```json\n{json.dumps(dict(rejected_totals), indent=1)}\n```"]
+        md.append(
+            f"Selection reserves: {reserve_groups} distinct eligible groups held "
+            f"beyond the cap; {reserve_rows} duplicate/diversity member rows "
+            "collapse into published or reserve groups (not rejections)."
+        )
     md += ["", "## Zero-image vocab findings", f"```json\n{json.dumps(zero, indent=1)}\n```"]
     md += ["", "## Costs", f"```json\n{json.dumps(costs, indent=1)}\n```"]
     md += ["", "## Access failures", f"```json\n{json.dumps(failures, indent=1)}\n```"]

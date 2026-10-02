@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import config, db, representatives
+from .. import config, coverage, db, demographics, gallery, publication, representatives, source_quality
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
@@ -337,6 +337,83 @@ def _tabs_for(key: str) -> list[dict]:
     return TABS.get(key, GENERIC_TABS)
 
 
+def _subsections(tab: dict) -> list[str] | None:
+    """Fixed subsection names for a tab; None when it is not subdivided.
+
+    ``group_order`` spelling variants (nr_axspa / nr-axSpA) collapse to the
+    last spelling. A ``finding``-grouped tab is subdivided by finding key.
+    """
+    if tab.get("group_by") == "finding":
+        return ["finding"]
+    names: dict[str, str] = {}
+    for name in tab.get("group_order") or ():
+        names[name.lower().replace("_", "-")] = name
+    return list(names.values()) or None
+
+
+# One-line meanings sent with fixed subsection names to the describe stage.
+_SUBSECTION_HINTS = {
+    "nr-axSpA": "non-radiographic axial SpA: no definite sacroiliitis on radiographs; MRI-only inflammation",
+    "early": "early radiographic disease: definite sacroiliitis or erosions without syndesmophytes or ankylosis",
+    "advanced": "advanced disease: syndesmophytes, bridging, ankylosis or bamboo spine",
+    "ACLE": "acute cutaneous lupus, e.g. malar (butterfly) rash",
+    "SCLE": "subacute cutaneous lupus: annular or papulosquamous lesions",
+    "DLE": "discoid (chronic cutaneous) lupus: scarring discoid plaques",
+    "Vascular findings": "vasculitis, Raynaud phenomenon, livedo reticularis, digital ulcers or gangrene",
+    "Other skin findings": "other skin manifestations",
+}
+
+
+def section_options(key: str) -> list[dict]:
+    """The disease's sections (tabs) and subsections, for the describe stage."""
+    options = []
+    for tab in _tabs_for(key):
+        if tab.get("cross_cutting") or "match" not in tab:
+            continue
+        alts = tab["match"].get("any_of", [])
+        options.append({
+            "key": tab["key"],
+            "label": tab["label"],
+            "image_types": sorted({m for alt in alts for m in alt.get("modalities", ())}),
+            "finding_categories": sorted({c for alt in alts for c in alt.get("categories", ())}),
+            "subsections": _subsections(tab),
+        })
+        if options[-1]["subsections"] and options[-1]["subsections"] != ["finding"]:
+            options[-1]["subsection_meanings"] = {
+                name: _SUBSECTION_HINTS[name]
+                for name in options[-1]["subsections"] if name in _SUBSECTION_HINTS
+            }
+    return options
+
+
+def route_panel(panel: dict, key: str, categories: dict[str, str]) -> None:
+    """Set ``tab``/``clinical_group`` (and the stage or lead finding for
+    stage/finding-grouped tabs), preferring the describe stage's choice
+    when it names a valid section and subsection, else the rule routing."""
+    tabs = _tabs_for(key)
+    by_key = {t["key"]: t for t in tabs if not t.get("cross_cutting") and "match" in t}
+    section = panel.get("display_section")
+    tab = by_key.get(section) if section else None
+    panel["tab"] = tab["key"] if tab else assign_tab(panel, tabs, categories)
+    tab = tab or by_key.get(panel["tab"])
+    subsection = panel.get("display_subsection")
+    group_by = tab.get("group_by") if tab else None
+    allowed = _subsections(tab) if tab else None
+    if group_by == "finding":
+        lead = [f for f in panel.get("findings", []) if f.get("key") == subsection]
+        if lead:
+            panel["findings"] = lead + [f for f in panel["findings"] if f is not lead[0]]
+        subsection = None
+    elif not allowed or subsection not in allowed:
+        subsection = None
+    if group_by == "stage" and subsection:
+        panel["stage"] = subsection
+    if key == "sle" and panel["tab"] == "skin":
+        panel["clinical_group"] = subsection or _clinical_group(panel)
+    else:
+        panel["clinical_group"] = None
+
+
 def _known_disease(conn, key: str) -> bool:
     return conn.execute(
         "SELECT 1 FROM diseases WHERE disease_key = ?", (key,)
@@ -380,8 +457,8 @@ def _eye_evidence(conn, disease: str) -> list[dict]:
             break
     return result
 
-# Pediatric is a cross-cutting view: the frontend filters explicit age_group
-# values while each returned panel also keeps its regular clinical_tab/group.
+# Pediatric is a cross-cutting view of source-validated patient age; each
+# returned panel also keeps its regular clinical_tab/group.
 for _tabs in TABS.values():
     _tabs.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
 GENERIC_TABS.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
@@ -443,6 +520,7 @@ def _sort_panels(panels: list[dict]) -> list[dict]:
     return sorted(
         panels,
         key=lambda p: (
+            p.get("article_tier", source_quality.TIER_SERIES),
             TYPICALITY_ORDER.get(_norm(p.get("typicality")), 3),
             -(p.get("confidence") or 0.0),
         ),
@@ -517,11 +595,21 @@ def _panel_json(
     if not context and mentions:
         context = str(mentions[0]).strip()
     context = " ".join(context.split())
-    if len(context) > 320:
-        context = context[:317].rsplit(" ", 1)[0] + "…"
+    keys = row.keys()
+    display_title = (row["display_title"] or "").strip() if "display_title" in keys else ""
+    display_description = (row["display_description"] or "").strip() if "display_description" in keys else ""
+    if display_description:
+        context = display_description
+    display_section = row["display_section"] if "display_section" in keys else None
+    display_subsection = row["display_subsection"] if "display_subsection" in keys else None
+    context_summary = context if len(context) <= 320 else context[:317].rsplit(" ", 1)[0] + "…"
     findings = [f for f in findings if f["source_supported"]]
     shown_label = ", ".join(dict.fromkeys(f["label"] for f in findings))
     article_title = row["article_title"] if "article_title" in row.keys() else None
+    article_types = (
+        db.from_json(row["article_publication_types"], [])
+        if "article_publication_types" in row.keys() else []
+    )
     doi_url = f"https://doi.org/{row['doi']}" if row["doi"] else row["source_url"]
     license_url = row["license_url"] if "license_url" in row.keys() else None
     if not license_url:
@@ -531,9 +619,13 @@ def _panel_json(
     article_url = f"https://doi.org/{row['doi']}" if row["doi"] else (
         f"https://pmc.ncbi.nlm.nih.gov/articles/{row['pmcid']}/" if row["pmcid"] else row["source_url"]
     )
-    age_group = _norm(row["age_group"])
-    age_group_supported = _age_group_supported(row["age_group"], source_text)
-    age_group_label = _age_group_label(row["age_group"]) if age_group_supported else "Not stated"
+    age = demographics.resolve_age({
+        "caption": caption, "in_text_mentions": mentions,
+        "case_age_text": row["case_age_text"] if "case_age_text" in row.keys() else None,
+    })
+    age_group = age["age_group"]
+    age_group_supported = age_group != "unknown"
+    age_group_label = _age_group_label(age_group) if age_group_supported else "Not stated"
     country = row["study_region"] or (row["article_country"] if "article_country" in row.keys() else None)
     source_variant = {
         "article_title": article_title,
@@ -542,6 +634,9 @@ def _panel_json(
         "license_url": license_url,
         "license_code": row["license_code"],
         "context": context,
+        "context_summary": context_summary,
+        "figure_caption": caption,
+        "age_evidence": age["evidence"],
         "country": country,
         "age_group_label": age_group_label,
         "age_group_metadata_label": _age_group_label(row["age_group"]),
@@ -565,7 +660,7 @@ def _panel_json(
         "sha256": row["sha256"],
         "typicality": row["typicality"],
         "stage": row["stage"],
-        "age_group": row["age_group"],
+        "age_group": age_group,
         "skin_tone": row["skin_tone"],
         "stated_ethnicity": row["stated_ethnicity"],
         "stated_ethnicity_quote": row["stated_ethnicity_quote"],
@@ -582,11 +677,17 @@ def _panel_json(
         "doi_url": doi_url,
         "article_url": article_url,
         "article_title": article_title,
+        "article_tier": source_quality.article_tier(article_types, article_title),
         "country": country,
-        "display_label": shown_label or _caption_label(caption) or row["body_site"] or row["modality"] or "Clinical image",
+        "display_section": display_section,
+        "display_subsection": display_subsection,
+        "display_label": shown_label or display_title or _caption_label(caption) or row["body_site"] or row["modality"] or "Clinical image",
         "context": context,
+        "context_summary": context_summary,
+        "age_evidence": age["evidence"],
+        "patient_age_years": age["patient_age_years"],
         "age_group_label": age_group_label,
-        "age_group_variants": [row["age_group"]] if row["age_group"] else [],
+        "age_group_variants": [age_group] if age_group_supported else [],
         "pediatric": _is_pediatric(age_group),
         "source_variant": source_variant,
         "source_variants": [source_variant],
@@ -625,22 +726,8 @@ def _age_group_label(age_group) -> str:
     return {
         "child": "Child", "children": "Child", "pediatric": "Pediatric",
         "paediatric": "Pediatric", "adolescent": "Adolescent", "infant": "Infant",
+        "adult": "Adult", "older_adult": "Older adult",
     }.get(normalized, age_group or "Unknown")
-
-
-def _age_group_supported(age_group, source_text: str) -> bool:
-    normalized = _norm(age_group)
-    terms = {
-        "child": ("child", "children", "pediatric", "paediatric"),
-        "children": ("child", "children", "pediatric", "paediatric"),
-        "pediatric": ("child", "children", "pediatric", "paediatric"),
-        "paediatric": ("child", "children", "pediatric", "paediatric"),
-        "adolescent": ("adolescent", "teenage", "teenager"),
-        "infant": ("infant", "newborn", "neonate"),
-        "adult": ("adult",),
-        "older_adult": ("older adult", "elderly", "aged"),
-    }.get(normalized, ())
-    return any(term in source_text for term in terms)
 
 
 def _finding_supported(finding: dict, source_text: str, terms: list[str]) -> bool:
@@ -724,44 +811,75 @@ def _is_pediatric(age_group) -> bool:
     return _norm(age_group) in {"child", "children", "pediatric", "paediatric", "infant", "adolescent"}
 
 
-def _exclude_curated(conn, rows: list[sqlite3.Row], panels: list[dict],
-                     allowed_findings: set[str] | None = None) -> list[dict]:
-    """Apply current-hash audit exclusions and the shared deterministic gate."""
-    stored = {}
-    try:
-        stored = {
-            r["panel_id"]: r["image_sha256"]
-            for r in conn.execute("SELECT panel_id, image_sha256 FROM panel_curation WHERE decision='exclude'")
-        }
-    except sqlite3.OperationalError:
-        # Older databases are initialized by create_app, but keep API usable
-        # for read-only legacy stores where migration cannot be performed.
-        pass
-    try:
-        from ..curation import exclusion_reason
-    except ImportError:
-        exclusion_reason = None
+def _gallery_inputs(conn, disease: str, data_root: Path):
+    """One frozen read of C1 eligibility, the C2 snapshot, and join rows.
 
-    visible = []
-    for row, panel in zip(rows, panels):
-        if stored.get(panel["panel_id"]) == panel.get("sha256") and panel.get("sha256"):
-            continue
-        # Use the same deterministic eligibility policy as new curation. Missing
-        # or invalid bounds are ineligible, so they cannot leak partial figures.
-        if exclusion_reason:
-            p = dict(row)
-            figure = {
-                "label": row["figure_label"],
-                "caption": row["figure_caption"],
-                "triage_json": row["figure_triage_json"] if "figure_triage_json" in row.keys() else None,
-                "vision_json": row["figure_vision_json"] if "figure_vision_json" in row.keys() else None,
-                "effective_license": row["figure_license"] if "figure_license" in row.keys() else None,
-            }
-            article = {"title": row["article_title"] if "article_title" in row.keys() else None}
-            if exclusion_reason(p, figure, article, allowed_findings=allowed_findings):
-                continue
-        visible.append(panel)
-    return visible
+    ``panel_records`` carries the shared eligibility verdicts (audit
+    exclusions, licensing, source type, source-supported age, disease
+    attribution, source-supported finding labels, mixed-plate rules and
+    file/dimension availability). ``snapshot`` holds the per-pair gallery
+    selections. ``rows`` maps panel_id to the joined panels+figures+articles
+    row that ``_panel_json`` serializes. Every consumer in a request draws
+    from the same frozen snapshot so panels, tabs and reserves agree.
+    """
+    with coverage.consistent_read(conn):
+        records = publication.panel_records(conn, disease, data_root=data_root)
+        snapshot = coverage.snapshot(
+            conn, gallery.select_gallery, disease, panels=records
+        )
+        rows = {r["panel_id"]: r for r in _query_panels(conn, disease)}
+    return records, snapshot, rows
+
+
+def _selected_panel_ids(
+    snapshot: dict, disease: str, finding: str | None, records: list[dict]
+) -> set[str]:
+    """Panel ids the frozen selection publishes for this view.
+
+    A ``finding`` filter picks exactly that pair's selected gallery (never
+    reserves). The default view is the union of every pair's gallery plus
+    eligible whole-figure combined plates, which stay visible in Combined
+    views but earn no per-finding credit.
+    """
+    findings = snapshot.get(disease, {})
+    if finding is not None:
+        record = findings.get(finding) or {}
+        return set(record.get("published_panel_ids") or [])
+    selected = {
+        panel_id
+        for record in findings.values()
+        for panel_id in record.get("published_panel_ids") or []
+    }
+    selected.update(
+        r["panel_id"]
+        for r in records
+        if r.get("eligible") and r.get("plate_kind") == "combined"
+    )
+    return selected
+
+
+def _display_panel_ids(selected: set[str], records: list[dict]) -> list[str]:
+    """Selected ids first, then eligible identical-bytes aliases.
+
+    ``_collapse_duplicates`` folds aliases into the selected card so every
+    stored row's attribution stays visible without adding cards — the
+    alias was a distinct group member, not a separate gallery image.
+    """
+    by_id = {r["panel_id"]: r for r in records}
+    sha = {
+        by_id[pid].get("sha256")
+        for pid in selected
+        if pid in by_id and by_id[pid].get("sha256")
+    }
+    aliases = sorted(
+        r["panel_id"]
+        for r in records
+        if r["panel_id"] not in selected
+        and r.get("eligible")
+        and r.get("sha256")
+        and r["sha256"] in sha
+    )
+    return sorted(selected) + aliases
 
 
 def _collapse_duplicates(panels: list[dict]) -> list[dict]:
@@ -911,10 +1029,11 @@ def _query_panels(
         params["typicality"] = typicality
     sql = (
         "SELECT p.*, a.doi, f.label AS figure_label, f.caption AS figure_caption, "
-        "f.in_text_mentions_json, f.effective_license AS figure_license, "
+        "f.in_text_mentions_json, f.effective_license AS figure_license, f.case_age_text, "
         "f.triage_json AS figure_triage_json, "
         "f.vision_json AS figure_vision_json, "
-        "a.title AS article_title, a.license_url AS article_license_url, a.country AS article_country "
+        "a.title AS article_title, a.license_url AS article_license_url, a.country AS article_country, "
+        "a.publication_types_json AS article_publication_types "
         "FROM panels p "
         "LEFT JOIN articles a ON a.pmcid = p.pmcid "
         "LEFT JOIN figures f ON f.figure_id = p.figure_id "
@@ -1017,11 +1136,19 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             categories = _categories(c)
             labels = _labels(c)
             terms = _finding_terms(c)
-            rows = _query_panels(c, key)
-            panels = [_panel_json(r, approved, labels, categories, terms) for r in rows]
-            panels = _exclude_curated(c, rows, panels, approved)
+            with coverage.consistent_read(c):
+                records, snapshot, rows = _gallery_inputs(c, key, data_root)
+                eye_evidence = _eye_evidence(c, key)
+            # Tab availability mirrors the default gallery: the union of all
+            # pairs' selected images plus combined plates — never reserves.
+            selected = _selected_panel_ids(snapshot, key, None, records)
+            panels = [
+                _panel_json(rows[pid], approved, labels, categories, terms)
+                for pid in sorted(selected)
+                if pid in rows
+            ]
             for panel in panels:
-                panel["tab"] = assign_tab(panel, tabs, categories)
+                route_panel(panel, key, categories)
 
             available = {panel["tab"] for panel in panels}
             if any(panel["pediatric"] for panel in panels):
@@ -1033,7 +1160,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             evidence_only_eye = (
                 "eye" not in available
                 and any(t["key"] == "eye" for t in tabs)
-                and bool(_eye_evidence(c, key))
+                and bool(eye_evidence)
             )
             if evidence_only_eye:
                 available.add("eye")
@@ -1082,32 +1209,52 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             terms = _finding_terms(c)
             if finding and finding not in approved:
                 # unapproved/proposed findings are never shown
-                return {"panels": [], "count": 0, "representatives": {}}
-            rows = _query_panels(
-                c,
-                key,
-                modality=modality,
-                subtype=subtype,
-                skin_tone=skin_tone,
-                finding=finding,
-                typicality=typicality,
-            )
-            panels = [_panel_json(r, approved, labels, categories, terms) for r in rows]
-            panels = _exclude_curated(c, rows, panels, approved)
-            if finding:
-                panels = [p for p in panels if finding in _finding_keys(p)]
+                return {"panels": [], "count": 0, "representatives": {}, "reserves": {}}
+            # One consistent read covers eligibility, selection, the joined
+            # rows, and the primary mapping so they can never disagree.
+            with coverage.consistent_read(c):
+                records, snapshot, rows = _gallery_inputs(c, key, data_root)
+                representative_map = representatives.mapping_for_disease(
+                    c,
+                    key,
+                    snapshot=snapshot,
+                    panels={str(r["panel_id"]): r for r in records},
+                )
+            # The gallery is selected once per (disease, finding) pair — capped
+            # at config.VP_FINDING_GALLERY_CAP distinct groups — before any
+            # filter runs, so filters below can only shrink that fixed set,
+            # never mint a separate allowance.
+            selected = _selected_panel_ids(snapshot, key, finding, records)
+            reserves = {
+                finding_key: record["reserve_distinct"]
+                for finding_key, record in snapshot.get(key, {}).items()
+            }
+            panels = [
+                _panel_json(rows[pid], approved, labels, categories, terms)
+                for pid in _display_panel_ids(selected, records)
+                if pid in rows
+            ]
+            if modality:
+                panels = [p for p in panels if _norm(p.get("modality")) == _norm(modality)]
+            if subtype:
+                panels = [p for p in panels if _norm(p.get("subtype")) == _norm(subtype)]
+            if skin_tone:
+                panels = [p for p in panels if _norm(p.get("skin_tone")) == _norm(skin_tone)]
+            if typicality:
+                panels = [p for p in panels if _norm(p.get("typicality")) == _norm(typicality)]
             for p in panels:
-                p["tab"] = assign_tab(p, _tabs_for(key), categories)
+                route_panel(p, key, categories)
                 p["clinical_tab"] = p["tab"]
-                p["clinical_group"] = _clinical_group(p) if key == "sle" and p["tab"] == "skin" else None
                 p["source_variant"]["clinical_tab"] = p["clinical_tab"]
                 p["source_variant"]["clinical_group"] = p["clinical_group"]
             panels = _collapse_duplicates(panels)
-            representative_map = representatives.mapping_for_disease(c, key)
             _mark_representatives(panels, representative_map)
             for p in panels:
                 p["clinical_tab"] = p["tab"]
-                p["clinical_group"] = _clinical_group(p) if key == "sle" and p["tab"] == "skin" else None
+                if key == "sle" and p["tab"] == "skin" and not p.get("clinical_group"):
+                    p["clinical_group"] = _clinical_group(p)
+                elif not (key == "sle" and p["tab"] == "skin"):
+                    p["clinical_group"] = None
                 p["pediatric"] = p.get("pediatric") or any(
                     _is_pediatric(age) for age in p.get("age_group_variants", [])
                 )
@@ -1115,6 +1262,69 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             return {
                 "panels": _sort_panels(panels), "count": len(panels),
                 "representatives": representative_map,
+                # Per-finding reserve counts (distinct eligible groups held
+                # because the gallery cap is full); inspect via /reserves.
+                "reserves": reserves,
+                "gallery_cap": config.VP_FINDING_GALLERY_CAP,
+            }
+        finally:
+            c.close()
+
+    @app.get("/api/diseases/{key}/reserves")
+    def api_reserves(key: str, finding: str | None = None) -> dict:
+        """Inspection path for eligible images held back by the gallery cap.
+
+        Reserves are never merged into the default gallery response; each
+        entry carries the finding pair it belongs to and the selection
+        reason that held it back.
+        """
+        c = conn()
+        try:
+            if not _known_disease(c, key):
+                raise HTTPException(404, "unknown disease")
+            approved = _approved_keys(c, key)
+            categories = _categories(c)
+            labels = _labels(c)
+            terms = _finding_terms(c)
+            empty = {
+                "disease_key": key, "finding": finding,
+                "gallery_cap": config.VP_FINDING_GALLERY_CAP,
+                "count": 0, "reserves": [], "per_finding": {},
+            }
+            if finding and finding not in approved:
+                return empty
+            records, snapshot, rows = _gallery_inputs(c, key, data_root)
+            findings_map = snapshot.get(key, {})
+            if finding:
+                findings_map = {finding: findings_map.get(finding) or {}}
+            reserves = []
+            per_finding = {}
+            for finding_key in sorted(findings_map):
+                record = findings_map[finding_key] or {}
+                reasons = record.get("selection_reasons") or {}
+                per_finding[finding_key] = {
+                    "eligible_distinct": record.get("eligible_distinct", 0),
+                    "published_distinct": record.get("published_distinct", 0),
+                    "reserve_distinct": record.get("reserve_distinct", 0),
+                    "tier": record.get("tier"),
+                    "blocked_reason": record.get("blocked_reason"),
+                    "selection_reasons": reasons,
+                }
+                for pid in record.get("reserve_panel_ids") or []:
+                    row = rows.get(pid)
+                    if row is None:
+                        continue
+                    panel = _panel_json(row, approved, labels, categories, terms)
+                    panel.pop("_routing_findings", None)
+                    panel["reserve"] = True
+                    panel["finding_key"] = finding_key
+                    panel["selection_reason"] = reasons.get(pid) or {}
+                    reserves.append(panel)
+            return {
+                "disease_key": key, "finding": finding,
+                "gallery_cap": config.VP_FINDING_GALLERY_CAP,
+                "count": len(reserves), "reserves": reserves,
+                "per_finding": per_finding,
             }
         finally:
             c.close()
@@ -1176,16 +1386,38 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                 for side in ("left", "right"):
                     spec = pair[side]
                     approved = _approved_keys(c, spec["disease"])
-                    rows = _query_panels(
-                        c,
-                        spec["disease"],
-                        modality=None,
-                        finding=spec.get("finding"),
-                    )
                     categories = _categories(c)
                     terms = _finding_terms(c)
-                    panels = [_panel_json(r, approved, labels, categories, terms) for r in rows]
-                    panels = _exclude_curated(c, rows, panels, approved)
+                    records, snapshot, rows = _gallery_inputs(
+                        c, spec["disease"], data_root
+                    )
+                    # Each side draws from the same frozen selection as the
+                    # library views: the named pair's gallery, the union of
+                    # the named pairs' galleries, or the default union plus
+                    # combined plates — then post-filters narrow that set.
+                    if spec.get("finding"):
+                        selected = _selected_panel_ids(
+                            snapshot, spec["disease"], spec["finding"], records
+                        )
+                    elif spec.get("findings_any"):
+                        findings_map = snapshot.get(spec["disease"], {})
+                        selected = {
+                            pid
+                            for fk in spec["findings_any"]
+                            for pid in (findings_map.get(fk) or {}).get(
+                                "published_panel_ids"
+                            )
+                            or []
+                        }
+                    else:
+                        selected = _selected_panel_ids(
+                            snapshot, spec["disease"], None, records
+                        )
+                    panels = [
+                        _panel_json(rows[pid], approved, labels, categories, terms)
+                        for pid in _display_panel_ids(selected, records)
+                        if pid in rows
+                    ]
                     panels = _collapse_duplicates(panels)
                     if spec.get("finding"):
                         panels = [p for p in panels if spec["finding"] in _finding_keys(p)]

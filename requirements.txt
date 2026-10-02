@@ -4,8 +4,7 @@
 fastapi>=0.109.0
 uvicorn>=0.27.0
 
-# Retrieval + providers (turbopuffer PMC namespace, OpenAI-compatible LLM/embeddings)
-turbopuffer>=0.10.0
+# Providers (Europe PMC REST via httpx, OpenAI-compatible LLM endpoints)
 openai>=2.21.0
 httpx>=0.28.0
 

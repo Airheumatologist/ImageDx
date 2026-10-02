@@ -87,6 +87,9 @@ function openLightbox(panel, src) {
       addSourceRow(section, "License", source.license_code || "License details", source.license_url);
     }
     if (source.figure_label) addSourceRow(section, "Figure", source.figure_label);
+    if (source.figure_caption && source.figure_caption !== context) {
+      addSourceRow(section, "Full figure caption", source.figure_caption);
+    }
     details.append(section);
   });
 
@@ -117,7 +120,7 @@ function compactContext(panel) {
   const caption = (panel.caption_variants || [panel.figure_caption]).filter(Boolean).join(" ");
   const mention = (panel.in_text_mentions || []).filter(Boolean).join(" ");
   const evidence = [caption, mention].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
-  if (evidence) parts.push(evidence.length > 650 ? `${evidence.slice(0, 647).trimEnd()}…` : evidence);
+  if (evidence) parts.push(evidence);
   return parts.join(" · ");
 }
 
@@ -151,6 +154,7 @@ function restoreFilters(tab) {
 }
 
 function isPediatric(panel) {
+  if (typeof panel.pediatric === "boolean") return panel.pediatric;
   if (panel.pediatric === true) return true;
   const ages = [...(panel.age_group_variants || []), panel.age_group, panel.age_group_label].filter(Boolean);
   return ages.some(age => String(age).toLowerCase().split(/[\s/,;|]+/).some(part =>
@@ -304,6 +308,14 @@ function loadPanels() {
       if (request !== panelsRequest) return;
       state.loading = false;
       state.panels = d.panels;
+      const reserves = Object.values(d.reserves || {}).reduce((sum, n) => sum + n, 0);
+      const note = $("reserves-note");
+      if (note) {
+        note.hidden = reserves === 0;
+        note.textContent = reserves
+          ? `${reserves} additional eligible image${reserves === 1 ? "" : "s"} held in reserve — galleries are capped at ${d.gallery_cap || 20} per finding.`
+          : "";
+      }
       if (!params.toString() && state.hasPediatric === null) state.hasPediatric = d.panels.some(isPediatric);
       render();
     }).catch(() => {

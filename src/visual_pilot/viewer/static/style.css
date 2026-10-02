@@ -29,6 +29,7 @@ header a { color: #3b6fd4; text-decoration: none; }
 #filters { display: flex; gap: 10px; padding: 12px 28px; flex-wrap: wrap; }
 #filters[hidden] { display: none; }
 #filters select { padding: 6px 8px; border: 1px solid #ccd2dc; border-radius: 6px; background: #fff; }
+.reserves-note { padding: 0 28px; margin: 4px 0 0; color: #667; font-size: .85rem; }
 
 #content { padding: 8px 28px 40px; }
 .group-header { font-size: 1.05rem; margin: 22px 0 10px; text-transform: uppercase; letter-spacing: .04em; color: #445; }

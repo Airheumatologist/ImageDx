@@ -255,12 +255,17 @@ def _encode_original(img: Image.Image, figure: dict) -> tuple[str, bytes]:
     re-encoded as WebP capped at ``VP_ORIGINAL_MAX_EDGE``. The verbatim bytes
     are never written to disk — they stay refetchable from the PMC S3 bundle
     (``figures.sha256`` verifies the pixels on refetch)."""
-    name = PurePosixPath(_original_basename(figure)).with_suffix(".webp").name
     buf = io.BytesIO()
     _cap_edge(img, config.VP_ORIGINAL_MAX_EDGE).save(
         buf, format="WEBP", quality=config.VP_PANEL_QUALITY, method=6
     )
-    return f"figures/{figure['pmcid']}/{name}", buf.getvalue()
+    return original_rel_path(figure), buf.getvalue()
+
+
+def original_rel_path(figure: dict) -> str:
+    """Data-dir-relative path of a figure's stored display original."""
+    name = PurePosixPath(_original_basename(figure)).with_suffix(".webp").name
+    return f"figures/{figure['pmcid']}/{name}"
 
 
 def write_original(original_bytes: bytes, figure: dict, data_dir: Path) -> str:
@@ -848,5 +853,13 @@ def run(args) -> int:
         f"({totals['whole_figure']} whole-figure, {totals['dedup']} deduped), "
         f"{totals['proposed']} proposed-finding upserts, {totals['errors']} errors"
     )
+    if totals["panels"]:
+        # Newly stored panels can change each pair's gallery lead; refresh
+        # the representative table so mappings never wait for report/startup.
+        # Storage itself is never capped — all eligible panels stay stored.
+        from . import representatives
+
+        changes = representatives.rebuild(conn)
+        print(f"store: representatives refreshed ({changes})")
     conn.close()
     return 0

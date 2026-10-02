@@ -2,7 +2,8 @@
 
 This repository builds a VisualDx-style medical image library: a browsable,
 findings-tagged collection of disease imagery curated from PMC open-access
-review articles with commercial-use licenses.
+articles (case reports, original research and reviews) with commercial-use
+licenses.
 
 Current disease scope: **SLE**, **dermatomyositis**, **ankylosing
 spondylitis**, **rheumatoid arthritis**, **systemic sclerosis**,
@@ -16,43 +17,40 @@ authoritative spec is `docs/visual_pilot_plan.md`.
                         Visual Findings Library pipeline
                         ================================
 
-  PREBUILT INDEXES                    LLM STAGES (OpenRouter)
-  +---------------------------+       P1 article relevance   (text)
-  | turbopuffer PMC namespace |       P2 caption triage      (text, batched)
-  |  chunk-level: title BM25, |       P3 figure judgment     (vision)
-  |  content BM25, dense ANN  |       P4 finding extraction  (text)
+  DISCOVERY                           LLM STAGES (OpenRouter)
+  +---------------------------+       P2 caption triage      (text, batched)
+  | Europe PMC REST search    |       P3 figure judgment     (vision)
+  |  FIG: caption field,      |       P4 finding extraction  (text)
+  |  license + OA filters     |
   +---------------------------+
               |
               v
  +=====================================================================+
- | 1. SELECT      select_articles.py                    -> articles    |
- |    synonym + finding/modality queries, RRF fusion,                  |
- |    pub-type filter, license gate, P1 relevance triage               |
- +=====================================================================+
-              |  status: relevant
-              v
- +=====================================================================+
- | 2. PARSE       parse.py (ranked batches)             -> figures     |
+ | 1. DISCOVER    discover.py, europepmc.py     -> articles + figures  |
+ |    passes: overview reviews/series per disease, then reviews/series |
+ |    per under-target finding, then backfill with any article type;  |
+ |    caption names the finding, title/abstract names the disease;    |
  |    JATS XML from s3://pmc-oa-opendata; one row per <fig>;           |
+ |    caption must name an approved finding -> pending, else rejected  |
  |    pre-rejects: third-party, bad license, missing graphic           |
  +=====================================================================+
               |  status: pending        (rejects -> caption_rejected)
               v
  +=====================================================================+
- | 3. TRIAGE      triage.py  (P2, batches of 40)                       |
+ | 2. TRIAGE      triage.py  (P2, batches of 40)                       |
  |    caption-only keep / uncertain / drop                             |
  +=====================================================================+
               |  status: caption_kept | caption_uncertain
               v
  +=====================================================================+
- | 4. JUDGE       judge.py   (P3, vision model)                        |
+ | 3. JUDGE       judge.py   (P3, vision model)                        |
  |    image bytes -> base64 data URL; panel bboxes, modality,          |
  |    findings, subtype, demographics; metadata priority ordering      |
  +=====================================================================+
               |  status: vision_accepted      (else vision_rejected)
               v
  +=====================================================================+
- | 5. STORE       store.py                                -> panels    |
+ | 4. STORE       store.py                                -> panels    |
  |    bbox crops (2% pad), whole-figure mode for ND/overlap/tiny,      |
  |    WebP q90 @2048px + 400px thumbs, sha256 dedup, attribution,      |
  |    proposed findings upserted to findings_vocab (unapproved)        |
@@ -60,92 +58,74 @@ authoritative spec is `docs/visual_pilot_plan.md`.
               |
               v
  +=====================================================================+
- | 6. EXTRACT     extract_findings.py  (P4)             -> findings    |
+ | 5. EXTRACT     extract_findings.py  (P4)             -> findings    |
  |    clinical sections -> disease->finding assertions with            |
  |    verbatim-verified quotes; rebuilds image-source finding rows     |
  +=====================================================================+
               |
               v
  +=====================================================================+
- | 7. REPORT      report.py (no LLM)                    -> reports/    |
- |    per-disease funnel, panel distributions, coverage gaps, cost     |
- |    ledger, access failures, HTML/CSV spot-check sheets              |
+ | 6. REPORT      report.py (no LLM)                    -> reports/    |
+ |    per-disease funnel, panel distributions, pair coverage           |
+ |    milestones + per-pair funnel, cost ledger, access failures,      |
+ |    HTML/CSV spot-check sheets                                       |
  +=====================================================================+
               |
               v
  +=====================================================================+
- | 8. SERVE       viewer/  (FastAPI, stage 8)           -> localhost   |
+ | 7. SERVE       viewer/  (FastAPI, stage 7)           -> localhost   |
  |    per-disease tabbed browser over panels/thumbs; JSON API          |
  +=====================================================================+
 ```
 
-`run-all` orchestrates 1-7: it selects once, then expands in yield-driven
-batches (default 50 articles/disease) — `parse -> triage -> judge -> store`
-per batch — stopping after 2 consecutive zero-yield batches, a safety limit
-(`--max-articles`, `--max-runtime-seconds`), or budget exhaustion
-(`--budget-usd`). It finishes with `extract` + `report`.
+`run-all` orchestrates 1-6 in rounds: each round re-plans from current
+coverage, runs `discover` for every approved pair still under
+`--finding-image-target` (default 10), then `triage -> judge -> store` on the
+new articles in batches of `--batch-size` (default 50). It stops when a round
+finds no new articles, after `--max-rounds` (default 3), at
+`--max-runtime-seconds`, or when `--budget-usd` is spent, and finishes with
+`extract` + `report`.
 
 ## What each stage does
 
-### 1. `select` — article selection (`select_articles.py`)
+### 1. `discover` — figure-first discovery (`discover.py`, `europepmc.py`)
 
-Retrieves candidate review articles per disease from the **prebuilt
-turbopuffer PMC chunk index** (`TURBOPUFFER_NAMESPACE_PMC`, default
-`medical_database_pmc`):
+Europe PMC indexes figure captions under the `FIG:` field, so each search
+lands on articles that contain an image of the finding rather than articles
+that merely discuss the disease:
 
-- per disease synonym: title BM25 (top 500), page_content BM25 (top 750),
-  dense ANN via DeepInfra embeddings (top 750);
-- plus one finding/modality content query (top 300) per approved,
-  disease-specific finding by default. `VP_VISUAL_QUERY_CAP=0` means all
-  findings; a positive value caps and round-robins them across image-bearing
-  categories, prioritizing findings with fewer stored panels;
-- all ranked lists fused per-PMCID with **RRF (k=60)**, visual hits weighted
-  12x; qualifying passages kept as `retrieval_evidence_json`;
-- discovery asks Turbopuffer for compact per-job projections and at most one
-  row per PMC article. Search jobs use `Namespace.multi_query` when available,
-  with an ordered sequential fallback. Full citation metadata and abstracts
-  are hydrated in batches only for shortlisted unique PMCIDs; passage queries
-  include page text and section labels, never abstracts;
-- with a finite `--limit`, Python filters publication types first, reserves
-  candidates round-robin across finding lanes (up to
-  `VP_MANIFESTATION_QUOTA`, default 20 unique articles per finding), then fills
-  remaining slots by global RRF. Selected finding/PMCID ranks persist in
-  `manifestation_candidates` for the downstream manifestation queue;
-- filters: `has_full_text` AND review-type (`publication_type` Contains
-  "Review" OR `article_type` = "review-article"); Python-side exclusions
-  drop case reports, trials, letters, meta-analyses, etc.;
-- license gate via the per-article S3 metadata JSON (`license_allows` →
-  `crop` / `whole_figure` / excluded);
-- relevance: every `license_ok` article goes through **P1** LLM triage on
-  title + abstract, including articles that match the deterministic title rule.
+- pairs are approved (disease, finding) rows from `findings_vocab`, ordered
+  by current stored image count (fewest first); pairs at the target are
+  skipped;
+- caption phrasing comes from `pair_terms.caption_terms`: vocabulary labels
+  and synonyms with disease/modality words stripped and singular forms added
+  ("Systemic-sclerosis digital ulcers" -> "digital ulcer"), plus hand-written
+  `CAPTION_TERM_OVERRIDES` where derivation is too generic;
+- query: `FIG:"term"` (exact phrase tier), then, if the pair still needs
+  articles, `FIG:(word* AND word*)` (all words in the same caption) — AND the
+  disease in `TITLE`/`ABSTRACT`, `OPEN_ACCESS:y`, `IN_PMC:y`, and a CC
+  license clause; `resultType=core` supplies license, publication types and
+  retraction data in the same call (stored in `article_source_metadata`);
+- passes run broad sources first: `overview` (per disease: narrative reviews
+  and case series whose title surveys the presentation, with a caption naming
+  any finding), `manifestation` (per pair: reviews and case series about the
+  finding), then `backfill` (any article type) for pairs still under target;
+  systematic reviews and meta-analyses are excluded from the first two, and
+  atypical sources are left to backfill;
+- any article type is eligible in backfill; only notices (errata,
+  retractions, corrections) are dropped, and `pmc.license_allows` re-checks
+  every license locally;
+- up to `--per-pair` (default 25) new articles per pair per round are
+  fetched **in memory** from the public `s3://pmc-oa-opendata` bucket and
+  parsed by `jats.parse_article` into one `figures` row per `<fig>`;
+  figure-level `<permissions>` licenses override the article license;
+- a figure becomes `pending` only when its caption names an approved finding
+  of the disease; other figures, third-party wording, disallowed licenses and
+  missing graphics land as `caption_rejected` with no LLM call;
+- every query is logged in `pair_search_attempts` (`policy_version`
+  `epmc-fig.v1`) with hit counts and returned/new PMCIDs.
 
-Turbopuffer logical bytes queried and returned are printed at the end of
-selection and recorded in `reports/stage2_counts.json` under
-`_turbopuffer_billing` (along with request and query counts).
-
-Report and viewer rebuild one deterministic primary representative for each
-covered approved disease/finding pair. All eligible alternatives remain in the
-library, and manual or locked selections are preserved.
-
-### 2. `parse` — figure extraction (`parse.py`, `jats.py`, `pmc.py`)
-
-For each `relevant` article, fetches the JATS bundle **in memory** from the
-public `s3://pmc-oa-opendata` bucket (`{pmcid}.{version}/` dirs; the old
-`oa.fcgi`/`oa_package` endpoints are dead — see stage-0 findings below).
-`jats.parse_article` yields one `figures` row per `<fig>`:
-
-- graphic hrefs resolve to S3 HTTPS URLs via `media_urls`/ListObjectsV2;
-- figure-level `<permissions>` licenses override the article license;
-- pre-rejects (`caption_rejected`): third-party wording, disallowed
-  license, missing graphic — everything else becomes `pending`.
-
-Articles are processed in **ranked batches**: `article_rank` scores each
-candidate on retrieval evidence, finding/modality mentions and coverage
-gaps; a bounded JATS caption peek reranks the shortlist and can *rescue*
-licensed `license_ok`/`irrelevant` articles whose captions demonstrably
-depict the target disease.
-
-### 3. `triage` — caption triage (`triage.py`, prompt P2)
+### 2. `triage` — caption triage (`triage.py`, prompt P2)
 
 `pending` figures go to a text model (`VP_TRIAGE_MODEL`, default
 `stealth/space-bunny-alpha` on OpenRouter) in batches of `VP_TRIAGE_BATCH` (40). Per
@@ -165,7 +145,7 @@ of a target disease) are auto-downgraded to `uncertain`; a one-time
 `revisit_conflicting_rejections` pass re-queues historical contradictions.
 Figures the model omits stay `pending` with `attempts` bumped.
 
-### 4. `judge` — vision judgment (`judge.py`, prompt P3)
+### 3. `judge` — vision judgment (`judge.py`, prompt P3)
 
 `caption_kept`/`caption_uncertain` figures are ordered by a deterministic
 metadata priority score (disease/modality/finding hits, coverage gaps,
@@ -182,7 +162,7 @@ Post-validation clamps/swaps bboxes, demotes unknown finding keys to
 ≥1 included panel → `vision_accepted`, else `vision_rejected`; fetch/LLM
 failures → `vision_error` (retried up to 3 attempts).
 
-### 5. `store` — panel materialization (`store.py`)
+### 4. `store` — panel materialization (`store.py`)
 
 `vision_accepted` figures are refetched; a display copy capped at
 `VP_ORIGINAL_MAX_EDGE` (default 2048px) is written to
@@ -211,7 +191,7 @@ data/visual_pilot/
 - each panel gets a citation `attribution_text` (authors, title, journal,
   DOI, license, figure label).
 
-### 6. `extract` — text findings (`extract_findings.py`, prompt P4)
+### 5. `extract` — text findings (`extract_findings.py`, prompt P4)
 
 For each `parsed` article, clinical sections (heading keywords:
 "clinic", "manifest", "imaging", "histo", …; whole body as fallback,
@@ -225,7 +205,7 @@ findings are rebuilt as `source='image'` rows. Delete+reinsert per article
 keeps reruns idempotent (`--force` to redo, `--image-only` to rebuild
 image rows only).
 
-### 7. `report` — pilot report (`report.py`, no LLM)
+### 6. `report` — pilot report (`report.py`, no LLM)
 
 Writes `reports/pilot_report.md` + `.json`: per-disease funnel
 (select → parse → triage → vision → stored), panel distributions,
@@ -233,7 +213,27 @@ zero-image vocabulary findings, skin-tone distribution, cost ledger,
 access failures, and human spot-check sheets (`spot_accepted.html`,
 `spot_caption_rejected.html` + CSVs).
 
-### 8. `serve` — library viewer (`viewer/`, FastAPI)
+Two pair-coverage sections report every approved (disease, finding) pair —
+even pairs with zero articles or images — from the same frozen gallery
+snapshot the scheduler and viewer use:
+
+- `pair_coverage` — the milestone summary: legacy histogram buckets plus
+  `floor`/`target`/`cap` (defaults 3/10/20) and per-disease `pairs_at_floor`,
+  `pairs_at_target`, `pairs_full`, `zero_image_pairs`, `tier_counts`,
+  `under_target`, and plate counts;
+- `pair_funnel` — per pair: `retrieved_unique_articles`,
+  `licensed_articles`, `pair_supported_caption_figures`,
+  `eligible_distinct`, `published_distinct`, `reserve_distinct`,
+  `floor_deficit`/`target_deficit`/`cap_remaining`, `tier`, `milestone`,
+  `blocked_reason`, `attempted_strategies`, `last_deficit_reduction`,
+  `next_action`, `pending_work`, `unresolved_legacy_candidates`, structured
+  `rejection_categories` (license/third-party, review type, no patient
+  image, attribution unclear/other disease, unsupported
+  finding, mixed plate, quality, retrieval error), and `selection_reserves`
+  (`distinct_groups`, `duplicate_or_diversity_rows`). Rejection categories
+  and reserves are separate concepts and are never merged.
+
+### 7. `serve` — library viewer (`viewer/`, FastAPI)
 
 `python3 -m src.visual_pilot.cli serve --port 8765` starts a local
 browser: per-disease pages with modality/body-site/finding tabs, grouped
@@ -253,6 +253,47 @@ an existing library, run `python3 -m src.visual_pilot.curation_audit`; add
 `--apply` to back up SQLite and save reversible exclusions. The images and
 original judgments are retained. See [curation review](docs/visual_curation_review.md)
 for the diagnosis and audit details.
+
+## Balanced pair coverage (3/10/20)
+
+Coverage is measured per approved `(disease_key, finding_key)` pair by the
+selected gallery, not by retrieved articles or stored rows.
+
+- **Milestones.** `VP_FINDING_IMAGE_FLOOR` (default 3) is the initial
+  coverage milestone, `VP_FINDING_IMAGE_TARGET` (default 10) the expansion
+  goal, and `VP_FINDING_GALLERY_CAP` (default 20) the maximum published
+  gallery size per pair — across all modalities, tabs, and age groups, not
+  per tab. Ten is a milestone, not a ceiling; galleries may grow to 20 once
+  lower-coverage lanes are served. Inconsistent overrides
+  (`floor > target` or `target > cap`) fail loudly at startup.
+- **Gallery selection and reserves.** `gallery.select_gallery` collapses
+  identical hashes, documented same-patient/reuse groups, and
+  undocumented same-figure source families into distinct groups, then fills
+  the cap with a soft two-per-article preference before a score-ordered
+  second pass. Eligible surplus beyond the cap is stored as **reserves** —
+  retained and inspectable, never truncated, deleted, or counted as a
+  rejection. Modality/pediatric filters draw subsets of the same capped
+  gallery.
+- **Lane tiers and blocked reasons.** Each pair's lane is tiered by
+  published distinct count: `empty` (0), `below_floor` (1–2),
+  `below_target` (3–9), `expanding` (10–19), `full` (20). Lane rows
+  (`manifestation_lanes`) keep `status` (`open`/`covered`), `tier`,
+  `last_served_sequence`, `blocked_reason` (e.g. `search_plan_exhausted` or
+  a safety-limit pause), `search_policy_version`, and
+  `last_deficit_reduction_at`. A blocked lane reports its deficit honestly
+  instead of spinning or claiming coverage.
+- **`pair_search_attempts` ledger.** Bounded replenishment records each
+  disease-scoped query round: policy version, round, query/filter hash,
+  BM25 depth (300, 600, then 1200 — at most three automatic rounds per
+  policy version, ≤6 unattempted query variants per round), returned and
+  newly discovered PMCIDs, pending outcomes, errors, and completion time.
+  Completed attempts are never repeated; interrupted ones resume.
+- **Reporting.** `pilot_report.json` mirrors all of this under
+  `pair_coverage` and `pair_funnel` (field list in stage 7 above), and
+  `pilot_report.md` renders per-disease pair tables with honest blocked
+  reasons and next actions, plus a rejection-categories summary kept
+  separate from reserve counts. The viewer, scheduler, and report read the
+  same `gallery.coverage_snapshot`, so they agree on pair counts and IDs.
 
 ## Guarantees
 
@@ -285,19 +326,19 @@ turborag/
 |       |-- config.py            # env loading + VP_* settings
 |       |-- db.py                # sqlite schema: articles/figures/panels/...
 |       |-- diseases.py          # disease + findings vocab seeding
-|       |-- retrieval.py         # turbopuffer namespace + DeepInfra embeds
+|       |-- europepmc.py         # Europe PMC FIG: caption search client
+|       |-- discover.py          # stage 1: pair planning, fetch, figure rows
+|       |-- pair_terms.py        # caption phrasings per (disease, finding)
 |       |-- pmc.py               # S3 bundle fetch, licenses, image prep
 |       |-- jats.py              # JATS XML parser
-|       |-- select_articles.py   # stage 1
-|       |-- article_rank.py      # candidate reranking + caption signals
-|       |-- parse.py             # stage 2
-|       |-- triage.py            # stage 3 (P2)
-|       |-- judge.py             # stage 4 (P3, vision)
-|       |-- store.py             # stage 5
-|       |-- extract_findings.py  # stage 6 (P4)
-|       |-- report.py            # stage 7
+|       |-- parse.py             # figure-row helpers + body-section cache
+|       |-- triage.py            # stage 2 (P2)
+|       |-- judge.py             # stage 3 (P3, vision)
+|       |-- store.py             # stage 4
+|       |-- extract_findings.py  # stage 5 (P4)
+|       |-- report.py            # stage 6
 |       |-- llm.py               # provider client: budget, cache, retries
-|       |-- prompts.py           # P1-P4 systems + JSON schemas
+|       |-- prompts.py           # P2-P4 systems + JSON schemas
 |       |-- data/                # diseases.json, findings_vocab.json
 |       `-- viewer/              # FastAPI library browser (static HTML/JS)
 |-- tests/visual_pilot/
@@ -308,7 +349,7 @@ turborag/
 
 ```bash
 pip install -r requirements.txt
-cp env.example .env   # fill in DEEPINFRA_API_KEY + TURBOPUFFER_API_KEY
+cp env.example .env   # fill in OPENROUTER_API_KEY (discovery needs no key)
 ```
 
 ## Usage
@@ -318,20 +359,54 @@ cp env.example .env   # fill in DEEPINFRA_API_KEY + TURBOPUFFER_API_KEY
 python3 -m src.visual_pilot.cli run-all --disease all --budget-usd X
 
 # or stage by stage (all flags: --disease --limit --dry-run --budget-usd
-#                        --pmcids --batch-size --max-articles ...)
-python3 -m src.visual_pilot.cli init                 # create DB + seed
-python3 -m src.visual_pilot.cli select  --disease sle
-python3 -m src.visual_pilot.cli parse   --disease sle
+#                        --pmcids --per-pair --batch-size ...)
+python3 -m src.visual_pilot.cli init                         # create DB + seed
+python3 -m src.visual_pilot.cli discover --disease sle --dry-run  # pairs under target
+python3 -m src.visual_pilot.cli discover --disease sle --per-pair 25
 python3 -m src.visual_pilot.cli triage  --disease sle
 python3 -m src.visual_pilot.cli judge   --disease sle
 python3 -m src.visual_pilot.cli store   --disease sle
+python3 -m src.visual_pilot.cli describe --disease sle   # standalone captions + sections
 python3 -m src.visual_pilot.cli extract --disease sle
 python3 -m src.visual_pilot.cli report
 python3 -m src.visual_pilot.cli serve --port 8765    # browse the library
 ```
 
+`discover --limit N` caps the number of pairs searched. Re-running discovery
+skips articles already parsed for the disease, so each round reaches deeper
+into the Europe PMC results for pairs that are still under target.
+
 See `src/visual_pilot/README.md` for stage details, env vars, and stage-0
 findings.
+
+## Europe PMC discovery switch (2026-10-01)
+
+Discovery moved from turbopuffer article retrieval (review articles only, P1
+relevance triage) to Europe PMC figure-caption search across all article
+types. On the same database, the last turbopuffer run had parsed 891 review
+articles into 3,626 figures and stored 116 images (about 3% of figures). A
+first pilot of six dermatomyositis pairs (10 articles each) found 49 articles
+in 12 seconds, queued 90 caption-matched figures, and stored 37 images (46%
+of judged figures), mostly from case reports. Case-report age evidence now
+comes from the abstract or case-presentation section when the caption states
+none (`figures.case_age_text`).
+The pre-switch database is saved as
+`data/visual_pilot/visual_pilot.pre_epmc_20261001.sqlite`.
+
+## Review-first sources and optional age (2026-10-01)
+
+Galleries rank sources review > case series/original study > case report >
+atypical (drug-induced, treatment-story or rare presentations; see
+`source_quality.article_tier`), so a pair leads with broad material and
+case reports fill what is left. Patient age no longer gates publication: a
+stated age sorts an image into adult or pediatric, otherwise it shows as
+"Not stated". The age gate had vetoed 1,764 review panels the judge accepted;
+`requeue-age-vetoes` lifted them without LLM calls, raising published images
+from 790 to 1,152 (reviews 41 → 235, case series/studies 71 → 256) and
+pairs with images from 118 to 137 of 169. The pre-change database is saved as
+`data/visual_pilot/visual_pilot.pre_age_optional_20261001.sqlite`.
+
+The sections below describe earlier runs on the previous pipeline.
 
 ## Fresh data run
 

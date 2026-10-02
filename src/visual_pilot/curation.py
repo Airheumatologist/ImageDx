@@ -17,7 +17,12 @@ from functools import lru_cache
 
 from . import diseases
 
-POLICY_VERSION = "clinical-panels.v5"
+POLICY_VERSION = "clinical-panels.v7-age-optional"
+
+# Reason the retired v6 age gate recorded; ``judge.requeue_age_vetoes`` lifts it.
+# Age is now display/sorting metadata only: stated ages sort images into adult
+# or pediatric, and images without one are published as "Not stated".
+RETIRED_AGE_REASON = "patient age unclear or unsupported by source"
 
 # Stored whole-figure rows carry this panel_label and crop_mode whole_figure.
 PLATE_LABEL = "whole"

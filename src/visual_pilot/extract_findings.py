@@ -425,22 +425,23 @@ def run(args) -> int:
     results = client.iter_many(requests)
     try:
         for res in results:
-            article, ctx = submitted[res.index]
-            if res.error is not None:
-                if isinstance(res.error, llm.BudgetExceeded):
-                    budget_hit = True  # leave the article parsed; stop cleanly
-                else:
-                    stats["errors"] += 1
-                continue
-            with conn:  # delete + reinsert per pmcid in one transaction
-                apply_response(
-                    conn,
-                    article,
-                    ctx,
-                    res.parsed,
-                    bool((res.meta or {}).get("cached")),
-                    stats,
-                )
+            with client.db_lock:  # iter_many workers commit on this connection
+                article, ctx = submitted[res.index]
+                if res.error is not None:
+                    if isinstance(res.error, llm.BudgetExceeded):
+                        budget_hit = True  # leave the article parsed; stop cleanly
+                    else:
+                        stats["errors"] += 1
+                    continue
+                with conn:  # delete + reinsert per pmcid in one transaction
+                    apply_response(
+                        conn,
+                        article,
+                        ctx,
+                        res.parsed,
+                        bool((res.meta or {}).get("cached")),
+                        stats,
+                    )
     finally:
         requests.close()
         results.close()

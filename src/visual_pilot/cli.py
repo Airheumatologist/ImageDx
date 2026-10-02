@@ -10,9 +10,7 @@ from __future__ import annotations
 import argparse
 import logging
 import time
-from collections import deque
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from . import config, db, diseases, timing
@@ -76,424 +74,158 @@ def _lazy(module: str, attr: str = "run") -> CommandFn:
     return fn
 
 
-def _snapshot(conn, disease_key: str) -> tuple[set[str], set[str]]:
-    """Yield baseline for one disease: distinct image hashes + covered findings.
-
-    W9 task 5: the per-row ``findings_json`` Python scan is now a single
-    aggregate ``json_each`` query. ``je.type='object'`` mirrors the old
-    ``isinstance(value, dict)`` check and ``json_extract(...,'$.finding_key')``
-    mirrors ``value.get("finding_key")`` (NULL when absent — never truthy).
-    The nested ``CASE`` feeds ``json_each`` only valid array JSON: ``WHERE``
-    filters cannot stop a table-valued function from evaluating invalid or
-    non-array input, and ``json_type`` raises on malformed JSON, so the
-    ``json_valid`` arm guards it (``AND`` is not guaranteed to short-circuit).
-    The Python-side ``k and str(k) in approved`` filter applies the same
-    truthiness/str() rules as the old loop, so results are identical.
-    """
-    hashes = {
-        r["sha256"]
-        for r in conn.execute(
-            "SELECT DISTINCT sha256 FROM published_panels WHERE disease_key=? "
-            "AND sha256 IS NOT NULL AND sha256 != ''",
-            (disease_key,),
-        )
-    }
-    approved = {
-        r["finding_key"]
-        for r in conn.execute(
-            "SELECT finding_key FROM findings_vocab WHERE approved=1 "
-            "AND EXISTS (SELECT 1 FROM json_each(disease_keys_json) je "
-            "WHERE je.value=?)",
-            (disease_key,),
-        )
-    }
-    findings = {
-        str(r["k"])
-        for r in conn.execute(
-            "SELECT DISTINCT CASE WHEN je.type='object' "
-            "THEN json_extract(je.value,'$.finding_key') "
-            "ELSE je.value END AS k "
-            "FROM published_panels p, json_each(CASE WHEN json_valid(p.findings_json) "
-            "THEN CASE WHEN json_type(p.findings_json)='array' "
-            "THEN p.findings_json ELSE '[]' END ELSE '[]' END) je "
-            "WHERE p.disease_key=?",
-            (disease_key,),
-        )
-        if r["k"] and str(r["k"]) in approved
-    }
-    return hashes, findings
-
-
-def _warm_jats_entry(article_row: dict) -> None:
-    """Fetch + JATS-parse one article into ``parse._JATS_CACHE``.
-
-    Prefetch worker step (W9 task 3): touches the network and the locked,
-    bounded in-memory LRU only — no DB access, no disk writes. Best-effort: a
-    failed warm just means the later caption peek/parse fetches it anyway.
-    """
-    from . import parse as parse_stage
-
-    pmcid = article_row["pmcid"]
-    try:
-        entry = parse_stage._bundle_and_parsed(article_row)
-    except Exception as exc:  # noqa: BLE001 - warm-up must never fail run-all
-        logger.debug("run-all prefetch: %s not warmed (%s)", pmcid, exc)
-        return
-    parse_stage._jats_put(pmcid, entry)
-
-
-def _prefetch_candidates(
-    disease_key: str,
-    batch_size: int,
-    *,
-    exclude_pmcids: frozenset[str],
-    allowed_pmcids: frozenset[str] | None,
-    pool: ThreadPoolExecutor,
-) -> None:
-    """Warm ``parse._JATS_CACHE`` for the *next* batch's likely candidates.
-
-    W9 task 3 (fetch-only overlap): while batch N runs its stages, this ranks
-    the disease's ``relevant`` articles the same way ``select_batch`` does and
-    warms the top ``min(batch_size * 2, 100)`` (the peek limit ``select_batch``
-    would use). It is 100% write-free — its own ``db.connect()`` is read-only
-    (WAL sees fresh commits per statement) and it never calls
-    ``ranked_pending_articles``, whose rescue path commits writes — so the real
-    ``select_batch`` still runs on the main thread after batch N's ``store``
-    (coverage gaps feed ranking; early selection is a proven parity hazard).
-    """
-    from . import article_rank
-    from . import parse as parse_stage
-
-    try:
-        conn = db.connect()
-        try:
-            rows = [
-                dict(row)
-                for row in db.rows_with_status(
-                    conn, "articles", "relevant", disease=disease_key
-                )
-            ]
-            gaps = parse_stage.coverage_gaps(conn, disease_key)
-        finally:
-            conn.close()
-        if allowed_pmcids is not None:
-            rows = [row for row in rows if row["pmcid"] in allowed_pmcids]
-        for row in rows:
-            row["matched_passages"] = (
-                db.from_json(row.get("retrieval_evidence_json"), []) or []
-            )
-        ranked = article_rank.rank_articles(
-            rows, disease_key, coverage_gaps=gaps
-        )
-        candidates = [
-            row
-            for row, _score in ranked
-            if row["pmcid"] not in exclude_pmcids
-        ][: min(batch_size * 2, 100)]
-    except Exception as exc:  # noqa: BLE001 - prefetch is pure warm-up
-        logger.debug("run-all prefetch: candidate scan failed for %s (%s)", disease_key, exc)
-        return
-    for row in candidates:
-        pool.submit(_warm_jats_entry, row)
-
-
 def _cmd_run_all(args: argparse.Namespace) -> int:
-    """Select once, then expand visual-yield batches until marginal yield falls."""
-    from . import judge
-    from . import parse as parse_stage
+    """Figure-first loop: discover → triage → judge → store, then extract/report.
+
+    Discovery runs broad sources first: one ``overview`` round (narrative
+    reviews and case series surveying each disease), one ``manifestation``
+    round (reviews and case series about each under-target finding), then
+    ``backfill`` rounds over any article type, case reports included. Every
+    round re-plans the pairs still under the image target (fewest images
+    first), parses the matching articles and runs the LLM stages on just
+    those articles, so case reports only fill what reviews left short.
+    Backfill rounds repeat until no pair is under target, a round discovers
+    nothing new, or the runtime/budget limit is reached. ``--pmcids`` skips discovery and only
+    drains the stages for those articles. Figures an interrupted run left
+    unfinished are drained before the first discovery round.
+    """
+    from . import discover, judge
 
     started = time.monotonic()
-    max_runtime = max(1, int(getattr(args, "max_runtime_seconds", 900) or 900))
-    max_articles = max(1, int(getattr(args, "max_articles", 1200) or 1200))
-    batch_size = max(1, int(getattr(args, "batch_size", 100) or 100))
-    zero_yield_limit = max(1, int(getattr(args, "zero_yield_batches", 2) or 2))
+    max_runtime = int(args.max_runtime_seconds)
     if args.dry_run:
-        print(
-            "run-all dry-run: no database writes, network retrieval, JATS fetch, "
-            f"or LLM calls; planned batch size={batch_size}, "
-            f"article safety limit={max_articles}/disease, runtime={max_runtime}s"
-        )
+        print(f"run-all dry-run: no writes; per-pair={args.per_pair}, runtime={max_runtime}s")
         return 0
     _cmd_init(args)
-    # W9 task 5: one long-lived read connection for every bookkeeping query
-    # (budget, snapshots, unfinished counts, select_batch). WAL autocommit
-    # sees fresh commits per statement; stage modules write on their own
-    # connections, and select_batch's internal rescue commits explicitly.
     read_conn = db.connect()
-    # W9 task 3: one small executor for the whole run's write-free prefetch
-    # warm-up of parse._JATS_CACHE (submitted per batch, cancelled on exit).
-    prefetch_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="vp-prefetch")
     try:
         start_call_id = read_conn.execute(
             "SELECT COALESCE(MAX(call_id), 0) AS m FROM llm_calls"
         ).fetchone()["m"]
-        budget0 = args.budget_usd
 
-        def _spent_since_start() -> float:
-            return read_conn.execute(
+        def _remaining_budget():
+            if args.budget_usd is None:
+                return None
+            spent = read_conn.execute(
                 "SELECT COALESCE(SUM(cost_usd), 0) AS s FROM llm_calls WHERE call_id > ?",
                 (start_call_id,),
             ).fetchone()["s"]
+            return args.budget_usd - spent
 
-        def _remaining_budget():
-            return None if budget0 is None else budget0 - _spent_since_start()
-
-        def _unfinished_figures(pmcids=None) -> int:
-            placeholders = ""
-            values: tuple = (
-                "pending", "caption_kept", "caption_uncertain", "vision_accepted",
-                judge.MAX_ATTEMPTS,
-            )
-            if pmcids:
-                marks = ",".join("?" for _ in pmcids)
-                placeholders = f" AND pmcid IN ({marks})"
-                values += tuple(pmcids)
-            return read_conn.execute(
-                "SELECT COUNT(*) AS n FROM figures WHERE "
-                "(status IN (?,?,?,?) OR (status='vision_error' AND attempts < ?))"
-                + placeholders,
-                values,
-            ).fetchone()["n"]
-
-        def _retriable_vision_errors(pmcids) -> int:
-            """Cheap count of ``vision_error`` figures judge would still retry.
-
-            Mirrors the ``attempts < judge.MAX_ATTEMPTS`` filter in ``judge.run``
-            so the in-batch retry below only re-invokes judge when a pass could
-            actually do work.
-            """
-            if not pmcids:
-                return 0
-            marks = ",".join("?" for _ in pmcids)
-            return read_conn.execute(
-                "SELECT COUNT(*) AS n FROM figures WHERE status='vision_error' "
-                f"AND attempts < ? AND pmcid IN ({marks})",
-                (judge.MAX_ATTEMPTS, *pmcids),
-            ).fetchone()["n"]
-
-        if COMMANDS["select"] is None:
-            return 2
-        requested_pmcids = set(args.pmcids) if args.pmcids else None
-        if getattr(args, "skip_select", False):
-            print("run-all: using committed article selections; selection skipped")
-        elif requested_pmcids is None:
-            print("run-all: select")
-            args.budget_usd = _remaining_budget()
-            with timing.stage("select"):
-                rc = COMMANDS["select"](args)
-            if rc != 0:
-                return rc
-        else:
-            print(f"run-all: using {len(requested_pmcids)} existing requested PMCIDs; selection skipped")
-        if args.dry_run:
-            return 0
-
-        disease_keys = list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
         scoped = argparse.Namespace(**vars(args))
-        per_disease_cap = min(max_articles, args.limit) if args.limit is not None else max_articles
 
-        def _run_batch_stages(disease_key: str, batch_no: int, pmcids: list[str]) -> int:
-            """Run one batch through parse → triage → judge → store.
+        def _stage(name: str, pmcids, label: str) -> int:
+            remaining = _remaining_budget()
+            if remaining is not None and remaining <= 0:
+                print(f"run-all: budget ${args.budget_usd:.2f} exhausted before {name}; stopping")
+                return 4
+            scoped.budget_usd = remaining
+            scoped.pmcids = pmcids
+            print(f"run-all: {label}: {name}")
+            with timing.stage(name):
+                return COMMANDS[name](scoped)
 
-            W9: between judge and store, ``vision_error`` figures that judge will
-            still retry (``attempts < judge.MAX_ATTEMPTS``) get up to
-            ``MAX_ATTEMPTS - 1`` extra judge passes so transiently-failed figures
-            recover and are stored in-batch instead of pausing the disease.
-            ``scoped`` is already narrowed to this batch's disease and pmcids.
-            """
-
-            def _stage(name: str) -> int:
-                remaining = _remaining_budget()
-                if remaining is not None and remaining <= 0:
-                    print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
-                    return 4
-                scoped.budget_usd = remaining
-                print(
-                    f"run-all: {disease_key} batch {batch_no}: {name} "
-                    f"({len(pmcids)} articles)"
-                )
-                with timing.stage(name):
-                    return COMMANDS[name](scoped) if COMMANDS[name] else 2
-
-            for name in ("parse", "triage", "judge"):
-                rc = _stage(name)
+        def _drain(pmcids, label: str) -> int:
+            for name in ("triage", "judge"):
+                rc = _stage(name, pmcids, label)
                 if rc != 0:
                     return rc
             for _ in range(judge.MAX_ATTEMPTS - 1):
-                if not _retriable_vision_errors(pmcids):
+                marks = ",".join("?" for _ in pmcids)
+                retry = read_conn.execute(
+                    "SELECT COUNT(*) AS n FROM figures WHERE status='vision_error' "
+                    f"AND attempts < ? AND pmcid IN ({marks})",
+                    (judge.MAX_ATTEMPTS, *pmcids),
+                ).fetchone()["n"] if pmcids else 0
+                if not retry:
                     break
-                rc = _stage("judge")
+                rc = _stage("judge", pmcids, label)
                 if rc != 0:
                     return rc
-            return _stage("store")
-
-        # W0/C7: every stage call below is wrapped in timing.stage(...) and the
-        # report is written on every exit path. Observation only.
-        # Resume any figure work left by an interrupted earlier invocation before
-        # measuring marginal yield from new article batches.
-        for disease_key in disease_keys:
-            scoped.disease = disease_key
-            scoped.pmcids = sorted(requested_pmcids) if requested_pmcids is not None else None
-            # v5 plates: deterministically requeue license-allowed compound
-            # figures already vision_rejected before stage resumes.
-            requeue_conn = db.connect()
-            try:
-                requeued = judge.requeue_plates(
-                    requeue_conn,
-                    disease=disease_key,
-                    pmcids=scoped.pmcids,
-                )
-            finally:
-                requeue_conn.close()
-            if requeued["requeued"]:
-                print(
-                    f"run-all: {disease_key} requeued {requeued['requeued']} "
-                    "whole-figure plate(s)"
-                )
-            for name in ("triage", "judge", "store"):
-                remaining = _remaining_budget()
-                if remaining is not None and remaining <= 0:
-                    print(f"run-all: budget ${budget0:.2f} exhausted while resuming {name}")
-                    return 4
-                scoped.budget_usd = remaining
-                print(f"run-all: resume queued figures for {disease_key}: {name}")
-                with timing.stage(name):
-                    rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
-                if rc != 0:
-                    return rc
-
-        # W9: round-robin expansion across in-scope diseases. Each disease
-        # keeps its own {processed, zero_yield, batch count} state and yields
-        # the slot after every batch, so a paused/exhausted/zero-yielding
-        # disease cannot starve the others on the shared runtime + budget.
-        pending_diseases = deque(disease_keys)
-        progress = {
-            key: {"processed": 0, "zero_yield_batches": 0, "batches": 0}
-            for key in disease_keys
-        }
-        while pending_diseases:
-            if time.monotonic() - started >= max_runtime:
-                print(f"run-all: runtime safety limit ({max_runtime}s) reached; stopping expansion")
-                break
-            remaining = _remaining_budget()
-            if remaining is not None and remaining <= 0:
-                print(f"run-all: budget ${budget0:.2f} exhausted; stopping expansion")
-                return 4
-            disease_key = pending_diseases.popleft()
-            state = progress[disease_key]
-            selected = parse_stage.select_batch(
-                read_conn,
-                disease_key,
-                min(batch_size, per_disease_cap - state["processed"]),
-                pmcids=requested_pmcids,
-            )
-            if requested_pmcids is not None:
-                selected = [r for r in selected if r["pmcid"] in requested_pmcids]
-            if not selected:
-                continue  # finished: nothing left to select for this disease
-            pmcids = [r["pmcid"] for r in selected]
-            before_images, before_findings = _snapshot(read_conn, disease_key)
-            scoped.disease = disease_key
-            scoped.pmcids = pmcids
-            scoped.limit = None
-            state["batches"] += 1
-            # W9 task 3: while this batch runs its stage sequence, warm
-            # parse._JATS_CACHE for the next rotation's likely candidates on a
-            # prefetch worker. Pure cache warming on the worker's own
-            # connection — selection itself stays here, after this batch's
-            # store, because coverage gaps feed the ranking.
-            if pending_diseases:
-                prefetch_target = pending_diseases[0]
-            elif state["processed"] + len(pmcids) < per_disease_cap:
-                prefetch_target = disease_key  # this disease can still continue
-            else:
-                prefetch_target = None
-            if prefetch_target is not None:
-                prefetch_pool.submit(
-                    _prefetch_candidates,
-                    prefetch_target,
-                    batch_size,
-                    exclude_pmcids=frozenset(pmcids),
-                    allowed_pmcids=(
-                        frozenset(requested_pmcids)
-                        if requested_pmcids is not None
-                        else None
-                    ),
-                    pool=prefetch_pool,
-                )
-            rc = _run_batch_stages(disease_key, state["batches"], pmcids)
+            rc = _stage("store", pmcids, label)
             if rc != 0:
                 return rc
-            parse_stage.manifestation_queue.record_published_outcomes(
-                read_conn, disease_key
-            )
-            after_images, after_findings = _snapshot(read_conn, disease_key)
-            new_images = after_images - before_images
-            new_findings = after_findings - before_findings
-            state["processed"] += len(pmcids)
-            unfinished = _unfinished_figures(pmcids)
-            if unfinished:
-                print(
-                    f"run-all: {disease_key} batch has {unfinished} unfinished figures; "
-                    "leaving it resumable and pausing disease expansion"
+            return _stage("describe", pmcids, label)
+
+        if args.pmcids:
+            rc = _drain(list(args.pmcids), "explicit PMCIDs")
+            if rc != 0:
+                return rc
+        else:
+            disease_keys = list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
+            # Resume: finish figures an interrupted run left mid-pipeline
+            # before discovering more articles.
+            leftover = [
+                row["pmcid"] for row in read_conn.execute(
+                    "SELECT DISTINCT f.pmcid FROM figures f JOIN articles a USING(pmcid) "
+                    "WHERE (f.status IN ('pending','caption_kept','caption_uncertain','vision_accepted') "
+                    "OR (f.status='vision_error' AND f.attempts < ?)) "
+                    "AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) je "
+                    f"WHERE je.value IN ({','.join('?' for _ in disease_keys)})) "
+                    "ORDER BY f.pmcid",
+                    (judge.MAX_ATTEMPTS, *disease_keys),
                 )
-                continue  # finished: paused, stays resumable for the next run
-            print(
-                f"run-all: {disease_key} batch yield: {len(new_images)} distinct images, "
-                f"{len(new_findings)} newly covered findings"
-            )
-            if new_images or new_findings:
-                state["zero_yield_batches"] = 0
-            else:
-                state["zero_yield_batches"] += 1
-                if state["zero_yield_batches"] >= zero_yield_limit:
-                    # W4: keep the disease in rotation while any approved pair
-                    # is still under the per-finding image target.
-                    gaps = parse_stage.coverage_gaps(read_conn, disease_key)
-                    if gaps:
-                        print(
-                            f"run-all: {disease_key} {state['zero_yield_batches']} "
-                            f"zero-yield batches but {len(gaps)} pairs under "
-                            f"{config.VP_FINDING_IMAGE_TARGET} images; continuing"
+            ]
+            for i in range(0, len(leftover), args.batch_size):
+                chunk = leftover[i : i + args.batch_size]
+                rc = _drain(chunk, f"resume batch {i // args.batch_size + 1}")
+                if rc != 0:
+                    return rc
+            write_conn = db.connect()
+            try:
+                schedule = (
+                    [] if args.skip_review_passes else ["overview", "manifestation"]
+                ) + ["backfill"] * int(args.max_rounds)
+                for round_no, pass_name in enumerate(schedule, 1):
+                    left = max_runtime - (time.monotonic() - started)
+                    if left <= 0:
+                        print("run-all: runtime limit reached")
+                        break
+                    print(f"run-all: round {round_no}: discover ({pass_name})")
+                    with timing.stage("discover"):
+                        stats = discover.discover(
+                            write_conn, disease_keys, per_pair=args.per_pair,
+                            target=int(config.VP_FINDING_IMAGE_TARGET), max_runtime=left,
+                            pass_name=pass_name,
                         )
-                    else:
-                        print(f"run-all: {disease_key} stopped after {state['zero_yield_batches']} consecutive zero-yield batches")
-                        continue  # finished: marginal yield fell
-            if state["processed"] < per_disease_cap:
-                pending_diseases.append(disease_key)
+                    pmcids = stats["pmcids"]
+                    if not pmcids:
+                        if pass_name != "backfill":
+                            print(f"run-all: {pass_name} pass found no new articles")
+                            continue
+                        print("run-all: no new articles for any under-target pair; done")
+                        break
+                    for i in range(0, len(pmcids), args.batch_size):
+                        chunk = pmcids[i : i + args.batch_size]
+                        rc = _drain(chunk, f"round {round_no} batch {i // args.batch_size + 1}")
+                        if rc != 0:
+                            return rc
+            finally:
+                write_conn.close()
 
         scoped.disease = args.disease
         scoped.pmcids = None
         for name in ("extract", "report"):
-            remaining = _remaining_budget()
-            if remaining is not None and remaining <= 0:
-                print(f"run-all: budget ${budget0:.2f} exhausted before {name}; stopping")
-                return 4
-            scoped.budget_usd = remaining
-            print(f"run-all: {name}")
-            with timing.stage(name):
-                rc = COMMANDS[name](scoped) if COMMANDS[name] else 2
+            rc = _stage(name, None, "final")
             if rc != 0:
                 return rc
         return 0
     finally:
-        # Pending warm-up jobs are pure cache warming — cancel rather than
-        # wait; anything already running finishes harmlessly on its own conn.
-        prefetch_pool.shutdown(wait=False, cancel_futures=True)
         read_conn.close()
         _write_timings_report()
 
 
 # Registry: later workstreams replace the None entries with their module's
-# run(args) function (e.g. select_articles.run, triage.run, ...).
+# run(args) function (e.g. discover.run, triage.run, ...).
 COMMANDS: dict[str, CommandFn | None] = {
     "init": _cmd_init,
-    "select": _lazy("select_articles"),
-    "parse": _lazy("parse"),
+    "discover": _lazy("discover"),
     "triage": _lazy("triage"),
     "judge": _lazy("judge"),
     "requeue-plates": _lazy("judge", "run_requeue_plates"),
+    "requeue-age-vetoes": _lazy("judge", "run_requeue_age_vetoes"),
     "store": _lazy("store"),
+    "describe": _lazy("describe"),
     "extract": _lazy("extract_findings"),
     "report": _lazy("report"),
     "serve": _lazy("viewer"),
@@ -517,7 +249,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit",
         type=int,
         default=None,
-        help="max items to process (select: license-passing articles per disease)",
+        help="max items to process (discover: pairs)",
     )
     shared.add_argument(
         "--dry-run",
@@ -531,33 +263,40 @@ def build_parser() -> argparse.ArgumentParser:
         help="stop LLM spend when the cumulative cost reaches this amount",
     )
     shared.add_argument(
-        "--cap",
-        type=int,
-        default=None,
-        help="legacy stage-2 report threshold; parse uses yield batches",
+        "--batch-size", type=int, default=50,
+        help="articles per triage/judge/store batch in run-all (default: 50)",
     )
     shared.add_argument(
-        "--batch-size", type=int, default=200,
-        help="articles per disease in a visual-yield expansion batch (default: 200)",
+        "--per-pair", type=int, default=25,
+        help="new Europe PMC articles fetched per under-target pair per round (default: 25)",
     )
     shared.add_argument(
-        "--max-articles", type=int, default=6000,
-        help="safety limit on articles processed per disease per run (default: 6000)",
+        "--max-rounds", type=int, default=3,
+        help="backfill discovery rounds in run-all, after the overview and manifestation "
+        "rounds; each round re-plans from current coverage (default: 3)",
+    )
+    shared.add_argument(
+        "--skip-review-passes", action="store_true",
+        help="run-all: skip the overview and manifestation rounds and only backfill",
     )
     shared.add_argument(
         "--max-runtime-seconds", type=int, default=14400,
-        help="runtime safety limit for parse/run-all expansion (default: 14400)",
+        help="runtime safety limit for run-all (default: 14400)",
     )
     shared.add_argument(
-        "--zero-yield-batches", type=int, default=2,
-        help="stop a disease after this many consecutive batches add no images "
-        "or findings, only when no approved pair remains under "
-        "--finding-image-target images",
+        "--finding-image-floor", type=int, default=None,
+        help="minimum published images before a pair is considered staffed "
+        "(default: VP_FINDING_IMAGE_FLOOR=3)",
     )
     shared.add_argument(
         "--finding-image-target", type=int, default=None,
         help="distinct published images targeted per approved (disease, finding) "
         "pair (default: VP_FINDING_IMAGE_TARGET=10)",
+    )
+    shared.add_argument(
+        "--finding-gallery-cap", type=int, default=None,
+        help="maximum published distinct representatives per pair; eligible "
+        "surplus stays stored as reserves (default: VP_FINDING_GALLERY_CAP=20)",
     )
     shared.add_argument(
         "--pmcids",
@@ -570,6 +309,13 @@ def build_parser() -> argparse.ArgumentParser:
     subs = {}
     for name in COMMANDS:
         subs[name] = subparsers.add_parser(name, parents=[shared])
+    subs["discover"].add_argument(
+        "--pass", dest="discovery_pass", choices=["overview", "manifestation", "backfill"],
+        default="backfill",
+        help="overview: reviews/case series surveying each disease; manifestation: "
+        "reviews/case series about each under-target finding; backfill: any article "
+        "type (default: backfill)",
+    )
     subs["triage"].add_argument(
         "--retriage-montages",
         action="store_true",
@@ -581,16 +327,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="recompute panel attribution/subtype from stored vision_json",
     )
-    for name in ("parse", "run-all"):
-        subs[name].add_argument(
-            "--accept-cap",
-            action="store_true",
-            help="deprecated compatibility flag; expansion is yield-based",
-        )
-    subs["run-all"].add_argument(
-        "--skip-select",
+    subs["describe"].add_argument(
+        "--force",
         action="store_true",
-        help="resume from committed article selections without new retrieval or relevance calls",
+        help="rewrite display captions that already exist",
     )
     subs["extract"].add_argument(
         "--force",
@@ -603,19 +343,27 @@ def build_parser() -> argparse.ArgumentParser:
             action="store_true",
             help="refresh panel-derived finding links without text extraction",
         )
-    subs["select"].add_argument(
-        "--recheck-title-rule",
-        action="store_true",
-        help="skip retrieval/licensing; re-run P1 on articles the title rule "
-        "passed (relevance_reason='title_rule', status relevant|parsed)",
-    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if getattr(args, "finding_image_target", None) is not None:
-        config.VP_FINDING_IMAGE_TARGET = max(1, args.finding_image_target)
+    overridden = False
+    for flag, name in (
+        ("finding_image_floor", "VP_FINDING_IMAGE_FLOOR"),
+        ("finding_image_target", "VP_FINDING_IMAGE_TARGET"),
+        ("finding_gallery_cap", "VP_FINDING_GALLERY_CAP"),
+    ):
+        value = getattr(args, flag, None)
+        if value is not None:
+            setattr(config, name, value)
+            overridden = True
+    if overridden:
+        try:
+            config.validate_coverage_settings()
+        except ValueError as exc:
+            print(f"error: {exc}")
+            return 2
     fn = COMMANDS.get(args.command)
     if fn is None:
         return _cmd_not_implemented(args)
