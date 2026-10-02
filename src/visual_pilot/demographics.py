@@ -18,6 +18,16 @@ _GROUPS = {
 
 
 def resolve_age(figure: dict) -> dict:
+    age = _resolve_figure_age(figure)
+    case_text = str(figure.get("case_age_text") or "")
+    if age["age_group"] == "unknown" and case_text.strip():
+        # Case reports state the patient's age in the abstract, not the
+        # caption; the same conflict rules apply to that text.
+        age = _resolve_figure_age({"caption": case_text})
+    return age
+
+
+def _resolve_figure_age(figure: dict) -> dict:
     caption = str(figure.get("caption") or figure.get("figure_caption") or "")
     mentions = figure.get("in_text_mentions_json", figure.get("in_text_mentions", []))
     if isinstance(mentions, str):
@@ -62,6 +72,6 @@ def resolve_age(figure: dict) -> dict:
         groups = [g for g in groups if g[0] != 'adult']
     if len(groups) != 1:
         if not groups and caption.strip() and mentions:
-            return resolve_age({"caption": " ".join(str(m) for m in mentions)})
+            return _resolve_figure_age({"caption": " ".join(str(m) for m in mentions)})
         return unknown
     return {"age_group": groups[0][0], "evidence": groups[0][1], "patient_age_years": None}

@@ -17,7 +17,7 @@ from balanced_fixtures import (
     add_panel,
     make_db,
 )
-from src.visual_pilot import gallery, manifestation_queue, pair_reporting
+from src.visual_pilot import discover, gallery, pair_reporting
 from src.visual_pilot import representatives, report
 from src.visual_pilot.viewer.app import create_app
 
@@ -65,15 +65,14 @@ def test_all_surfaces_agree_on_published_reserve_and_gap_counts(tmp_path):
     assert (discoid["eligible_distinct"], discoid["published_distinct"]) == (0, 0)
     assert discoid["tier"] == "empty" and discoid["floor_deficit"] == 3
 
-    # Scheduler consumes the same counts: covered lane drops out, the empty
-    # lane is the only actionable one.
-    assert manifestation_queue.published_coverage(conn, "sle") == {
+    # Discovery plans from the same counts: the covered pair drops out, the
+    # empty pair is the only one searched.
+    assert gallery.published_coverage(conn, "sle") == {
         "malar_rash": 20, "discoid_plaque": 0,
     }
-    assert manifestation_queue.sync_candidates(conn, "sle") == {"discoid_plaque": 0}
-    actionable = manifestation_queue.actionable_lanes(snapshot, ["sle"])
-    assert [(l["disease_key"], l["finding_key"]) for l in actionable] == [
-        ("sle", "discoid_plaque")
+    plan = discover.plan_pairs(conn, ["sle"], target=10)
+    assert [(d, f["finding_key"], have) for d, f, have in plan] == [
+        ("sle", "discoid_plaque", 0)
     ]
 
     # Primary representative comes from the selected gallery, never a reserve.

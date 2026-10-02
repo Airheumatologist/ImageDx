@@ -1,7 +1,7 @@
 """Configuration for the Visual Findings Library pilot.
 
-Provider settings (OpenRouter, DeepInfra embeddings, turbopuffer) are read
-from the environment;
+Provider settings (OpenRouter, plus optional OpenCode/DeepInfra chat
+endpoints) are read from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
 are read here with their spec defaults (docs/visual_pilot_plan.md §3).
 
@@ -40,8 +40,9 @@ def _env_float(name: str, default: float) -> float:
 
 
 # -----------------------------------------------------------------------------
-# Provider settings: turbopuffer PMC namespace for retrieval, DeepInfra for
-# query embeddings only, and OpenRouter for all LLM stages (P1-P4).
+# Provider settings: OpenRouter for all LLM stages (P2-P4) by default;
+# OpenCode and DeepInfra are alternative OpenAI-compatible chat endpoints.
+# Article discovery uses the public Europe PMC REST API (no key).
 # -----------------------------------------------------------------------------
 DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
 DEEPINFRA_BASE_URL = os.getenv(
@@ -54,24 +55,10 @@ OPENROUTER_BASE_URL = os.getenv(
     "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
 )
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
-TURBOPUFFER_API_KEY = os.getenv("TURBOPUFFER_API_KEY", "")
-TURBOPUFFER_REGION = os.getenv("TURBOPUFFER_REGION", "gcp-us-central1").strip()
-TURBOPUFFER_NAMESPACE_PMC = os.getenv(
-    "TURBOPUFFER_NAMESPACE_PMC", "medical_database_pmc"
-)
-TURBOPUFFER_TIMEOUT_SECONDS = _env_int("TURBOPUFFER_TIMEOUT_SECONDS", 30)
-EMBEDDING_MODEL = os.getenv(
-    "RUNTIME_EMBEDDING_MODEL",
-    os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"),
-)
-EMBEDDING_TIMEOUT_SECONDS = _env_int("DEEPINFRA_EMBED_TIMEOUT_SECONDS", 120)
 
 # Credentials for each supported VP_LLM_PROVIDER value.
 _LLM_PROVIDER_CREDENTIALS = {
     "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
-    # DeepInfra is primarily the embeddings/reranking provider, but the same
-    # OpenAI-compatible endpoint serves chat models (used for parity runs while
-    # space-bunny-free's upstream rejects union-type json_schema).
     "deepinfra": lambda: (DEEPINFRA_API_KEY, DEEPINFRA_BASE_URL),
     "openrouter": lambda: (OPENROUTER_API_KEY, OPENROUTER_BASE_URL),
 }
@@ -107,11 +94,6 @@ VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Figures per P2 caption-triage batch.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
-# Maximum per-disease visual finding/modality passage queries in stage 2.
-# Zero means use every approved disease-specific finding query.
-VP_VISUAL_QUERY_CAP = max(0, _env_int("VP_VISUAL_QUERY_CAP", 0))
-# Per-finding candidate reservation quota when --limit caps stage-2 articles.
-VP_MANIFESTATION_QUOTA = max(0, _env_int("VP_MANIFESTATION_QUOTA", 20))
 # Per-pair gallery coverage band for the balanced pair search. FLOOR is the
 # minimum distinct published images a (disease, finding) lane must retain,
 # TARGET is the coverage goal at which a lane counts as covered, and
@@ -153,30 +135,6 @@ def validate_coverage_settings() -> tuple[int, int, int]:
 
 validate_coverage_settings()
 
-# Balanced pair-search policy identity and schedule. These are fixed by the
-# policy and deliberately not env-overridable; policy_version is recorded on
-# every pair_search_attempts row and lanes' search_policy_version.
-PAIR_SEARCH_POLICY_VERSION = "balanced-pair-search.v1"
-PAIR_SEARCH_DEPTHS = (300, 600, 1200)
-PAIR_SEARCH_VARIANTS_PER_ROUND = 6
-# Persisted-candidate caption rescue lane (W6): top-N candidate rows peeked
-# per batch (0 disables) and confirming captions required for those rescues.
-VP_CAPTION_RESCUE_PEEK = max(0, _env_int("VP_CAPTION_RESCUE_PEEK", 50))
-VP_CAPTION_RESCUE_MIN_CAPTIONS = max(1, _env_int("VP_CAPTION_RESCUE_MIN_CAPTIONS", 2))
-# Extra per-synonym visual queries emitted for under-target findings (W7);
-# 0 disables targeted synonym expansion.
-VP_TARGETED_SYNONYM_QUERIES = max(0, _env_int("VP_TARGETED_SYNONYM_QUERIES", 3))
-# Europe PMC batched article-license source (final; S3 is fallback only):
-# PMCIDs per searchPOST call and concurrent batch calls in flight.
-VP_EPMC_LICENSE_BATCH = max(1, _env_int("VP_EPMC_LICENSE_BATCH", 100))
-VP_EPMC_CONCURRENCY = max(1, _env_int("VP_EPMC_CONCURRENCY", 4))
-# Pair ranking enriches only the bounded caption shortlist, never the corpus.
-VP_RANK_METADATA_TTL_DAYS = max(1, _env_int("VP_RANK_METADATA_TTL_DAYS", 7))
-VP_PAIR_SEMANTIC_RERANK = os.getenv("VP_PAIR_SEMANTIC_RERANK", "1") != "0"
-# Explicit editorial preferences keyed by journal ISSN (values clamped to 0..1).
-# Empty by default: journal identity is not itself evidence of quality.
-VP_JOURNAL_PREFERENCES = os.getenv("VP_JOURNAL_PREFERENCES", "{}")
-
 # -----------------------------------------------------------------------------
 # Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults
 # preserve current behavior; later workstreams switch each of these on.
@@ -191,18 +149,12 @@ VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
 # was measured on DeepInfra GLM; on OpenRouter stealth/space-bunny-alpha
 # throughput scales with concurrency and rate limits are generous.
 VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 16))
-# Max in-flight P1 relevance calls (W4); defaults above VP_CONCURRENCY since
-# high-volume runs push thousands of cheap P1 calls through OpenRouter.
-VP_P1_CONCURRENCY = max(1, _env_int("VP_P1_CONCURRENCY", 32))
 # Per-request LLM timeout for the P3 judge (W6).
 VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
 # Retries on HTTP 429 for provider calls (W3).
 VP_RATE_LIMIT_RETRIES = max(0, _env_int("VP_RATE_LIMIT_RETRIES", 4))
 # In-memory cap for the judge->store original-bytes handoff (W6/W7).
 VP_ORIGINALS_CACHE_MB = max(0, _env_int("VP_ORIGINALS_CACHE_MB", 512))
-# Stage-2 metadata hydration: concurrent turbopuffer batch requests in
-# select (each batch is one request, so this is HTTP-level parallelism).
-VP_RETRIEVAL_CONCURRENCY = max(1, _env_int("VP_RETRIEVAL_CONCURRENCY", 4))
 # W0 timing instrumentation: 1 records timings and writes reports/timings_*.json.
 VP_TIMINGS = _env_int("VP_TIMINGS", 1)
 # W0 parity harness: 1 makes an llm_calls cache miss raise LLMError instead of

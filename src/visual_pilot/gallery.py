@@ -9,6 +9,11 @@ reserves; nothing is deleted, truncated, or written here.
 
 from __future__ import annotations
 
+from .source_quality import TIER_SERIES
+
+# Panels built without article metadata rank as an ordinary study.
+TIER_DEFAULT = TIER_SERIES
+
 
 def _validated_identity(panel: dict) -> dict | None:
     """Return the panel's identity review only when it binds to current bytes.
@@ -129,8 +134,9 @@ def select_gallery(
     Qualifying panels collapse into distinct groups by identical hashes,
     documented patient/reuse evidence, and undocumented source-figure
     families. A valid lock is its group's representative and the first
-    gallery entry; otherwise the group lead is the best
-    ``representatives.score_panel`` score, ties ascending by panel_id.
+    gallery entry; otherwise the group lead is the best source tier
+    (``article_tier``: review, series/study, case report, atypical), then
+    the best ``representatives.score_panel`` score, ties ascending by panel_id.
     Selection is round-robin over source articles (at most two
     representatives per article, counting the lock), then a second pass
     fills the cap in score order since the article preference is soft.
@@ -156,9 +162,12 @@ def select_gallery(
     }
     groups = _group_panels(qualified)
 
-    def group_key(group: dict) -> tuple[float, str]:
-        rep_id = str(group["rep"]["panel_id"])
-        return (-scores[rep_id], rep_id)
+    def rank(panel: dict) -> tuple[int, float, str]:
+        panel_id = str(panel["panel_id"])
+        return (int(panel.get("article_tier", TIER_DEFAULT)), -scores[panel_id], panel_id)
+
+    def group_key(group: dict) -> tuple[int, float, str]:
+        return rank(group["rep"])
 
     locked = str(locked_panel_id) if locked_panel_id is not None else None
     locked_group = None
@@ -172,9 +181,7 @@ def select_gallery(
             )
             locked_group = group
         else:
-            group["rep"] = min(
-                members, key=lambda m: (-scores[str(m["panel_id"])], str(m["panel_id"]))
-            )
+            group["rep"] = min(members, key=rank)
     groups.sort(key=group_key)
 
     reasons: dict[str, dict] = {}
@@ -192,7 +199,7 @@ def select_gallery(
     if locked_group is not None:
         select(locked_group, "locked")
 
-    # First pass: round-robin articles by their top group's (-score, panel_id),
+    # First pass: round-robin articles by their top group's (tier, -score, panel_id),
     # one group per article per round, at most two per article (counting the
     # already-selected lock).
     by_article: dict[str, list[dict]] = {}
@@ -226,7 +233,7 @@ def select_gallery(
             break
 
     # Second pass: the per-article preference is soft; fill remaining capacity
-    # from the rest of the distinct groups in score order.
+    # from the rest of the distinct groups in tier, then score order.
     for group in groups:
         if len(published) >= cap:
             break
@@ -258,6 +265,20 @@ def select_gallery(
             1 for group in published_groups if not group["documented"]
         ),
         "eligible_distinct": len(groups),
+    }
+
+
+def published_coverage(conn, disease_key: str) -> dict[str, int]:
+    """Distinct *published* gallery images per approved finding.
+
+    Counts the same grouped representatives the viewer publishes — eligible
+    reserves and duplicate aliases never inflate a pair's count. Every
+    approved pair is present, including empty ones.
+    """
+    snapshot = coverage_snapshot(conn, disease_key)
+    return {
+        finding_key: int(record.get("published_distinct") or 0)
+        for finding_key, record in (snapshot.get(disease_key) or {}).items()
     }
 
 

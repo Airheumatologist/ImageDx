@@ -304,3 +304,16 @@ def test_snapshot_preserves_all_rows_and_files_for_25_images(tmp_path):
     files = list((tmp_path / "panels").glob("*.png"))
     assert len(files) == 25
     conn.close()
+
+
+def test_reviews_lead_and_atypical_case_reports_fall_to_reserves():
+    # The case report has the best image score; tier still outranks score.
+    panels = [
+        _documented("case", 1, confidence=1.0, article_tier=2),
+        _documented("atypical", 2, confidence=1.0, article_tier=3),
+        _documented("review", 3, confidence=0.5, article_tier=0),
+        _documented("series", 4, confidence=0.5, article_tier=1),
+    ]
+    out = gallery.select_gallery(panels, "sle", "malar_rash", cap=3)
+    assert out["published_panel_ids"] == ["review", "series", "case"]
+    assert out["reserve_panel_ids"] == ["atypical"]

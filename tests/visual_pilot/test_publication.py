@@ -79,7 +79,7 @@ def test_third_party_and_whole_figure_only_licenses(tmp_path):
     conn.close()
 
 
-def test_unknown_age_and_unsupported_label_reject(tmp_path):
+def test_unknown_age_publishes_but_unsupported_label_rejects(tmp_path):
     conn = make_db(tmp_path)
     _seed_sle(conn)
     add_article(conn, "PMC1")
@@ -89,8 +89,8 @@ def test_unknown_age_and_unsupported_label_reject(tmp_path):
     )
     add_panel(conn, tmp_path, "pn", "PMC1:noage", "PMC1", "sle")
     record = _record(conn, "pn")
-    assert record["eligible"] is False
-    assert "patient age unclear or unsupported by source" in record["reasons"]
+    assert record["eligible"] is True
+    assert record["source_age"]["age_group"] == "unknown"
 
     add_figure(
         conn, "PMC1:nolabel", "PMC1",
@@ -251,4 +251,36 @@ def test_mixed_disease_plate_stays_excluded(tmp_path):
     record = _record(conn, "plate_mixed")
     assert record["eligible"] is False
     assert "multi-panel plate: multi_disease" in record["reasons"]
+    conn.close()
+
+
+def test_requeue_age_vetoes_restores_only_age_vetoed_accepts(tmp_path):
+    from src.visual_pilot import curation, db, judge
+
+    conn = make_db(tmp_path)
+    _seed_sle(conn)
+    add_article(conn, "PMC1")
+
+    def vetoed(reason, exclusion):
+        return {"figure_is_compound": False, "panels": [{
+            "panel_label": "A", "bbox": [0, 0, 1, 1], "include": False,
+            "exclusion_reason": exclusion, "curation_reason": reason,
+            "disease_key": "sle", "modality": "clinical_photo",
+            "findings": [{"finding_key": "malar_rash", "evidence": "visual"}],
+        }]}
+
+    add_figure(conn, "PMC1:age", "PMC1", vision=vetoed(curation.RETIRED_AGE_REASON, "not_patient_image"))
+    add_figure(conn, "PMC1:chart", "PMC1", vision=vetoed("chart or graph", "diagram"))
+    conn.execute("UPDATE figures SET status='vision_rejected'")
+
+    assert judge.requeue_age_vetoes(conn, dry_run=True)["requeued"] == 1
+    assert conn.execute("SELECT status FROM figures WHERE figure_id='PMC1:age'").fetchone()[0] == "vision_rejected"
+
+    result = judge.requeue_age_vetoes(conn)
+    assert result == {"examined": 1, "requeued": 1, "still_rejected": {}}
+    rows = {r["figure_id"]: r for r in conn.execute("SELECT * FROM figures")}
+    assert rows["PMC1:age"]["status"] == "vision_accepted"
+    panel = db.from_json(rows["PMC1:age"]["vision_json"])["panels"][0]
+    assert panel["include"] is True and "curation_reason" not in panel
+    assert rows["PMC1:chart"]["status"] == "vision_rejected"
     conn.close()

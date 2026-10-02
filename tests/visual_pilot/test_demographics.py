@@ -24,16 +24,16 @@ class AgeEvidenceTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(resolve_age({'caption': f'A {text} patient.'})['age_group'], expected)
 
-    def test_unknown_conflicting_or_unattributed_ages_are_rejected(self):
+    def test_unknown_conflicting_or_unattributed_ages_resolve_unknown_but_do_not_reject(self):
         for caption in ['MRI of sacroiliitis.', 'Follow-up at 23 years in a patient.',
                         'A 12-year-old patient and a 23-year-old patient.',
                         '(A) A 42-year-old patient. (B) A different patient.',
                         'Juvenile arthritis MRI.']:
             with self.subTest(caption=caption):
                 self.assertEqual(resolve_age({'caption': caption})['age_group'], 'unknown')
-                self.assertEqual(curation.exclusion_reason(
+                self.assertNotEqual(curation.exclusion_reason(
                     {'include': True, 'age_group': 'adult'}, {'caption': caption}, {}),
-                    'patient age unclear or unsupported by source')
+                    curation.RETIRED_AGE_REASON)
 
     def test_caption_precedes_mentions_and_explicit_age_group_is_supported(self):
         self.assertEqual(resolve_age({'caption': 'An adult patient with lupus.',
@@ -43,7 +43,7 @@ class AgeEvidenceTests(unittest.TestCase):
         self.assertEqual(resolve_age({'caption': 'MRI showing sacroiliitis.', 'in_text_mentions_json':
                                      '["The pictured patient is a 23-year-old adult."]'})['age_group'], 'adult')
 
-    def test_api_corrects_adult_and_excludes_unknown_across_views(self):
+    def test_api_corrects_stated_ages_and_publishes_unknown_as_not_stated(self):
         with tempfile.TemporaryDirectory() as directory:
             data_dir = Path(directory)
             conn = make_db(data_dir)
@@ -67,15 +67,17 @@ class AgeEvidenceTests(unittest.TestCase):
             with TestClient(create_app(directory)) as client:
                 payload = client.get('/api/diseases/sle/panels').json()
                 panels = {p['panel_id']: p for p in payload['panels']}
-                self.assertEqual(set(panels), {'adult', 'child'})
+                self.assertEqual(set(panels), {'adult', 'child', 'unknown'})
                 self.assertEqual(panels['adult']['age_group'], 'adult')
+                # A model-guessed age without source text is not trusted.
+                self.assertEqual(panels['unknown']['age_group'], 'unknown')
+                self.assertEqual(panels['unknown']['age_group_label'], 'Not stated')
+                self.assertFalse(panels['unknown']['pediatric'])
                 self.assertFalse(panels['adult']['pediatric'])
                 self.assertTrue(panels['child']['pediatric'])
                 self.assertEqual(panels['adult']['source_variants'][0]['figure_caption'], caption)
                 self.assertEqual(panels['adult']['context'], caption)
                 self.assertLessEqual(len(panels['adult']['context_summary']), 320)
-                compared = client.get('/api/compare/sle-dm-skin').json()
-                self.assertNotIn('unknown', {p['panel_id'] for entry in compared for side in ('left','right') for p in entry[side].get('panels',[])})
 
 
 if __name__ == '__main__':

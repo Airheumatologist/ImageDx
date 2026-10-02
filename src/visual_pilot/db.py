@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS figures (
     vision_json          TEXT,
     error                TEXT,
     attempts             INTEGER NOT NULL DEFAULT 0,
+    case_age_text        TEXT,
     created_at           TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -334,6 +335,7 @@ def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
         conn = connect()
     conn.executescript(SCHEMA)
     _migrate_articles(conn)
+    _migrate_figures(conn)
     _migrate_panels(conn)
     _migrate_manifestation_representatives(conn)
     _migrate_manifestation_candidates(conn)
@@ -375,6 +377,14 @@ def _migrate_articles(conn: sqlite3.Connection) -> None:
     for column, statement in wanted.items():
         if column not in existing:
             conn.execute(statement)
+
+
+def _migrate_figures(conn: sqlite3.Connection) -> None:
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(figures)")}
+    if existing and "case_age_text" not in existing:
+        # Single-patient case-report abstract: age evidence when the caption
+        # and figure mentions state none (demographics.resolve_age).
+        conn.execute("ALTER TABLE figures ADD COLUMN case_age_text TEXT")
 
 
 _PANEL_MIGRATIONS = (

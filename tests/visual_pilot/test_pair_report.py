@@ -43,7 +43,7 @@ def test_zero_article_pair_reports_honest_gap(tmp_path):
     assert record["pending_work"] == 0
     assert record["unresolved_legacy_candidates"] == 0
     assert record["next_action"] == (
-        "Attempt the next bounded disease-scoped search strategy"
+        "Run another bounded discovery round for this pair"
     )
     assert not any(record["rejection_categories"].values())
     assert record["selection_reserves"] == {
@@ -74,10 +74,10 @@ def test_ineligible_panel_is_rejection_not_reserve(tmp_path):
     conn = make_db(tmp_path)
     _seed_pairs(conn)
     add_article(conn, "PMC1")
-    # No source-supported age -> deterministic eligibility failure.
+    # Caption names no approved finding -> deterministic eligibility failure.
     add_figure(
         conn, "PMC1:fig1", "PMC1",
-        caption="Malar rash in a patient with systemic lupus erythematosus",
+        caption="Discoid plaque in a 40-year-old patient with systemic lupus erythematosus",
     )
     add_panel(conn, tmp_path, "p1", "PMC1:fig1", "PMC1", "sle", sha256="sha-1")
     conn.commit()
@@ -85,7 +85,7 @@ def test_ineligible_panel_is_rejection_not_reserve(tmp_path):
     assert record["eligible_distinct"] == 0
     assert record["published_distinct"] == 0
     assert record["reserve_distinct"] == 0
-    assert record["rejection_categories"]["age unclear"] == 1
+    assert record["rejection_categories"]["unsupported finding"] == 1
     assert sum(record["rejection_categories"].values()) == 1
     # An eligibility failure is never a selection reserve.
     assert record["selection_reserves"]["distinct_groups"] == 0
@@ -197,7 +197,7 @@ def test_pair_funnel_candidate_attempt_and_pending_fields(tmp_path):
     assert record["pending_work"] == 1
     assert record["unresolved_legacy_candidates"] == 1
     assert record["next_action"] == (
-        "Finish pending pair candidates before new retrieval"
+        "Finish pending figures before the next discovery round"
     )
     assert len(record["attempted_strategies"]) == 1
     attempt = record["attempted_strategies"][0]

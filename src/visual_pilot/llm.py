@@ -113,6 +113,9 @@ class LLMClient:
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
         self._lock = threading.Lock()
+        # Worker threads write llm_calls through the caller's connection under
+        # this lock; callers streaming iter_many must hold it for their own
+        # writes on that connection (see db_lock).
         self._client_init_lock = threading.Lock()
         # Remember per model whether strict json_schema is accepted.
         self._response_mode: dict[str, str] = {}
@@ -311,6 +314,17 @@ class LLMClient:
                 "images": [im.identity() for im in images],
             },
         )
+
+    @property
+    def db_lock(self) -> threading.Lock:
+        """Lock guarding the shared ``db_conn``.
+
+        ``iter_many`` workers insert and commit ``llm_calls`` rows on the
+        caller's connection; a caller writing to the same connection while
+        results stream must hold this lock, or a worker commit can end the
+        caller's transaction between its writes and its own commit.
+        """
+        return self._lock
 
     def _cache_lookup(self, input_hash: str):
         if self.conn is None:

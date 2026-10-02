@@ -1,5 +1,11 @@
 # Visual Findings Library: 3-disease pilot — spec
 
+> **Amendment 2026-10-01 (authoritative; overrides everything below where they conflict):**
+> - **Source articles:** any PMC open-access article type — case reports, original research, reviews, letters — with a commercial-use license. Only notices (errata, corrections, retractions) and retracted articles are excluded. The `Publication types` row in §2 and the "review articles" wording in §1 and the prompts no longer apply.
+> - **Discovery:** Europe PMC REST figure-caption search (`FIG:`) per (disease, finding) pair replaces turbopuffer retrieval and the P1 relevance prompt (`src/visual_pilot/discover.py`). turbopuffer and DeepInfra embeddings are no longer used.
+> - **Discovery passes:** narrative reviews and case series first (an `overview` pass per disease and a `manifestation` pass per finding), then a `backfill` pass over any article type for pairs still under target. Galleries rank sources review > case series/original study > case report > atypical (drug-induced, treatment-story, rare) (`source_quality.article_tier`); ranking only, nothing is excluded by type.
+> - **Patient age:** not an eligibility gate. A source-stated age sorts an image into adult or pediatric; an image without one is published with age "Not stated". For case reports, the abstract and case-presentation section count as source age evidence when the caption and figure mentions state none (`figures.case_age_text`).
+
 > **Repo adjustments (authoritative, override the text below where they conflict):**
 > - Repo root is `/Volumes/Vibing/Turborag` (not `/Volumes/Vibing/Review Article`). Python 3.14 system interpreter (`python3`); pillow, lxml, jsonschema, httpx, openai, turbopuffer, fastapi, pytest, ruff are installed. Add any new runtime deps (pillow, lxml, jsonschema) to `requirements.txt`.
 > - There is no `tests/` dir yet; create `tests/visual_pilot/`. `.gitignore` ignores `test_*.py` except under `tests/`. Add `data/visual_pilot/` to `.gitignore`.

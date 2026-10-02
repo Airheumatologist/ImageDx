@@ -239,10 +239,7 @@ def test_coverage_non_integer_raises_clear_error():
     assert "VP_FINDING_IMAGE_TARGET must be an integer" in proc.stderr
 
 
-def test_pair_search_policy_constants_and_validator():
-    assert config.PAIR_SEARCH_POLICY_VERSION == "balanced-pair-search.v1"
-    assert config.PAIR_SEARCH_DEPTHS == (300, 600, 1200)
-    assert config.PAIR_SEARCH_VARIANTS_PER_ROUND == 6
+def test_coverage_validator_returns_band():
     assert config.validate_coverage_settings() == (
         config.VP_FINDING_IMAGE_FLOOR,
         config.VP_FINDING_IMAGE_TARGET,

@@ -15,9 +15,14 @@ import re
 from collections import Counter
 from functools import lru_cache
 
-from . import diseases, demographics
+from . import diseases
 
-POLICY_VERSION = "clinical-panels.v6-age-evidence"
+POLICY_VERSION = "clinical-panels.v7-age-optional"
+
+# Reason the retired v6 age gate recorded; ``judge.requeue_age_vetoes`` lifts it.
+# Age is now display/sorting metadata only: stated ages sort images into adult
+# or pediatric, and images without one are published as "Not stated".
+RETIRED_AGE_REASON = "patient age unclear or unsupported by source"
 
 # Stored whole-figure rows carry this panel_label and crop_mode whole_figure.
 PLATE_LABEL = "whole"
@@ -365,9 +370,6 @@ def exclusion_reason(
     if not _get(panel, "include", True):
         reason = _get(panel, "exclusion_reason")
         return str(reason or "model excluded panel").replace("_", " ")
-
-    if demographics.resolve_age(figure)["age_group"] == "unknown":
-        return "patient age unclear or unsupported by source"
 
     vision = _json_value(_get(figure, "vision_json"), {}) or {}
     compound = (

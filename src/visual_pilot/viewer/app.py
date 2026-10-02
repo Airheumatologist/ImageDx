@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import config, coverage, db, demographics, gallery, publication, representatives
+from .. import config, coverage, db, demographics, gallery, publication, representatives, source_quality
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
@@ -443,6 +443,7 @@ def _sort_panels(panels: list[dict]) -> list[dict]:
     return sorted(
         panels,
         key=lambda p: (
+            p.get("article_tier", source_quality.TIER_SERIES),
             TYPICALITY_ORDER.get(_norm(p.get("typicality")), 3),
             -(p.get("confidence") or 0.0),
         ),
@@ -521,6 +522,10 @@ def _panel_json(
     findings = [f for f in findings if f["source_supported"]]
     shown_label = ", ".join(dict.fromkeys(f["label"] for f in findings))
     article_title = row["article_title"] if "article_title" in row.keys() else None
+    article_types = (
+        db.from_json(row["article_publication_types"], [])
+        if "article_publication_types" in row.keys() else []
+    )
     doi_url = f"https://doi.org/{row['doi']}" if row["doi"] else row["source_url"]
     license_url = row["license_url"] if "license_url" in row.keys() else None
     if not license_url:
@@ -530,7 +535,10 @@ def _panel_json(
     article_url = f"https://doi.org/{row['doi']}" if row["doi"] else (
         f"https://pmc.ncbi.nlm.nih.gov/articles/{row['pmcid']}/" if row["pmcid"] else row["source_url"]
     )
-    age = demographics.resolve_age({"caption": caption, "in_text_mentions": mentions})
+    age = demographics.resolve_age({
+        "caption": caption, "in_text_mentions": mentions,
+        "case_age_text": row["case_age_text"] if "case_age_text" in row.keys() else None,
+    })
     age_group = age["age_group"]
     age_group_supported = age_group != "unknown"
     age_group_label = _age_group_label(age_group) if age_group_supported else "Not stated"
@@ -585,6 +593,7 @@ def _panel_json(
         "doi_url": doi_url,
         "article_url": article_url,
         "article_title": article_title,
+        "article_tier": source_quality.article_tier(article_types, article_title),
         "country": country,
         "display_label": shown_label or _caption_label(caption) or row["body_site"] or row["modality"] or "Clinical image",
         "context": context,
@@ -631,6 +640,7 @@ def _age_group_label(age_group) -> str:
     return {
         "child": "Child", "children": "Child", "pediatric": "Pediatric",
         "paediatric": "Pediatric", "adolescent": "Adolescent", "infant": "Infant",
+        "adult": "Adult", "older_adult": "Older adult",
     }.get(normalized, age_group or "Unknown")
 
 
@@ -719,7 +729,7 @@ def _gallery_inputs(conn, disease: str, data_root: Path):
     """One frozen read of C1 eligibility, the C2 snapshot, and join rows.
 
     ``panel_records`` carries the shared eligibility verdicts (audit
-    exclusions, licensing, review type, source-supported age, disease
+    exclusions, licensing, source type, source-supported age, disease
     attribution, source-supported finding labels, mixed-plate rules and
     file/dimension availability). ``snapshot`` holds the per-pair gallery
     selections. ``rows`` maps panel_id to the joined panels+figures+articles
@@ -933,10 +943,11 @@ def _query_panels(
         params["typicality"] = typicality
     sql = (
         "SELECT p.*, a.doi, f.label AS figure_label, f.caption AS figure_caption, "
-        "f.in_text_mentions_json, f.effective_license AS figure_license, "
+        "f.in_text_mentions_json, f.effective_license AS figure_license, f.case_age_text, "
         "f.triage_json AS figure_triage_json, "
         "f.vision_json AS figure_vision_json, "
-        "a.title AS article_title, a.license_url AS article_license_url, a.country AS article_country "
+        "a.title AS article_title, a.license_url AS article_license_url, a.country AS article_country, "
+        "a.publication_types_json AS article_publication_types "
         "FROM panels p "
         "LEFT JOIN articles a ON a.pmcid = p.pmcid "
         "LEFT JOIN figures f ON f.figure_id = p.figure_id "

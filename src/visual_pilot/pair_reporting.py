@@ -21,14 +21,18 @@ def caption_supports_pair(figure: dict, article: dict, disease: str, finding: di
     return publication.finding_supported({"key": finding["finding_key"]}, text, terms)
 
 
+DISCOVERY_POLICY = "epmc-fig.v1"
+_UNFINISHED_FIGURES = frozenset({"pending", "caption_kept", "caption_uncertain", "vision_error"})
+
+
 def next_action(record: dict, pending: int) -> str:
     if record["tier"] == "full":
         return "Gallery full; retain and inspect reserves"
     if record["blocked_reason"]:
         return f"Review block: {record['blocked_reason']}; deficit remains"
     if pending:
-        return "Finish pending pair candidates before new retrieval"
-    return "Attempt the next bounded disease-scoped search strategy"
+        return "Finish pending figures before the next discovery round"
+    return "Run another bounded discovery round for this pair"
 
 
 def pair_funnel(conn, *, snapshot=None, records=None) -> dict:
@@ -59,7 +63,14 @@ def pair_funnel(conn, *, snapshot=None, records=None) -> dict:
                     if row["provenance_status"] == "explicit"
                     and row["provenance_disease_key"] == disease
                 ]
-                ids = {row["pmcid"] for row in explicit}
+                discovered = {
+                    pmcid
+                    for attempt in attempts
+                    if attempt["disease_key"] == disease and attempt["finding_key"] == finding
+                    and attempt["policy_version"] == DISCOVERY_POLICY
+                    for pmcid in db.from_json(attempt["new_pmcids_json"], []) or []
+                }
+                ids = {row["pmcid"] for row in explicit} | discovered
                 licensed = {
                     pmcid for pmcid in ids if pmcid in articles
                     and pmc.license_allows(pmc.normalize_license(articles[pmcid].get("license_code"))) is not None
@@ -78,6 +89,9 @@ def pair_funnel(conn, *, snapshot=None, records=None) -> dict:
                         articles[row["pmcid"]]["status"] != "relevant"
                         or disease in db.from_json(articles[row["pmcid"]]["primary_disease_keys_json"], [])
                     )
+                } | {
+                    row["pmcid"] for row in figures
+                    if row["pmcid"] in discovered and row["status"] in _UNFINISHED_FIGURES
                 }
                 rejected = Counter()
                 for panel in records:
@@ -111,7 +125,7 @@ def pair_funnel(conn, *, snapshot=None, records=None) -> dict:
                         rejected["retrieval error"] += 1
                 rejection_categories = {
                     category: rejected.get(category, 0) for category in (
-                        "license/third-party", "review type", "no patient image", "age unclear",
+                        "license/third-party", "source type", "no patient image", "age unclear",
                         "attribution unclear/other disease", "unsupported finding", "mixed plate",
                         "quality", "retrieval error",
                     )

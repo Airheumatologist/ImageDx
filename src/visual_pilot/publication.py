@@ -6,31 +6,51 @@ from pathlib import Path
 
 from PIL import Image
 
-from . import config, curation, db, demographics, diseases, jats, pmc
-from .select_articles import passes_type_filter
+from . import config, curation, db, demographics, diseases, jats, pair_terms, pmc, source_quality
 
 
 def finding_terms(rows) -> dict[str, list[str]]:
+    """Source phrasings per finding: key, label, synonyms, and caption terms.
+
+    Caption terms (``pair_terms.caption_terms``) drop the disease and
+    modality words vocabulary labels carry ("Systemic-sclerosis digital
+    ulcers" -> "digital ulcer"), the way figure captions name findings.
+    """
+    catalog = diseases.load_diseases()
     terms = {}
     for row in rows:
         row = dict(row)
         synonyms = row.get("synonyms")
         if synonyms is None:
             synonyms = db.from_json(row.get("synonyms_json"), [])
+        disease_keys = row.get("disease_keys")
+        if disease_keys is None:
+            disease_keys = db.from_json(row.get("disease_keys_json"), []) or []
         values = [
             str(row["finding_key"]).replace("_", " "),
             str(row.get("label") or "").split("(", 1)[0],
             *(synonyms or []),
         ]
-        terms[row["finding_key"]] = [
+        finding = {**row, "synonyms": list(synonyms or [])}
+        for disease_key in disease_keys:
+            if disease_key in catalog:
+                values += pair_terms.caption_terms(disease_key, finding, catalog[disease_key])
+        terms[row["finding_key"]] = list(dict.fromkeys(
             " ".join(str(value).casefold().split()) for value in values if value
-        ]
+        ))
     return terms
 
 
 def finding_supported(finding: dict, source_text: str, terms: list[str]) -> bool:
-    """Copied model evidence alone is not source support for its assigned label."""
-    return any(term and term in source_text for term in terms)
+    """Copied model evidence alone is not source support for its assigned label.
+
+    The source text must name the finding: a term as a substring, or a
+    plural-tolerant caption match (every content word of a multi-word term
+    in the same text, as discovery searches captions).
+    """
+    if any(term and term in source_text for term in terms):
+        return True
+    return pair_terms.caption_matches(source_text, terms, mode="words")
 
 
 def _source_findings(panel: dict, figure: dict, approved: set[str]) -> set[str]:
@@ -68,12 +88,23 @@ def _source_findings(panel: dict, figure: dict, approved: set[str]) -> set[str]:
     return supported
 
 
+# Notices rather than articles; every real article type (case reports,
+# original research, reviews, letters with images) may supply images.
+_EXCLUDED_TYPE_PARTS = ("retraction", "retracted", "erratum", "correction", "expression of concern")
+
+
+def passes_type_filter(publication_types, article_type=None) -> bool:
+    labels = [str(t).strip().lower() for t in (publication_types or []) if str(t).strip()]
+    labels.append(str(article_type or "").strip().lower())
+    return not any(part in label for label in labels for part in _EXCLUDED_TYPE_PARTS)
+
+
 def rejection_category(reason: str) -> str:
     text = reason.casefold()
     if any(term in text for term in ("license", "third-party", "third party")):
         return "license/third-party"
-    if "review" in text and "audit" not in text:
-        return "review type"
+    if "notice" in text or "retracted" in text:
+        return "source type"
     if "age" in text:
         return "age unclear"
     if any(term in text for term in ("plate", "collage")):
@@ -118,12 +149,12 @@ def panel_eligibility(
         reject("third-party figure")
     metadata = article.get("source_metadata") or {}
     if metadata.get("retraction_status") == "retracted":
-        reject("source review article is retracted")
+        reject("source article is retracted")
     types = db.from_json(article.get("publication_types_json"), []) or metadata.get("publication_types") or []
     if isinstance(types, str):
         types = [types]
     if not passes_type_filter(types, article.get("article_type")):
-        reject("source is not an eligible review article")
+        reject("source is a notice, not an article")
     vision = db.from_json(figure.get("vision_json"), {}) or {}
     retained = vision.get("plate") if panel.get("plate_kind") else next(
         (row for row in vision.get("panels", []) if row.get("panel_label") == panel.get("panel_label")),
@@ -217,6 +248,10 @@ def panel_records(conn, disease_key: str | None = None, *, data_root=None) -> li
         panel.update(result)
         panel["eligibility"] = result
         panel["source_age"] = demographics.resolve_age(figure)
+        panel["article_tier"] = source_quality.article_tier(
+            db.from_json(article.get("publication_types_json"), []), article.get("title"),
+            (article.get("source_metadata") or {}).get("abstract"),
+        )
         identity = identities.get(panel["panel_id"])
         if (
             identity and panel.get("sha256")
