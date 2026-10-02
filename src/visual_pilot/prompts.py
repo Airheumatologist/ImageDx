@@ -291,9 +291,6 @@ P4_SCHEMA = {
 }
 P4 = Prompt(name="p4_text_findings", version=P4_VERSION, system=P4_SYSTEM, schema=P4_SCHEMA)
 
-PROMPTS = {p.name: p for p in (P2, P3, P4)}
-
-
 P5_VERSION = "p5.v5"
 P5_SYSTEM = """You write the display caption for one image in a clinical visual-diagnosis library. The image is shown on its own, outside the article it came from. You receive the original figure caption, the in-text mentions, which part of the figure the image is (one panel, or the whole figure), the image's disease, modality, body site and findings, and the library sections for that disease.
 

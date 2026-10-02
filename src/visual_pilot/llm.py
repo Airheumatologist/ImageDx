@@ -1,14 +1,13 @@
 """LLM provider layer for the visual pilot.
 
-OpenAI-compatible chat calls (default provider OpenRouter,
-``VP_LLM_PROVIDER=openrouter``; ``opencode`` and ``deepinfra`` remain
-supported) with strict JSON-schema output, one repair retry on validation failure, an
+OpenAI-compatible chat calls to OpenRouter (``VP_LLM_PROVIDER=openrouter``)
+with strict JSON-schema output, one repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 
 There is no provider batch API, so ``call_many``/``iter_many`` run requests
-on a thread pool of ``VP_CONCURRENCY`` workers. Contract C4
-(docs/visual_pilot_plan.md §4): per-client timeout, lazy completion-order
+on a thread pool of ``VP_CONCURRENCY`` workers, with a per-client timeout,
+lazy completion-order
 ``iter_many``, and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
 independent of ``max_retries``.
 """
@@ -31,7 +30,6 @@ import openai
 import httpx
 
 from . import config, db, timing
-from .prompts import Prompt
 
 
 class LLMError(Exception):
@@ -192,25 +190,6 @@ class LLMClient:
         }
         self._record(input_hash, stage, model, prompt_version, raw_content, usage, cost, meta)
         return parsed, meta
-
-    def call_prompt(
-        self,
-        stage: str,
-        prompt: Prompt,
-        model: str,
-        user_content: str,
-        images: list[ImageInput] | None = None,
-    ) -> tuple[Any, dict]:
-        """call_json with a Prompt object (brings system, schema, version)."""
-        return self.call_json(
-            stage=stage,
-            model=model,
-            system=prompt.system,
-            user_content=user_content,
-            schema=prompt.schema,
-            images=images,
-            prompt_version=prompt.version,
-        )
 
     def call_many(self, requests: Iterable[dict]) -> list[BatchResult]:
         """Run call_json requests concurrently (no provider batch API).
@@ -517,14 +496,6 @@ class LLMClient:
         if delay is None:
             delay = 2.0**attempt
         return min(30.0, max(0.0, delay))
-
-    @staticmethod
-    def _looks_like_schema_unsupported(exc: Exception) -> bool:
-        text = str(exc).lower()
-        return any(
-            marker in text
-            for marker in ("response_format", "json_schema", "json_schema", "schema")
-        )
 
     def _cost(self, model: str, usage: dict) -> float | None:
         price = config.model_price(model)

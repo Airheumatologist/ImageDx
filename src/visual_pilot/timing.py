@@ -95,16 +95,6 @@ def inflight(name: str = "llm") -> Iterator[None]:
             _inflight[name] -= 1
 
 
-def reset() -> None:
-    """Drop all recorded state (tests and multi-run harnesses)."""
-    with _lock:
-        _stages.clear()
-        _samples.clear()
-        _counts.clear()
-        _inflight.clear()
-        _inflight_peak.clear()
-
-
 def _percentile(sorted_vals: list[float], q: float) -> float | None:
     if not sorted_vals:
         return None
@@ -131,7 +121,7 @@ def _stats(vals: list[float]) -> dict:
 
 
 def report() -> dict:
-    """Assemble the timings report dict (see docs/visual_pilot_plan.md §6.3)."""
+    """Assemble the timings report dict."""
     with _lock:
         samples = {k: sorted(v) for k, v in _samples.items()}
         stages = {k: dict(v) for k, v in _stages.items()}

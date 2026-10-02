@@ -29,7 +29,7 @@ MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
 TYPICALITY_ORDER = {"classic": 0, "variant": 1, "atypical": 2}
 
 # ---------------------------------------------------------------------------
-# Tab membership (§5 stage 8). Each tab's match is a list of alternatives
+# Tab membership. Each tab's match is a list of alternatives
 # ("any_of"): within one alternative every declared key must hit (AND);
 # alternatives are OR'd. ``not_*`` exclusions apply to all alternatives.
 # Tabs are evaluated in display order, except tabs carrying ``priority`` are
@@ -463,7 +463,7 @@ for _tabs in TABS.values():
     _tabs.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
 GENERIC_TABS.append({"key": "pediatric", "label": "Pediatric", "cross_cutting": True})
 
-# Side-by-side comparisons for /compare/sle-dm-skin (§5 stage 8).
+# Side-by-side comparisons for /compare/sle-dm-skin.
 COMPARISONS = [
     {
         "title": "Gottron papules vs SLE hand/knuckle-sparing rash",

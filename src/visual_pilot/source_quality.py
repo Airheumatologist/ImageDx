@@ -13,10 +13,6 @@ import re
 # better. Ranking only — no tier is excluded, so a case report still fills a
 # pair when nothing better shows the finding.
 TIER_REVIEW, TIER_SERIES, TIER_CASE, TIER_ATYPICAL = 0, 1, 2, 3
-TIER_LABELS = {
-    TIER_REVIEW: "review", TIER_SERIES: "series_or_study",
-    TIER_CASE: "case_report", TIER_ATYPICAL: "atypical",
-}
 _REVIEW_TYPE = re.compile(r"review|meta-analysis|guideline|consensus", re.I)
 _CASE_TYPE = re.compile(r"case", re.I)
 _SERIES_TEXT = re.compile(

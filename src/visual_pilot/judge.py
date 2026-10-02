@@ -1,8 +1,7 @@
 """Stage 5: vision judge with prompt P3.
 
-Input figures are those the caption stage kept or left uncertain. DeepInfra
-cannot fetch the S3 image URLs (stage 0), so each figure's bytes are fetched
-into memory, normalized via ``pmc.prepare_for_llm`` and sent as a base64
+Input figures are those the caption stage kept or left uncertain. Each
+figure's bytes are fetched into memory, normalized via ``pmc.prepare_for_llm`` and sent as a base64
 data URL. The cache identity is the sha256 of the *original* fetched bytes,
 so a rerun with unchanged inputs hits the cache and makes zero LLM calls.
 
@@ -13,7 +12,7 @@ least one panel is included or its whole-figure plate is publishable, else
 ``vision_rejected``. Fetch/LLM failures
 become ``vision_error`` (attempts-bounded retries on later runs).
 
-Scheduling (plan §5 W6): a fetch pool of ``VP_FETCH_CONCURRENCY`` workers
+Scheduling: a fetch pool of ``VP_FETCH_CONCURRENCY`` workers
 prepares images in ``rank_figures`` priority order and streams them into
 ``LLMClient.iter_many`` (≤ ``VP_JUDGE_CONCURRENCY`` in flight); results are
 applied on the main thread in completion order. Accepted figures' original
@@ -39,7 +38,7 @@ from .prompts import P3
 MAX_ATTEMPTS = 3
 PILOT_KEYS = set(diseases.DISEASE_KEYS)
 
-# P3 enum per disease (§6). Matching is case-insensitive with
+# P3 enum per disease. Matching is case-insensitive with
 # hyphen/space->underscore folding.
 SUBTYPES = {
     key: {
@@ -275,7 +274,7 @@ def fetch_and_prepare(figure: dict) -> tuple[str, bytes, bytes, str | None, tupl
 
 
 # ---------------------------------------------------------------------------
-# Post-validation of the P3 response (spec §5 stage 5)
+# Post-validation of the P3 response 
 # ---------------------------------------------------------------------------
 def post_validate(
     result: dict,
@@ -450,13 +449,13 @@ def run(args) -> int:
     reasons: Counter = Counter()
     budget_hit = False
 
-    # Streaming pipeline (plan §5 W6): a fetch pool prepares images just
+    # Streaming pipeline: a fetch pool prepares images just
     # ahead of the judge and client.iter_many pulls a new request only when
     # an LLM slot frees, so completed-but-unjudged images stay bounded to
     # ~2x the in-flight cap and the whole figure set's bytes are never held
     # in memory at once. Everything below runs on this thread: figures are
     # dispatched in rank_figures priority order, results are applied and
-    # committed in completion order (call order is not an input; §1).
+    # committed in completion order (call order is not an input).
     fetch_window = max(1, 2 * config.VP_JUDGE_CONCURRENCY)
     submitted: list[dict] = []  # BatchResult.index -> figure
 

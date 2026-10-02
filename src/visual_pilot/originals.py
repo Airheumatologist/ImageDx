@@ -7,7 +7,7 @@ process-local, thread-safe cache so the judge can hand the *original* bytes
 (never the downscaled LLM copy) over instead.
 
 Bounded by ``config.VP_ORIGINALS_CACHE_MB`` with LRU eviction on total byte
-size. Nothing is ever written to disk (invariant §1.3). Entries are consumed
+size. Nothing is ever written to disk. Entries are consumed
 by ``take`` so memory does not outlive the store stage.
 """
 

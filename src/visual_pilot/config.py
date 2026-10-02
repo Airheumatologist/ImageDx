@@ -1,9 +1,8 @@
 """Configuration for the Visual Findings Library pilot.
 
-Provider settings (OpenRouter, plus optional OpenCode/DeepInfra chat
-endpoints) are read from the environment;
+OpenRouter provider settings are read from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
-are read here with their spec defaults (docs/visual_pilot_plan.md §3).
+are read here with their defaults.
 
 Data paths are resolved lazily through functions (not module constants) so
 tests can override ``VP_DATA_DIR`` with env vars / monkeypatch.
@@ -40,16 +39,9 @@ def _env_float(name: str, default: float) -> float:
 
 
 # -----------------------------------------------------------------------------
-# Provider settings: OpenRouter for all LLM stages (P2-P4) by default;
-# OpenCode and DeepInfra are alternative OpenAI-compatible chat endpoints.
+# Provider settings: OpenRouter runs all LLM stages (P2-P5).
 # Article discovery uses the public Europe PMC REST API (no key).
 # -----------------------------------------------------------------------------
-DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
-DEEPINFRA_BASE_URL = os.getenv(
-    "DEEPINFRA_BASE_URL", "https://api.deepinfra.com/v1/openai"
-)
-OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
-OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/v1")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = os.getenv(
     "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
@@ -58,8 +50,6 @@ LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 
 # Credentials for each supported VP_LLM_PROVIDER value.
 _LLM_PROVIDER_CREDENTIALS = {
-    "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
-    "deepinfra": lambda: (DEEPINFRA_API_KEY, DEEPINFRA_BASE_URL),
     "openrouter": lambda: (OPENROUTER_API_KEY, OPENROUTER_BASE_URL),
 }
 LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
@@ -73,7 +63,7 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
     return _LLM_PROVIDER_CREDENTIALS[name]()
 
 # -----------------------------------------------------------------------------
-# Visual pilot settings (VP_*), defaults per spec §3 / repo adjustments box.
+# Visual pilot settings (VP_*).
 # Every LLM stage runs on OpenRouter; stealth/space-bunny-alpha is multimodal, so
 # the same model covers caption triage, extraction, and the vision judge.
 # -----------------------------------------------------------------------------
@@ -137,8 +127,7 @@ def validate_coverage_settings() -> tuple[int, int, int]:
 validate_coverage_settings()
 
 # -----------------------------------------------------------------------------
-# Throughput-plan keys (docs/visual_pilot_plan.md §4 contract C1). Defaults
-# preserve current behavior; later workstreams switch each of these on.
+# Throughput settings: request rates, worker pools and caches.
 # -----------------------------------------------------------------------------
 # Request rate for the public S3 bucket (pmc-oa-opendata); NCBI hosts unchanged.
 VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
@@ -146,9 +135,9 @@ VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
 # limiters (pmc.RATE_LIMITER) still cap per-host throughput, so this mainly
 # controls how much of the S3/OpenRouter budget is kept in flight.
 VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
-# Max in-flight P3 vision-judge calls (W6). The W11 probe's "keep 4" result
-# was measured on DeepInfra GLM; on OpenRouter stealth/space-bunny-alpha
-# throughput scales with concurrency and rate limits are generous.
+# Max in-flight P3 vision-judge calls (W6). On OpenRouter
+# stealth/space-bunny-alpha throughput scales with concurrency and rate
+# limits are generous.
 VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 16))
 # Per-request LLM timeout for the P3 judge (W6).
 VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))

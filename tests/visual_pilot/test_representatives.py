@@ -37,40 +37,6 @@ class RepresentativeSelectionTests(unittest.TestCase):
             "crop_mode": "whole_figure", "annotations_present": 0, **extra,
         }
 
-    def test_one_per_covered_approved_pair_and_panel_can_cover_many(self):
-        panels = [
-            self.panel("p1", '["malar_rash", "proposed"]'),
-            self.panel("p2", '[{"finding_key":"malar_rash"}]'),
-        ]
-        chosen = representatives.elect_representatives(panels, self.vocab)
-        self.assertEqual([(r["disease_key"], r["finding_key"]) for r in chosen], [("sle", "malar_rash")])
-        self.assertEqual(len(chosen), 1)
-        self.assertIn("components", json.loads(chosen[0]["scoring_json"]))
-
-    def test_deterministic_panel_id_tie_break(self):
-        chosen = representatives.elect_representatives(
-            [self.panel("z"), self.panel("a")], self.vocab
-        )
-        self.assertEqual(chosen[0]["panel_id"], "a")
-        reverse = representatives.elect_representatives(
-            [self.panel("a"), self.panel("z")], self.vocab
-        )
-        self.assertEqual(chosen[0]["panel_id"], reverse[0]["panel_id"])
-        self.assertEqual(chosen[0]["score"], reverse[0]["score"])
-
-    def test_locked_valid_selection_is_preserved_and_invalid_lock_replaced(self):
-        rows = [self.panel("a"), self.panel("b", confidence=0.1)]
-        valid = [{"disease_key": "sle", "finding_key": "malar_rash", "panel_id": "b",
-                  "selection_source": "manual", "locked": 1}]
-        kept = representatives.elect_representatives(rows, self.vocab, valid)[0]
-        self.assertEqual((kept["panel_id"], kept["locked"], kept["selection_source"]), ("b", 1, "manual"))
-        invalid = [{"disease_key": "sle", "finding_key": "malar_rash", "panel_id": "gone",
-                    "selection_source": "manual", "locked": 1}]
-        replaced = representatives.elect_representatives(rows, self.vocab, invalid)[0]
-        self.assertEqual(replaced["panel_id"], "a")
-        self.assertEqual(replaced["selection_source"], "auto_replaced_invalid_lock")
-        self.assertEqual(json.loads(replaced["scoring_json"])["replaced_selection"]["panel_id"], "gone")
-
     def test_score_prefers_typical_confident_clear_high_resolution_whole_image(self):
         good = self.panel("good")
         poor = self.panel("poor", confidence=0.4, typicality="atypical", width=300,

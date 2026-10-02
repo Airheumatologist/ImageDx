@@ -4,9 +4,10 @@ Self-contained pilot for a VisualDx-style image library covering **SLE**,
 **dermatomyositis**, **ankylosing spondylitis**, **rheumatoid arthritis**,
 **systemic sclerosis**, **psoriasis**, **psoriatic arthritis**, **sarcoidosis**,
 **gout**, and **atopic dermatitis**, built only from PMC open-access articles
-(case reports, original research and reviews) with commercial-use licenses. The disease index and approved visual
-findings are in `data/diseases.json` and `data/findings_vocab.json`. Spec:
-`docs/visual_pilot_plan.md`.
+(reviews, case series, original research and case reports) with
+commercial-use licenses. The disease index and approved visual findings are in
+`data/diseases.json` and `data/findings_vocab.json`. The repo-root README
+describes every stage.
 
 ## Usage
 
@@ -14,51 +15,13 @@ findings are in `data/diseases.json` and `data/findings_vocab.json`. Spec:
 # From the repo root, using the system python3.
 python3 -m src.visual_pilot.cli init                 # create DB + seed diseases/vocab
 python3 -m src.visual_pilot.cli <stage> --disease all --limit N --dry-run --budget-usd X
-python3 -m src.visual_pilot.cli run-all --disease all --budget-usd X
+python3 -m src.visual_pilot.cli run-all --disease all   # --budget-usd X caps spend
 ```
 
 Stages: `init | discover | triage | judge | store | describe | extract |
 report | serve | run-all`. Every stage is idempotent and resumes from the `status`
 column. Data lives under `data/visual_pilot/` (override with `VP_DATA_DIR`):
 `visual_pilot.sqlite`, `panels/`, `thumbs/`, `figures/`, `reports/`.
-
-## Fresh data run
-
-The previous pilot data and generated artifacts were cleared on 2026-09-27.
-The replacement ten-disease run completed on 2026-09-28 UTC with 420 parsed
-articles, 167 saved images, 123 published images, and 6,486 text finding
-assertions. All ten diseases have published images. The audit saved 44
-reversible exclusions and a pre-curation database backup.
-
-The run used `run-all --disease all --limit 80 --batch-size 20
---max-articles 60 --max-runtime-seconds 7200 --budget-usd 5`, followed by
-`curation_audit --disease all --apply` and `report`. Use
-`python3 -m src.visual_pilot.cli serve --port 8765` to preview the library.
-Reports and verification results live in `data/visual_pilot/reports/`.
-
-The 2026-09-28 image expansion then increased the candidate limit to 240 and
-finally 480 per disease, with a per-run article cap of 180. Caption rescue used
-100-candidate inspection passes and a targeted eight-article tail. It finished
-with 1,408 parsed review articles (3.35× the original), 287 saved images, and
-184 published images (61 more than the initial run). All 6,486 original text
-finding assertions and existing images were preserved. The same clinical-image
-publication criteria applied. See
-`data/visual_pilot/reports/expansion_3x/expansion_report.md` for the full
-commands and per-disease counts; `viewer_qa.json` in that directory verifies
-all ten pages and all 574 saved media routes.
-
-The subsequent full regeneration used dynamic approved finding queries,
-800 retrieval candidates per disease, 100-article processing batches, and a
-360-article per-disease run limit. It parsed 1,767 fresh articles and extracted
-22,054 text finding records. A merge preserved all 184 previously approved
-panels, including 20 whose new judgments lost the prior supported finding or
-did not produce a panel. The final curated library has 1,768 parsed articles,
-307 saved panels, 204 published panels across all ten diseases, and 27,987
-text finding records. The image audit and page/media QA are recorded in
-`data/visual_pilot/reports/regeneration_summary.md`. Psoriasis has 29
-published panels; its tabs display image sections with content plus an Eye
-article-evidence section for documented uveitis. No psoriasis ocular photo
-passed the current review-article, license, and publication criteria.
 
 ## Discovery (Europe PMC figure-caption search)
 
@@ -97,7 +60,7 @@ Each query is logged in `pair_search_attempts` (`policy_version`
 `epmc-fig.v1`; overview queries under finding key `_overview`). `run-all`
 runs one overview round, one manifestation round, then backfill rounds
 (`--max-rounds`, default 3; `--skip-review-passes` goes straight to
-backfill), each followed by triage, judge and store on the new articles in batches
+backfill), each followed by triage, judge, store and describe on the new articles in batches
 of `--batch-size` (default 50), and stops early when a round finds nothing
 new or `--max-runtime-seconds` / `--budget-usd` is reached.
 
@@ -106,12 +69,12 @@ covered approved disease/finding pair while retaining all eligible alternatives.
 Existing manual or locked representative selections are preserved.
 
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
-`VP_JUDGE_MODEL` (all default to `stealth/space-bunny-alpha` on OpenRouter),
+`VP_JUDGE_MODEL`, `VP_DESCRIBE_MODEL` (all default to
+`stealth/space-bunny-alpha` on OpenRouter),
 `VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_LLM_PROVIDER` (default
 `openrouter`), `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`, `VP_FETCH_CONCURRENCY`,
 `VP_NCBI_API_KEY`, `VP_DATA_DIR`. Provider keys come from `.env`
-(`OPENROUTER_API_KEY`, or `OPENCODE_API_KEY` / `DEEPINFRA_API_KEY` for the
-alternative chat providers) via `config.py`. Discovery needs no key.
+(`OPENROUTER_API_KEY`) via `config.py`. Discovery needs no key.
 
 ## Whole-figure plates and coverage targets
 
@@ -139,7 +102,7 @@ Coverage is measured as distinct published images per approved
 `VP_FINDING_IMAGE_TARGET` (default 10, CLI `--finding-image-target`). A
 pair is `covered` only at target; `discover` searches only pairs under
 target. Recommended growth run:
-`run-all --disease all --per-pair 25 --max-rounds 3 --budget-usd X`. The
+`run-all --disease all --per-pair 25 --max-rounds 3`. The
 report's "Per-pair image coverage" section shows the images/pair histogram
 and per-disease under-target pairs.
 
@@ -166,42 +129,30 @@ panel gets a `panel_curation` exclusion (reason `treatment_related`) and its
 crop, thumbnail and figure original are deleted unless a published panel
 still uses them. Disease a drug caused (e.g. drug-induced lupus) is kept.
 
-## Stage 0 findings
+## PMC access notes
 
-_Checked 2026-09-25 on 10 real PMC OA review articles (SLE/DM/AS), with
-separate LLM access checks. The one-off probe scripts and pilot outputs
-were retired during the 2026-09-27 data cleanup._
-
-- **PMC infrastructure (2025 reorg).** The old endpoints are dead:
-  `oa.fcgi` 404s, `oa_file_list.csv` 404s, `oa_package` tarballs gone,
-  `oa_comm/xml/all/` empty. Everything now lives in the public S3 bucket
-  `s3://pmc-oa-opendata` under per-article version dirs
+- **Article files.** The old PMC endpoints are gone (`oa.fcgi`,
+  `oa_file_list.csv` and `oa_package` tarballs 404). Everything lives in the
+  public S3 bucket `s3://pmc-oa-opendata` under per-article version dirs
   `{pmcid}.{version}/` containing `{pmcid}.{version}.json` (metadata incl.
   license + `media_urls`), `.xml`, `.txt`, `.pdf` and the figure files under
   their real names.
-- **License source (chosen):** the Europe PMC core record returned by the
-  discovery search (`license` field) — treated as final for the article;
-  figure-level JATS `<permissions>` override it per figure. Normalized to
-  `cc0|cc-by|cc-by-sa|cc-by-nd|cc-by-nc*|other|none` by
-  `pmc.normalize_license` (`license_allows` → `crop` / `whole_figure` /
-  excluded per §2).
-- **Figure access (chosen):** direct public HTTPS URLs into
-  `pmc-oa-opendata.s3.amazonaws.com/{pmcid}.{version}/{file}` (spec
-  preference 1) — resolver maps `<graphic xlink:href>` to dir contents via
-  `media_urls` or ListObjectsV2. Unresolved graphics get `needs_bytes` (the
-  Europe PMC `/bin/` figure endpoint 403s; Europe PMC `fullTextXML` is the
-  XML fallback only).
-- **LLM URL fetch: FAILS on DeepInfra.** The S3 bucket serves figures as
-  `binary/octet-stream`; DeepInfra rejects them ("must serve a supported
-  image MIME type"), 0/5 fetched. **Base64 mode is required** — confirmed
-  working (`prepare_for_llm` + `to_data_url`, strict `json_schema` accepted).
-- **Probe results:** 10 articles → licenses: 7 `cc-by`, 3 `cc-by-nc`
-  (excluded); 38/38 graphic hrefs resolved to S3 URLs, 0 needs_bytes;
-  image formats seen: jpg, webp; **TIFF share 0/38 (0%)** — TIFF→PNG support
-  is implemented anyway.
-- **API:** `get_license`, `license_allows`, `get_article_bundle`
-  (`xml_text` + href→`ImageRef` resolver + `metadata`),
-  `fetch_image_bytes`, `prepare_for_llm` (TIFF/other→PNG + downscale to
-  `VP_IMAGE_MAX_EDGE`, in memory), `to_data_url`; per-host rate limiting
-  (NCBI ≤3 req/s, ≤10 with `VP_NCBI_API_KEY`; others ~5) with retries on
-  429/5xx. Nothing is written to disk.
+- **License source.** The Europe PMC core record returned by the discovery
+  search (`license` field) is final for the article; figure-level JATS
+  `<permissions>` override it per figure. Licenses normalize to
+  `cc0|cc-by|cc-by-sa|cc-by-nd|cc-by-nc*|other|none` via
+  `pmc.normalize_license`; `license_allows` returns `crop`, `whole_figure`
+  (ND) or excluded.
+- **Figure access.** Direct public HTTPS URLs into
+  `pmc-oa-opendata.s3.amazonaws.com/{pmcid}.{version}/{file}`; the resolver
+  maps `<graphic xlink:href>` to dir contents via `media_urls` or
+  ListObjectsV2. Unresolved graphics get `needs_bytes` (the Europe PMC
+  `/bin/` figure endpoint 403s; Europe PMC `fullTextXML` is the XML fallback
+  only).
+- **Images go to the LLM as base64.** The bucket serves figures as
+  `binary/octet-stream`, which providers reject as an image URL, so
+  `prepare_for_llm` (TIFF/other→PNG, downscale to `VP_IMAGE_MAX_EDGE`, in
+  memory) + `to_data_url` send them inline.
+- **Rate limits.** Per-host limiting (NCBI ≤3 req/s, ≤10 with
+  `VP_NCBI_API_KEY`; S3 `VP_S3_RPS`, default 20; others ~5) with retries on
+  429/5xx. Nothing is written to disk before `store`.

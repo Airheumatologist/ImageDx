@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections import defaultdict
 from datetime import datetime, timezone
 
 from . import db
@@ -23,16 +22,6 @@ def _finding_keys(raw) -> set[str]:
         if key:
             out.add(str(key))
     return out
-
-
-def _approved_pairs(vocab_rows) -> set[tuple[str, str]]:
-    pairs = set()
-    for row in vocab_rows:
-        if not row["approved"]:
-            continue
-        for disease in db.from_json(row["disease_keys_json"], []) or []:
-            pairs.add((str(disease), str(row["finding_key"])))
-    return pairs
 
 
 def score_panel(panel: dict) -> tuple[float, dict]:
@@ -81,58 +70,6 @@ def score_panel(panel: dict) -> tuple[float, dict]:
     }
     total = round(confidence_points + typicality_points + resolution_points + crop_points + annotation_points, 4)
     return total, {"formula": "confidence*40 + typicality + resolution + crop_integrity + annotations", "components": parts, "total": total}
-
-
-def elect_representatives(panel_rows, vocab_rows, existing_rows=()) -> list[dict]:
-    """Elect one panel for every covered approved pair, preserving valid locks.
-
-    The input mappings need only contain the columns used by ``score_panel``
-    plus panel_id, disease_key and findings_json. Ties resolve by panel_id.
-    """
-    approved = _approved_pairs(vocab_rows)
-    candidates: dict[tuple[str, str], dict[str, dict]] = defaultdict(dict)
-    for panel in panel_rows:
-        disease = panel.get("disease_key")
-        panel_id = panel.get("panel_id")
-        if not disease or not panel_id:
-            continue
-        for finding in _finding_keys(panel.get("findings_json")):
-            pair = (str(disease), finding)
-            if pair in approved:
-                candidates[pair][str(panel_id)] = dict(panel)
-
-    existing = {(r["disease_key"], r["finding_key"]): dict(r) for r in existing_rows}
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    selected = []
-    for pair in sorted(candidates):
-        options = candidates[pair]
-        scored = {pid: score_panel(panel) for pid, panel in options.items()}
-        locked = existing.get(pair)
-        keep = None
-        if locked and (locked.get("locked") or locked.get("selection_source") == "manual"):
-            keep = locked.get("panel_id") if locked.get("panel_id") in options else None
-        if keep is not None:
-            panel = options[keep]
-            score, scoring = scored[keep]
-            source = locked.get("selection_source") or "manual"
-            is_locked = int(bool(locked.get("locked")))
-        else:
-            keep = min(options, key=lambda pid: (-scored[pid][0], pid))
-            panel = options[keep]
-            score, scoring = scored[keep]
-            source = "auto_replaced_invalid_lock" if locked and (locked.get("locked") or locked.get("selection_source") == "manual") else "auto"
-            is_locked = 0
-            if source == "auto_replaced_invalid_lock":
-                scoring["replaced_selection"] = {
-                    "panel_id": locked.get("panel_id"),
-                    "reason": "selected panel is no longer published or no longer supports this approved disease/finding pair",
-                }
-        selected.append({
-            "disease_key": pair[0], "finding_key": pair[1], "panel_id": keep,
-            "score": score, "scoring_json": json.dumps(scoring, sort_keys=True),
-            "selection_source": source, "locked": is_locked, "updated_at": now,
-        })
-    return selected
 
 
 _REPRESENTATIVE_COLUMNS = (
