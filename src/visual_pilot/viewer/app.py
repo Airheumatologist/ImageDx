@@ -23,6 +23,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .. import config, coverage, db, demographics, gallery, publication, representatives, source_quality
+from ..diseases import load_diseases
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
@@ -1094,12 +1095,16 @@ def create_app(data_dir: str | None = None) -> FastAPI:
 
     @app.get("/api/diseases")
     def api_diseases() -> list[dict]:
+        catalog = load_diseases()
         c = conn()
         try:
             return [
                 {
                     "key": r["disease_key"],
                     "name": r["name"],
+                    "specialty": catalog.get(r["disease_key"], {}).get("specialty"),
+                    "summary": catalog.get(r["disease_key"], {}).get("summary"),
+                    "synonyms": db.from_json(r["synonyms_json"], []),
                     "subtypes": db.from_json(r["subtypes_json"], []),
                 }
                 for r in c.execute("SELECT * FROM diseases ORDER BY disease_key")

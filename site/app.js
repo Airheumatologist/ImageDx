@@ -1,5 +1,5 @@
 /* Disease page: clean image cards with source details available on demand. */
-const state = { tab: null, tabs: [], panels: [], vocab: [], eyeEvidence: [], hasPediatric: null, tabFilters: {}, loading: false };
+const state = { tabs: [], open: new Set(), panels: [], vocab: [], eyeEvidence: [], hasPediatric: null, loading: false };
 const FILTER_IDS = ["f-subtype", "f-modality", "f-finding", "f-typicality", "f-skin-tone"];
 let panelsRequest = 0;
 const $ = (id) => document.getElementById(id);
@@ -144,15 +144,6 @@ function filters() {
   return p;
 }
 
-function rememberFilters() {
-  state.tabFilters[state.tab] = Object.fromEntries(FILTER_IDS.map(id => [id, $(id).value]));
-}
-
-function restoreFilters(tab) {
-  const values = state.tabFilters[tab] || {};
-  for (const id of FILTER_IDS) $(id).value = values[id] || "";
-}
-
 function isPediatric(panel) {
   if (typeof panel.pediatric === "boolean") return panel.pediatric;
   if (panel.pediatric === true) return true;
@@ -161,9 +152,9 @@ function isPediatric(panel) {
     ["child", "children", "pediatric", "paediatric", "infant", "adolescent"].includes(part)));
 }
 
-function groupName(panel, groupBy) {
+function groupName(panel, groupBy, tabKey) {
   if (panel.plate_kind === "combined") return "Combined views";
-  if (state.tab === "pediatric") {
+  if (tabKey === "pediatric") {
     if (panel.clinical_group) return panel.clinical_group;
     const clinicalTab = panel.clinical_tab || panel.tab;
     return state.tabs.find(tab => tab.key === clinicalTab)?.label || "Pediatric manifestations";
@@ -176,35 +167,69 @@ function groupName(panel, groupBy) {
   return null;
 }
 
-function render() {
-  const active = state.tabs.find(t => t.key === state.tab);
-  $("filters").hidden = Boolean(active?.evidence_only);
-  $("f-skin-tone").hidden = !(active && active.skin_tone_filter);
-  if (state.hasPediatric !== null) {
-    const pediatricTab = $("tabs").querySelector('[data-tab-key="pediatric"]');
-    if (pediatricTab) pediatricTab.hidden = !state.hasPediatric;
-  }
+function sectionPanels(tab) {
   let panels = state.panels;
-  if (state.tab === "pediatric") panels = panels.filter(isPediatric);
-  else if (active) panels = panels.filter(p => p.tab === state.tab);
-  if (state.tab === "other") panels = panels.filter(p => p.tab === "other");
-  // Skin tone is local to views that expose this filter. Keep the complete
-  // result set so switching sections never inherits a hidden skin filter.
+  if (tab.key === "pediatric") panels = panels.filter(isPediatric);
+  else panels = panels.filter(p => p.tab === tab.key);
+  // Skin tone only narrows the sections that expose it.
   const skinTone = $("f-skin-tone").value;
-  if (active?.skin_tone_filter && skinTone) panels = panels.filter(p => p.skin_tone === skinTone);
+  if (tab.skin_tone_filter && skinTone) panels = panels.filter(p => p.skin_tone === skinTone);
+  return panels;
+}
 
+function render() {
+  $("f-skin-tone").hidden = !state.tabs.some(t => t.skin_tone_filter);
   const content = $("content");
   content.replaceChildren();
-  if (active?.evidence_only) { renderEyeEvidence(content); return; }
   if (state.loading) { content.innerHTML = "<p class='empty'>Loading images…</p>"; return; }
-  if (!panels.length) { content.innerHTML = "<p class='empty'>No panels in this view.</p>"; return; }
-  const groupBy = state.tab === "pediatric" ? "clinical_tab" : active && active.group_by;
+  const list = document.createElement("div");
+  list.className = "manifestations";
+  for (const tab of state.tabs) {
+    if (tab.key === "pediatric" && !state.hasPediatric) continue;
+    const panels = tab.evidence_only ? [] : sectionPanels(tab);
+    const count = tab.evidence_only
+      ? new Set(state.eyeEvidence.map(item => item.finding_key)).size
+      : panels.length;
+    const section = document.createElement("details");
+    section.className = "manifestation";
+    const summary = document.createElement("summary");
+    const label = document.createElement("span");
+    label.className = "manifestation-name";
+    label.textContent = tab.label;
+    const meta = document.createElement("span");
+    meta.className = "manifestation-count";
+    meta.textContent = tab.evidence_only
+      ? `${count} finding${count === 1 ? "" : "s"} · no images yet`
+      : `${count} image${count === 1 ? "" : "s"}`;
+    summary.append(label, meta);
+    const body = document.createElement("div");
+    body.className = "manifestation-body";
+    section.append(summary, body);
+    // Build a section's images only when it is opened, so closed sections cost nothing.
+    const fill = () => {
+      if (body.childElementCount) return;
+      if (tab.evidence_only) renderEyeEvidence(body);
+      else renderSection(body, tab, panels);
+    };
+    section.addEventListener("toggle", () => {
+      if (section.open) { state.open.add(tab.key); fill(); }
+      else state.open.delete(tab.key);
+    });
+    if (state.open.has(tab.key)) { section.open = true; fill(); }
+    list.append(section);
+  }
+  content.append(list);
+}
+
+function renderSection(content, tab, panels) {
+  if (!panels.length) { content.innerHTML = "<p class='empty'>No images match the current filters.</p>"; return; }
+  const groupBy = tab.key === "pediatric" ? "clinical_tab" : tab.group_by;
   if (!groupBy) {
     const combined = panels.filter(p => p.plate_kind === "combined");
     const rest = panels.filter(p => p.plate_kind !== "combined");
     if (rest.length) content.appendChild(grid(rest));
     if (combined.length) {
-      const heading = document.createElement("h2");
+      const heading = document.createElement("h3");
       heading.className = "group-header";
       heading.textContent = "Combined views";
       content.append(heading, grid(combined));
@@ -212,10 +237,10 @@ function render() {
     return;
   }
 
-  const order = (active?.group_order || []).map(s => s.toLowerCase());
+  const order = (tab.group_order || []).map(s => s.toLowerCase());
   const buckets = {};
   for (const panel of panels) {
-    const name = groupName(panel, groupBy) || (state.tab === "pediatric" ? "Pediatric manifestations" : "Other");
+    const name = groupName(panel, groupBy, tab.key) || (tab.key === "pediatric" ? "Pediatric manifestations" : "Other");
     (buckets[name] = buckets[name] || []).push(panel);
   }
   const names = Object.keys(buckets).sort((a, b) => {
@@ -225,7 +250,7 @@ function render() {
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
   });
   for (const name of names) {
-    const heading = document.createElement("h2");
+    const heading = document.createElement("h3");
     heading.className = "group-header";
     heading.textContent = name;
     content.append(heading, grid(buckets[name]));
@@ -331,28 +356,6 @@ Promise.all([
   $("title").textContent = `${disease.name || DISEASE} — visual library`;
   state.tabs = tabs;
   state.eyeEvidence = eyeEvidence;
-  state.tab = (tabs.find(t => !t.evidence_only && t.key !== "pediatric") || tabs[0] || {}).key;
-  const nav = $("tabs");
-  for (const tab of state.tabs) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.dataset.tabKey = tab.key;
-    button.textContent = tab.label;
-      button.className = tab.key === state.tab ? "tab active" : "tab";
-    if (tab.key === "pediatric" && state.hasPediatric === false) button.hidden = true;
-    button.setAttribute("aria-pressed", String(tab.key === state.tab));
-    button.addEventListener("click", () => {
-      if (state.tab === tab.key) return;
-      rememberFilters();
-      state.tab = tab.key;
-      restoreFilters(tab.key);
-      nav.querySelectorAll(".tab").forEach(el => { el.classList.remove("active"); el.setAttribute("aria-pressed", "false"); });
-      button.classList.add("active"); button.setAttribute("aria-pressed", "true");
-      if (tab.evidence_only) render();
-      else loadPanels();
-    });
-    nav.append(button);
-  }
   for (const subtype of disease.subtypes || []) {
     const option = document.createElement("option"); option.value = subtype.key; option.textContent = subtype.label;
     $("f-subtype").append(option);
@@ -368,7 +371,6 @@ Promise.all([
     $("f-finding").append(option);
   }
   for (const id of FILTER_IDS) $(id).addEventListener("change", () => {
-    rememberFilters();
     if (id === "f-skin-tone") render();
     else loadPanels();
   });

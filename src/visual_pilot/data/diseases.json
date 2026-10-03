@@ -1,6 +1,8 @@
 {
   "sle": {
     "name": "Systemic lupus erythematosus",
+    "specialty": "Rheumatology",
+    "summary": "Multisystem autoimmune disease with malar rash, discoid lesions, oral ulcers, arthritis and renal involvement.",
     "mondo_id": "MONDO:0007915",
     "mesh_id": "D008180",
     "synonyms": [
@@ -41,6 +43,8 @@
   },
   "dm": {
     "name": "Dermatomyositis",
+    "specialty": "Rheumatology",
+    "summary": "Inflammatory myopathy with heliotrope rash, Gottron papules and proximal muscle weakness.",
     "mondo_id": "MONDO:0016367",
     "mesh_id": "D003882",
     "synonyms": [
@@ -80,6 +84,8 @@
   },
   "as": {
     "name": "Ankylosing spondylitis",
+    "specialty": "Rheumatology",
+    "summary": "Axial spondyloarthritis causing sacroiliitis, syndesmophytes and progressive spinal fusion.",
     "mondo_id": "MONDO:0005306",
     "mesh_id": "D013167",
     "synonyms": [
@@ -106,6 +112,8 @@
   },
   "ra": {
     "name": "Rheumatoid arthritis",
+    "specialty": "Rheumatology",
+    "summary": "Chronic inflammatory polyarthritis with symmetric synovitis, erosions and hand deformities.",
     "mondo_id": "MONDO:0008383",
     "mesh_id": "D001172",
     "synonyms": [
@@ -132,6 +140,8 @@
   },
   "ssc": {
     "name": "Systemic sclerosis",
+    "specialty": "Rheumatology",
+    "summary": "Connective tissue disease with skin thickening, Raynaud phenomenon, digital ulcers and interstitial lung disease.",
     "mondo_id": "MONDO:0005100",
     "mesh_id": "D012595",
     "synonyms": [
@@ -162,6 +172,8 @@
   },
   "psoriasis": {
     "name": "Psoriasis",
+    "specialty": "Dermatology",
+    "summary": "Chronic inflammatory skin disease with well-demarcated scaly plaques and nail changes.",
     "mondo_id": "MONDO:0005083",
     "mesh_id": "D011565",
     "synonyms": [
@@ -203,6 +215,8 @@
   },
   "psa": {
     "name": "Psoriatic arthritis",
+    "specialty": "Rheumatology",
+    "summary": "Inflammatory arthritis associated with psoriasis, with dactylitis, enthesitis and nail disease.",
     "mondo_id": "MONDO:0011849",
     "mesh_id": "D015535",
     "synonyms": [
@@ -245,6 +259,8 @@
   },
   "sarcoidosis": {
     "name": "Sarcoidosis",
+    "specialty": "Pulmonology",
+    "summary": "Multisystem granulomatous disease with hilar lymphadenopathy, skin lesions and uveitis.",
     "mondo_id": "MONDO:0019338",
     "mesh_id": "D012507",
     "synonyms": [
@@ -283,6 +299,8 @@
   },
   "gout": {
     "name": "Gout",
+    "specialty": "Rheumatology",
+    "summary": "Crystal arthropathy from urate deposition, with acute flares, tophi and punched-out erosions.",
     "mondo_id": "MONDO:0005393",
     "mesh_id": "D006073",
     "synonyms": [
@@ -313,6 +331,8 @@
   },
   "ad": {
     "name": "Atopic dermatitis",
+    "specialty": "Dermatology",
+    "summary": "Chronic itchy eczematous dermatitis with age-dependent distribution and lichenification.",
     "mondo_id": "MONDO:0004980",
     "mesh_id": "D003876",
     "synonyms": [

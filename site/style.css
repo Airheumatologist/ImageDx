@@ -8,43 +8,55 @@ header h1 { margin: 4px 0; font-size: 1.5rem; }
 header a { color: #3b6fd4; text-decoration: none; }
 .sub { color: #667; margin: 0; }
 
-#diseases { display: flex; gap: 16px; padding: 20px 28px; flex-wrap: wrap; }
-.disease-card {
-  display: block; background: #fff; border: 1px solid #dfe3ea; border-radius: 10px;
-  padding: 18px 22px; min-width: 220px; text-decoration: none; color: inherit;
-}
-.disease-card:hover { border-color: #3b6fd4; }
-.disease-card h2 { margin: 0 0 4px; font-size: 1.1rem; overflow-wrap: anywhere; hyphens: auto; }
-.disease-card p { margin: 0; color: #667; }
-.compare-link { padding: 0 28px 24px; }
-.compare-link a { color: #3b6fd4; }
-.disease-card.empty-card { opacity: .6; }
-
-.articles { padding: 0 28px 40px; max-width: 980px; }
-.articles h2 { font-size: 1.15rem; margin: 8px 0 2px; }
-#articles { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
-.article-item { background: #fff; border: 1px solid #dfe3ea; border-radius: 10px; padding: 14px 18px; }
-.article-title { color: #1c2333; font-weight: 650; text-decoration: none; line-height: 1.35; }
-.article-title:hover { color: #3b6fd4; }
-.article-meta { margin: 4px 0 8px; color: #667; font-size: .88rem; }
-.article-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
-.tag {
-  display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .8rem;
-  background: #eef2fa; color: #315fb8; text-decoration: none;
-}
-.tag.license { background: #eaf5ee; color: #2c6e45; }
-.tag.muted { background: #f1f2f5; color: #778; }
 @media (max-width: 700px) {
-  header, #diseases, .compare-link, .articles { padding-left: 16px; padding-right: 16px; }
-  .disease-card { min-width: 0; flex: 1 1 140px; }
+  header { padding-left: 16px; padding-right: 16px; }
 }
 
-#tabs { display: flex; gap: 6px; padding: 0 28px; flex-wrap: wrap; border-bottom: 1px solid #dfe3ea; }
-.tab {
-  border: none; background: none; padding: 10px 14px; cursor: pointer;
-  font-size: .92rem; color: #556; border-bottom: 2px solid transparent;
+/* Home: searchable disease list */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+body.home { background: #fff; }
+.home-header { background: #2f6b66; padding: 18px 28px 20px; color: #fff; }
+.home-header h1 { font-size: 1.15rem; font-weight: 600; margin: 0 0 12px; }
+.search { position: relative; display: block; max-width: 980px; }
+.search input {
+  width: 100%; padding: 14px 48px 14px 18px; border: 0; border-radius: 12px;
+  font: inherit; font-size: 1.05rem; color: #1c2333; background: #fff;
 }
-.tab.active { color: #1c2333; border-bottom-color: #3b6fd4; font-weight: 600; }
+.search input::placeholder { color: #8a909b; }
+.search input:focus { outline: 3px solid #d9a63a; outline-offset: 0; }
+.search svg {
+  position: absolute; right: 16px; top: 50%; width: 22px; height: 22px; transform: translateY(-50%);
+  fill: none; stroke: #8a909b; stroke-width: 2; stroke-linecap: round; pointer-events: none;
+}
+.home-tabs { display: flex; border-bottom: 1px solid #e6e8eb; max-width: 1036px; }
+.home-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 12px 12px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 1rem; font-weight: 600; color: #8a909b;
+  border-bottom: 4px solid transparent; border-radius: 0;
+}
+.home-tab svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.home-tab.active { color: #2f6b66; border-bottom-color: #d9a63a; }
+.home-tab:focus-visible { outline: 2px solid #2f6b66; outline-offset: -2px; }
+.disease-list { max-width: 1036px; padding-bottom: 40px; }
+.disease-list .empty { padding: 24px 28px; margin: 0; }
+.disease-row {
+  display: block; padding: 18px 28px 20px; border-bottom: 1px solid #e6e8eb;
+  text-decoration: none; color: inherit;
+}
+.disease-row:hover, .disease-row:focus-visible { background: #f4f8f7; }
+.disease-row-name { display: block; font-size: 1.15rem; font-weight: 700; color: #111; }
+.disease-row-summary { display: block; margin-top: 4px; color: #6b717c; line-height: 1.4; }
+.specialty-heading {
+  display: flex; align-items: center; gap: 10px; margin: 0; padding: 22px 28px 8px;
+  font-size: .82rem; letter-spacing: .06em; text-transform: uppercase; color: #2f6b66;
+  border-bottom: 1px solid #e6e8eb;
+}
+.specialty-count { font-weight: 600; color: #8a909b; letter-spacing: 0; }
+@media (max-width: 700px) {
+  .home-header { padding: 14px 16px 16px; }
+  .disease-row, .specialty-heading, .disease-list .empty { padding-left: 16px; padding-right: 16px; }
+}
 
 #filters { display: flex; gap: 10px; padding: 12px 28px; flex-wrap: wrap; }
 #filters[hidden] { display: none; }
@@ -52,7 +64,7 @@ header a { color: #3b6fd4; text-decoration: none; }
 .reserves-note { padding: 0 28px; margin: 4px 0 0; color: #667; font-size: .85rem; }
 
 #content { padding: 8px 28px 40px; }
-.group-header { font-size: 1.05rem; margin: 22px 0 10px; text-transform: uppercase; letter-spacing: .04em; color: #445; }
+.group-header { font-size: .95rem; margin: 18px 0 10px; text-transform: uppercase; letter-spacing: .04em; color: #445; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
 .panel-card { background: #fff; border: 1px solid #dfe3ea; border-radius: 10px; overflow: hidden; }
 .panel-card:hover { border-color: #aebee3; box-shadow: 0 3px 12px #24355b12; }
@@ -60,7 +72,7 @@ header a { color: #3b6fd4; text-decoration: none; }
   display: flex; flex-direction: column; width: 100%; height: 100%; padding: 0; border: 0;
   background: transparent; color: inherit; text-align: left; cursor: zoom-in; font: inherit;
 }
-.card-open:focus-visible, .tab:focus-visible, .lb-close:focus-visible { outline: 3px solid #3b6fd4; outline-offset: 2px; }
+.card-open:focus-visible, .lb-close:focus-visible { outline: 3px solid #3b6fd4; outline-offset: 2px; }
 .panel-card .thumb { width: 100%; height: 190px; object-fit: contain; display: block; background: #f1f2f5; }
 .card-label { display: block; padding: 12px 14px 14px; font-size: .95rem; line-height: 1.35; font-weight: 650; }
 .empty { color: #889; }
@@ -104,3 +116,25 @@ header a { color: #3b6fd4; text-decoration: none; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
 .side h3 { font-size: .95rem; color: #445; }
+
+
+/* Disease page: manifestations as a vertical list of expandable sections */
+.manifestations { border-top: 1px solid #dfe3ea; }
+.manifestation { border-bottom: 1px solid #dfe3ea; }
+.manifestation summary {
+  display: flex; align-items: baseline; gap: 12px; padding: 16px 4px; cursor: pointer;
+  list-style: none;
+}
+.manifestation summary::-webkit-details-marker { display: none; }
+.manifestation summary::after {
+  content: ""; margin-left: auto; align-self: center; flex: none; width: 9px; height: 9px;
+  border-right: 2px solid #667; border-bottom: 2px solid #667; transform: rotate(45deg) translateY(-3px);
+  transition: transform .15s ease;
+}
+.manifestation[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
+.manifestation summary:hover { background: #eef1f5; }
+.manifestation summary:focus-visible { outline: 3px solid #3b6fd4; outline-offset: -3px; }
+.manifestation-name { font-size: 1.1rem; font-weight: 650; color: #1c2333; }
+.manifestation-count { color: #667; font-size: .9rem; }
+.manifestation-body { padding: 4px 4px 22px; }
+.manifestation-body .evidence-intro { margin-top: 4px; }

@@ -7,75 +7,94 @@
   <title>Visual Findings Library</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header>
+<body class="home">
+  <header class="home-header">
     <h1>Visual Findings Library</h1>
-    <p class="sub">Open-access clinical imagery across the pilot disease library</p>
+    <label class="search">
+      <span class="visually-hidden">Search diseases</span>
+      <input id="search" type="search" placeholder="Disease, Specialty, Condition" autocomplete="off">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </label>
   </header>
-  <main>
-    <section id="diseases"><p>Loading&hellip;</p></section>
-    <section class="compare-link">
-      <a id="compare-link" href="/compare/sle-dm-skin">SLE vs DM skin comparison &rarr;</a>
-    </section>
-    <section class="articles">
-      <h2>Source articles</h2>
-      <p class="sub" id="articles-summary"></p>
-      <ol id="articles"></ol>
-    </section>
-  </main>
+  <nav class="home-tabs" role="tablist">
+    <button type="button" role="tab" class="home-tab active" data-view="all" aria-selected="true">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+      All Diseases
+    </button>
+    <button type="button" role="tab" class="home-tab" data-view="specialty" aria-selected="false">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3v6a5 5 0 0 0 10 0V3"/><path d="M11 14v2a5 5 0 0 0 10 0v-3"/><circle cx="21" cy="11" r="2"/></svg>
+      Specialties
+    </button>
+  </nav>
+  <main id="diseases" class="disease-list"><p class="empty">Loading&hellip;</p></main>
   <script src="api.js"></script>
   <script>
-    document.getElementById("compare-link").href = VP.compareUrl;
-    const LICENSES = { "cc0": "CC0", "cc-by": "CC BY", "cc-by-sa": "CC BY-SA", "cc-by-nd": "CC BY-ND" };
     const el = (tag, className, text) => {
       const node = document.createElement(tag);
       if (className) node.className = className;
       if (text != null) node.textContent = text;
       return node;
     };
+    const list = document.getElementById("diseases");
+    const search = document.getElementById("search");
+    let diseases = [];
+    let view = "all";
 
-    Promise.all([VP.diseases(), VP.articles()]).then(([diseases, all]) => {
-      const articles = all.filter(a => a.published_total > 0);
-      const names = Object.fromEntries(diseases.map(d => [d.key, d.name]));
-      const imagesBy = {};
-      for (const a of articles)
-        for (const [key, n] of Object.entries(a.published_images)) imagesBy[key] = (imagesBy[key] || 0) + n;
+    function matches(d, q) {
+      if (!q) return true;
+      const haystack = [d.name, d.key, d.specialty, d.summary, ...(d.synonyms || [])].join(" ").toLowerCase();
+      return q.split(/\s+/).every(word => haystack.includes(word));
+    }
 
-      const grid = document.getElementById("diseases");
-      grid.replaceChildren();
-      for (const d of diseases) {
-        const card = el("a", "disease-card");
-        card.href = VP.diseaseUrl(d.key);
-        const n = imagesBy[d.key] || 0;
-        card.append(el("h2", null, d.name), el("p", null, `${d.key.toUpperCase()} · ${n} image${n === 1 ? "" : "s"}`));
-        if (!n) card.classList.add("empty-card");
-        grid.append(card);
+    function row(d) {
+      const link = el("a", "disease-row");
+      link.href = VP.diseaseUrl(d.key);
+      link.append(el("span", "disease-row-name", d.name));
+      if (d.summary) link.append(el("span", "disease-row-summary", d.summary));
+      return link;
+    }
+
+    function render() {
+      const q = search.value.trim().toLowerCase();
+      const shown = diseases.filter(d => matches(d, q));
+      list.replaceChildren();
+      if (!shown.length) { list.append(el("p", "empty", "No diseases match your search.")); return; }
+      if (view === "all") {
+        for (const d of shown) list.append(row(d));
+        return;
       }
+      const groups = new Map();
+      for (const d of shown) {
+        const name = d.specialty || "Other";
+        if (!groups.has(name)) groups.set(name, []);
+        groups.get(name).push(d);
+      }
+      for (const name of [...groups.keys()].sort()) {
+        const section = el("section", "specialty-group");
+        const heading = el("h2", "specialty-heading", name);
+        heading.append(el("span", "specialty-count", String(groups.get(name).length)));
+        section.append(heading, ...groups.get(name).map(row));
+        list.append(section);
+      }
+    }
 
-      const total = articles.reduce((sum, a) => sum + a.published_total, 0);
-      document.getElementById("articles-summary").textContent =
-        `${articles.length} article${articles.length === 1 ? "" : "s"} · ${total} published image${total === 1 ? "" : "s"}`;
-      const list = document.getElementById("articles");
-      for (const a of articles) {
-        const item = el("li", "article-item");
-        const title = el("a", "article-title", a.title || a.pmcid);
-        title.href = a.article_url; title.target = "_blank"; title.rel = "noopener noreferrer";
-        const meta = el("p", "article-meta",
-          [a.journal, a.year, a.pmcid, (a.publication_types || [])[0]].filter(Boolean).join(" · "));
-        const tags = el("p", "article-tags");
-        const license = el("span", "tag license", LICENSES[a.license_code] || a.license_code || "license unknown");
-        tags.append(license);
-        for (const key of a.disease_keys) {
-          const n = a.published_images[key] || 0;
-          const tag = el("a", "tag", `${names[key] || key}${n ? ` · ${n}` : ""}`);
-          tag.href = VP.diseaseUrl(key);
-          tags.append(tag);
+    for (const tab of document.querySelectorAll(".home-tab")) {
+      tab.addEventListener("click", () => {
+        view = tab.dataset.view;
+        for (const other of document.querySelectorAll(".home-tab")) {
+          other.classList.toggle("active", other === tab);
+          other.setAttribute("aria-selected", String(other === tab));
         }
-        item.append(title, meta, tags);
-        list.append(item);
-      }
+        render();
+      });
+    }
+    search.addEventListener("input", render);
+
+    VP.diseases().then(data => {
+      diseases = data.slice().sort((a, b) => a.name.localeCompare(b.name));
+      render();
     }).catch(() => {
-      document.getElementById("diseases").innerHTML = "<p class='empty'>The library could not be loaded.</p>";
+      list.innerHTML = "<p class='empty'>The library could not be loaded.</p>";
     });
   </script>
 </body>
