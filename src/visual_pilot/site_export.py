@@ -81,7 +81,9 @@ def export(out: Path = DEFAULT_OUT, data_dir: str | None = None, log=print) -> d
     data = out / "data"
     diseases = _get(client, "/api/diseases")
     _write(data / "diseases.json", diseases)
-    _write(data / "articles.json", _get(client, "/api/articles"))
+    # Only articles that contribute a published image; the rest were screened out.
+    articles = [a for a in _get(client, "/api/articles") if a["published_total"]]
+    _write(data / "articles.json", articles)
     totals = {}
     for d in diseases:
         key = d["key"]

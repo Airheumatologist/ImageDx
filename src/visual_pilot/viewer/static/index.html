@@ -17,7 +17,7 @@
       <a id="compare-link" href="/compare/sle-dm-skin">SLE vs DM skin comparison &rarr;</a>
     </section>
     <section class="articles">
-      <h2>Pilot articles</h2>
+      <h2>Source articles</h2>
       <p class="sub" id="articles-summary"></p>
       <ol id="articles"></ol>
     </section>
@@ -33,7 +33,8 @@
       return node;
     };
 
-    Promise.all([VP.diseases(), VP.articles()]).then(([diseases, articles]) => {
+    Promise.all([VP.diseases(), VP.articles()]).then(([diseases, all]) => {
+      const articles = all.filter(a => a.published_total > 0);
       const names = Object.fromEntries(diseases.map(d => [d.key, d.name]));
       const imagesBy = {};
       for (const a of articles)
@@ -69,7 +70,6 @@
           tag.href = VP.diseaseUrl(key);
           tags.append(tag);
         }
-        if (!a.published_total) tags.append(el("span", "tag muted", "no published images"));
         item.append(title, meta, tags);
         list.append(item);
       }

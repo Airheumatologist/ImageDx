@@ -14,6 +14,9 @@ from urllib.parse import urlencode
 from . import pair_terms, pmc
 
 SEARCH_URL = f"{pmc.EPMC_REST}/search"
+# Europe PMC has brief outages (5xx bursts, read timeouts); 8 retries back off
+# for ~47 s in total instead of ~15 s, so one blip does not drop a disease's search.
+SEARCH_RETRIES = 8
 
 # Europe PMC license values that can normalize to an allowed code; the exact
 # gate is re-applied locally with pmc.license_allows.
@@ -160,7 +163,7 @@ def search(query: str, *, limit: int = 100, page_size: int = 100) -> tuple[int, 
             "query": query, "format": "json", "resultType": "core",
             "pageSize": str(min(page_size, 1000)), "cursorMark": cursor,
         }
-        data = pmc._request(f"{SEARCH_URL}?{urlencode(params)}").json()
+        data = pmc._request(f"{SEARCH_URL}?{urlencode(params)}", max_retries=SEARCH_RETRIES).json()
         total = int(data.get("hitCount") or 0)
         records = (data.get("resultList") or {}).get("result") or []
         for rec in records:
