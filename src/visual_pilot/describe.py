@@ -166,6 +166,7 @@ def run(args) -> int:
             ),
             "schema": prompts.P5.schema,
             "prompt_version": prompts.P5.version,
+            "reasoning_effort": config.VP_DESCRIBE_REASONING_EFFORT,
         }
         for p in panels
     )

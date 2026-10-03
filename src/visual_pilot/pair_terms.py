@@ -127,9 +127,14 @@ def caption_terms(disease_key: str, finding: dict, disease: dict | None = None) 
 
     Vocabulary labels carry disease and modality context ("Telangiectasias in
     systemic sclerosis"); captions name the finding alone. An explicit
-    ``caption_terms`` list on the vocabulary row overrides the derivation.
+    ``caption_terms`` list on the vocabulary row (the generated topic
+    vocabulary carries one) overrides the derivation.
     """
-    override = finding.get("caption_terms") or CAPTION_TERM_OVERRIDES.get(finding.get("finding_key"))
+    override = (
+        finding.get("caption_terms")
+        or CAPTION_TERM_OVERRIDES.get(finding.get("finding_key"))
+        or diseases.vocab_caption_terms(finding.get("finding_key"))
+    )
     if override:
         return list(dict.fromkeys(_caption_norm(t) for t in override if t))
     disease = disease or diseases.load_diseases()[disease_key]

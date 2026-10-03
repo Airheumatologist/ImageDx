@@ -28,6 +28,7 @@ of the disease becomes ``pending`` for triage, every other figure lands as
 
 from __future__ import annotations
 
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import logging
@@ -67,19 +68,39 @@ def disease_query_terms(disease: dict) -> list[str]:
     return list(dict.fromkeys(terms))
 
 
+def _vocab_by_disease(conn) -> dict[str, list[dict]]:
+    out: dict[str, list[dict]] = {}
+    for finding in _vocab(conn):
+        for disease_key in finding["disease_keys"]:
+            out.setdefault(disease_key, []).append(finding)
+    return out
+
+
 def plan_pairs(conn, disease_keys, target: int) -> list[tuple[str, dict, int]]:
     """(disease, finding, current count) under target, fewest images first."""
-    vocab = _vocab(conn)
+    vocab = _vocab_by_disease(conn)
     out = []
     for disease_key in disease_keys:
+        findings = vocab.get(disease_key) or []
+        if not findings:
+            continue
         counts = gallery.published_coverage(conn, disease_key)
-        for finding in vocab:
-            if disease_key not in finding["disease_keys"]:
-                continue
+        for finding in findings:
             have = counts.get(finding["finding_key"], 0)
             if have < target:
                 out.append((disease_key, finding, have))
     out.sort(key=lambda item: (item[2], item[0], item[1]["finding_key"]))
+    return out
+
+
+def _known_by_disease(conn) -> dict[str, set[str]]:
+    """Parsed articles per disease, read once per pass (see ``_known_pmcids``)."""
+    out: dict[str, set[str]] = {}
+    for row in conn.execute(
+        "SELECT pmcid, primary_disease_keys_json FROM articles WHERE status='parsed'"
+    ):
+        for key in db.from_json(row["primary_disease_keys_json"], []) or []:
+            out.setdefault(key, set()).add(row["pmcid"])
     return out
 
 
@@ -238,12 +259,18 @@ def _upsert_article(conn, hit: europepmc.Hit, disease_key: str, finding_key: str
     return dict(conn.execute("SELECT * FROM articles WHERE pmcid=?", (hit.pmcid,)).fetchone())
 
 
-def disease_caption_terms(conn, disease_key: str) -> list[str]:
+def disease_caption_terms(conn, disease_key: str, vocab: list[dict] | None = None) -> list[str]:
+    """Caption terms of every approved finding of the disease.
+
+    ``vocab`` is the disease's findings when the caller already grouped them
+    (``_vocab_by_disease``); otherwise they are read here.
+    """
     disease = diseases.load_diseases()[disease_key]
+    if vocab is None:
+        vocab = [f for f in _vocab(conn) if disease_key in f["disease_keys"]]
     terms: list[str] = []
-    for finding in _vocab(conn):
-        if disease_key in finding["disease_keys"]:
-            terms += pair_terms.caption_terms(disease_key, finding, disease)
+    for finding in vocab:
+        terms += pair_terms.caption_terms(disease_key, finding, disease)
     return list(dict.fromkeys(terms))
 
 
@@ -330,64 +357,160 @@ def _ingest(conn, pool, disease_key: str, finding_key: str, picked, pass_name: s
     return pending
 
 
+def _ahead(pool, jobs, fn, window: int, prepare=lambda job: job):
+    """Yield ``(job, result)`` in job order with up to ``window`` calls in flight.
+
+    ``fn(prepare(job))`` runs on ``pool``; an exception is yielded as the
+    result. ``prepare`` runs on the consuming thread at submit time, so it
+    can snapshot state the consumer keeps updating between results.
+    """
+    pending: deque = deque()
+    jobs = iter(jobs)
+
+    def fill() -> None:
+        while len(pending) < window:
+            job = next(jobs, None)
+            if job is None:
+                return
+            pending.append((job, pool.submit(fn, prepare(job))))
+
+    fill()
+    try:
+        while pending:
+            job, future = pending.popleft()
+            try:
+                result = future.result()
+            except Exception as exc:  # noqa: BLE001 - handed to the consumer
+                result = exc
+            yield job, result
+            fill()
+    finally:
+        for _, future in pending:
+            future.cancel()
+
+
 def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int | None = None,
-             max_runtime: float | None = None, pass_name: str = "backfill", log=print) -> dict:
-    """Search, fetch and parse one pass for under-target pairs; returns run stats."""
+             max_runtime: float | None = None, pass_name: str = "backfill", log=print,
+             on_articles=None, should_stop=None) -> dict:
+    """Search, fetch and parse one pass for under-target pairs; returns run stats.
+
+    Europe PMC searches run ahead of ingestion on ``VP_SEARCH_CONCURRENCY``
+    workers while fetching, parsing and every DB write stay on this thread in
+    plan order. A search sees the articles known when it was submitted, so
+    hits another pair took meanwhile are dropped at ingest. ``on_articles``
+    receives each pair's newly parsed PMCIDs as soon as they are stored, so
+    ``run-all`` can triage them while discovery continues; ``should_stop``
+    ends the pass early. Searches lost to Europe PMC errors are retried once
+    after ``VP_SEARCH_RETRY_COOLDOWN`` seconds at the end of the pass.
+    """
     if pass_name not in PASSES:
         raise ValueError(f"unknown discovery pass {pass_name!r}")
     started = time.monotonic()
     stats: dict = {"pass": pass_name, "pairs": 0, "articles": 0, "fetch_errors": 0, "pmcids": []}
-    match_terms = {d: disease_caption_terms(conn, d) for d in disease_keys}
+    vocab = _vocab_by_disease(conn)
+    match_terms: dict[str, list[str]] = {}
+
+    def terms_for(disease_key: str) -> list[str]:
+        if disease_key not in match_terms:
+            match_terms[disease_key] = disease_caption_terms(
+                conn, disease_key, vocab.get(disease_key) or []
+            )
+        return match_terms[disease_key]
+
     plan = plan_pairs(conn, disease_keys, target)
     if max_pairs is not None:
         plan = plan[:max_pairs]
     log(f"discover[{pass_name}]: {len(plan)} pair(s) under target {target}")
+    known = _known_by_disease(conn)
 
     def out_of_time() -> bool:
+        if should_stop is not None and should_stop():
+            log(f"discover[{pass_name}]: stopping early")
+            return True
         if max_runtime is not None and time.monotonic() - started >= max_runtime:
             log(f"discover[{pass_name}]: runtime limit reached")
             return True
         return False
 
-    with ThreadPoolExecutor(config.VP_FETCH_CONCURRENCY) as pool:
-        if pass_name == "overview":
-            for disease_key in dict.fromkeys(d for d, _, _ in plan):
-                if out_of_time():
-                    break
-                try:
-                    picked, attempts = find_overview_articles(
-                        disease_key, match_terms[disease_key], OVERVIEW_PER_DISEASE,
-                        _known_pmcids(conn, disease_key),
-                    )
-                except pmc.PmcError as exc:
-                    log(f"discover[overview]: {disease_key}: search failed: {exc}")
-                    continue
-                _record_attempts(conn, disease_key, OVERVIEW_KEY, attempts)
-                pending = _ingest(conn, pool, disease_key, OVERVIEW_KEY, picked, pass_name,
-                                  match_terms[disease_key], stats)
-                totals = "/".join(str(a["total"]) for a in attempts)
-                log(f"discover[overview]: {disease_key}: hits {totals}, "
-                    f"{len(picked)} new article(s), {pending} figure(s) queued")
-            return stats
-        scope = "reviews" if pass_name == "manifestation" else "all"
-        for disease_key, finding, have in plan:
-            if out_of_time():
-                break
-            fk = finding["finding_key"]
-            try:
-                _, picked, attempts = find_articles(
-                    disease_key, finding, per_pair, _known_pmcids(conn, disease_key), scope=scope,
-                )
-            except pmc.PmcError as exc:
-                log(f"discover[{pass_name}]: {disease_key}/{fk}: search failed: {exc}")
-                continue
-            _record_attempts(conn, disease_key, fk, attempts)
-            pending = _ingest(conn, pool, disease_key, fk, picked, pass_name,
-                              match_terms[disease_key], stats)
+    overview = pass_name == "overview"
+    scope = "reviews" if pass_name == "manifestation" else "all"
+    if overview:
+        jobs = [(d, None, 0) for d in dict.fromkeys(d for d, _, _ in plan)]
+    else:
+        jobs = plan
+
+    def prepare(job):
+        # Snapshot on this thread: ingest keeps adding to ``known``.
+        disease_key = job[0]
+        terms = terms_for(disease_key) if overview else None
+        return job, set(known.get(disease_key, ())), terms
+
+    def search(prepared):
+        (disease_key, finding, _), skip, terms = prepared
+        if overview:
+            return find_overview_articles(disease_key, terms, OVERVIEW_PER_DISEASE, skip)
+        _, picked, attempts = find_articles(disease_key, finding, per_pair, skip, scope=scope)
+        return picked, attempts
+
+    def label(job) -> str:
+        disease_key, finding, _ = job
+        return disease_key if overview else f"{disease_key}/{finding['finding_key']}"
+
+    def ingest(job, result) -> None:
+        disease_key, finding, have = job
+        picked, attempts = result
+        mine = known.setdefault(disease_key, set())
+        # Another pair may have ingested a hit since this search was submitted.
+        picked = [(hit, mode) for hit, mode in picked if hit.pmcid not in mine]
+        key = OVERVIEW_KEY if overview else finding["finding_key"]
+        _record_attempts(conn, disease_key, key, attempts)
+        before = len(stats["pmcids"])
+        pending = _ingest(conn, pool, disease_key, key, picked, pass_name,
+                          terms_for(disease_key), stats)
+        new = stats["pmcids"][before:]
+        mine.update(new)
+        if not overview:
             stats["pairs"] += 1
-            totals = "/".join(str(a["total"]) for a in attempts)
-            log(f"discover[{pass_name}]: {disease_key}/{fk} (have {have}): hits {totals}, "
-                f"{len(picked)} new article(s), {pending} figure(s) queued")
+        totals = "/".join(str(a["total"]) for a in attempts)
+        have_text = "" if overview else f" (have {have})"
+        log(f"discover[{pass_name}]: {label(job)}{have_text}: hits {totals}, "
+            f"{len(picked)} new article(s), {pending} figure(s) queued")
+        if new and on_articles is not None:
+            on_articles(new)
+
+    def run_jobs(job_list) -> list:
+        failed = []
+        for job, result in _ahead(search_pool, job_list, search, window, prepare):
+            if isinstance(result, pmc.PmcError):
+                log(f"discover[{pass_name}]: {label(job)}: search failed: {result}")
+                failed.append(job)
+                continue
+            if isinstance(result, Exception):
+                raise result
+            ingest(job, result)
+            if out_of_time():
+                return []
+        return failed
+
+    window = 4 * config.VP_SEARCH_CONCURRENCY
+    with ThreadPoolExecutor(config.VP_FETCH_CONCURRENCY) as pool, \
+            ThreadPoolExecutor(config.VP_SEARCH_CONCURRENCY) as search_pool:
+        if out_of_time():
+            return stats
+        failed = run_jobs(jobs)
+        if failed:
+            log(f"discover[{pass_name}]: retrying {len(failed)} failed search(es) "
+                f"in {config.VP_SEARCH_RETRY_COOLDOWN}s")
+            deadline = time.monotonic() + config.VP_SEARCH_RETRY_COOLDOWN
+            while time.monotonic() < deadline:
+                if out_of_time():
+                    return stats
+                time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
+            still = run_jobs(failed)
+            stats["search_failures"] = len(still)
+            if still:
+                log(f"discover[{pass_name}]: {len(still)} search(es) failed twice: "
+                    + ", ".join(label(job) for job in still[:20]))
     return stats
 
 

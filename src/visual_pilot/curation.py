@@ -69,6 +69,9 @@ def _term_pattern(term: str) -> re.Pattern | None:
     body = r"[\s-]+".join(re.escape(word) for word in words if word)
     if not body:
         return None
+    if diseases.is_acronym(value):
+        # Topic synonyms such as "ALL", "UC" or "PV" are words in lower case.
+        return re.compile(r"(?<![A-Za-z0-9])" + body + r"(?![A-Za-z0-9])")
     return re.compile(r"(?<![a-z0-9])" + body + r"(?![a-z0-9])", re.I)
 
 
@@ -88,11 +91,41 @@ def _disease_matchers() -> dict[str, tuple[re.Pattern, ...]]:
     return matchers
 
 
+_WORD = re.compile(r"[a-z0-9]+")
+
+
+@lru_cache(maxsize=1)
+def _matcher_index() -> tuple[dict[str, tuple], tuple]:
+    """Matchers keyed by the first word their term must contain.
+
+    With the full topic catalog a caption would otherwise be searched with
+    thousands of patterns; only terms whose first word occurs in the text can
+    match, so the rest are skipped without changing the result.
+    """
+    by_word: dict[str, list] = {}
+    always: list = []
+    seen = set()
+    for key, item in diseases.load_diseases().items():
+        for term in (item.get("name", ""), *item.get("synonyms", [])):
+            pattern = _term_pattern(term)
+            if pattern is None or (key, pattern.pattern) in seen:
+                continue
+            seen.add((key, pattern.pattern))
+            first = _WORD.search(str(term).strip().split()[0].casefold())
+            if first is None:
+                always.append((key, pattern))
+            else:
+                by_word.setdefault(first.group(0), []).append((key, pattern))
+    return {w: tuple(v) for w, v in by_word.items()}, tuple(always)
+
+
 def _diseases_in_text(text: str) -> set[str]:
-    return {
-        key for key, patterns in _disease_matchers().items()
-        if any(pattern.search(text or "") for pattern in patterns)
-    }
+    text = text or ""
+    by_word, always = _matcher_index()
+    candidates = list(always)
+    for word in set(_WORD.findall(text.casefold())):
+        candidates.extend(by_word.get(word, ()))
+    return {key for key, pattern in candidates if pattern.search(text)}
 
 
 _NONPILOT_MATCHERS = tuple(
