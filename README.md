@@ -355,14 +355,20 @@ turborag/
 |       |-- llm.py               # OpenRouter client: budget, cache, retries
 |       |-- prompts.py           # P2-P5 systems + JSON schemas
 |       |-- data/                # diseases.json, findings_vocab.json
+|       |-- site_export.py       # static GitHub Pages export of the viewer
 |       `-- viewer/              # FastAPI library browser (static HTML/JS)
+|-- site/                        # exported static site (deployed to Pages)
+|-- .github/workflows/pages.yml  # deploys site/ on push to main
 |-- tests/visual_pilot/
 `-- data/visual_pilot/           # runtime artifacts (gitignored)
 ```
 
 ## Setup
 
+Python 3.10+ is required (the macOS system `python3` is 3.9):
+
 ```bash
+uv venv --python 3.12 venv && source venv/bin/activate
 pip install -r requirements.txt
 cp env.example .env   # fill in OPENROUTER_API_KEY (discovery needs no key)
 ```
@@ -392,9 +398,30 @@ python3 -m src.visual_pilot.cli report
 python3 -m src.visual_pilot.cli serve --port 8765    # browse the library
 ```
 
+`discover --pmcids ...` skips search and fetches exactly those articles,
+attributing each to the diseases its title or abstract names (or to the one
+`--disease` given when it names none); `run-all --pmcids ...` then takes
+them through triage, judge, store and describe. The 20-article pilot set
+lives in `src/visual_pilot/data/parity_pmcids.json`.
+
 `discover --limit N` caps the number of pairs searched. Re-running discovery
 skips articles already parsed for the disease, so each round reaches deeper
 into the Europe PMC results for pairs that are still under target.
+
+### Static site (GitHub Pages)
+
+```bash
+python3 -m src.visual_pilot.cli export-site     # writes site/
+git add site && git commit -m "Update site" && git push
+```
+
+`export-site` calls the viewer API in-process and writes each response as
+JSON beside copies of the viewer pages; the pages read those files when
+`window.VP_STATIC` is set. No images are copied: every panel links to its
+figure in the public PMC open-data bucket, and cropped panels carry a
+normalized `crop` box the page draws in a canvas. `.github/workflows/pages.yml`
+deploys `site/` on every push to `main` that changes it (repository
+Settings → Pages → Source: GitHub Actions).
 
 See `src/visual_pilot/README.md` for stage details, env vars and PMC access
 notes.

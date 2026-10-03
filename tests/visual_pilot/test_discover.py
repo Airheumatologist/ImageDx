@@ -320,3 +320,11 @@ def test_overview_terms_drop_abbreviations():
     terms = discover.overview_disease_terms(diseases.load_diseases()["psa"])
     assert "PsA" not in terms and "psoriatic arthritis" in [t.lower() for t in terms]
     assert discover.overview_disease_terms(diseases.load_diseases()["gout"])[0] == "Gout"
+
+
+def test_article_disease_keys_match_title_and_abstract():
+    hit = _hit("PMC1", abstract="Systemic lupus erythematosus overlapping psoriatic arthritis.")
+    keys = discover.article_disease_keys(hit, list(diseases.DISEASE_KEYS))
+    assert "sle" in keys and "psa" in keys
+    assert "gout" not in keys
+    assert discover.article_disease_keys(hit, ["gout"]) == []

@@ -229,6 +229,7 @@ COMMANDS: dict[str, CommandFn | None] = {
     "extract": _lazy("extract_findings"),
     "report": _lazy("report"),
     "serve": _lazy("viewer"),
+    "export-site": _lazy("site_export"),
     "run-all": _cmd_run_all,
 }
 
@@ -336,6 +337,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="re-extract articles that already have source='text' findings",
+    )
+    subs["export-site"].add_argument(
+        "--out",
+        default=None,
+        help="static site output directory (default: site/ at the repo root)",
     )
     for name in ("extract", "run-all"):
         subs[name].add_argument(
