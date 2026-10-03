@@ -13,6 +13,7 @@ every response.
 
 from __future__ import annotations
 
+import html
 import sqlite3
 import re
 from pathlib import Path
@@ -1103,6 +1104,45 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                 }
                 for r in c.execute("SELECT * FROM diseases ORDER BY disease_key")
             ]
+        finally:
+            c.close()
+
+    @app.get("/api/articles")
+    def api_articles() -> list[dict]:
+        """Parsed source articles with their published image counts per disease."""
+        c = conn()
+        try:
+            published: dict[str, dict[str, int]] = {}
+            for (disease,) in c.execute("SELECT disease_key FROM diseases ORDER BY disease_key"):
+                with coverage.consistent_read(c):
+                    records, snapshot, rows = _gallery_inputs(c, disease, data_root)
+                for pid in _selected_panel_ids(snapshot, disease, None, records):
+                    if pid in rows:
+                        counts = published.setdefault(rows[pid]["pmcid"], {})
+                        counts[disease] = counts.get(disease, 0) + 1
+            out = []
+            for r in c.execute(
+                "SELECT pmcid, doi, title, journal, year, license_code, license_url, "
+                "publication_types_json, primary_disease_keys_json FROM articles "
+                "WHERE status='parsed' ORDER BY year DESC, pmcid"
+            ):
+                counts = published.get(r["pmcid"], {})
+                out.append({
+                    "pmcid": r["pmcid"],
+                    "title": re.sub(r"<[^>]+>", "", html.unescape(r["title"] or "")).strip(),
+                    "journal": r["journal"],
+                    "year": r["year"],
+                    "license_code": r["license_code"],
+                    "license_url": r["license_url"],
+                    "publication_types": db.from_json(r["publication_types_json"], []) or [],
+                    "disease_keys": db.from_json(r["primary_disease_keys_json"], []) or [],
+                    "article_url": f"https://doi.org/{r['doi']}" if r["doi"]
+                    else f"https://pmc.ncbi.nlm.nih.gov/articles/{r['pmcid']}/",
+                    "published_images": counts,
+                    "published_total": sum(counts.values()),
+                })
+            # Articles contributing images first; SQL order (newest) within.
+            return sorted(out, key=lambda a: a["published_total"] == 0)
         finally:
             c.close()
 

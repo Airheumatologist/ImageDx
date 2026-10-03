@@ -391,9 +391,65 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
     return stats
 
 
+FIXED_KEY = "_fixed"
+
+
+def article_disease_keys(hit: europepmc.Hit, disease_keys) -> list[str]:
+    """Diseases among ``disease_keys`` named in the article's title or abstract."""
+    text = f"{hit.title} {hit.abstract}".lower()
+    catalog = diseases.load_diseases()
+    return [
+        key for key in disease_keys
+        if any(term.lower() in text for term in disease_query_terms(catalog[key]))
+    ]
+
+
+def ingest_pmcids(conn, pmcids, disease_keys, log=print) -> dict:
+    """Fetch and parse an explicit article list, skipping search; returns run stats.
+
+    Each article is attributed to the diseases its title or abstract names
+    (or to the one requested disease when it names none); ineligible and
+    already-parsed articles are skipped.
+    """
+    stats: dict = {"pass": "fixed", "pairs": 0, "articles": 0, "fetch_errors": 0, "pmcids": []}
+    match_terms = {d: disease_caption_terms(conn, d) for d in disease_keys}
+    parsed = {r["pmcid"] for r in conn.execute("SELECT pmcid FROM articles WHERE status='parsed'")}
+    with ThreadPoolExecutor(config.VP_FETCH_CONCURRENCY) as pool:
+        for pmcid in dict.fromkeys(pmcids):
+            if pmcid in parsed:
+                log(f"discover[fixed]: {pmcid}: already parsed")
+                continue
+            _, hits = europepmc.search(f"PMCID:{pmcid}", limit=1)
+            hit = hits[0] if hits else None
+            if hit is None or not europepmc.eligible(hit):
+                log(f"discover[fixed]: {pmcid}: not found or not eligible")
+                continue
+            # A single --disease is trusted for articles whose text names none.
+            keys = article_disease_keys(hit, disease_keys) or (
+                list(disease_keys) if len(disease_keys) == 1 else []
+            )
+            if not keys:
+                log(f"discover[fixed]: {pmcid}: names no configured disease")
+                continue
+            for key in keys[1:]:
+                _upsert_article(conn, hit, key, FIXED_KEY, "fixed", "fixed")
+            terms = list(dict.fromkeys(t for k in keys for t in match_terms[k]))
+            pending = _ingest(conn, pool, keys[0], FIXED_KEY, [(hit, "fixed")], "fixed",
+                              terms, stats)
+            log(f"discover[fixed]: {pmcid} ({'+'.join(keys)}): {pending} figure(s) queued")
+    return stats
+
+
 def run(args) -> int:
     conn = db.init_db()
     disease_keys = list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
+    if getattr(args, "pmcids", None):
+        stats = ingest_pmcids(conn, args.pmcids, disease_keys)
+        print(f"discover: {stats['articles']} article(s), "
+              f"{stats.get('pending', 0)} figure(s) pending, "
+              f"{stats.get('caption_rejected', 0)} rejected, {stats['fetch_errors']} fetch error(s)")
+        conn.close()
+        return 0
     target = int(config.VP_FINDING_IMAGE_TARGET)
     per_pair = getattr(args, "per_pair", None) or DEFAULT_PER_PAIR
     if args.dry_run:
