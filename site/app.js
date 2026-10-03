@@ -186,7 +186,7 @@ function render() {
   }
   let panels = state.panels;
   if (state.tab === "pediatric") panels = panels.filter(isPediatric);
-  else if (state.tab !== "all" && active) panels = panels.filter(p => p.tab === state.tab);
+  else if (active) panels = panels.filter(p => p.tab === state.tab);
   if (state.tab === "other") panels = panels.filter(p => p.tab === "other");
   // Skin tone is local to views that expose this filter. Keep the complete
   // result set so switching sections never inherits a hidden skin filter.
@@ -329,9 +329,9 @@ Promise.all([
 ]).then(([diseases, tabs, vocab, eyeEvidence]) => {
   const disease = diseases.find(x => x.key === DISEASE) || {};
   $("title").textContent = `${disease.name || DISEASE} — visual library`;
-  state.tabs = [{ key: "all", label: "All" }, ...tabs];
+  state.tabs = tabs;
   state.eyeEvidence = eyeEvidence;
-  state.tab = "all";
+  state.tab = (tabs.find(t => !t.evidence_only && t.key !== "pediatric") || tabs[0] || {}).key;
   const nav = $("tabs");
   for (const tab of state.tabs) {
     const button = document.createElement("button");
