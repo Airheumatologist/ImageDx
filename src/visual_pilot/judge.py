@@ -33,6 +33,7 @@ from PIL import Image
 
 from . import config, curation, db, diseases, gallery, llm, originals, pmc
 from .demographics import resolve_age
+from . import prompts
 from .prompts import P3
 
 MAX_ATTEMPTS = 3
@@ -76,23 +77,30 @@ def _contains(text: str, term: str) -> bool:
     return re.search(r"(?<![a-z0-9])" + re.escape(term) + r"(?![a-z0-9])", text.lower()) is not None
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=None)
 def _disease_terms(disease_key: str) -> tuple[str, ...]:
     item = diseases.load_diseases().get(disease_key, {})
-    terms = [item.get("name", ""), *item.get("synonyms", [])]
+    # Matching is case-insensitive, so upper-case acronyms ("ITP", "UC")
+    # would match ordinary words.
+    terms = [
+        t for t in [item.get("name", ""), *item.get("synonyms", [])]
+        if not diseases.is_acronym(t)
+    ]
     # Common short forms often occur with punctuation/qualifiers.
     terms += {"sle": ["lupus", "sle"], "dm": ["dermatomyositis", "jdm", "cadm", "anti-mda5"],
               "as": ["axspa", "ankylosing spondylitis", "sacroiliitis"]}.get(disease_key, [])
     return tuple(dict.fromkeys(t for t in terms if t))
 
 
-def _load_priority_context(conn) -> dict:
+def _load_priority_context(conn, disease_keys=None) -> dict:
     vocabulary = [dict(row) for row in conn.execute(
         "SELECT finding_key,label,synonyms_json,disease_keys_json FROM findings_vocab WHERE approved=1"
     )]
+    # Coverage snapshots cost a gallery selection per disease; build them
+    # only for the diseases being ranked, not the whole catalog.
     coverage = {
         key: gallery.published_coverage(conn, key)
-        for key in diseases.DISEASE_KEYS
+        for key in (diseases.DISEASE_KEYS if disease_keys is None else disease_keys)
     }
     return {"vocabulary": vocabulary, "coverage": coverage}
 
@@ -192,7 +200,12 @@ def figure_priority(conn, figure: dict, article: dict, context: dict | None = No
 
 def rank_figures(conn, figures: list[dict], articles: dict[str, dict]) -> list[dict]:
     """Stable priority order; uncertain figures stay in the returned queue."""
-    context = _load_priority_context(conn)
+    keys = {
+        key
+        for fig in figures
+        for key in db.from_json(articles[fig["pmcid"]].get("primary_disease_keys_json"), []) or []
+    }
+    context = _load_priority_context(conn, sorted(keys))
     ranked = []
     for fig in figures:
         score, components = figure_priority(conn, fig, articles[fig["pmcid"]], context)
@@ -386,14 +399,14 @@ def run(args) -> int:
         "figures",
         ["caption_kept", "caption_uncertain", "vision_error"],
         disease=disease,
+        pmcids=args.pmcids or None,
     )
-    if args.pmcids:
-        wanted = set(args.pmcids)
-        rows = [r for r in rows if r["pmcid"] in wanted]
     articles = {
         r["pmcid"]: dict(r)
         for r in conn.execute(
-            "SELECT pmcid, title, primary_disease_keys_json, license_code FROM articles"
+            "SELECT pmcid, title, primary_disease_keys_json, license_code FROM articles "
+            "WHERE pmcid IN (SELECT value FROM json_each(?))",
+            (db.to_json(sorted({r["pmcid"] for r in rows})),),
         )
     }
     figures = []
@@ -499,13 +512,17 @@ def run(args) -> int:
                 fig["_image_size"] = image_size
                 fig["_format_note"] = note
                 submitted.append(fig)
+                prompt = prompts.scoped(
+                    "p3", db.from_json(article.get("primary_disease_keys_json"), [])
+                )
                 yield {
                     "stage": "p3",
                     "model": config.VP_JUDGE_MODEL,
-                    "system": P3.system,
+                    "system": prompt.system,
                     "user_content": user_content(fig, article, vocab),
-                    "schema": P3.schema,
-                    "prompt_version": P3.version,
+                    "schema": prompt.schema,
+                    "prompt_version": prompt.version,
+                    "reasoning_effort": config.VP_JUDGE_REASONING_EFFORT,
                     "images": [
                         llm.ImageInput(
                             data_url=pmc.to_data_url(mime, prepared),

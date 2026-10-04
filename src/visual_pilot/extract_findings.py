@@ -29,6 +29,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 
 from . import config, db, diseases, jats, llm, parse, pmc, timing
+from . import prompts
 from .prompts import P4
 from .store import slugify, upsert_proposed
 
@@ -214,6 +215,7 @@ def prepare_article(article: dict, vocabulary: list[dict]) -> dict | None:
     if not source_text.strip():
         return None
     disease_keys = db.from_json(article["primary_disease_keys_json"], [])
+    prompt = prompts.scoped("p4", disease_keys)
     return {
         "sections": sections,
         "source_text": source_text,
@@ -221,12 +223,13 @@ def prepare_article(article: dict, vocabulary: list[dict]) -> dict | None:
         "request": {
             "stage": "p4",
             "model": config.VP_EXTRACT_MODEL,
-            "system": P4.system,
+            "system": prompt.system,
             "user_content": user_content(
                 article["title"], disease_keys, vocabulary, sections
             ),
-            "schema": P4.schema,
-            "prompt_version": P4.version,
+            "schema": prompt.schema,
+            "prompt_version": prompt.version,
+            "reasoning_effort": config.VP_EXTRACT_REASONING_EFFORT,
         },
     }
 

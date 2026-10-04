@@ -18,6 +18,7 @@ import logging
 import re
 
 from . import config, curation, db, diseases, llm, pmc
+from . import prompts
 from .prompts import P2
 
 logger = logging.getLogger(__name__)
@@ -117,7 +118,10 @@ class _RunContext:
         """``diseases.json`` name+synonyms term lists, keyed by disease key."""
         if self._disease_terms is None:
             self._disease_terms = {
-                key: [data.get("name", ""), *data.get("synonyms", [])]
+                key: [
+                    term for term in [data.get("name", ""), *data.get("synonyms", [])]
+                    if not diseases.is_acronym(term)
+                ]
                 for key, data in diseases.load_diseases().items()
             }
         return self._disease_terms
@@ -206,14 +210,31 @@ def _batch_payload(rows) -> str:
 
 
 def _p2_request(rows) -> dict:
+    # Only the batch's article diseases go into the prompt and schema enum.
+    prompt = prompts.scoped(
+        "p2", {key for row in rows for key in row.get("_article_disease_keys") or []}
+    )
     return {
         "stage": "p2",
         "model": config.VP_TRIAGE_MODEL,
-        "system": P2.system,
-        "schema": P2.schema,
-        "prompt_version": P2.version,
+        "system": prompt.system,
+        "schema": prompt.schema,
+        "prompt_version": prompt.version,
         "user_content": _batch_payload(rows),
+        "reasoning_effort": config.VP_TRIAGE_REASONING_EFFORT,
     }
+
+
+def _batches(rows: list[dict], size: int) -> list[list[dict]]:
+    """Batches of figures from articles about the same diseases.
+
+    Grouping keeps each batch's disease set (and so its scoped prompt) small;
+    PMCID order is kept inside a group.
+    """
+    ordered = sorted(
+        rows, key=lambda r: (sorted(r.get("_article_disease_keys") or []), r["pmcid"])
+    )
+    return [ordered[i : i + size] for i in range(0, len(ordered), size)]
 
 
 def _bump_attempts(conn, figure_id: str, error: str | None = None) -> None:
@@ -289,20 +310,30 @@ def _apply_batch(conn, rows, result, ctx=None) -> str | None:
     return None
 
 
-def _print_summary(conn) -> None:
+def _print_summary(conn, pmcids=None) -> None:
+    """Status counts and rejection reasons, for ``pmcids`` when given.
+
+    run-all passes its batch: the whole-table version re-reads every rejected
+    caption, which grows with the library and dominated small batches.
+    """
+    scope, params = "", ()
+    if pmcids is not None:
+        scope, params = " AND pmcid IN (SELECT value FROM json_each(?))", (db.to_json(list(pmcids)),)
     status_counts = {
         r["status"]: r["n"]
         for r in conn.execute(
-            "SELECT status, COUNT(*) AS n FROM figures GROUP BY status"
+            f"SELECT status, COUNT(*) AS n FROM figures WHERE 1=1{scope} GROUP BY status", params
         )
     }
     print(f"figures by status: {status_counts}")
     reasons: dict[str, int] = {}
     for row in conn.execute(
-        "SELECT triage_json FROM figures WHERE status = 'caption_rejected'"
+        f"SELECT triage_json FROM figures WHERE status = 'caption_rejected'{scope}", params
     ):
         triage = db.from_json(row["triage_json"], {}) or {}
         reason = triage.get("reason") or "unknown"
+        # Free-text model reasons are unique per figure; log the fixed ones.
+        reason = reason if len(reason) <= 40 else "model_reason"
         reasons[reason] = reasons.get(reason, 0) + 1
     print(f"caption rejections by reason: {reasons}")
 
@@ -314,13 +345,12 @@ def requeue_montage_rejections(conn, disease=None, pmcids=None, dry_run=False) -
     category). Rows already requeued for this P2 version are skipped via the
     ``montage_retriage`` marker kept in triage_json.
     """
-    rows = db.rows_with_status(conn, "figures", "caption_rejected", disease=disease)
-    wanted = set(pmcids) if pmcids else None
+    rows = db.rows_with_status(
+        conn, "figures", "caption_rejected", disease=disease, pmcids=pmcids or None
+    )
     count = 0
     for source in rows:
         row = dict(source)
-        if wanted is not None and row["pmcid"] not in wanted:
-            continue
         item = db.from_json(row.get("triage_json"), {}) or {}
         if (
             item.get("source") == "parse"
@@ -366,13 +396,12 @@ def requeue_montage_rejections(conn, disease=None, pmcids=None, dry_run=False) -
 def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=False, ctx=None) -> int:
     """Re-queue historical P2 contradictions for vision review, once only."""
     ctx = ctx or _RunContext(conn)
-    rows = db.rows_with_status(conn, "figures", "caption_rejected", disease=disease)
-    wanted = set(pmcids) if pmcids else None
+    rows = db.rows_with_status(
+        conn, "figures", "caption_rejected", disease=disease, pmcids=pmcids or None
+    )
     count = 0
     for source in rows:
         row = dict(source)
-        if wanted is not None and row["pmcid"] not in wanted:
-            continue
         item = db.from_json(row.get("triage_json"), {}) or {}
         if item.get("source") == "parse" or item.get("third_party") or not row.get("image_url"):
             continue
@@ -420,13 +449,11 @@ def run(args) -> int:
     if revisited:
         verb = "would revisit" if args.dry_run else "re-queued"
         print(f"triage: {verb} {revisited} contradictory historical rejection(s)")
-    rows = db.rows_with_status(
-        conn, "figures", "pending", disease=disease, limit=getattr(args, "limit", None)
-    )
     pmcid_filter = getattr(args, "pmcids", None)
-    if pmcid_filter:
-        allowed = set(pmcid_filter)
-        rows = [r for r in rows if r["pmcid"] in allowed]
+    rows = db.rows_with_status(
+        conn, "figures", "pending", disease=disease, limit=getattr(args, "limit", None),
+        pmcids=pmcid_filter or None,
+    )
     # Give P2 the parent article context too: captions alone can be terse, but
     # a broad article topic remains context only and cannot make a figure pass.
     contextual_rows = []
@@ -443,7 +470,7 @@ def run(args) -> int:
             )
         contextual_rows.append(row)
     rows = contextual_rows
-    batches = [rows[i : i + BATCH_SIZE] for i in range(0, len(rows), BATCH_SIZE)]
+    batches = _batches(rows, BATCH_SIZE)
 
     if args.dry_run:
         print(
@@ -455,7 +482,7 @@ def run(args) -> int:
 
     if not rows:
         print("no pending figures")
-        _print_summary(conn)
+        _print_summary(conn, pmcid_filter or None)
         conn.close()
         return 0
 
@@ -488,7 +515,7 @@ def run(args) -> int:
             f"LLM budget exhausted (${client.spent_usd:.4f} spent); "
             "remaining figures left pending. Rerun to resume."
         )
-    _print_summary(conn)
+    _print_summary(conn, pmcid_filter or None)
     print(f"live LLM spend this run: ${client.spent_usd:.4f}")
     conn.close()
     return 0

@@ -130,11 +130,22 @@ class LLMClient:
         schema: dict,
         images: list[ImageInput] | None = None,
         prompt_version: str = "",
+        reasoning_effort: str | None = None,
     ) -> tuple[Any, dict]:
-        """One JSON call. Returns (parsed_response, meta)."""
+        """One JSON call. Returns (parsed_response, meta).
+
+        ``reasoning_effort`` overrides ``LLM_REASONING_EFFORT`` for this call
+        (stages pass their ``VP_*_REASONING_EFFORT``); empty means the model
+        default.
+        """
         images = images or []
+        effort = (
+            config.LLM_REASONING_EFFORT if reasoning_effort is None else reasoning_effort
+        ).strip()
         started = time.monotonic()  # W0/C7 timing hook (observation only)
-        input_hash = self._input_hash(stage, model, prompt_version, system, user_content, images)
+        input_hash = self._input_hash(
+            stage, model, prompt_version, system, user_content, images, effort
+        )
 
         cached = self._cache_lookup(input_hash)
         if cached is not None:
@@ -169,7 +180,7 @@ class LLMClient:
 
         with timing.inflight("llm"):
             parsed, raw_content, usage, attempts, mode = self._call_with_validation(
-                model, system, user_content, schema, images
+                model, system, user_content, schema, images, effort
             )
         timing.record("llm_latency", time.monotonic() - started, stage=stage, source="live")
         cost = self._cost(model, usage)
@@ -187,6 +198,7 @@ class LLMClient:
             "input_tokens": usage.get("input_tokens"),
             "output_tokens": usage.get("output_tokens"),
             "attempts": attempts,
+            "reasoning_effort": effort or None,
         }
         self._record(input_hash, stage, model, prompt_version, raw_content, usage, cost, meta)
         return parsed, meta
@@ -282,17 +294,19 @@ class LLMClient:
         system: str,
         user_content: str,
         images: list[ImageInput],
+        effort: str = "",
     ) -> str:
-        return db.llm_input_hash(
-            stage,
-            model,
-            {
-                "prompt_version": prompt_version,
-                "system": system,
-                "user_content": user_content,
-                "images": [im.identity() for im in images],
-            },
-        )
+        payload = {
+            "prompt_version": prompt_version,
+            "system": system,
+            "user_content": user_content,
+            "images": [im.identity() for im in images],
+        }
+        if effort:
+            # Only a set effort joins the identity, so model-default calls
+            # keep the cache keys they had before efforts were configurable.
+            payload["reasoning_effort"] = effort
+        return db.llm_input_hash(stage, model, payload)
 
     @property
     def db_lock(self) -> threading.Lock:
@@ -335,6 +349,7 @@ class LLMClient:
         user_content: str,
         schema: dict,
         images: list[ImageInput],
+        effort: str = "",
     ):
         """Single chat completion with strict-schema -> json_object fallback."""
         mode = self._response_mode.get(model)
@@ -357,10 +372,8 @@ class LLMClient:
             ]
 
         extra_kwargs = {}
-        if config.LLM_REASONING_EFFORT:
-            extra_kwargs["extra_body"] = {
-                "reasoning": {"effort": config.LLM_REASONING_EFFORT}
-            }
+        if effort:
+            extra_kwargs["extra_body"] = {"reasoning": {"effort": effort}}
 
         def _send(target_mode: str):
             res = self._openai().chat.completions.create(
@@ -406,6 +419,7 @@ class LLMClient:
         user_content: str,
         schema: dict,
         images: list[ImageInput],
+        effort: str = "",
     ) -> tuple[Any, str, dict, int, str]:
         usage = {"input_tokens": 0, "output_tokens": 0}
         attempts = 0
@@ -417,7 +431,7 @@ class LLMClient:
                     f"{user_content}\n\nThe previous response failed validation: "
                     f"{last_error}\nReturn corrected JSON only."
                 )
-            resp, mode = self._send_once(model, system, request_text, schema, images)
+            resp, mode = self._send_once(model, system, request_text, schema, images, effort)
             attempts += 1
             u = getattr(resp, "usage", None)
             if u is not None:

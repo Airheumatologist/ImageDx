@@ -144,6 +144,8 @@ def _default_host_rps() -> dict[str, float]:
     # Public S3 bucket: not an NCBI host; contract C1 VP_S3_RPS (default 20).
     # Read at call time so tests/deploys can adjust config.VP_S3_RPS.
     host_rps[_S3_HOST] = float(getattr(config, "VP_S3_RPS", 20.0))
+    # Europe PMC REST search; discovery runs several searches at once.
+    host_rps[urlparse(EPMC_REST).netloc] = float(getattr(config, "VP_EPMC_RPS", 8.0))
     return host_rps
 
 

@@ -72,6 +72,8 @@ VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "stealth/space-bunny-alpha")
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "stealth/space-bunny-alpha")
 VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "stealth/space-bunny-alpha")
 VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
+# Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
+VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 # Stage-5 storage encoding. Panels are written lossy (WebP q90 by default)
 # capped at VP_PANEL_MAX_EDGE; the stored "original" is a display copy capped
@@ -83,8 +85,19 @@ VP_PANEL_MAX_EDGE = max(0, _env_int("VP_PANEL_MAX_EDGE", 2048))
 VP_ORIGINAL_MAX_EDGE = max(0, _env_int("VP_ORIGINAL_MAX_EDGE", 2048))
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
-# Figures per P2 caption-triage batch.
-VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 40))
+# Figures per P2 caption-triage batch. Smaller batches finish sooner (the
+# stealth model reasons ~400 output tokens per figure) and spread across the
+# VP_CONCURRENCY slots.
+VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 20))
+# Per-stage reasoning effort sent to OpenRouter (minimal/low/medium/high;
+# stealth/space-bunny-alpha rejects disabling reasoning). Unset
+# falls back to LLM_REASONING_EFFORT; empty means the model default. A set
+# effort is part of the llm_calls cache key.
+VP_TRIAGE_REASONING_EFFORT = os.getenv("VP_TRIAGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
+VP_JUDGE_REASONING_EFFORT = os.getenv("VP_JUDGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
+VP_DESCRIBE_REASONING_EFFORT = os.getenv("VP_DESCRIBE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
+VP_EXTRACT_REASONING_EFFORT = os.getenv("VP_EXTRACT_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
+VP_VOCAB_REASONING_EFFORT = os.getenv("VP_VOCAB_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
 # Per-pair gallery coverage band for the balanced pair search. FLOOR is the
 # minimum distinct published images a (disease, finding) lane must retain,
 # TARGET is the coverage goal at which a lane counts as covered, and
@@ -135,6 +148,13 @@ VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
 # limiters (pmc.RATE_LIMITER) still cap per-host throughput, so this mainly
 # controls how much of the S3/OpenRouter budget is kept in flight.
 VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
+# Europe PMC searches run ahead of ingestion on this many workers, capped by
+# VP_EPMC_RPS requests/second to www.ebi.ac.uk.
+VP_SEARCH_CONCURRENCY = max(1, _env_int("VP_SEARCH_CONCURRENCY", 8))
+VP_EPMC_RPS = max(0.1, _env_float("VP_EPMC_RPS", 8.0))
+# Seconds to wait before retrying the searches a discovery pass lost to
+# Europe PMC outages (each failed search is retried once at the pass end).
+VP_SEARCH_RETRY_COOLDOWN = max(0, _env_int("VP_SEARCH_RETRY_COOLDOWN", 60))
 # Max in-flight P3 vision-judge calls (W6). On OpenRouter
 # stealth/space-bunny-alpha throughput scales with concurrency and rate
 # limits are generous.

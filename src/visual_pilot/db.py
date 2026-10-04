@@ -601,6 +601,7 @@ def rows_with_status(
     statuses: str | Iterable[str],
     disease: str | None = None,
     limit: int | None = None,
+    pmcids: Iterable[str] | None = None,
 ) -> list[sqlite3.Row]:
     """Rows whose status is in ``statuses``, optionally scoped to a disease.
 
@@ -608,6 +609,8 @@ def rows_with_status(
     inherit the pipeline status of their parent figure (panels have no
     status column). Disease scoping uses ``articles.primary_disease_keys_json``
     — directly for articles, via the article join for figures and panels.
+    ``pmcids`` limits rows to those articles in SQL, so a batch does not load
+    the whole table.
     """
     pk_col = _pk_column(table)
     status_list = [statuses] if isinstance(statuses, str) else list(statuses)
@@ -643,6 +646,10 @@ def rows_with_status(
         else:
             raise ValueError(f"disease filter not supported for table {table!r}")
         params["disease"] = disease
+
+    if pmcids is not None:
+        conditions.append("t.pmcid IN (SELECT value FROM json_each(:pmcids))")
+        params["pmcids"] = to_json(list(pmcids))
 
     sql = f"SELECT t.* FROM {table} t{join} WHERE {' AND '.join(conditions)}"
     sql += f" ORDER BY t.{pk_col}"

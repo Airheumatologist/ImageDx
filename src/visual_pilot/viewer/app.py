@@ -277,6 +277,36 @@ GENERIC_TABS: list[dict] = [
         "match": {"any_of": [{"categories": {"clinical_msk"}}]},
     },
     {
+        "key": "appearance",
+        "label": "Clinical appearance",
+        "priority": 0,
+        "match": {"any_of": [{"categories": {"clinical_general"}}]},
+    },
+    {
+        "key": "endoscopy",
+        "label": "Endoscopy",
+        "modality_priority": {"endoscopy"},
+        "priority": 0,
+        "match": {
+            "any_of": [
+                {"modalities": {"endoscopy"}},
+                {"categories": {"endoscopy"}},
+            ]
+        },
+    },
+    {
+        "key": "gross",
+        "label": "Gross pathology",
+        "modality_priority": {"gross"},
+        "priority": 0,
+        "match": {
+            "any_of": [
+                {"modalities": {"gross"}},
+                {"categories": {"gross"}},
+            ]
+        },
+    },
+    {
         "key": "eye",
         "label": "Eye",
         "modality_priority": {"ophthalmic"},
@@ -328,7 +358,7 @@ GENERIC_TABS: list[dict] = [
         "match": {
             "any_of": [
                 {"modalities": {"radiograph", "ct", "mri", "ultrasound", "echo", "pet"}},
-                {"categories": {"radiology_xray", "ct", "mri", "us", "echo"}},
+                {"categories": {"radiology_xray", "ct", "mri", "us", "echo", "nuclear"}},
             ]
         },
     },
