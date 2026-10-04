@@ -21,7 +21,8 @@ python3 -m src.visual_pilot.cli run-all --disease all   # --budget-usd X caps sp
 Stages: `init | discover | triage | judge | store | describe | extract |
 report | serve | run-all`. Every stage is idempotent and resumes from the `status`
 column. Data lives under `data/visual_pilot/` (override with `VP_DATA_DIR`):
-`visual_pilot.sqlite`, `panels/`, `thumbs/`, `figures/`, `reports/`.
+`visual_pilot.sqlite` and `reports/`. No image files are stored: pages load
+each figure from PMC S3 and draw the panel's crop box.
 
 ## Discovery (Europe PMC figure-caption search)
 
@@ -125,9 +126,7 @@ valid section was chosen. `run-all` runs it after every `store` batch; use
 Treatment images are excluded: caption triage (P2) drops before/after,
 drug-response, follow-up healing, intraoperative/postoperative, injection and
 device figures before download. P5 also returns `treatment_related`; a flagged
-panel gets a `panel_curation` exclusion (reason `treatment_related`) and its
-crop, thumbnail and figure original are deleted unless a published panel
-still uses them. Disease a drug caused (e.g. drug-induced lupus) is kept.
+panel gets a `panel_curation` exclusion (reason `treatment_related`). Disease a drug caused (e.g. drug-induced lupus) is kept.
 
 ## PMC access notes
 
@@ -155,4 +154,4 @@ still uses them. Disease a drug caused (e.g. drug-induced lupus) is kept.
   memory) + `to_data_url` send them inline.
 - **Rate limits.** Per-host limiting (NCBI ≤3 req/s, ≤10 with
   `VP_NCBI_API_KEY`; S3 `VP_S3_RPS`, default 20; others ~5) with retries on
-  429/5xx. Nothing is written to disk before `store`.
+  429/5xx. No image bytes are ever written to disk.

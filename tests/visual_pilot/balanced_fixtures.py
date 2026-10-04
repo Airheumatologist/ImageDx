@@ -1,14 +1,12 @@
 """Scratch fixtures for balanced-coverage tests.
 
-Offline only: real Pillow image files under a tmp_path data directory and a
-scratch SQLite DB; no network, providers, or the main database.
+Offline only: a scratch SQLite DB under tmp_path; no network, providers, or
+the main database.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-
-from PIL import Image
 
 from src.visual_pilot import db
 
@@ -18,17 +16,10 @@ MALAR_CAPTION = (
 
 
 def make_db(tmp_path) -> "object":
-    """Scratch DB; image paths resolve against its parent directory."""
+    """Scratch DB in tmp_path."""
     conn = db.connect(tmp_path / "visual_pilot.sqlite")
     db.init_db(conn)
     return conn
-
-
-def write_image(root: Path, rel: str, size=(400, 300), color=(120, 80, 40)) -> str:
-    path = Path(root) / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    Image.new("RGB", tuple(size), tuple(color)).save(path, format="PNG")
-    return rel
 
 
 def add_disease(conn, key: str, name: str | None = None) -> None:
@@ -88,11 +79,14 @@ def add_figure(
     license_code: str | None = "CC-BY",
     triage: dict | None = None,
     vision: dict | None = None,
+    image_url: str | None = "default",
 ) -> None:
+    if image_url == "default":
+        image_url = f"https://pmc-oa-opendata.s3.amazonaws.com/{pmcid}.1/{figure_id.split(':')[-1]}.jpg"
     conn.execute(
         "INSERT OR REPLACE INTO figures"
-        "(figure_id,pmcid,caption,effective_license,triage_json,vision_json,status) "
-        "VALUES(?,?,?,?,?,?,'stored')",
+        "(figure_id,pmcid,caption,effective_license,triage_json,vision_json,image_url,status) "
+        "VALUES(?,?,?,?,?,?,?,'stored')",
         (
             figure_id,
             pmcid,
@@ -100,6 +94,7 @@ def add_figure(
             license_code,
             db.to_json(triage or {}),
             db.to_json(vision) if vision is not None else None,
+            image_url,
         ),
     )
 
@@ -124,29 +119,14 @@ def add_panel(
     typicality: str = "classic",
     modality: str = "clinical_photo",
     body_site: str = "face",
-    image_size=None,
-    image: bool = True,
-    thumb: bool = True,
 ) -> None:
-    """Insert a panel row; write real PNG files under ``root`` unless disabled.
-
-    ``image_size`` controls the actual file dimensions independently of the
-    row's stored width/height so tests can exercise dimension mismatches.
-    """
-    rel_img = f"panels/{panel_id}.png"
-    rel_thumb = f"thumbs/{panel_id}.png"
-    file_size = image_size or (width, height)
-    if image:
-        write_image(root, rel_img, file_size)
-    if thumb:
-        write_image(root, rel_thumb, (100, 75))
+    """Insert a panel row (pages draw it from the figure's image_url)."""
     conn.execute(
         "INSERT OR REPLACE INTO panels"
         "(panel_id,figure_id,pmcid,disease_key,modality,body_site,"
         "findings_json,plate_findings_json,typicality,confidence,crop_mode,"
-        "plate_kind,annotations_present,width,height,sha256,license_code,"
-        "image_path,thumb_path) "
-        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "plate_kind,annotations_present,width,height,sha256,license_code) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             panel_id,
             figure_id,
@@ -169,8 +149,6 @@ def add_panel(
             height,
             sha256,
             license_code,
-            rel_img,
-            rel_thumb,
         ),
     )
 

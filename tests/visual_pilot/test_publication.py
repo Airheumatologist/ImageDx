@@ -103,22 +103,17 @@ def test_unknown_age_publishes_but_unsupported_label_rejects(tmp_path):
     conn.close()
 
 
-def test_missing_files_and_dimension_mismatch_are_actionable(tmp_path):
+def test_missing_image_url_and_dimensions_are_actionable(tmp_path):
     conn = make_db(tmp_path)
     _seed_sle(conn)
     add_article(conn, "PMC1")
-    add_figure(conn, "PMC1:fig1", "PMC1")
-    add_panel(conn, tmp_path, "p_img", "PMC1:fig1", "PMC1", "sle", image=False)
-    assert any(r.startswith("missing image_path") for r in _record(conn, "p_img")["reasons"])
+    add_figure(conn, "PMC1:fig1", "PMC1", image_url=None)
+    add_panel(conn, tmp_path, "p_url", "PMC1:fig1", "PMC1", "sle")
+    assert "missing figure image_url" in _record(conn, "p_url")["reasons"]
 
-    add_panel(conn, tmp_path, "p_th", "PMC1:fig1", "PMC1", "sle", thumb=False)
-    assert any(r.startswith("missing thumb_path") for r in _record(conn, "p_th")["reasons"])
-
-    add_panel(
-        conn, tmp_path, "p_dim", "PMC1:fig1", "PMC1", "sle",
-        width=400, height=300, image_size=(200, 150),
-    )
-    assert "stored image dimensions do not match file" in _record(conn, "p_dim")["reasons"]
+    add_figure(conn, "PMC1:fig2", "PMC1")
+    add_panel(conn, tmp_path, "p_dim", "PMC1:fig2", "PMC1", "sle", width=0)
+    assert "invalid stored image dimensions" in _record(conn, "p_dim")["reasons"]
     conn.close()
 
 

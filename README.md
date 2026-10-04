@@ -54,7 +54,7 @@ restricts a run to the ten pilot diseases.
               v
  +=====================================================================+
  | 4. STORE       store.py                                -> panels    |
- |    crops or whole-figure plates, WebP q90 @2048px + 400px thumbs,   |
+ |    crop boxes or whole-figure plates (no image files), pixel        |
  |    sha256 dedup, attribution, proposed findings (unapproved)        |
  +=====================================================================+
               |
@@ -62,7 +62,7 @@ restricts a run to the ten pilot diseases.
  +=====================================================================+
  | 5. DESCRIBE    describe.py  (P5)              -> display captions   |
  |    standalone title + description, viewer section/subsection;       |
- |    treatment images excluded and their files deleted               |
+ |    treatment images excluded from the library                       |
  +=====================================================================+
               |
               v
@@ -82,7 +82,7 @@ restricts a run to the ten pilot diseases.
               v
  +=====================================================================+
  | 8. SERVE       viewer/  (FastAPI)                    -> localhost   |
- |    per-disease tabbed browser over panels/thumbs; JSON API          |
+ |    per-disease tabbed browser, images from PMC S3; JSON API         |
  +=====================================================================+
 ```
 
@@ -224,26 +224,24 @@ failures → `vision_error` (retried up to 3 attempts).
 
 ### 4. `store`: panel materialization (`store.py`)
 
-`vision_accepted` figures are refetched; a display copy capped at
-`VP_ORIGINAL_MAX_EDGE` (default 2048px) is written to
-`figures/{pmcid}/{stem}.webp`. The verbatim bytes stay refetchable from
-the PMC S3 bundle (`figures.sha256` verifies pixels on refetch). Each
-included panel is cropped from its bbox with 2% padding, capped at
-`VP_PANEL_MAX_EDGE` (default 2048px) and encoded per `VP_PANEL_FORMAT`
-(default WebP at `VP_PANEL_QUALITY`=90):
+No image files are written. Pages load every panel straight from its
+figure's public URL in the PMC open-data S3 bucket (`figures.image_url`)
+and draw the crop in the browser. `vision_accepted` figures are decoded
+in memory (judge handoff or refetch; `figures.sha256` verifies the pixels)
+only to measure each included panel: its bbox crop with 2% padding gives
+the stored `width`/`height` and a sha256 of the cropped pixels.
+`store.crop_box` turns `bbox_json` + `crop_mode` into the normalized crop
+box the pages draw. The data directory holds only the database and reports:
 
 ```text
 data/visual_pilot/
 |-- visual_pilot.sqlite
-|-- figures/{pmcid}/{stem}.webp                  # capped display originals
-|-- panels/{disease}/{modality}/{panel_id}.webp  # crops
-|-- thumbs/{panel_id}.webp                       # 400px thumbnails
 `-- reports/                                     # report output
 ```
 
 - **crop mode** `whole_figure` applies to ND licenses, missing/tiny
   (<3%) bboxes, >30% panel overlaps, and single-disease multi-panel plates;
-- **dedup:** identical encoded-image sha256 reuses the existing file (own
+- **dedup:** identical cropped-pixel sha256 is counted as a duplicate (own
   row, attribution and license kept);
 - `proposed_findings` upsert `findings_vocab` as unapproved entries
   (`approved=0`, `proposed_by_llm=1`), exactly once per figure;
@@ -265,8 +263,7 @@ a P5 change.
 
 P5 also flags `treatment_related` images that slipped past triage. A flagged
 panel gets a reversible `panel_curation` exclusion (reason
-`treatment_related`), and its crop, thumbnail and figure original are deleted
-unless a published panel still uses them.
+`treatment_related`).
 
 ### 6. `extract`: text findings (`extract_findings.py`, prompt P4)
 
@@ -308,8 +305,8 @@ snapshot the scheduler and viewer use:
 `python3 -m src.visual_pilot.cli serve --port 8765` starts a local
 browser: per-disease pages with section tabs (subsections such as SLE skin
 groups or AS stages), sorted classic → variant → atypical then confidence.
-JSON API under `/api/...`, images under `/media/...` (panels/thumbs/figures
-only). Includes an SLE↔DM skin comparison page and a Pediatric view.
+JSON API under `/api/...`; images load from PMC S3 with the crop box drawn
+in the page, exactly as on the static site. Includes an SLE↔DM skin comparison page and a Pediatric view.
 Unapproved proposed findings are filtered out of every response.
 
 To audit an existing library against the publication policy (no collages,
@@ -374,8 +371,8 @@ selected gallery, not by retrieved articles or stored rows.
                  hash makes reruns free
   Licensed       commercial-use gate at article AND figure level;
                  ND figures stored whole, never cropped
-  Memory-only    JATS XML and image bytes are never written to disk
-                 until the store stage saves approved panels
+  Memory-only    JATS XML and image bytes are never written to disk;
+                 pages stream images from PMC S3
 ```
 
 ## Repository layout
@@ -434,9 +431,6 @@ cp env.example .env   # fill in OPENROUTER_API_KEY (discovery needs no key)
 ```
 
 The default models (`stealth/space-bunny-alpha` on OpenRouter) are free.
-Store `VP_DATA_DIR` on an APFS or other small-block filesystem: on an exFAT
-drive with 128 KB clusters, every thumbnail and its macOS `._` companion file
-take a full cluster, inflating the library about 8×.
 
 ## Usage
 

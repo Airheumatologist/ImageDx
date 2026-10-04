@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from PIL import Image
-
-from . import config, curation, db, demographics, diseases, jats, pair_terms, pmc, source_quality
+from . import curation, db, demographics, diseases, jats, pair_terms, pmc, source_quality
 
 
 def finding_terms(rows) -> dict[str, list[str]]:
@@ -174,29 +170,9 @@ def panel_eligibility(
         valid_size = False
     if not valid_size:
         reject("invalid stored image dimensions")
-    root = Path(panel.get("_data_root") or config.data_dir()).resolve()
-    for field in ("image_path", "thumb_path"):
-        raw = panel.get(field)
-        if not raw:
-            reject(f"missing {field}")
-            continue
-        path = (root / raw).resolve()
-        if not path.is_relative_to(root):
-            reject(f"unavailable {field}: path outside data directory")
-            continue
-        if not path.is_file():
-            reject(f"missing {field}: {raw}")
-            continue
-        try:
-            with Image.open(path) as image:
-                if min(image.size) <= 0:
-                    reject(f"invalid {field} image dimensions")
-                if field == "image_path" and valid_size:
-                    if image.size != (int(panel["width"]), int(panel["height"])):
-                        reject("stored image dimensions do not match file")
-                image.verify()
-        except (OSError, ValueError, SyntaxError):
-            reject(f"unreadable {field}: {raw}")
+    # Pages draw the panel from the figure's public PMC S3 image.
+    if not figure.get("image_url"):
+        reject("missing figure image_url")
     eligible = not reasons
     return {
         "eligible": eligible,
@@ -206,11 +182,8 @@ def panel_eligibility(
     }
 
 
-def panel_records(conn, disease_key: str | None = None, *, data_root=None) -> list[dict]:
+def panel_records(conn, disease_key: str | None = None) -> list[dict]:
     """Return eligible and failed rows together for non-publication diagnostics."""
-    if data_root is None:
-        paths = [row[2] for row in conn.execute("PRAGMA database_list") if row[1] == "main"]
-        data_root = Path(paths[0]).parent if paths and paths[0] else config.data_dir()
     vocab = [dict(row) for row in conn.execute("SELECT * FROM findings_vocab WHERE approved=1")]
     terms = finding_terms(vocab)
     categories = {row["finding_key"]: row["category"] for row in vocab}
@@ -236,7 +209,6 @@ def panel_records(conn, disease_key: str | None = None, *, data_root=None) -> li
     out = []
     for row in rows:
         panel = dict(row)
-        panel["_data_root"] = str(data_root)
         panel["_audit_excluded"] = (
             panel["panel_id"] in exclusions
             and exclusions[panel["panel_id"]] == (panel.get("sha256") or "")

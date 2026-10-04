@@ -172,30 +172,8 @@ def test_treatment_images_get_a_reversible_exclusion(tmp_path, monkeypatch):
         finally:
             c.close()
 
-    c = make_db(tmp_path)
-    image = tmp_path / c.execute("SELECT image_path FROM panels").fetchone()[0]
-    c.close()
-    assert image.is_file()
     assert describe.run(_args()) == 0
     assert published() == []
-    assert not image.exists()
     flag["treatment"] = False
     assert describe.run(_args(force=True)) == 0
     assert published() == ["p1"]
-
-
-def test_purge_keeps_files_a_published_panel_shares(tmp_path):
-    conn = _seed(tmp_path)
-    add_figure(conn, "PMC1:fig2", "PMC1", caption=CAPTION)
-    add_panel(conn, tmp_path, "p2", "PMC1:fig2", "PMC1", "gout",
-              findings=("tophus",), sha256="sha-p1")
-    shared = conn.execute("SELECT image_path FROM panels WHERE panel_id='p1'").fetchone()[0]
-    conn.execute("UPDATE panels SET image_path = ? WHERE panel_id = 'p2'", (shared,))
-    conn.execute(
-        "INSERT INTO panel_curation (panel_id, image_sha256, decision, reason, policy_version) "
-        "VALUES ('p1', 'sha-p1', 'exclude', 'treatment_related', 'test')"
-    )
-    conn.commit()
-    describe.purge_files(conn, tmp_path, ["p1"])
-    assert (tmp_path / shared).is_file()
-    conn.close()

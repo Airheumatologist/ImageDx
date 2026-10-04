@@ -255,7 +255,11 @@ def representative_summary(conn) -> dict:
 # Spot-check sheets
 # ---------------------------------------------------------------------------
 def _spot_accepted_html(conn) -> str:
-    panels = _rows(conn, "SELECT * FROM published_panels ORDER BY disease_key, panel_id")
+    panels = _rows(
+        conn,
+        "SELECT pp.*, f.image_url FROM published_panels pp "
+        "LEFT JOIN figures f USING(figure_id) ORDER BY pp.disease_key, pp.panel_id",
+    )
     cards = []
     for p in panels:
         findings = ", ".join(
@@ -264,7 +268,7 @@ def _spot_accepted_html(conn) -> str:
         )
         cards.append(
             "<div class='card'>"
-            f"<img src='../{p['thumb_path'] or p['image_path']}' loading='lazy'>"
+            f"<img src='{html.escape(p['image_url'] or '')}' loading='lazy'>"
             f"<div><b>{html.escape(p['panel_id'])}</b> "
             f"<i>{html.escape(p['disease_key'] or '')}/{html.escape(p['subtype'] or '')}</i><br>"
             f"{html.escape(p['modality'] or '')} · {html.escape(p['body_site'] or '')} · "
