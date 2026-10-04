@@ -67,7 +67,8 @@ def test_topic_vocab_post_validate_drops_generic_terms():
              "synonyms": ["dissecting aortic aneurysm"]}
     parsed = {"findings": [
         {"key": "Intimal flap", "label": "Intimal flap on CT", "category": "ct",
-         "synonyms": ["dissection flap"], "caption_terms": ["Intimal flap", "flap", "mass"]},
+         "synonyms": ["dissection flap"],
+         "caption_terms": ["Intimal flap", "flap", "mass", "contrast-enhanced CT", "T2-weighted MRI"]},
         {"key": "rash", "label": "Rash", "category": "skin", "synonyms": [],
          "caption_terms": ["rash", "acute aortic dissection"]},
         {"key": "x", "label": "Bad category", "category": "photo", "synonyms": [],

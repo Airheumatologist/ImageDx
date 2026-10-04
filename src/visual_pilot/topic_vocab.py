@@ -80,6 +80,21 @@ _TOO_GENERIC = frozenset({
     "mass", "masses", "opacity", "opacities", "swelling", "lump", "tumor",
     "tumour", "deformity", "image", "finding", "lesion", "lesions", "rash",
 })
+# Terms that name only the modality or technique ("t2 weighted mri", "slit
+# lamp examination", "direct immunofluorescence"): any figure of that kind
+# would match them, whatever it shows.
+_MODALITY_ONLY = re.compile(
+    r"^((axial|coronal|sagittal|contrast enhanced|non contrast|plain|chest|abdominal|cranial|brain|"
+    r"spine|high resolution|t1|t2|t1 weighted|t2 weighted|flair|diffusion weighted|gadolinium enhanced|"
+    r"fat suppressed|stir|pet|fdg pet|pet ct|fdg|ct|mri|mr|x ray|radiograph|ultrasound|doppler|"
+    r"color doppler|slit lamp|fundus|oct|optical coherence tomography|dermoscopy|dermoscopic|endoscopic|"
+    r"endoscopy|colonoscopy|biopsy|skin biopsy|renal biopsy|liver biopsy|bone marrow|bone marrow biopsy|"
+    r"muscle biopsy|h e|hematoxylin and eosin|immunohistochemistry|immunofluorescence|"
+    r"direct immunofluorescence|electron microscopy|histopathology|histology|photograph|"
+    r"clinical photograph|echocardiography|echocardiogram|transthoracic|hrct|ct scan|mri scan)\s*)+"
+    r"(image|images|imaging|scan|examination|exam|view|appearance|findings|weighted|sequence|"
+    r"staining|stain|photograph|photo|histology)?$"
+)
 
 
 def _slug(value: str) -> str:
@@ -128,6 +143,7 @@ def post_validate(topic: dict, parsed: dict, meta: dict | None = None) -> list[d
                 or (" " not in term and len(term) < MIN_SINGLE_WORD)
                 or term in pair_terms._GENERIC_TERMS
                 or term in _TOO_GENERIC
+                or _MODALITY_ONLY.match(term)
                 or term in disease_words
                 or term in seen_terms
                 or term in terms
