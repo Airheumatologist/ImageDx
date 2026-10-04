@@ -277,7 +277,7 @@ def test_snapshot_reports_distinct_metrics_and_lane_fields(tmp_path):
     conn.close()
 
 
-def test_snapshot_preserves_all_rows_and_files_for_25_images(tmp_path):
+def test_snapshot_preserves_all_rows_for_25_images(tmp_path):
     conn = make_db(tmp_path)
     add_disease(conn, "sle", "Systemic lupus erythematosus")
     add_finding(conn, "malar_rash", ("sle",), label="Malar rash")
@@ -301,8 +301,6 @@ def test_snapshot_preserves_all_rows_and_files_for_25_images(tmp_path):
     assert record["tier"] == "full"
     rows = conn.execute("SELECT COUNT(*) n FROM panels").fetchone()["n"]
     assert rows == 25
-    files = list((tmp_path / "panels").glob("*.png"))
-    assert len(files) == 25
     conn.close()
 
 

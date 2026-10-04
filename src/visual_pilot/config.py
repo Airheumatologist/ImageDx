@@ -75,14 +75,6 @@ VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
-# Stage-5 storage encoding. Panels are written lossy (WebP q90 by default)
-# capped at VP_PANEL_MAX_EDGE; the stored "original" is a display copy capped
-# at VP_ORIGINAL_MAX_EDGE (raw bytes stay refetchable from the PMC S3 bundle).
-# VP_PANEL_FORMAT=png keeps lossless archival crops at much larger file sizes.
-VP_PANEL_FORMAT = os.getenv("VP_PANEL_FORMAT", "webp").strip().lower()
-VP_PANEL_QUALITY = max(1, min(100, _env_int("VP_PANEL_QUALITY", 90)))
-VP_PANEL_MAX_EDGE = max(0, _env_int("VP_PANEL_MAX_EDGE", 2048))
-VP_ORIGINAL_MAX_EDGE = max(0, _env_int("VP_ORIGINAL_MAX_EDGE", 2048))
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Figures per P2 caption-triage batch. Smaller batches finish sooner (the

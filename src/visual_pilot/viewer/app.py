@@ -1,8 +1,8 @@
 """Stage 8: FastAPI viewer for the Visual Findings Library pilot.
 
 Pages are plain HTML/JS (no build step) served from ``viewer/static``; JSON
-comes from ``/api/...``; images come from ``/media/...`` which only serves
-paths under panels/, thumbs/ and figures/ inside the pilot data dir.
+comes from ``/api/...``; images load straight from each figure's public URL in
+the PMC open-data S3 bucket, with the panel's crop box drawn in the browser.
 
 Tab membership lives in ``TABS`` below: an ordered per-disease mapping from
 modality / body_site / finding keys / finding categories to a tab, evaluated
@@ -19,14 +19,13 @@ import re
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import config, coverage, db, demographics, gallery, publication, representatives, source_quality
+from .. import config, coverage, db, demographics, gallery, publication, representatives, source_quality, store
 from ..diseases import load_diseases
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-MEDIA_PREFIXES = {"panels", "thumbs", "figures"}
 
 TYPICALITY_ORDER = {"classic": 0, "variant": 1, "atypical": 2}
 
@@ -610,7 +609,6 @@ def _panel_json(
                     "evidence": f.get("evidence", "") if isinstance(f, dict) else "",
                 }
             )
-    thumb = row["thumb_path"] or row["image_path"]
     mentions = db.from_json(row["in_text_mentions_json"], [])
     caption = (row["figure_caption"] or "").strip()
     source_text = " ".join(" ".join([caption, *[str(m) for m in mentions]]).casefold().split())
@@ -724,8 +722,9 @@ def _panel_json(
         "source_variant": source_variant,
         "source_variants": [source_variant],
         "_routing_findings": routing_findings,
-        "image": f"/media/{row['image_path']}" if row["image_path"] else None,
-        "thumb": f"/media/{thumb}" if thumb else None,
+        "image": row["figure_image_url"],
+        "thumb": row["figure_image_url"],
+        "crop": store.crop_box(db.from_json(row["bbox_json"], None), row["crop_mode"]),
     }
 
 
@@ -843,19 +842,19 @@ def _is_pediatric(age_group) -> bool:
     return _norm(age_group) in {"child", "children", "pediatric", "paediatric", "infant", "adolescent"}
 
 
-def _gallery_inputs(conn, disease: str, data_root: Path):
+def _gallery_inputs(conn, disease: str):
     """One frozen read of C1 eligibility, the C2 snapshot, and join rows.
 
     ``panel_records`` carries the shared eligibility verdicts (audit
     exclusions, licensing, source type, source-supported age, disease
     attribution, source-supported finding labels, mixed-plate rules and
-    file/dimension availability). ``snapshot`` holds the per-pair gallery
+    image/dimension availability). ``snapshot`` holds the per-pair gallery
     selections. ``rows`` maps panel_id to the joined panels+figures+articles
     row that ``_panel_json`` serializes. Every consumer in a request draws
     from the same frozen snapshot so panels, tabs and reserves agree.
     """
     with coverage.consistent_read(conn):
-        records = publication.panel_records(conn, disease, data_root=data_root)
+        records = publication.panel_records(conn, disease)
         snapshot = coverage.snapshot(
             conn, gallery.select_gallery, disease, panels=records
         )
@@ -1062,7 +1061,7 @@ def _query_panels(
     sql = (
         "SELECT p.*, a.doi, f.label AS figure_label, f.caption AS figure_caption, "
         "f.in_text_mentions_json, f.effective_license AS figure_license, f.case_age_text, "
-        "f.triage_json AS figure_triage_json, "
+        "f.triage_json AS figure_triage_json, f.image_url AS figure_image_url, "
         "f.vision_json AS figure_vision_json, "
         "a.title AS article_title, a.license_url AS article_license_url, a.country AS article_country, "
         "a.publication_types_json AS article_publication_types "
@@ -1150,7 +1149,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             published: dict[str, dict[str, int]] = {}
             for (disease,) in c.execute("SELECT disease_key FROM diseases ORDER BY disease_key"):
                 with coverage.consistent_read(c):
-                    records, snapshot, rows = _gallery_inputs(c, disease, data_root)
+                    records, snapshot, rows = _gallery_inputs(c, disease)
                 for pid in _selected_panel_ids(snapshot, disease, None, records):
                     if pid in rows:
                         counts = published.setdefault(rows[pid]["pmcid"], {})
@@ -1212,7 +1211,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             labels = _labels(c)
             terms = _finding_terms(c)
             with coverage.consistent_read(c):
-                records, snapshot, rows = _gallery_inputs(c, key, data_root)
+                records, snapshot, rows = _gallery_inputs(c, key)
                 eye_evidence = _eye_evidence(c, key)
             # Tab availability mirrors the default gallery: the union of all
             # pairs' selected images plus combined plates — never reserves.
@@ -1288,7 +1287,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             # One consistent read covers eligibility, selection, the joined
             # rows, and the primary mapping so they can never disagree.
             with coverage.consistent_read(c):
-                records, snapshot, rows = _gallery_inputs(c, key, data_root)
+                records, snapshot, rows = _gallery_inputs(c, key)
                 representative_map = representatives.mapping_for_disease(
                     c,
                     key,
@@ -1368,7 +1367,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             }
             if finding and finding not in approved:
                 return empty
-            records, snapshot, rows = _gallery_inputs(c, key, data_root)
+            records, snapshot, rows = _gallery_inputs(c, key)
             findings_map = snapshot.get(key, {})
             if finding:
                 findings_map = {finding: findings_map.get(finding) or {}}
@@ -1463,9 +1462,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                     approved = _approved_keys(c, spec["disease"])
                     categories = _categories(c)
                     terms = _finding_terms(c)
-                    records, snapshot, rows = _gallery_inputs(
-                        c, spec["disease"], data_root
-                    )
+                    records, snapshot, rows = _gallery_inputs(c, spec["disease"])
                     # Each side draws from the same frozen selection as the
                     # library views: the named pair's gallery, the union of
                     # the named pairs' galleries, or the default union plus
@@ -1514,24 +1511,6 @@ def create_app(data_dir: str | None = None) -> FastAPI:
             return out
         finally:
             c.close()
-
-    @app.get("/media/{path:path}")
-    def media(path: str):
-        root = data_root
-        target = (root / path).resolve()
-        # Path traversal guard: must resolve inside data_dir AND under an
-        # allowed image subdirectory.
-        if not str(target).startswith(str(root) + "/"):
-            raise HTTPException(403, "forbidden")
-        try:
-            rel = target.relative_to(root)
-        except ValueError:
-            raise HTTPException(403, "forbidden") from None
-        if rel.parts[0] not in MEDIA_PREFIXES:
-            raise HTTPException(403, "forbidden")
-        if not target.is_file():
-            raise HTTPException(404, "not found")
-        return FileResponse(target)
 
     return app
 

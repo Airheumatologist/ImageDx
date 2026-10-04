@@ -1,14 +1,13 @@
-"""Stage 6: crop panels, write image files, insert panel rows.
+"""Stage 6: measure panel crops and insert panel rows. No image files are written.
 
-For each ``vision_accepted`` figure the original bytes come from the
-judge->store handoff cache (contract C5, ``originals.take``) or are
-refetched into memory; a display copy capped at ``VP_ORIGINAL_MAX_EDGE``
-is written to ``figures/{pmcid}/{stem}.webp`` (raw bytes stay refetchable
-from the PMC S3 bundle) and every included panel is cropped from its
-normalized bbox (2% padding of the original size, clamped), capped at
-``VP_PANEL_MAX_EDGE`` and encoded per ``VP_PANEL_FORMAT``/``VP_PANEL_QUALITY``
-(default WebP q90) to ``panels/{disease}/{modality}/{panel_id}.{ext}``
-with a 400px WebP thumb in ``thumbs/``. ``whole_figure`` crop mode applies
+Pages show every panel straight from its figure in the public PMC open-data
+S3 bucket (``figures.image_url``) and draw the crop box in the browser
+(``crop_box``). For each ``vision_accepted`` figure the original bytes come
+from the judge->store handoff cache (contract C5, ``originals.take``) or are
+refetched into memory, only to record each included panel's crop size in
+pixels and a sha256 of its cropped pixels; the bytes are then dropped.
+Each panel is cut from its normalized bbox (2% padding of the original
+size, clamped). ``whole_figure`` crop mode applies
 to ND licenses, missing or tiny (<3%) bboxes and >30% overlaps between
 included panels, and to ``vision_json["plate"]`` — the v5 whole-figure
 record for a publishable single-disease compound figure, stored once with
@@ -21,13 +20,13 @@ Attribution (contract C6) is built from the persisted
 ``articles.authors_json``/``author_count``/``journal_name``; a hinted JATS
 refetch is used only when those fields are missing.
 
-Exact dedup: panels whose saved image sha256 already exists reuse the
-earlier file but keep their own row, attribution and license. Proposed findings
+Exact dedup: panels whose cropped-pixel sha256 already exists are counted
+as duplicates but keep their own row, attribution and license. Proposed findings
 upsert into findings_vocab exactly once per figure (the vision_accepted ->
 stored transition is the only place they are counted).
 
-Scheduling: fetch + decode + crop + PNG/WebP encoding run on a
-``VP_FETCH_CONCURRENCY`` worker pool; file writes, the sha256 dedup check,
+Scheduling: fetch + decode + crop hashing run on a
+``VP_FETCH_CONCURRENCY`` worker pool; the sha256 dedup check,
 panel inserts, proposal upserts and the ``vision_accepted -> stored`` flip
 are applied on the main thread in deterministic figure order, one
 transaction per figure — identical results to the sequential path.
@@ -40,7 +39,6 @@ import io
 import re
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
-from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
@@ -50,7 +48,6 @@ PILOT_KEYS = set(diseases.DISEASE_KEYS)
 PAD_FRAC = 0.02
 MIN_BBOX_AREA = 0.03
 OVERLAP_MAX = 0.30
-THUMB_EDGE = 400
 
 _LICENSE_NAMES = {
     "cc0": "CC0",
@@ -101,6 +98,17 @@ def bbox_to_pixels(
         min(width, int(round(x1 * width + pad_x))),
         min(height, int(round(y1 * height + pad_y))),
     )
+
+
+def crop_box(bbox, crop_mode: str | None) -> list[float] | None:
+    """Normalized, padded [x0, y0, x1, y1] the page draws from the figure;
+    None shows the whole figure."""
+    if crop_mode == "whole_figure" or not bbox or len(bbox) != 4 or list(bbox) == [0, 0, 1, 1]:
+        return None
+    return [
+        round(max(0.0, bbox[0] - PAD_FRAC), 4), round(max(0.0, bbox[1] - PAD_FRAC), 4),
+        round(min(1.0, bbox[2] + PAD_FRAC), 4), round(min(1.0, bbox[3] + PAD_FRAC), 4),
+    ]
 
 
 def bbox_area(bbox: list[float]) -> float:
@@ -198,70 +206,16 @@ def slugify(term: str) -> str:
     return re.sub(r"_+", "_", re.sub(r"[^a-z0-9]+", "_", term.strip().lower())).strip("_")
 
 
-def _cap_edge(img: Image.Image, max_edge: int) -> Image.Image:
-    """Return ``img`` downscaled so the long edge is <= ``max_edge``
-    (0 disables). Returns the same object when no resize is needed."""
-    if max_edge and max(img.size) > max_edge:
-        scale = max_edge / max(img.size)
-        return img.resize(
-            (max(1, round(img.width * scale)), max(1, round(img.height * scale))),
-            Image.Resampling.LANCZOS,
-        )
-    return img
-
-
-_PANEL_ENCODINGS = {
-    "webp": (".webp", "WEBP"),
-    "jpeg": (".jpg", "JPEG"),
-    "png": (".png", "PNG"),
-}
-
-
-def _encode_panel(img: Image.Image) -> tuple[bytes, str]:
-    """(encoded_bytes, file_ext) for one panel per VP_PANEL_FORMAT/QUALITY."""
-    try:
-        ext, pil_fmt = _PANEL_ENCODINGS[config.VP_PANEL_FORMAT]
-    except KeyError:
-        raise ValueError(
-            f"VP_PANEL_FORMAT must be one of {sorted(_PANEL_ENCODINGS)}"
-        ) from None
-    buf = io.BytesIO()
-    if pil_fmt == "PNG":
-        img.save(buf, format="PNG", optimize=True)
-    elif pil_fmt == "JPEG":
-        img.save(buf, format="JPEG", quality=config.VP_PANEL_QUALITY,
-                 optimize=True, progressive=True)
-    else:
-        img.save(buf, format="WEBP", quality=config.VP_PANEL_QUALITY, method=6)
-    return buf.getvalue(), ext
+def _pixel_sha(img: Image.Image) -> str:
+    """sha256 of an image's decoded pixels and size (exact-duplicate key)."""
+    digest = hashlib.sha256(f"{img.mode}:{img.width}x{img.height}:".encode())
+    digest.update(img.tobytes())
+    return digest.hexdigest()
 
 
 # ---------------------------------------------------------------------------
 # Storage internals
 # ---------------------------------------------------------------------------
-def _original_basename(figure: dict) -> str:
-    name = PurePosixPath((figure.get("image_url") or "").split("?")[0]).name
-    return name or f"{figure['figure_id'].replace(':', '_')}.webp"
-
-
-def _encode_original(img: Image.Image, figure: dict) -> tuple[str, bytes]:
-    """(rel_path, file_bytes) for the stored figure original: a display copy
-    re-encoded as WebP capped at ``VP_ORIGINAL_MAX_EDGE``. The verbatim bytes
-    are never written to disk — they stay refetchable from the PMC S3 bundle
-    (``figures.sha256`` verifies the pixels on refetch)."""
-    buf = io.BytesIO()
-    _cap_edge(img, config.VP_ORIGINAL_MAX_EDGE).save(
-        buf, format="WEBP", quality=config.VP_PANEL_QUALITY, method=6
-    )
-    return original_rel_path(figure), buf.getvalue()
-
-
-def original_rel_path(figure: dict) -> str:
-    """Data-dir-relative path of a figure's stored display original."""
-    name = PurePosixPath(_original_basename(figure)).with_suffix(".webp").name
-    return f"figures/{figure['pmcid']}/{name}"
-
-
 def upsert_proposed(conn, term: str, disease_key: str, modality: str | None) -> bool:
     """One proposal upsert. Returns False when the slug is an approved key."""
     slug = slugify(term)
@@ -366,8 +320,21 @@ def _original_bytes(figure: dict) -> bytes:
     return data
 
 
+def _measure(figure: dict, panel: dict, crop: Image.Image, mode: str, label: str) -> dict:
+    pid = panel_id_for(figure["pmcid"], figure["figure_id"].split(":", 1)[1], label)
+    return {
+        "panel": panel,
+        "mode": mode,
+        "sha": _pixel_sha(crop),
+        "width": crop.width,
+        "height": crop.height,
+        "pid": pid,
+        "modality": panel.get("modality") or "other",
+    }
+
+
 def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
-    """Worker-side: resolve + verify original bytes, decode, crop and encode.
+    """Worker-side: resolve + verify original bytes, decode and measure crops.
 
     No DB access and no file writes — returns everything the main thread
     needs to apply the figure (``_apply_prepared``). ``attrib`` may carry a
@@ -379,11 +346,9 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
         with timing.inflight("store_pool"):
             original_bytes = _original_bytes(figure)
             img = Image.open(io.BytesIO(original_bytes)).convert("RGB")
-            original_file = _encode_original(img, figure)
 
             vision = db.from_json(figure["vision_json"], {}) or {}
             all_panels = vision.get("panels") or []
-            fig_xml_id = figure["figure_id"].split(":", 1)[1]
             license_mode = pmc.license_allows(figure["effective_license"])
 
             width, height = img.size
@@ -407,70 +372,21 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
                 crop = img if mode == "whole_figure" else img.crop(
                     bbox_to_pixels(panel["bbox"], width, height)
                 )
-                crop = _cap_edge(crop, config.VP_PANEL_MAX_EDGE)
-                img_bytes, img_ext = _encode_panel(crop)
-                thumb_io = io.BytesIO()
-                thumb = crop.copy()
-                thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
-                thumb.save(thumb_io, format="WEBP", quality=80, method=6)
-                pid = panel_id_for(
-                    figure["pmcid"], fig_xml_id, panel.get("panel_label") or "A"
-                )
-                modality = panel.get("modality") or "other"
-                panels.append(
-                    {
-                        "panel": panel,
-                        "mode": mode,
-                        "img_bytes": img_bytes,
-                        "thumb": thumb_io.getvalue(),
-                        "sha": hashlib.sha256(img_bytes).hexdigest(),
-                        "width": crop.width,
-                        "height": crop.height,
-                        "pid": pid,
-                        "modality": modality,
-                        "rel_img": f"panels/{panel['disease_key']}/{modality}/{pid}{img_ext}",
-                        "rel_thumb": f"thumbs/{pid}.webp",
-                    }
-                )
+                panels.append(_measure(figure, panel, crop, mode, panel.get("panel_label") or "A"))
             plate = vision.get("plate") or {}
             if plate.get("include"):
-                # Same write-boundary recheck as panels, then store the whole
-                # figure once — capped, encoded and thumbed like a panel.
+                # Same write-boundary recheck as panels; the plate is the
+                # whole figure, stored once.
                 reason = curation.exclusion_reason(
                     plate, figure, article_row, image_size=(width, height)
                 )
                 if reason:
                     curation_exclusions.append(("plate", reason))
                 else:
-                    crop = _cap_edge(img, config.VP_PANEL_MAX_EDGE)
-                    img_bytes, img_ext = _encode_panel(crop)
-                    thumb_io = io.BytesIO()
-                    thumb = crop.copy()
-                    thumb.thumbnail((THUMB_EDGE, THUMB_EDGE))
-                    thumb.save(thumb_io, format="WEBP", quality=80, method=6)
-                    pid = panel_id_for(
-                        figure["pmcid"], fig_xml_id, curation.PLATE_LABEL
-                    )
-                    modality = plate.get("modality") or "other"
-                    panels.append(
-                        {
-                            "panel": plate,
-                            "mode": "whole_figure",
-                            "img_bytes": img_bytes,
-                            "thumb": thumb_io.getvalue(),
-                            "sha": hashlib.sha256(img_bytes).hexdigest(),
-                            "width": crop.width,
-                            "height": crop.height,
-                            "pid": pid,
-                            "modality": modality,
-                            "rel_img": f"panels/{plate['disease_key']}/{modality}/{pid}{img_ext}",
-                            "rel_thumb": f"thumbs/{pid}.webp",
-                        }
-                    )
+                    panels.append(_measure(figure, plate, img, "whole_figure", curation.PLATE_LABEL))
             if attrib is None:
                 attrib = _attribution_source(article_row)
             return {
-                "original_file": original_file,
                 "panels": panels,
                 "curation_exclusions": curation_exclusions,
                 "attrib": attrib,
@@ -479,16 +395,10 @@ def _prepare_figure(figure: dict, article_row, attrib=None) -> dict:
         timing.record("store_prepare", time.monotonic() - started)
 
 
-def _write_file(data_dir: Path, rel: str, data: bytes) -> None:
-    path = data_dir / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
+def _apply_prepared(conn, figure: dict, article, prepared: dict) -> dict:
+    """Main thread: dedup-check and insert panel rows for one figure.
 
-
-def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path) -> dict:
-    """Main thread: write files, dedup-check, insert panel rows for one figure.
-
-    Must run under ``with conn:`` so file writes, upserts and the caller's
+    Must run under ``with conn:`` so panel rows, upserts and the caller's
     status flip commit or roll back together. Dedup sees every panel row
     inserted earlier in the run because callers apply in figure order.
     """
@@ -535,29 +445,19 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
              "excluded": len(prepared.get("curation_exclusions", []))}
     seen_sha: set[str] = set()
 
-    rel_orig, orig_data = prepared["original_file"]
-    if prepared["panels"]:
-        _write_file(data_dir, rel_orig, orig_data)
-
     for item in prepared["panels"]:
         panel = item["panel"]
         mode = item["mode"]
         if mode == "whole_figure":
             stats["whole_figure"] += 1
         sha = item["sha"]
-        rel_img, rel_thumb = item["rel_img"], item["rel_thumb"]
 
         existing = conn.execute(
-            "SELECT image_path, thumb_path FROM panels WHERE sha256 = ?", (sha,)
+            "SELECT 1 FROM panels WHERE sha256 = ? AND panel_id != ?", (sha, item["pid"])
         ).fetchone()
         if existing is not None or sha in seen_sha:
-            if existing is not None:
-                rel_img, rel_thumb = existing["image_path"], existing["thumb_path"]
             stats["dedup"] += 1
-        else:
-            _write_file(data_dir, rel_img, item["img_bytes"])
-            _write_file(data_dir, rel_thumb, item["thumb"])
-            seen_sha.add(sha)
+        seen_sha.add(sha)
 
         findings = [
             {"finding_key": f["finding_key"], "evidence": f.get("evidence", "")}
@@ -588,11 +488,11 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
             "disease_key, subtype, modality, body_site, findings_json, typicality, "
             "stage, age_group, skin_tone, stated_ethnicity, stated_ethnicity_quote, "
             "study_region, annotations_present, bbox_json, crop_mode, confidence, "
-            "rationale, image_path, thumb_path, width, height, sha256, "
+            "rationale, width, height, sha256, "
             "attribution_text, license_code, license_url, source_url, "
             "plate_kind, plate_findings_json) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 item["pid"],
                 figure["figure_id"],
@@ -615,8 +515,6 @@ def _apply_prepared(conn, figure: dict, article, prepared: dict, data_dir: Path)
                 mode,
                 panel.get("confidence"),
                 panel.get("rationale"),
-                rel_img,
-                rel_thumb,
                 item["width"],
                 item["height"],
                 sha,
@@ -711,7 +609,6 @@ def refresh_panel_metadata(conn) -> dict:
 # ---------------------------------------------------------------------------
 def run(args) -> int:
     conn = db.init_db()
-    data_dir = config.data_dir()
 
     if getattr(args, "refresh", False):
         stats = refresh_panel_metadata(conn)
@@ -758,11 +655,11 @@ def run(args) -> int:
         print(f"{fig['figure_id']}: store error {exc}")
         conn.commit()
 
-    # W7: fetch + decode + crop + WebP encode run on a VP_FETCH_CONCURRENCY pool
+    # W7: fetch + decode + crop hashing run on a VP_FETCH_CONCURRENCY pool
     # with bounded lookahead (2x workers); results are applied on this thread
     # strictly in figure order — one transaction per figure — so the sha256
     # dedup check sees panels inserted earlier in the same run and the whole
-    # stage is byte-identical to the sequential implementation.
+    # stage is identical to the sequential implementation.
     workers = max(1, int(getattr(config, "VP_FETCH_CONCURRENCY", 8)))
     ahead = workers * 2
     pending: dict[int, Future | Exception] = {}
@@ -797,13 +694,13 @@ def run(args) -> int:
                 _store_error(figure, outcome)
                 continue
             try:
-                # One transaction per figure: file writes, panel rows,
+                # One transaction per figure: panel rows,
                 # proposed-finding upserts and the status flip commit together
                 # or roll back together, so a rerun never double-counts
                 # proposals.
                 with conn:
                     stats = _apply_prepared(
-                        conn, figure, article_rows[figure["pmcid"]], outcome, data_dir
+                        conn, figure, article_rows[figure["pmcid"]], outcome
                     )
                     final_status = (
                         "vision_rejected"

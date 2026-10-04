@@ -11,18 +11,16 @@ one call per panel, cached in ``llm_calls``.
 
 Treatment images (before/after, drug response, postoperative views) are
 kept out of the library: P5 flags them and the panel gets a reversible
-``panel_curation`` exclusion with reason ``treatment_related``; its crop,
-thumbnail and figure original are deleted unless a published panel still
-uses them (rows stay, so the figure is not stored again). Caption triage
+``panel_curation`` exclusion with reason ``treatment_related`` (rows stay,
+so the figure is not stored again). Caption triage
 (P2) drops treatment figures before download, so this is a safety net.
 """
 
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
-from . import config, db, llm, prompts, store
+from . import config, db, llm, prompts
 from .diseases import load_diseases
 
 MAX_MENTIONS = 3
@@ -84,38 +82,6 @@ def _section_choice(parsed: dict, panel: dict, sections: list[dict]) -> tuple[st
         keys = {f.get("finding_key") for f in db.from_json(panel.get("findings_json"), []) or [] if isinstance(f, dict)}
         allowed = sorted(k for k in keys if k)
     return section["key"], subsection if subsection in allowed else None
-
-
-def purge_files(conn, data_dir: Path, panel_ids: list[str]) -> int:
-    """Delete stored files of excluded panels that no published panel uses.
-
-    Crops are deduplicated by sha256 and a figure original serves all its
-    panels, so a file is removed only when no published panel references it.
-    """
-    if not panel_ids:
-        return 0
-    keep = set()
-    for r in conn.execute(
-        "SELECT pp.image_path, pp.thumb_path, f.pmcid, f.figure_id, f.image_url "
-        "FROM published_panels pp JOIN figures f USING(figure_id)"
-    ):
-        keep.update({r["image_path"], r["thumb_path"], store.original_rel_path(dict(r))})
-    marks = ",".join("?" for _ in panel_ids)
-    doomed = set()
-    for r in conn.execute(
-        "SELECT p.image_path, p.thumb_path, f.pmcid, f.figure_id, f.image_url "
-        f"FROM panels p JOIN figures f USING(figure_id) WHERE p.panel_id IN ({marks})",
-        panel_ids,
-    ):
-        doomed.update({r["image_path"], r["thumb_path"], store.original_rel_path(dict(r))})
-    removed = 0
-    for rel in sorted(p for p in doomed - keep if p):
-        path = data_dir / rel
-        for target in (path, path.with_name("._" + path.name)):  # exFAT/AppleDouble twin
-            if target.is_file():
-                target.unlink()
-                removed += target == path
-    return removed
 
 
 def _panels(conn, args) -> list[dict]:
@@ -213,12 +179,10 @@ def run(args) -> int:
                         (panel["panel_id"], TREATMENT_REASON),
                     )
             written += 1
-    removed = purge_files(conn, config.data_dir(), excluded)
     if budget_hit:
         print(f"LLM budget exhausted (${client.spent_usd:.4f}); stopping cleanly. Rerun to resume.")
     print(
-        f"describe: {written} written, {len(excluded)} treatment image(s) excluded "
-        f"({removed} file(s) deleted), "
+        f"describe: {written} written, {len(excluded)} treatment image(s) excluded, "
         f"{errors} error(s), spend=${client.spent_usd:.4f}"
     )
     conn.close()

@@ -133,7 +133,7 @@ def test_reserves_inspection_and_default_exclusion(tmp_path):
         assert entry["reserve"] is True
         assert entry["finding_key"] == "malar_rash"
         assert entry["selection_reason"]["status"] == "gallery_full"
-        assert entry["image"].startswith("/media/panels/")
+        assert entry["image"].startswith("https://pmc-oa-opendata.s3.amazonaws.com/")
     # Reserves never leak into the default or filtered gallery.
     assert not reserve_ids & _panel_ids(default)
     filtered = client.get(
@@ -159,11 +159,11 @@ def test_ineligible_panels_never_reach_gallery_or_reserves(tmp_path):
         "INSERT INTO panel_curation(panel_id,image_sha256,decision,reason,"
         "policy_version) VALUES('px','sha-x','exclude','audit','v1')"
     )
-    # Missing image file.
-    add_figure(conn, "PMC1:figm", "PMC1")
+    # Missing figure image URL.
+    add_figure(conn, "PMC1:figm", "PMC1", image_url=None)
     add_panel(
         conn, tmp_path, "pm", "PMC1:figm", "PMC1", "sle",
-        findings=("malar_rash",), sha256="sha-m", image=False,
+        findings=("malar_rash",), sha256="sha-m",
     )
     conn.commit()
     conn.close()
