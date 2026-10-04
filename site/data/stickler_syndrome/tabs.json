@@ -1,1 +1,1 @@
-[]
+[{"key":"appearance","label":"Clinical appearance","group_by":null,"group_order":null,"skin_tone_filter":false,"cross_cutting":false,"evidence_only":false},{"key":"pediatric","label":"Pediatric","group_by":null,"group_order":null,"skin_tone_filter":false,"cross_cutting":true,"evidence_only":false}]
