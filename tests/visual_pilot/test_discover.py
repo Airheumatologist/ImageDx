@@ -157,6 +157,32 @@ def test_discover_queues_only_caption_matched_figures(tmp_path, monkeypatch):
     conn.close()
 
 
+def test_discover_holds_no_write_transaction_while_fetching(tmp_path, monkeypatch):
+    # Search attempts were inserted before the article fetch, so the write
+    # lock was held across network calls and the judge thread timed out.
+    conn = make_db(tmp_path)
+    add_disease(conn, "sle", "Systemic lupus erythematosus")
+    add_finding(conn, "malar_rash", ("sle",), label="Malar rash", synonyms=("butterfly rash",))
+    conn.commit()
+    in_transaction = []
+
+    def fake_fetch(pmcid):
+        in_transaction.append(conn.in_transaction)
+        return _Bundle(), _parsed(["Butterfly rash."])
+
+    monkeypatch.setattr(europepmc, "search", lambda query, limit=100, page_size=100: (
+        1, [_hit("PMC1", abstract="We report a woman with SLE.")]))
+    monkeypatch.setattr(discover, "_fetch", fake_fetch)
+
+    stats = discover.discover(conn, ["sle"], per_pair=5, target=10, log=lambda *_: None)
+
+    assert stats["pmcids"] == ["PMC1"]
+    assert in_transaction == [False]
+    assert conn.execute("SELECT COUNT(*) FROM pair_search_attempts").fetchone()[0] > 0
+    assert not conn.in_transaction
+    conn.close()
+
+
 def test_case_age_text_only_for_case_reports():
     parsed = _parsed([], sections=[("Case presentation", "A 9-year-old boy presented."),
                                    ("Discussion", "Adults aged 40 years differ.")])

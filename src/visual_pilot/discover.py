@@ -337,10 +337,19 @@ def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
     return pending
 
 
-def _ingest(conn, pool, disease_key: str, finding_key: str, picked, pass_name: str,
+def _fetch_all(pool, picked) -> list:
+    """Fetch and parse picked hits; an exception stands in for a failed one.
+
+    Callers fetch before their first write: a write opens a transaction, and
+    holding it across these network calls locks out the other pipeline
+    threads (judge saw "database is locked" when it outlasted busy_timeout).
+    """
+    return list(pool.map(_fetch, [hit.pmcid for hit, _ in picked]))
+
+
+def _ingest(conn, outcomes, disease_key: str, finding_key: str, picked, pass_name: str,
             match_terms: list[str], stats: dict) -> int:
-    """Fetch and parse picked hits; return the number of figures queued."""
-    outcomes = list(pool.map(_fetch, [hit.pmcid for hit, _ in picked]))
+    """Store fetched hits and commit; return the number of figures queued."""
     pending = 0
     for (hit, mode), outcome in zip(picked, outcomes):
         article = _upsert_article(conn, hit, disease_key, finding_key, mode, pass_name)
@@ -463,9 +472,10 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
         # Another pair may have ingested a hit since this search was submitted.
         picked = [(hit, mode) for hit, mode in picked if hit.pmcid not in mine]
         key = OVERVIEW_KEY if overview else finding["finding_key"]
+        outcomes = _fetch_all(pool, picked)
         _record_attempts(conn, disease_key, key, attempts)
         before = len(stats["pmcids"])
-        pending = _ingest(conn, pool, disease_key, key, picked, pass_name,
+        pending = _ingest(conn, outcomes, disease_key, key, picked, pass_name,
                           terms_for(disease_key), stats)
         new = stats["pmcids"][before:]
         mine.update(new)
@@ -554,10 +564,12 @@ def ingest_pmcids(conn, pmcids, disease_keys, log=print) -> dict:
             if not keys:
                 log(f"discover[fixed]: {pmcid}: names no configured disease")
                 continue
+            picked = [(hit, "fixed")]
+            outcomes = _fetch_all(pool, picked)
             for key in keys[1:]:
                 _upsert_article(conn, hit, key, FIXED_KEY, "fixed", "fixed")
             terms = list(dict.fromkeys(t for k in keys for t in match_terms[k]))
-            pending = _ingest(conn, pool, keys[0], FIXED_KEY, [(hit, "fixed")], "fixed",
+            pending = _ingest(conn, outcomes, keys[0], FIXED_KEY, picked, "fixed",
                               terms, stats)
             log(f"discover[fixed]: {pmcid} ({'+'.join(keys)}): {pending} figure(s) queued")
     return stats
