@@ -1,6 +1,7 @@
 """LLM prompts P2-P5 and their JSON schemas, verbatim from spec section 6.
 
-All calls: temperature 0, strict JSON-schema output, and each system prompt
+All calls use JSON mode with the schema appended to the system prompt
+(validated locally by llm.py), and each system prompt
 ends with "Return only JSON." Prompt versions feed the llm_calls cache hash —
 bump a PROMPT_VERSION whenever a prompt or its schema changes.
 """

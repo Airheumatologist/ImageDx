@@ -80,6 +80,10 @@ class BatchResult:
     error: Exception | None = None
 
 
+# Shared by every LLMClient so overlapping stages stay under the provider's
+# account-wide concurrency limit; held only while a request is open.
+_IN_FLIGHT = threading.BoundedSemaphore(config.VP_LLM_MAX_IN_FLIGHT)
+
 # Error classes worth a retry (rate limits, network blips, server 5xx).
 _TRANSIENT_ERRORS = (
     openai.RateLimitError,
@@ -410,12 +414,17 @@ class LLMClient:
             extra_kwargs["extra_body"] = {"reasoning_effort": effort}
 
         def _send():
+            with _IN_FLIGHT:
+                return _stream()
+
+        def _stream():
             # Streamed: the Step Plan gateway never answers non-streaming
             # requests that take more than a few seconds to generate.
             stream = self._openai().chat.completions.create(
                 model=model,
                 messages=messages,
-                temperature=0,
+                # No temperature=0: it doubles step-3.5-flash's reasoning
+                # length; the llm_calls cache keeps reruns reproducible.
                 response_format={"type": "json_object"},
                 stream=True,
                 stream_options={"include_usage": True},
