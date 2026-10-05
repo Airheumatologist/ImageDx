@@ -1,6 +1,6 @@
 import time
 
-import httpx
+from src.visual_pilot.llm import _openai_httpx as httpx
 import pytest
 
 from src.visual_pilot import llm

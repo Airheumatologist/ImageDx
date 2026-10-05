@@ -29,6 +29,11 @@ import jsonschema
 import openai
 import httpx
 
+try:  # openai>=3 sends through its own httpx fork; the transport must match.
+    import httpx2 as _openai_httpx
+except ImportError:  # pragma: no cover - older openai uses httpx itself
+    _openai_httpx = httpx
+
 from . import config, db, timing
 
 
@@ -82,14 +87,14 @@ _TRANSIENT_ERRORS = (
 )
 
 
-class _DeadlineStream(httpx.SyncByteStream):
+class _DeadlineStream(_openai_httpx.SyncByteStream):
     """Response body that raises ReadTimeout once a wall-clock deadline passes.
 
     httpx timeouts are per read, so OpenRouter's keep-alive whitespace on a
     stalled non-streaming request resets them indefinitely.
     """
 
-    def __init__(self, stream, request: httpx.Request, deadline: float) -> None:
+    def __init__(self, stream, request, deadline: float) -> None:
         self._stream = stream
         self._request = request
         self._deadline = deadline
@@ -97,7 +102,7 @@ class _DeadlineStream(httpx.SyncByteStream):
     def __iter__(self):
         for chunk in self._stream:
             if time.monotonic() > self._deadline:
-                raise httpx.ReadTimeout(
+                raise _openai_httpx.ReadTimeout(
                     "request exceeded VP_LLM_MAX_REQUEST_SECONDS",
                     request=self._request,
                 )
@@ -107,14 +112,14 @@ class _DeadlineStream(httpx.SyncByteStream):
         self._stream.close()
 
 
-class _DeadlineTransport(httpx.HTTPTransport):
+class _DeadlineTransport(_openai_httpx.HTTPTransport):
     """HTTP transport capping each request's total time at ``max_seconds``."""
 
     def __init__(self, max_seconds: float, **kwargs) -> None:
         super().__init__(**kwargs)
         self.max_seconds = max_seconds
 
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
+    def handle_request(self, request):
         deadline = time.monotonic() + self.max_seconds
         response = super().handle_request(request)
         response.stream = _DeadlineStream(response.stream, request, deadline)
