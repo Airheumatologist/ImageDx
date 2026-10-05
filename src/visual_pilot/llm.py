@@ -82,6 +82,45 @@ _TRANSIENT_ERRORS = (
 )
 
 
+class _DeadlineStream(httpx.SyncByteStream):
+    """Response body that raises ReadTimeout once a wall-clock deadline passes.
+
+    httpx timeouts are per read, so OpenRouter's keep-alive whitespace on a
+    stalled non-streaming request resets them indefinitely.
+    """
+
+    def __init__(self, stream, request: httpx.Request, deadline: float) -> None:
+        self._stream = stream
+        self._request = request
+        self._deadline = deadline
+
+    def __iter__(self):
+        for chunk in self._stream:
+            if time.monotonic() > self._deadline:
+                raise httpx.ReadTimeout(
+                    "request exceeded VP_LLM_MAX_REQUEST_SECONDS",
+                    request=self._request,
+                )
+            yield chunk
+
+    def close(self) -> None:
+        self._stream.close()
+
+
+class _DeadlineTransport(httpx.HTTPTransport):
+    """HTTP transport capping each request's total time at ``max_seconds``."""
+
+    def __init__(self, max_seconds: float, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.max_seconds = max_seconds
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        deadline = time.monotonic() + self.max_seconds
+        response = super().handle_request(request)
+        response.stream = _DeadlineStream(response.stream, request, deadline)
+        return response
+
+
 class LLMClient:
     """Provider-agnostic JSON caller with cache, ledger and budget guard."""
 
@@ -283,6 +322,11 @@ class LLMClient:
                 api_key=self.api_key, base_url=self.base_url,
                 timeout=self.timeout_seconds, max_retries=0,
                 default_headers=headers,
+                http_client=openai.DefaultHttpxClient(
+                    transport=_DeadlineTransport(
+                        config.VP_LLM_MAX_REQUEST_SECONDS
+                    ),
+                ),
             )
         return self._client
 

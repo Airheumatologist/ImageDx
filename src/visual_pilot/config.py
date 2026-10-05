@@ -77,6 +77,9 @@ VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
+# Wall-clock cap on one LLM request. The timeouts above are per read, which
+# OpenRouter keep-alive bytes reset forever on a stalled request.
+VP_LLM_MAX_REQUEST_SECONDS = max(1, _env_int("VP_LLM_MAX_REQUEST_SECONDS", 600))
 # Figures per P2 caption-triage batch. Smaller batches finish sooner (the
 # stealth model reasons ~400 output tokens per figure) and spread across the
 # VP_CONCURRENCY slots.
