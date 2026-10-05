@@ -475,7 +475,7 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 | `VP_SEARCH_CONCURRENCY` / `VP_EPMC_RPS` | 8 / 8 | Europe PMC searches in flight / per second |
 | `VP_FETCH_CONCURRENCY` / `VP_S3_RPS` | 16 / 20 | article fetches in flight / per second |
 | `--batch-size` | 150 | articles per judge batch |
-| `VP_LLM_MAX_IN_FLIGHT` | 20 | all LLM calls in flight across stages (the Step Plan limit) |
+| `VP_LLM_MAX_IN_FLIGHT` | 18 | all LLM calls in flight across stages (the Step Plan allows 20) |
 
 A lower reasoning effort is roughly 10× faster per call but changes
 decisions; compare against earlier decisions before lowering it for triage

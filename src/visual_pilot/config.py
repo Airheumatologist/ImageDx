@@ -154,8 +154,9 @@ VP_SEARCH_RETRY_COOLDOWN = max(0, _env_int("VP_SEARCH_RETRY_COOLDOWN", 60))
 VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 16))
 # Process-wide cap on in-flight LLM requests across every client and stage
 # (run-all overlaps triage with judge/describe). The StepFun Step Plan rejects
-# requests beyond 20 concurrent with HTTP 429.
-VP_LLM_MAX_IN_FLIGHT = max(1, _env_int("VP_LLM_MAX_IN_FLIGHT", 20))
+# requests beyond 20 concurrent with HTTP 429, and briefly counts a stream
+# that just closed, so the default keeps two slots of headroom.
+VP_LLM_MAX_IN_FLIGHT = max(1, _env_int("VP_LLM_MAX_IN_FLIGHT", 18))
 # Per-request LLM timeout for the P3 judge (W6).
 VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
 # Retries on HTTP 429 for provider calls (W3).

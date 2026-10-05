@@ -496,7 +496,10 @@ class LLMClient:
             parsed, last_error = self._parse_validate(content, schema)
             if last_error is None:
                 return parsed, content, usage, attempts, mode
-        raise SchemaValidationError(f"response failed schema validation: {last_error}")
+        raise SchemaValidationError(
+            f"response failed schema validation: {last_error}; "
+            f"reply began {content[:300]!r}"
+        )
 
     @staticmethod
     def _parse_validate(content: str, schema: dict) -> tuple[Any, str | None]:
