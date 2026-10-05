@@ -523,6 +523,7 @@ def run(args) -> int:
                     "schema": prompt.schema,
                     "prompt_version": prompt.version,
                     "reasoning_effort": config.VP_JUDGE_REASONING_EFFORT,
+                    "fill_missing": {"figure_id": fig["figure_id"]},
                     "images": [
                         llm.ImageInput(
                             data_url=pmc.to_data_url(mime, prepared),

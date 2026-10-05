@@ -179,12 +179,16 @@ class LLMClient:
         images: list[ImageInput] | None = None,
         prompt_version: str = "",
         reasoning_effort: str | None = None,
+        fill_missing: dict | None = None,
     ) -> tuple[Any, dict]:
         """One JSON call. Returns (parsed_response, meta).
 
         ``reasoning_effort`` overrides ``LLM_REASONING_EFFORT`` for this call
         (stages pass their ``VP_*_REASONING_EFFORT``); empty means the model
-        default.
+        default. ``fill_missing`` supplies top-level keys the model merely
+        echoes from the request (e.g. ``figure_id``) when the reply omits
+        them; JSON mode does not enforce required keys. It is not part of
+        the cache key.
         """
         images = images or []
         effort = (
@@ -228,7 +232,7 @@ class LLMClient:
 
         with timing.inflight("llm"):
             parsed, raw_content, usage, attempts, mode = self._call_with_validation(
-                model, system, user_content, schema, images, effort
+                model, system, user_content, schema, images, effort, fill_missing
             )
         timing.record("llm_latency", time.monotonic() - started, stage=stage, source="live")
         cost = self._cost(model, usage)
@@ -467,6 +471,7 @@ class LLMClient:
         schema: dict,
         images: list[ImageInput],
         effort: str = "",
+        fill_missing: dict | None = None,
     ) -> tuple[Any, str, dict, int, str]:
         usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
         attempts = 0
@@ -486,6 +491,8 @@ class LLMClient:
                 usage["cached_input_tokens"] += _cached_tokens(u)
                 usage["output_tokens"] += getattr(u, "completion_tokens", 0) or 0
             content = resp.choices[0].message.content or ""
+            if fill_missing:
+                content = _fill_missing(content, fill_missing)
             parsed, last_error = self._parse_validate(content, schema)
             if last_error is None:
                 return parsed, content, usage, attempts, mode
@@ -608,6 +615,19 @@ class LLMClient:
                 ),
             )
             self.conn.commit()
+
+
+def _fill_missing(content: str, defaults: dict) -> str:
+    """``content`` with absent top-level keys of a JSON object set from ``defaults``."""
+    try:
+        parsed = json.loads(content)
+    except ValueError:
+        return content
+    if not isinstance(parsed, dict) or all(k in parsed for k in defaults):
+        return content
+    for key, value in defaults.items():
+        parsed.setdefault(key, value)
+    return json.dumps(parsed, ensure_ascii=False)
 
 
 def _cached_tokens(usage) -> int:

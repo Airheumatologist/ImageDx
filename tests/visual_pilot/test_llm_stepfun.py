@@ -1,5 +1,6 @@
 """StepFun request shape and cost accounting for the LLM client."""
 
+import json
 from types import SimpleNamespace
 
 from src.visual_pilot import llm
@@ -114,3 +115,24 @@ def test_mid_stream_timeout_is_retried(monkeypatch):
     parsed, meta = client.call_json("p2", "step-3.5-flash", "sys", "user", SCHEMA)
     assert parsed == {"ok": True}
     assert len(completions.calls) == 2
+
+
+def test_fill_missing_supplies_echoed_keys_before_validation(monkeypatch):
+    schema = {
+        "type": "object",
+        "properties": {"figure_id": {"type": "string"}, "ok": {"type": "boolean"}},
+        "required": ["figure_id", "ok"],
+    }
+    usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
+    client, completions = _client(monkeypatch, usage)
+    parsed, meta = client.call_json(
+        "p3", "step-3.7-flash", "sys", "user", schema, fill_missing={"figure_id": "PMC1:f1"}
+    )
+    assert parsed == {"ok": True, "figure_id": "PMC1:f1"}
+    assert meta["attempts"] == 1
+
+
+def test_fill_missing_keeps_model_value():
+    out = llm._fill_missing('{"figure_id": "model", "ok": true}', {"figure_id": "req"})
+    assert json.loads(out)["figure_id"] == "model"
+    assert llm._fill_missing("[1]", {"figure_id": "req"}) == "[1]"
