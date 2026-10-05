@@ -491,14 +491,14 @@ class LLMClient:
                 usage["input_tokens"] += getattr(u, "prompt_tokens", 0) or 0
                 usage["cached_input_tokens"] += _cached_tokens(u)
                 usage["output_tokens"] += getattr(u, "completion_tokens", 0) or 0
-            content = resp.choices[0].message.content or ""
-            content = _normalize(content, schema, fill_missing or {})
+            raw = resp.choices[0].message.content or ""
+            content = _normalize(raw, schema, fill_missing or {})
             parsed, last_error = self._parse_validate(content, schema)
             if last_error is None:
                 return parsed, content, usage, attempts, mode
         raise SchemaValidationError(
             f"response failed schema validation: {last_error}; "
-            f"reply began {content[:300]!r}"
+            f"raw reply began {raw[:300]!r}"
         )
 
     @staticmethod
