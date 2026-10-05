@@ -43,7 +43,10 @@ def _env_float(name: str, default: float) -> float:
 # Article discovery uses the public Europe PMC REST API (no key).
 # -----------------------------------------------------------------------------
 STEPFUN_API_KEY = os.getenv("STEPFUN_API_KEY")
-STEPFUN_BASE_URL = os.getenv("STEPFUN_BASE_URL", "https://api.stepfun.ai/v1")
+# Step Plan subscription endpoint; pay-as-you-go keys use https://api.stepfun.ai/v1.
+STEPFUN_BASE_URL = os.getenv(
+    "STEPFUN_BASE_URL", "https://api.stepfun.ai/step_plan/v1"
+)
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 
 # Credentials for each supported VP_LLM_PROVIDER value.

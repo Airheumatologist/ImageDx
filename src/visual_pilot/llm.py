@@ -24,6 +24,7 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from types import SimpleNamespace
 from typing import Any
 
 import jsonschema
@@ -397,8 +398,9 @@ class LLMClient:
             {
                 "role": "system",
                 "content": (
-                    f"{system}\n\nStrict Output Schema (JSON):\n"
-                    f"{json.dumps(schema)}"
+                    f"{system}\n\nRespond with a single JSON object (the data "
+                    "itself, not a schema) that validates against this JSON "
+                    f"Schema:\n{json.dumps(schema)}"
                 ),
             },
             {"role": "user", "content": self._user_parts(user_content, images)},
@@ -408,28 +410,43 @@ class LLMClient:
             extra_kwargs["extra_body"] = {"reasoning_effort": effort}
 
         def _send():
-            res = self._openai().chat.completions.create(
+            # Streamed: the Step Plan gateway never answers non-streaming
+            # requests that take more than a few seconds to generate.
+            stream = self._openai().chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=0,
                 response_format={"type": "json_object"},
+                stream=True,
+                stream_options={"include_usage": True},
                 **extra_kwargs,
             )
-            if not getattr(res, "choices", None):
-                err = getattr(res, "error", None) or "empty choices returned"
-                code = err.get("code") if isinstance(err, dict) else None
-                status = int(code) if str(code).isdigit() and 400 <= int(code) <= 599 else 502
-                response = getattr(res, "_response", None)
-                if not isinstance(response, httpx.Response):
-                    response = httpx.Response(status, request=httpx.Request(
-                        "POST", self.base_url.rstrip('/') + '/chat/completions'))
-                error_class = {
-                    400: openai.BadRequestError, 401: openai.AuthenticationError,
-                    403: openai.PermissionDeniedError, 404: openai.NotFoundError,
-                    422: openai.UnprocessableEntityError, 429: openai.RateLimitError,
-                }.get(status, openai.InternalServerError if status >= 500 else openai.APIStatusError)
-                raise error_class(f"provider error: {err}", response=response, body=err)
-            return res
+            content: list[str] = []
+            usage = None
+            got_choice = False
+            try:
+                for chunk in stream:
+                    if getattr(chunk, "usage", None):
+                        usage = chunk.usage
+                    if chunk.choices:
+                        got_choice = True
+                        content.append(chunk.choices[0].delta.content or "")
+            except _openai_httpx.TimeoutException as exc:
+                raise openai.APITimeoutError(request=stream.response.request) from exc
+            except _openai_httpx.TransportError as exc:
+                raise openai.APIConnectionError(
+                    message=f"stream interrupted: {exc}", request=stream.response.request
+                ) from exc
+            finally:
+                stream.close()
+            if not got_choice:
+                response = httpx.Response(502, request=httpx.Request(
+                    "POST", self.base_url.rstrip('/') + '/chat/completions'))
+                raise openai.InternalServerError(
+                    "provider error: empty choices returned", response=response, body=None
+                )
+            message = SimpleNamespace(content="".join(content))
+            return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
         return self._with_retries(_send), "json_object"
 
