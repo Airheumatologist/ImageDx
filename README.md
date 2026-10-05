@@ -475,12 +475,17 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 | `VP_SEARCH_CONCURRENCY` / `VP_EPMC_RPS` | 8 / 8 | Europe PMC searches in flight / per second |
 | `VP_FETCH_CONCURRENCY` / `VP_S3_RPS` | 16 / 20 | article fetches in flight / per second |
 | `--batch-size` | 150 | articles per judge batch |
+| `VP_LLM_MAX_IN_FLIGHT` | 20 | all LLM calls in flight across stages (the Step Plan limit) |
 
 A lower reasoning effort is roughly 10× faster per call but changes
 decisions; compare against earlier decisions before lowering it for triage
 or judging. A set effort is part of the `llm_calls` cache key, so changing
 it re-asks the model. HTTP 429s back off and retry (`VP_RATE_LIMIT_RETRIES`)
 and are counted in the timings report.
+
+Run long jobs under `caffeinate -is` on macOS. An idle Mac sleeps mid-run,
+and because the process clock stops during sleep, request timeouts never
+fire: calls look hung for as long as the machine sleeps.
 
 `discover --limit N` caps the number of pairs searched. Re-running discovery
 skips articles already parsed for the disease, so each round reaches deeper
