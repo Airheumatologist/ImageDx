@@ -1,7 +1,8 @@
 """LLM provider layer for the visual pilot.
 
-OpenAI-compatible chat calls to OpenRouter (``VP_LLM_PROVIDER=openrouter``)
-with strict JSON-schema output, one repair retry on validation failure, an
+OpenAI-compatible chat calls to StepFun (``VP_LLM_PROVIDER=stepfun``) in
+JSON mode with the schema in the system prompt and validated locally, one
+repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 
@@ -90,7 +91,7 @@ _TRANSIENT_ERRORS = (
 class _DeadlineStream(_openai_httpx.SyncByteStream):
     """Response body that raises ReadTimeout once a wall-clock deadline passes.
 
-    httpx timeouts are per read, so OpenRouter's keep-alive whitespace on a
+    httpx timeouts are per read, so provider keep-alive whitespace on a
     stalled non-streaming request resets them indefinitely.
     """
 
@@ -159,8 +160,6 @@ class LLMClient:
         # this lock; callers streaming iter_many must hold it for their own
         # writes on that connection (see db_lock).
         self._client_init_lock = threading.Lock()
-        # Remember per model whether strict json_schema is accepted.
-        self._response_mode: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -315,18 +314,11 @@ class LLMClient:
                 raise LLMError(
                     f"no API key configured for provider {self.provider!r}"
                 )
-            headers = None
-            if self.provider == "openrouter":
-                headers = {
-                    "HTTP-Referer": "https://visual-pilot.local",
-                    "X-Title": "Visual Pilot",
-                }
             # max_retries=0: transient retries are handled here so that
             # budget/cache semantics stay under our control.
             self._client = openai.OpenAI(
                 api_key=self.api_key, base_url=self.base_url,
                 timeout=self.timeout_seconds, max_retries=0,
-                default_headers=headers,
                 http_client=openai.DefaultHttpxClient(
                     transport=_DeadlineTransport(
                         config.VP_LLM_MAX_REQUEST_SECONDS
@@ -400,36 +392,27 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
     ):
-        """Single chat completion with strict-schema -> json_object fallback."""
-        mode = self._response_mode.get(model)
-        if mode is None:
-            if "stealth" in model or "space-bunny" in model:
-                mode = "json_object"
-            else:
-                mode = "json_schema"
-
-        def _make_messages(target_mode: str) -> list[dict]:
-            sys_text = system
-            if target_mode == "json_object":
-                sys_text = (
+        """Single JSON-mode chat completion (StepFun has no json_schema mode)."""
+        messages = [
+            {
+                "role": "system",
+                "content": (
                     f"{system}\n\nStrict Output Schema (JSON):\n"
                     f"{json.dumps(schema)}"
-                )
-            return [
-                {"role": "system", "content": sys_text},
-                {"role": "user", "content": self._user_parts(user_content, images)},
-            ]
-
+                ),
+            },
+            {"role": "user", "content": self._user_parts(user_content, images)},
+        ]
         extra_kwargs = {}
         if effort:
-            extra_kwargs["extra_body"] = {"reasoning": {"effort": effort}}
+            extra_kwargs["extra_body"] = {"reasoning_effort": effort}
 
-        def _send(target_mode: str):
+        def _send():
             res = self._openai().chat.completions.create(
                 model=model,
-                messages=_make_messages(target_mode),
+                messages=messages,
                 temperature=0,
-                response_format=_response_format_for(target_mode, schema),
+                response_format={"type": "json_object"},
                 **extra_kwargs,
             )
             if not getattr(res, "choices", None):
@@ -448,18 +431,7 @@ class LLMClient:
                 raise error_class(f"provider error: {err}", response=response, body=err)
             return res
 
-        try:
-            resp = self._with_retries(lambda: _send(mode))
-        except (openai.BadRequestError, openai.InternalServerError):
-            if mode == "json_schema":
-                mode = "json_object"
-                self._response_mode[model] = mode
-                resp = self._with_retries(lambda: _send(mode))
-            else:
-                raise
-        else:
-            self._response_mode[model] = mode
-        return resp, mode
+        return self._with_retries(_send), "json_object"
 
     def _call_with_validation(
         self,
@@ -470,7 +442,7 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
     ) -> tuple[Any, str, dict, int, str]:
-        usage = {"input_tokens": 0, "output_tokens": 0}
+        usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
         attempts = 0
         last_error = "no response"
         for retry in range(2):
@@ -485,6 +457,7 @@ class LLMClient:
             u = getattr(resp, "usage", None)
             if u is not None:
                 usage["input_tokens"] += getattr(u, "prompt_tokens", 0) or 0
+                usage["cached_input_tokens"] += _cached_tokens(u)
                 usage["output_tokens"] += getattr(u, "completion_tokens", 0) or 0
             content = resp.choices[0].message.content or ""
             parsed, last_error = self._parse_validate(content, schema)
@@ -564,10 +537,14 @@ class LLMClient:
         price = config.model_price(model)
         if price is None:
             return None
-        in_rate, out_rate = price
+        in_rate, cached_rate, out_rate = price
+        cached = usage.get("cached_input_tokens") or 0
+        uncached = max(0, (usage.get("input_tokens") or 0) - cached)
         return (
-            usage.get("input_tokens") or 0
-        ) * in_rate / 1e6 + (usage.get("output_tokens") or 0) * out_rate / 1e6
+            uncached * in_rate
+            + cached * cached_rate
+            + (usage.get("output_tokens") or 0) * out_rate
+        ) / 1e6
 
     def _record(
         self,
@@ -607,10 +584,14 @@ class LLMClient:
             self.conn.commit()
 
 
-def _response_format_for(mode: str, schema: dict) -> dict:
-    if mode == "json_schema":
-        return {
-            "type": "json_schema",
-            "json_schema": {"name": "response", "schema": schema, "strict": True},
-        }
-    return {"type": "json_object"}
+def _cached_tokens(usage) -> int:
+    """Prompt tokens served from the provider cache.
+
+    StepFun reports ``usage.cached_tokens``; the OpenAI-style
+    ``prompt_tokens_details.cached_tokens`` is accepted too.
+    """
+    cached = getattr(usage, "cached_tokens", None)
+    if cached is None:
+        details = getattr(usage, "prompt_tokens_details", None)
+        cached = getattr(details, "cached_tokens", None) if details else None
+    return int(cached or 0)

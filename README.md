@@ -22,7 +22,7 @@ restricts a run to the ten pilot diseases.
                         Visual Findings Library pipeline
                         ================================
 
-  DISCOVERY                           LLM STAGES (OpenRouter)
+  DISCOVERY                           LLM STAGES (StepFun)   
   +---------------------------+       P2 caption triage      (text, batched)
   | Europe PMC REST search    |       P3 figure judgment     (vision)
   |  FIG: caption field,      |       P5 display captions    (text)
@@ -408,7 +408,7 @@ turborag/
 |       |-- publication.py       # publication eligibility rules
 |       |-- source_quality.py    # article tiers (review-first ranking)
 |       |-- curation_audit.py    # reversible publication audit
-|       |-- llm.py               # OpenRouter client: budget, cache, retries
+|       |-- llm.py               # StepFun client: budget, cache, retries   
 |       |-- prompts.py           # P2-P5 systems + JSON schemas
 |       |-- data/                # diseases.json, findings_vocab.json,
 |       |                        # topic_findings_vocab.json (generated)
@@ -427,10 +427,13 @@ Python 3.10+ is required (the macOS system `python3` is 3.9):
 ```bash
 uv venv --python 3.12 venv && source venv/bin/activate
 pip install -r requirements.txt
-cp env.example .env   # fill in OPENROUTER_API_KEY (discovery needs no key)
+cp env.example .env   # fill in STEPFUN_API_KEY (discovery needs no key)
 ```
 
-The default models (`stealth/space-bunny-alpha` on OpenRouter) are free.
+The default models run on StepFun: `step-3.5-flash` for the text stages and
+the multimodal `step-3.7-flash` for the P3 vision judge (`step-3.5-flash`
+cannot read images). Both are paid; `config.MODEL_PRICES` holds their list
+prices so the ledger and `--budget-usd` track real spend.
 
 ## Usage
 
@@ -460,8 +463,7 @@ lives in `src/visual_pilot/data/parity_pmcids.json`.
 
 ### Throughput settings
 
-The free `stealth/space-bunny-alpha` model reasons at length by default, and
-the vision judge dominated the pilot (about 11 of 18 hours, at ~40 s per call
+The vision judge dominated the pilot (about 11 of 18 hours, at ~40 s per call
 with 4 in flight). The settings that matter for a full run, all in `.env`:
 
 | Setting | Default | Effect |
@@ -469,7 +471,7 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 | `VP_JUDGE_CONCURRENCY` | 16 | vision calls in flight |
 | `VP_CONCURRENCY` | 16 | triage/describe/extract calls in flight |
 | `VP_TRIAGE_BATCH` | 20 | figures per triage call |
-| `VP_*_REASONING_EFFORT` | triage and judge `minimal`, vocab `medium`, others model default | per stage: `TRIAGE`, `JUDGE`, `DESCRIBE`, `EXTRACT`, `VOCAB` |
+| `VP_*_REASONING_EFFORT` | `low` in `env.example` (empty = model default) | per stage: `TRIAGE`, `JUDGE`, `DESCRIBE`, `EXTRACT`, `VOCAB` |
 | `VP_SEARCH_CONCURRENCY` / `VP_EPMC_RPS` | 8 / 8 | Europe PMC searches in flight / per second |
 | `VP_FETCH_CONCURRENCY` / `VP_S3_RPS` | 16 / 20 | article fetches in flight / per second |
 | `--batch-size` | 150 | articles per judge batch |

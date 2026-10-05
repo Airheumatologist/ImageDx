@@ -1,6 +1,6 @@
 """Configuration for the Visual Findings Library pilot.
 
-OpenRouter provider settings are read from the environment;
+StepFun provider settings are read from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
 are read here with their defaults.
 
@@ -39,18 +39,16 @@ def _env_float(name: str, default: float) -> float:
 
 
 # -----------------------------------------------------------------------------
-# Provider settings: OpenRouter runs all LLM stages (P2-P5).
+# Provider settings: StepFun runs all LLM stages (P2-P6).
 # Article discovery uses the public Europe PMC REST API (no key).
 # -----------------------------------------------------------------------------
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_BASE_URL = os.getenv(
-    "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
-)
+STEPFUN_API_KEY = os.getenv("STEPFUN_API_KEY")
+STEPFUN_BASE_URL = os.getenv("STEPFUN_BASE_URL", "https://api.stepfun.ai/v1")
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 
 # Credentials for each supported VP_LLM_PROVIDER value.
 _LLM_PROVIDER_CREDENTIALS = {
-    "openrouter": lambda: (OPENROUTER_API_KEY, OPENROUTER_BASE_URL),
+    "stepfun": lambda: (STEPFUN_API_KEY, STEPFUN_BASE_URL),
 }
 LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
 
@@ -64,13 +62,13 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on OpenRouter; stealth/space-bunny-alpha is multimodal, so
-# the same model covers caption triage, extraction, and the vision judge.
+# Every LLM stage runs on StepFun. step-3.5-flash is text-only, so the P3
+# vision judge defaults to the multimodal step-3.7-flash.
 # -----------------------------------------------------------------------------
-VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "openrouter").strip().lower()
-VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "stealth/space-bunny-alpha")
-VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "stealth/space-bunny-alpha")
-VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "stealth/space-bunny-alpha")
+VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "stepfun").strip().lower()
+VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", "step-3.5-flash")
+VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", "step-3.5-flash")
+VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", "step-3.7-flash")
 VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
@@ -78,14 +76,13 @@ VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Wall-clock cap on one LLM request. The timeouts above are per read, which
-# OpenRouter keep-alive bytes reset forever on a stalled request.
+# provider keep-alive bytes reset forever on a stalled request.
 VP_LLM_MAX_REQUEST_SECONDS = max(1, _env_int("VP_LLM_MAX_REQUEST_SECONDS", 600))
-# Figures per P2 caption-triage batch. Smaller batches finish sooner (the
-# stealth model reasons ~400 output tokens per figure) and spread across the
-# VP_CONCURRENCY slots.
+# Figures per P2 caption-triage batch. Smaller batches finish sooner (each
+# figure adds reasoning output) and spread across the VP_CONCURRENCY slots.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 20))
-# Per-stage reasoning effort sent to OpenRouter (minimal/low/medium/high;
-# stealth/space-bunny-alpha rejects disabling reasoning). Unset
+# Per-stage reasoning effort sent as StepFun ``reasoning_effort`` (low/medium/
+# high; step-3.5-flash-2603 accepts only low/high). Unset
 # falls back to LLM_REASONING_EFFORT; empty means the model default. A set
 # effort is part of the llm_calls cache key.
 VP_TRIAGE_REASONING_EFFORT = os.getenv("VP_TRIAGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
@@ -141,7 +138,7 @@ validate_coverage_settings()
 VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
 # Worker pool size for fetches/parse/store (W5/W6/W7). Host-level rate
 # limiters (pmc.RATE_LIMITER) still cap per-host throughput, so this mainly
-# controls how much of the S3/OpenRouter budget is kept in flight.
+# controls how much of the S3/LLM budget is kept in flight.
 VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
 # Europe PMC searches run ahead of ingestion on this many workers, capped by
 # VP_EPMC_RPS requests/second to www.ebi.ac.uk.
@@ -150,9 +147,7 @@ VP_EPMC_RPS = max(0.1, _env_float("VP_EPMC_RPS", 8.0))
 # Seconds to wait before retrying the searches a discovery pass lost to
 # Europe PMC outages (each failed search is retried once at the pass end).
 VP_SEARCH_RETRY_COOLDOWN = max(0, _env_int("VP_SEARCH_RETRY_COOLDOWN", 60))
-# Max in-flight P3 vision-judge calls (W6). On OpenRouter
-# stealth/space-bunny-alpha throughput scales with concurrency and rate
-# limits are generous.
+# Max in-flight P3 vision-judge calls (W6).
 VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 16))
 # Per-request LLM timeout for the P3 judge (W6).
 VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
@@ -166,17 +161,19 @@ VP_TIMINGS = _env_int("VP_TIMINGS", 1)
 # calling the provider (used with seeded candidate runs; default off).
 VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 
-# Per-model USD per 1M tokens (input/output). stealth/space-bunny-alpha is
-# free on OpenRouter; override or extend at runtime with
-# VP_MODEL_PRICES_JSON='{"model": {"in": x, "out": y}}'.
+# Per-model StepFun list prices, USD per 1M tokens: "in" is a prompt cache
+# miss, "cached_in" a cache hit (defaults to "in"), "out" is output. Override
+# or extend at runtime with
+# VP_MODEL_PRICES_JSON='{"model": {"in": x, "cached_in": y, "out": z}}'.
 MODEL_PRICES = {
-    "space-bunny-free": {"in": 0.0, "out": 0.0},
-    "stealth/space-bunny-alpha": {"in": 0.0, "out": 0.0},
+    "step-3.5-flash": {"in": 0.10, "cached_in": 0.02, "out": 0.30},
+    "step-3.5-flash-2603": {"in": 0.10, "cached_in": 0.02, "out": 0.30},
+    "step-3.7-flash": {"in": 0.20, "cached_in": 0.04, "out": 1.15},
 }
 
 
-def model_price(model: str) -> tuple[float, float] | None:
-    """(input, output) USD per 1M tokens, or None if the model is unpriced."""
+def model_price(model: str) -> tuple[float, float, float] | None:
+    """(input, cached input, output) USD per 1M tokens, or None if unpriced."""
     prices = dict(MODEL_PRICES)
     override = os.getenv("VP_MODEL_PRICES_JSON")
     if override:
@@ -188,7 +185,11 @@ def model_price(model: str) -> tuple[float, float] | None:
     entry = prices.get(model)
     if entry is None:
         return None
-    return float(entry["in"]), float(entry["out"])
+    return (
+        float(entry["in"]),
+        float(entry.get("cached_in", entry["in"])),
+        float(entry["out"]),
+    )
 
 DEFAULT_DATA_DIR = REPO_ROOT / "data" / "visual_pilot"
 DB_FILENAME = "visual_pilot.sqlite"

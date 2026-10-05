@@ -70,12 +70,12 @@ covered approved disease/finding pair while retaining all eligible alternatives.
 Existing manual or locked representative selections are preserved.
 
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
-`VP_JUDGE_MODEL`, `VP_DESCRIBE_MODEL` (all default to
-`stealth/space-bunny-alpha` on OpenRouter),
+`VP_JUDGE_MODEL`, `VP_DESCRIBE_MODEL` (default `step-3.5-flash` on StepFun,
+except the vision judge, which defaults to the multimodal `step-3.7-flash`),
 `VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_LLM_PROVIDER` (default
-`openrouter`), `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`, `VP_FETCH_CONCURRENCY`,
+`stepfun`), `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`, `VP_FETCH_CONCURRENCY`,
 `VP_NCBI_API_KEY`, `VP_DATA_DIR`. Provider keys come from `.env`
-(`OPENROUTER_API_KEY`) via `config.py`. Discovery needs no key.
+(`STEPFUN_API_KEY`) via `config.py`. Discovery needs no key.
 
 ## Whole-figure plates and coverage targets
 
