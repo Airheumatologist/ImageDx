@@ -132,7 +132,25 @@ def test_fill_missing_supplies_echoed_keys_before_validation(monkeypatch):
     assert meta["attempts"] == 1
 
 
-def test_fill_missing_keeps_model_value():
-    out = llm._fill_missing('{"figure_id": "model", "ok": true}', {"figure_id": "req"})
+def test_normalize_keeps_model_values_and_non_objects():
+    out = llm._normalize('{"figure_id": "model", "ok": true}', {}, {"figure_id": "req"})
     assert json.loads(out)["figure_id"] == "model"
-    assert llm._fill_missing("[1]", {"figure_id": "req"}) == "[1]"
+    assert llm._normalize("[1]", {}, {"figure_id": "req"}) == "[1]"
+
+
+def test_normalize_drops_forbidden_keys_and_calls_derived_defaults():
+    schema = {"properties": {"panels": {}, "compound": {}}, "additionalProperties": False}
+    out = llm._normalize(
+        '{"panels": [1, 2], "note": "extra"}',
+        schema,
+        {"compound": lambda reply: len(reply["panels"]) > 1},
+    )
+    assert json.loads(out) == {"panels": [1, 2], "compound": True}
+
+
+def test_judge_derives_compound_from_panel_count():
+    from src.visual_pilot import judge
+
+    assert judge._lists_several_panels({"panels": [{}, {}]}) is True
+    assert judge._lists_several_panels({"panels": [{}]}) is False
+    assert judge._lists_several_panels({}) is False

@@ -391,6 +391,11 @@ def figure_status(result: dict) -> str:
 # ---------------------------------------------------------------------------
 # Stage entry point
 # ---------------------------------------------------------------------------
+def _lists_several_panels(reply: dict) -> bool:
+    panels = reply.get("panels")
+    return isinstance(panels, list) and len(panels) > 1
+
+
 def run(args) -> int:
     conn = db.init_db()
     disease = None if args.disease == "all" else args.disease
@@ -523,7 +528,11 @@ def run(args) -> int:
                     "schema": prompt.schema,
                     "prompt_version": prompt.version,
                     "reasoning_effort": config.VP_JUDGE_REASONING_EFFORT,
-                    "fill_missing": {"figure_id": fig["figure_id"]},
+                    "fill_missing": {
+                        "figure_id": fig["figure_id"],
+                        # P3 rule 4: a multi-panel figure is compound.
+                        "figure_is_compound": _lists_several_panels,
+                    },
                     "images": [
                         llm.ImageInput(
                             data_url=pmc.to_data_url(mime, prepared),

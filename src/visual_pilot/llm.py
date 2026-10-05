@@ -185,10 +185,11 @@ class LLMClient:
 
         ``reasoning_effort`` overrides ``LLM_REASONING_EFFORT`` for this call
         (stages pass their ``VP_*_REASONING_EFFORT``); empty means the model
-        default. ``fill_missing`` supplies top-level keys the model merely
-        echoes from the request (e.g. ``figure_id``) when the reply omits
-        them; JSON mode does not enforce required keys. It is not part of
-        the cache key.
+        default. JSON mode does not enforce the schema, so before validation
+        top-level keys the schema forbids are dropped, and ``fill_missing``
+        supplies top-level keys the reply omits: a value, or a callable
+        taking the reply object (e.g. the judge's echoed ``figure_id``). It
+        is not part of the cache key.
         """
         images = images or []
         effort = (
@@ -491,8 +492,7 @@ class LLMClient:
                 usage["cached_input_tokens"] += _cached_tokens(u)
                 usage["output_tokens"] += getattr(u, "completion_tokens", 0) or 0
             content = resp.choices[0].message.content or ""
-            if fill_missing:
-                content = _fill_missing(content, fill_missing)
+            content = _normalize(content, schema, fill_missing or {})
             parsed, last_error = self._parse_validate(content, schema)
             if last_error is None:
                 return parsed, content, usage, attempts, mode
@@ -617,17 +617,30 @@ class LLMClient:
             self.conn.commit()
 
 
-def _fill_missing(content: str, defaults: dict) -> str:
-    """``content`` with absent top-level keys of a JSON object set from ``defaults``."""
+def _normalize(content: str, schema: dict, defaults: dict) -> str:
+    """Repair top-level drift in a JSON-mode reply before schema validation.
+
+    Drops keys a closed schema (``additionalProperties: false``) forbids and
+    sets absent keys from ``defaults`` (callables get the reply object).
+    Anything else, including nested problems, is left to validation.
+    """
     try:
         parsed = json.loads(content)
     except ValueError:
         return content
-    if not isinstance(parsed, dict) or all(k in parsed for k in defaults):
+    if not isinstance(parsed, dict):
         return content
+    changed = False
+    allowed = schema.get("properties")
+    if schema.get("additionalProperties") is False and allowed is not None:
+        for key in [k for k in parsed if k not in allowed]:
+            del parsed[key]
+            changed = True
     for key, value in defaults.items():
-        parsed.setdefault(key, value)
-    return json.dumps(parsed, ensure_ascii=False)
+        if key not in parsed:
+            parsed[key] = value(parsed) if callable(value) else value
+            changed = True
+    return json.dumps(parsed, ensure_ascii=False) if changed else content
 
 
 def _cached_tokens(usage) -> int:
