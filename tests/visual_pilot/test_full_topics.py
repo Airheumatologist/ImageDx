@@ -92,10 +92,11 @@ def test_expanded_terms_put_plain_names_first_and_skip_taken_or_generic():
          "caption_terms": ["small atrophic testes"]},
     ]
     parsed = {"findings": [
-        {"key": "ks_gynecomastia",
-         "caption_terms": ["Gynecomastia", "gynaecomastia", "swelling", "klinefelter syndrome"]},
-        {"key": "ks_small_testes", "caption_terms": ["gynecomastia", "small testes"]},
-        {"key": "unknown", "caption_terms": ["anything"]},
+        {"key": "ks_gynecomastia", "plain_name": "Gynecomastia",
+         "variants": ["gynaecomastia", "swelling", "klinefelter syndrome",
+                      "glandular male breast tissue enlargement"]},
+        {"key": "ks_small_testes", "plain_name": "gynecomastia", "variants": ["small testes"]},
+        {"key": "unknown", "plain_name": "anything", "variants": []},
     ]}
     assert topic_vocab.merge_expanded_terms(topic, rows, parsed) == 3
     assert rows[0]["caption_terms"] == ["gynecomastia", "gynaecomastia", "bilateral gynecomastia"]

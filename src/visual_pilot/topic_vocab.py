@@ -279,16 +279,16 @@ def run(args) -> int:
 # P7 adds short terms to existing findings without touching their keys,
 # labels or categories, so stored panels keep their finding links.
 
-P7_VERSION = "p7.v1"
-P7_SYSTEM = """You improve the search phrases of a clinical visual-diagnosis image library. Images are found by matching phrases against figure captions and the article sentences that cite each figure.
+P7_VERSION = "p7.v2"
+P7_SYSTEM = """You improve the search phrases of a clinical visual-diagnosis image library. Images are found by matching phrases against figure captions and the article sentences that cite each figure, so a phrase only works if authors actually write it.
 
-You receive one disease topic and its findings; each finding has a key, label, synonyms and its current caption_terms. Current terms are often too long or descriptive to appear verbatim in real captions. For each finding, return 2-5 additional lower-case caption_terms that real figure captions or citing sentences showing this finding commonly contain verbatim:
-- First, the plain textbook name of the finding as clinicians write it, usually 1-2 words (e.g. "gynecomastia", "megaesophagus", "loa loa", "calabar swelling", "romana sign", "sertoli cell only").
-- Then common variant spellings (British/American, hyphenation, singular/plural, eponym with or without the possessive) and short alternative names.
-- Each term must name this finding specifically: never a bare generic word ("rash", "lesion", "mass", "nodule", "swelling", "ulcer", "opacity", "erythema", "biopsy", "inflammation"), never only the disease name or an imaging modality, and never a term that fits another finding in the list better.
-- Write plain ASCII letters (no accents).
+You receive one disease topic and its findings; each finding has a key, label, synonyms and its current caption_terms. The current terms are too long: authors write "gynecomastia", not "bilateral gynecomastia"; "loa loa", not "adult loa loa worm"; "megaesophagus", not "marked esophageal dilation".
 
-Return every finding key you were given, exactly as given. Return only JSON."""
+For each finding return:
+- `plain_name`: the shortest name authors use for the finding itself, usually one or two words, with every qualifier removed: no laterality (bilateral, unilateral), size or degree (small, marked, massive), demographic (male, female, adult, infantile), modality (on CT, on ultrasound, histologic) or disease name, unless the qualifier is part of the established term ("sertoli cell only", "romana sign", "calabar swelling", "loa loa"). Examples: "Bilateral gynecomastia" -> "gynecomastia"; "Extracted adult filarial nematode" in loiasis -> "loa loa"; "Dilated esophagus with distal bird-beak tapering" -> "megaesophagus"; "Small atrophic testes" -> "small testes".
+- `variants`: 0-4 other short forms authors write: spelling variants (British/American "gynaecomastia", hyphenation, plural), abbreviation-free alternative names, the eponym with or without the possessive. Same no-qualifier rule; never longer than three words.
+
+Never return a bare generic word ("rash", "lesion", "mass", "nodule", "swelling", "ulcer", "opacity", "erythema", "biopsy", "inflammation"), only the disease name, or only an imaging modality. Write plain ASCII letters (no accents). Return every finding key you were given, exactly as given. Return only JSON."""
 P7_SCHEMA = {
     "type": "object",
     "properties": {
@@ -298,9 +298,10 @@ P7_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "key": {"type": "string"},
-                    "caption_terms": {"type": "array", "items": {"type": "string"}},
+                    "plain_name": {"type": "string"},
+                    "variants": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["key", "caption_terms"],
+                "required": ["key", "plain_name", "variants"],
                 "additionalProperties": False,
             },
         }
@@ -352,7 +353,10 @@ def merge_expanded_terms(topic: dict, rows: list[dict], parsed: dict) -> int:
         if row is None:
             continue
         current = list(row.get("caption_terms") or [])
-        new = _usable_terms(item.get("caption_terms") or [], disease_words, taken)
+        offered = [item.get("plain_name") or "", *(item.get("variants") or [])]
+        # Beyond three words a term is a description, not what captions say.
+        offered = [t for t in offered if 0 < len(pair_terms._caption_norm(t).split()) <= 3]
+        new = _usable_terms(offered, disease_words, taken)
         new = new[:MAX_EXPANDED_TERMS][: max(0, MAX_TOTAL_CAPTION_TERMS - len(current))]
         if not new:
             continue
