@@ -81,6 +81,27 @@ def test_topic_vocab_post_validate_drops_generic_terms():
     assert rows[0]["source"] == "llm_topic_vocab"
 
 
+
+def test_expanded_terms_put_plain_names_first_and_skip_taken_or_generic():
+    topic = {"topic_id": "klinefelter_syndrome", "name": "Klinefelter Syndrome",
+             "synonyms": ["47,XXY syndrome"]}
+    rows = [
+        {"finding_key": "ks_gynecomastia", "label": "Bilateral gynecomastia",
+         "caption_terms": ["bilateral gynecomastia"]},
+        {"finding_key": "ks_small_testes", "label": "Small testes",
+         "caption_terms": ["small atrophic testes"]},
+    ]
+    parsed = {"findings": [
+        {"key": "ks_gynecomastia",
+         "caption_terms": ["Gynecomastia", "gynaecomastia", "swelling", "klinefelter syndrome"]},
+        {"key": "ks_small_testes", "caption_terms": ["gynecomastia", "small testes"]},
+        {"key": "unknown", "caption_terms": ["anything"]},
+    ]}
+    assert topic_vocab.merge_expanded_terms(topic, rows, parsed) == 3
+    assert rows[0]["caption_terms"] == ["gynecomastia", "gynaecomastia", "bilateral gynecomastia"]
+    assert rows[1]["caption_terms"] == ["small testes", "small atrophic testes"]
+    assert rows[0]["caption_terms_version"] == topic_vocab.P7.version
+
 # --- scoped prompts ----------------------------------------------------------
 
 def test_scoped_prompts_list_only_the_call_diseases():

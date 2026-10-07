@@ -57,6 +57,24 @@ are stored in `figures.case_age_text` as patient-age evidence when the
 caption states none. Age only sorts images into adult or pediatric; an image
 without a stated age is still published ("Not stated").
 
+Topics with fewer than `VP_TOPIC_IMAGE_FLOOR` (default 10) distinct published
+images also get a `disease` pass (`--pass disease`; `run-all` runs it once,
+after the manifestation round): any article whose title names the disease,
+with no caption clause, up to 60 new articles per topic per round. In every
+pass a figure is `pending` when its caption **or a sentence citing it** names
+an approved finding, the same text publication checks for source support.
+Topic names drop their parenthetical gloss for search ("Loiasis (Loa Loa
+Filariasis)" is searched as "Loiasis"), and accents fold to ASCII
+("Romaña" -> "romana") in names and caption terms.
+
+`expand-terms` (prompt P7) adds 2-5 short caption terms per generated finding,
+plain textbook name first ("gynecomastia" next to "bilateral gynecomastia"),
+without changing finding keys. `requeue-terms` then returns discovery's
+`no_finding_term` drops that now name a finding to `pending`;
+`--retry-errors` also resets the attempt count of `vision_error` figures,
+except provider content refusals (HTTP 451). All three take `--diseases k1 k2
+...` (as do `discover` and `run-all`).
+
 Each query is logged in `pair_search_attempts` (`policy_version`
 `epmc-fig.v1`; overview queries under finding key `_overview`). `run-all`
 runs one overview round, one manifestation round, then backfill rounds

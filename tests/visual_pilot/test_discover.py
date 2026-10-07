@@ -328,7 +328,7 @@ def test_run_all_runs_review_passes_before_backfill(tmp_path, monkeypatch):
     for name in ("triage", "judge", "store", "extract", "report"):
         monkeypatch.setitem(cli.COMMANDS, name, lambda a, n=name: calls.append(n) or 0)
     monkeypatch.setattr(cli, "_cmd_init", lambda a: 0)
-    found = {"overview": ["PMC1"], "manifestation": [], "backfill": []}
+    found = {"overview": ["PMC1"], "manifestation": [], "disease": [], "backfill": []}
 
     def fake_discover(*a, pass_name, **k):
         calls.append(pass_name)
@@ -339,7 +339,8 @@ def test_run_all_runs_review_passes_before_backfill(tmp_path, monkeypatch):
     assert cli.main(["run-all", "--disease", "sle"]) == 0
     # Overview articles are judged before the manifestation pass re-plans;
     # an empty review pass does not stop backfill.
-    assert calls[:6] == ["overview", "triage", "judge", "store", "manifestation", "backfill"]
+    assert calls[:7] == ["overview", "triage", "judge", "store", "manifestation", "disease",
+                         "backfill"]
 
 
 def test_overview_terms_drop_abbreviations():
@@ -354,3 +355,81 @@ def test_article_disease_keys_match_title_and_abstract():
     assert "sle" in keys and "psa" in keys
     assert "gout" not in keys
     assert discover.article_disease_keys(hit, ["gout"]) == []
+
+
+def test_name_variants_strip_parenthetical_gloss_and_fold_accents():
+    assert diseases.name_variants("Loiasis (Loa Loa Filariasis)") == ["Loiasis"]
+    assert diseases.name_variants("Ménétrier Disease (Hypertrophic Gastropathy)") == [
+        "Ménétrier Disease", "Menetrier Disease",
+    ]
+    assert diseases.name_variants("Klinefelter Syndrome") == []
+    assert pair_terms._caption_norm("Romaña sign") == "romana sign"
+
+
+def test_disease_query_terms_include_bare_topic_name():
+    disease = {"name": "Loiasis (Loa Loa Filariasis)",
+               "synonyms": diseases.name_variants("Loiasis (Loa Loa Filariasis)")}
+    assert "Loiasis" in discover.disease_query_terms(disease)
+    query = europepmc.build_disease_query(["Loiasis"])
+    assert query.startswith('(TITLE:"Loiasis") AND OPEN_ACCESS:y') and "FIG:" not in query
+
+
+def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, monkeypatch):
+    conn = make_db(tmp_path)
+    add_disease(conn, "sle", "Systemic lupus erythematosus")
+    add_disease(conn, "gout", "Gout")
+    add_finding(conn, "malar_rash", ("sle",), label="Malar rash", synonyms=("butterfly rash",))
+    add_finding(conn, "gout_tophi", ("gout",), label="Tophi")
+    conn.commit()
+    monkeypatch.setattr(discover, "topic_image_counts", lambda c: {"gout": 25})
+    queries = []
+
+    def fake_search(query, limit=100, page_size=100):
+        queries.append(query)
+        return 1, [_hit("PMC1")]
+
+    parsed = _parsed(["Figure 1. Clinical photograph.", "Timeline of treatment."])
+    parsed.figures[0].in_text_mentions = ["Figure 1 shows a malar rash sparing the folds."]
+    monkeypatch.setattr(europepmc, "search", fake_search)
+    monkeypatch.setattr(discover, "_fetch", lambda pmcid: (_Bundle(), parsed))
+
+    stats = discover.discover(conn, ["sle", "gout"], per_pair=5, target=10,
+                              pass_name="disease", log=lambda *_: None)
+
+    # Only the topic under the floor is searched, by title alone.
+    assert len(queries) == 1 and "systemic lupus" in queries[0] and "FIG:" not in queries[0]
+    status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
+    assert status == {"PMC1:f1": "pending", "PMC1:f2": "caption_rejected"}
+    attempt = conn.execute("SELECT finding_key FROM pair_search_attempts").fetchone()
+    assert attempt[0] == discover.DISEASE_KEY and stats["pairs"] == 0
+    conn.close()
+
+
+def test_requeue_terms_and_errors(tmp_path, monkeypatch):
+    conn = make_db(tmp_path)
+    add_disease(conn, "sle", "Systemic lupus erythematosus")
+    add_finding(conn, "malar_rash", ("sle",), label="Malar rash", synonyms=("butterfly rash",))
+    conn.execute(
+        "INSERT INTO articles (pmcid, primary_disease_keys_json, status) "
+        "VALUES ('PMC1', '[\"sle\"]', 'parsed')"
+    )
+    rows = [
+        ("PMC1:f1", "Butterfly rash on the cheeks.", "caption_rejected",
+         '{"route":"drop","reason":"no_finding_term"}', None),
+        ("PMC1:f2", "Timeline.", "caption_rejected", '{"route":"drop","reason":"no_finding_term"}', None),
+        ("PMC1:f3", "x", "vision_error", None, "llm: Request timed out."),
+        ("PMC1:f4", "x", "vision_error", None, "llm: Error code: 451 - refused"),
+    ]
+    for fid, caption, status, triage, error in rows:
+        conn.execute(
+            "INSERT INTO figures (figure_id, pmcid, caption, status, triage_json, error, attempts) "
+            "VALUES (?, 'PMC1', ?, ?, ?, ?, 3)", (fid, caption, status, triage, error),
+        )
+    conn.commit()
+
+    assert discover.requeue_terms(conn, ["sle"]) == 1
+    assert discover.requeue_errors(conn, ["sle"]) == 1
+    got = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT figure_id, status, attempts FROM figures")}
+    assert got["PMC1:f1"] == ("pending", 0) and got["PMC1:f2"] == ("caption_rejected", 3)
+    assert got["PMC1:f3"] == ("vision_error", 0) and got["PMC1:f4"] == ("vision_error", 3)
+    conn.close()

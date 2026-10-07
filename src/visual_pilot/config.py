@@ -112,6 +112,9 @@ def _coverage_int(name: str, default: int) -> int:
 VP_FINDING_IMAGE_FLOOR = _coverage_int("VP_FINDING_IMAGE_FLOOR", 3)
 VP_FINDING_IMAGE_TARGET = _coverage_int("VP_FINDING_IMAGE_TARGET", 10)
 VP_FINDING_GALLERY_CAP = _coverage_int("VP_FINDING_GALLERY_CAP", 20)
+# Topics with fewer distinct published images than this get the disease-wide
+# discovery pass (any article whose title names the disease).
+VP_TOPIC_IMAGE_FLOOR = _coverage_int("VP_TOPIC_IMAGE_FLOOR", 10)
 
 
 def validate_coverage_settings() -> tuple[int, int, int]:

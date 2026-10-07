@@ -9,7 +9,10 @@ single case reports only fill what they leave short:
 2. ``manifestation``: per under-target pair, narrative reviews and case
    series about the finding ("dactylitis in psoriatic arthritis") with a
    figure caption naming it.
-3. ``backfill``: per pair still under target, any article type with a
+3. ``disease``: per topic with fewer than ``VP_TOPIC_IMAGE_FLOOR`` published
+   images, any article whose title names the disease, with no caption
+   clause. Rare topics' captions seldom repeat the vocabulary's phrasing.
+4. ``backfill``: per pair still under target, any article type with a
    caption naming the finding (case reports included); only notices such as
    errata and retractions are dropped.
 
@@ -23,7 +26,8 @@ earlier ones earned.
 Matching articles are fetched from the PMC open-data bucket and parsed
 straight into ``figures``: a figure whose caption names an approved finding
 of the disease becomes ``pending`` for triage, every other figure lands as
-``caption_rejected`` without an LLM call. Articles land at ``parsed`` so triage → judge → store run unchanged.
+``caption_rejected`` without an LLM call. The sentences citing a figure count
+as its caption here, as they do for publication's source-support check. Articles land at ``parsed`` so triage → judge → store run unchanged.
 """
 
 from __future__ import annotations
@@ -43,10 +47,13 @@ logger = logging.getLogger(__name__)
 POLICY_VERSION = pair_reporting.DISCOVERY_POLICY
 DEFAULT_PER_PAIR = 25
 SEARCH_DEPTH = 300
-PASSES = ("overview", "manifestation", "backfill")
-# Search attempts of the per-disease overview pass are logged under this key.
+PASSES = ("overview", "manifestation", "disease", "backfill")
+# Search attempts of the per-disease overview and disease passes are logged
+# under these keys.
 OVERVIEW_KEY = "_overview"
+DISEASE_KEY = "_disease"
 OVERVIEW_PER_DISEASE = 60
+DISEASE_PER_ROUND = 60
 
 
 def _vocab(conn) -> list[dict]:
@@ -91,6 +98,25 @@ def plan_pairs(conn, disease_keys, target: int) -> list[tuple[str, dict, int]]:
                 out.append((disease_key, finding, have))
     out.sort(key=lambda item: (item[2], item[0], item[1]["finding_key"]))
     return out
+
+
+def topic_image_counts(conn) -> dict[str, int]:
+    """Distinct published images per disease (sha256-distinct)."""
+    return {
+        row[0]: row[1] for row in conn.execute(
+            "SELECT disease_key, COUNT(DISTINCT COALESCE(sha256, panel_id)) "
+            "FROM published_panels GROUP BY disease_key"
+        )
+    }
+
+
+def plan_diseases(conn, disease_keys, floor: int) -> list[tuple[str, None, int]]:
+    """Topics under ``floor`` published images, fewest first, as pass jobs."""
+    counts = topic_image_counts(conn)
+    vocab = _vocab_by_disease(conn)
+    out = [(d, None, counts.get(d, 0)) for d in disease_keys
+           if vocab.get(d) and counts.get(d, 0) < floor]
+    return sorted(out, key=lambda job: (job[2], job[0]))
 
 
 def _known_by_disease(conn) -> dict[str, set[str]]:
@@ -185,6 +211,20 @@ def find_overview_articles(disease_key: str, caption_terms: list[str], limit: in
     picked: list[tuple[europepmc.Hit, str]] = []
     new = _take(hits, set(skip), limit, picked, "overview", broad_only=True)
     return picked, [{"mode": "overview", "scope": "overview", "query": query, "total": total,
+                     "returned": [h.pmcid for h in hits], "new": new}]
+
+
+def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
+    """Any article whose title names the disease (the ``disease`` pass)."""
+    query = europepmc.build_disease_query(
+        overview_disease_terms(diseases.load_diseases()[disease_key])
+    )
+    if not query:
+        return [], []
+    total, hits = europepmc.search(query, limit=SEARCH_DEPTH)
+    picked: list[tuple[europepmc.Hit, str]] = []
+    new = _take(hits, set(skip), limit, picked, "disease", broad_only=False)
+    return picked, [{"mode": "disease", "scope": "disease", "query": query, "total": total,
                      "returned": [h.pmcid for h in hits], "new": new}]
 
 
@@ -301,6 +341,14 @@ def case_age_text(hit: europepmc.Hit, parsed: jats.ParsedArticle | None = None) 
     return " ".join(parts) or None
 
 
+def names_finding(caption, mentions, terms: list[str]) -> bool:
+    """The caption or a sentence citing the figure names a finding term."""
+    return any(
+        pair_terms.caption_matches(str(text or ""), terms, mode="words")
+        for text in (caption, *(mentions or []))
+    )
+
+
 def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
                    age_text: str | None = None) -> list[str]:
     pmcid = article_row["pmcid"]
@@ -308,8 +356,8 @@ def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
     pending = []
     for fig in parsed.figures:
         row = parse_stage._figure_row(pmcid, fig, article_row["license_code"], bundle.resolver)
-        if row["status"] == "pending" and not pair_terms.caption_matches(
-            fig.caption or "", match_terms, mode="words"
+        if row["status"] == "pending" and not names_finding(
+            fig.caption, fig.in_text_mentions, match_terms
         ):
             row["status"] = "caption_rejected"
             row["triage_json"] = db.to_json(
@@ -426,10 +474,18 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
             )
         return match_terms[disease_key]
 
-    plan = plan_pairs(conn, disease_keys, target)
+    by_disease = pass_name == "disease"
+    if by_disease:
+        plan = plan_diseases(conn, disease_keys, int(config.VP_TOPIC_IMAGE_FLOOR))
+    else:
+        plan = plan_pairs(conn, disease_keys, target)
     if max_pairs is not None:
         plan = plan[:max_pairs]
-    log(f"discover[{pass_name}]: {len(plan)} pair(s) under target {target}")
+    if by_disease:
+        log(f"discover[{pass_name}]: {len(plan)} topic(s) under "
+            f"{config.VP_TOPIC_IMAGE_FLOOR} published images")
+    else:
+        log(f"discover[{pass_name}]: {len(plan)} pair(s) under target {target}")
     known = _known_by_disease(conn)
 
     def out_of_time() -> bool:
@@ -458,12 +514,14 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
         (disease_key, finding, _), skip, terms = prepared
         if overview:
             return find_overview_articles(disease_key, terms, OVERVIEW_PER_DISEASE, skip)
+        if by_disease:
+            return find_disease_articles(disease_key, DISEASE_PER_ROUND, skip)
         _, picked, attempts = find_articles(disease_key, finding, per_pair, skip, scope=scope)
         return picked, attempts
 
     def label(job) -> str:
         disease_key, finding, _ = job
-        return disease_key if overview else f"{disease_key}/{finding['finding_key']}"
+        return disease_key if finding is None else f"{disease_key}/{finding['finding_key']}"
 
     def ingest(job, result) -> None:
         disease_key, finding, have = job
@@ -471,7 +529,7 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
         mine = known.setdefault(disease_key, set())
         # Another pair may have ingested a hit since this search was submitted.
         picked = [(hit, mode) for hit, mode in picked if hit.pmcid not in mine]
-        key = OVERVIEW_KEY if overview else finding["finding_key"]
+        key = OVERVIEW_KEY if overview else DISEASE_KEY if by_disease else finding["finding_key"]
         outcomes = _fetch_all(pool, picked)
         _record_attempts(conn, disease_key, key, attempts)
         before = len(stats["pmcids"])
@@ -479,7 +537,7 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
                           terms_for(disease_key), stats)
         new = stats["pmcids"][before:]
         mine.update(new)
-        if not overview:
+        if finding is not None:
             stats["pairs"] += 1
         totals = "/".join(str(a["total"]) for a in attempts)
         have_text = "" if overview else f" (have {have})"
@@ -575,9 +633,87 @@ def ingest_pmcids(conn, pmcids, disease_keys, log=print) -> dict:
     return stats
 
 
+def _scoped_figures(conn, disease_keys, where: str, params=()):
+    """Figures of articles attributed to any of ``disease_keys``."""
+    return conn.execute(
+        "SELECT f.figure_id, f.caption, f.in_text_mentions_json, f.error, "
+        "a.primary_disease_keys_json FROM figures f JOIN articles a USING(pmcid) "
+        f"WHERE {where} AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) je "
+        "WHERE je.value IN (SELECT value FROM json_each(?)))",
+        (*params, db.to_json(list(disease_keys))),
+    ).fetchall()
+
+
+def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
+    """Return discovery's ``no_finding_term`` drops that now name a finding.
+
+    After ``expand-terms`` adds plain caption terms, figures already parsed
+    may match; they go back to ``pending`` for triage without a new search.
+    """
+    terms: dict[str, list[str]] = {}
+    moved = []
+    rows = _scoped_figures(
+        conn, disease_keys,
+        "f.status='caption_rejected' AND json_extract(f.triage_json,'$.reason')='no_finding_term'",
+    )
+    for row in rows:
+        keys = db.from_json(row["primary_disease_keys_json"], []) or []
+        match = []
+        for key in keys:
+            if key not in terms:
+                terms[key] = disease_caption_terms(conn, key) if key in diseases.load_diseases() else []
+            match += terms[key]
+        mentions = db.from_json(row["in_text_mentions_json"], []) or []
+        if names_finding(row["caption"], mentions, match):
+            moved.append(row["figure_id"])
+    if not dry_run:
+        conn.executemany(
+            "UPDATE figures SET status='pending', triage_json=NULL, attempts=0, error=NULL, "
+            "updated_at=datetime('now') WHERE figure_id=?",
+            [(f,) for f in moved],
+        )
+        conn.commit()
+    return len(moved)
+
+
+# The provider's content filter refuses the same image every time.
+_PERMANENT_JUDGE_ERRORS = ("Error code: 451",)
+
+
+def requeue_errors(conn, disease_keys, dry_run: bool = False) -> int:
+    """Reset the attempt count of retryable ``vision_error`` figures."""
+    rows = _scoped_figures(conn, disease_keys, "f.status='vision_error'")
+    retry = [r["figure_id"] for r in rows
+             if not any(m in str(r["error"] or "") for m in _PERMANENT_JUDGE_ERRORS)]
+    if not dry_run:
+        conn.executemany(
+            "UPDATE figures SET attempts=0, updated_at=datetime('now') WHERE figure_id=?",
+            [(f,) for f in retry],
+        )
+        conn.commit()
+    return len(retry)
+
+
+def run_requeue(args) -> int:
+    """``requeue-terms``: re-gate caption drops; with --retry-errors also reset judge errors."""
+    conn = db.init_db()
+    keys = diseases.selected_keys(args)
+    try:
+        n = requeue_terms(conn, keys, dry_run=args.dry_run)
+        print(f"requeue-terms: {n} figure(s) {'would return' if args.dry_run else 'returned'} "
+              "to pending")
+        if getattr(args, "retry_errors", False):
+            n = requeue_errors(conn, keys, dry_run=args.dry_run)
+            print(f"requeue-terms: {n} retryable vision_error figure(s) "
+                  f"{'would be' if args.dry_run else ''} reset")
+    finally:
+        conn.close()
+    return 0
+
+
 def run(args) -> int:
     conn = db.init_db()
-    disease_keys = list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
+    disease_keys = diseases.selected_keys(args)
     if getattr(args, "pmcids", None):
         stats = ingest_pmcids(conn, args.pmcids, disease_keys)
         print(f"discover: {stats['articles']} article(s), "

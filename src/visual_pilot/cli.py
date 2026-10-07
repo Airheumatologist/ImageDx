@@ -146,8 +146,9 @@ def _run_all(args: argparse.Namespace) -> int:
 
     Discovery runs broad sources first: one ``overview`` round (narrative
     reviews and case series surveying each disease), one ``manifestation``
-    round (reviews and case series about each under-target finding), then
-    ``backfill`` rounds over any article type, case reports included. Every
+    round (reviews and case series about each under-target finding), one
+    ``disease`` round (any article titled with a topic still under
+    ``VP_TOPIC_IMAGE_FLOOR`` published images), then ``backfill`` rounds over any article type, case reports included. Every
     round re-plans the pairs still under the image target (fewest images
     first), parses the matching articles and runs the LLM stages on just
     those articles, so case reports only fill what reviews left short.
@@ -334,7 +335,7 @@ def _run_all(args: argparse.Namespace) -> int:
             if rc != 0:
                 return rc
         else:
-            disease_keys = list(diseases.DISEASE_KEYS) if args.disease == "all" else [args.disease]
+            disease_keys = diseases.selected_keys(args)
             # Resume: finish figures an interrupted run left mid-pipeline
             # before discovering more articles.
             with read_lock:
@@ -356,7 +357,7 @@ def _run_all(args: argparse.Namespace) -> int:
                     return rc
             schedule = (
                 [] if args.skip_review_passes else ["overview", "manifestation"]
-            ) + ["backfill"] * int(args.max_rounds)
+            ) + ["disease"] + ["backfill"] * int(args.max_rounds)
             for round_no, pass_name in enumerate(schedule, 1):
                 if should_stop():
                     print("run-all: runtime limit reached")
@@ -434,6 +435,8 @@ COMMANDS: dict[str, CommandFn | None] = {
     "serve": _lazy("viewer"),
     "export-site": _lazy("site_export"),
     "build-vocab": _lazy("topic_vocab"),
+    "expand-terms": _lazy("topic_vocab", "run_expand"),
+    "requeue-terms": _lazy("discover", "run_requeue"),
     "run-all": _cmd_run_all,
 }
 
@@ -449,6 +452,13 @@ def build_parser() -> argparse.ArgumentParser:
         choices=[*diseases.disease_keys_from_catalog(), "all"],
         default="all",
         help="disease scope (default: all)",
+    )
+    shared.add_argument(
+        "--diseases",
+        nargs="+",
+        default=None,
+        help="several disease keys; overrides --disease (run-all, discover, "
+        "expand-terms, requeue-terms)",
     )
     shared.add_argument(
         "--limit",
@@ -483,7 +493,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     shared.add_argument(
         "--skip-review-passes", action="store_true",
-        help="run-all: skip the overview and manifestation rounds and only backfill",
+        help="run-all: skip the overview and manifestation rounds; the disease "
+        "round and backfill still run",
     )
     shared.add_argument(
         "--max-runtime-seconds", type=int, default=14400,
@@ -516,11 +527,12 @@ def build_parser() -> argparse.ArgumentParser:
     for name in COMMANDS:
         subs[name] = subparsers.add_parser(name, parents=[shared])
     subs["discover"].add_argument(
-        "--pass", dest="discovery_pass", choices=["overview", "manifestation", "backfill"],
+        "--pass", dest="discovery_pass", choices=["overview", "manifestation", "disease", "backfill"],
         default="backfill",
         help="overview: reviews/case series surveying each disease; manifestation: "
         "reviews/case series about each under-target finding; backfill: any article "
-        "type (default: backfill)",
+        "type; disease: any article whose title names a topic under "
+        "VP_TOPIC_IMAGE_FLOOR images (default: backfill)",
     )
     subs["triage"].add_argument(
         "--retriage-montages",
@@ -542,6 +554,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="re-extract articles that already have source='text' findings",
+    )
+    subs["expand-terms"].add_argument(
+        "--force", action="store_true",
+        help="re-expand topics already expanded with the current prompt",
+    )
+    subs["requeue-terms"].add_argument(
+        "--retry-errors", action="store_true",
+        help="also reset retryable vision_error figures (not provider content refusals)",
     )
     subs["build-vocab"].add_argument(
         "--topics", nargs="*", default=None,

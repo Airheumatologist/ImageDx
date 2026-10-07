@@ -74,7 +74,7 @@ P6 = Prompt(name="p6_topic_vocab", version=P6_VERSION, system=P6_SYSTEM, schema=
 MAX_FINDINGS = 12
 MAX_SYNONYMS = 5
 MAX_CAPTION_TERMS = 6
-MIN_SINGLE_WORD = 8
+MIN_SINGLE_WORD = 6
 # Bare words P6 is told not to use, on top of pair_terms' generic list.
 _TOO_GENERIC = frozenset({
     "mass", "masses", "opacity", "opacities", "swelling", "lump", "tumor",
@@ -116,8 +116,31 @@ def user_content(topic: dict) -> str:
 
 
 def _disease_words(topic: dict) -> set[str]:
-    names = [topic["name"], *(topic.get("synonyms") or [])]
+    names = [topic["name"], *diseases.name_variants(topic["name"]), *(topic.get("synonyms") or [])]
     return {pair_terms._caption_norm(n) for n in names if n}
+
+
+def _usable_terms(raw, disease_words: set[str], taken: set[str]) -> list[str]:
+    """Normalized caption terms specific enough to search, in order."""
+    terms: list[str] = []
+    for term in raw:
+        term = pair_terms._caption_norm(term)
+        if (
+            len(term) < 4
+            # A lone short word ("flap", "cyst") matches far too many
+            # captions; longer single terms ("ptosis", "onycholysis") are
+            # specific once the query also names the disease.
+            or (" " not in term and len(term) < MIN_SINGLE_WORD)
+            or term in pair_terms._GENERIC_TERMS
+            or term in _TOO_GENERIC
+            or _MODALITY_ONLY.match(term)
+            or term in disease_words
+            or term in taken
+            or term in terms
+        ):
+            continue
+        terms.append(term)
+    return terms
 
 
 def post_validate(topic: dict, parsed: dict, meta: dict | None = None) -> list[dict]:
@@ -133,23 +156,7 @@ def post_validate(topic: dict, parsed: dict, meta: dict | None = None) -> list[d
         category = item.get("category")
         if not slug or not label or category not in diseases.FINDING_CATEGORIES:
             continue
-        terms = []
-        for term in item.get("caption_terms") or []:
-            term = pair_terms._caption_norm(term)
-            if (
-                len(term) < 4
-                # A lone short word ("flap", "cyst") matches far too many
-                # captions; long single terms ("onycholysis") are specific.
-                or (" " not in term and len(term) < MIN_SINGLE_WORD)
-                or term in pair_terms._GENERIC_TERMS
-                or term in _TOO_GENERIC
-                or _MODALITY_ONLY.match(term)
-                or term in disease_words
-                or term in seen_terms
-                or term in terms
-            ):
-                continue
-            terms.append(term)
+        terms = _usable_terms(item.get("caption_terms") or [], disease_words, seen_terms)
         if not terms:
             continue
         key = f"{topic['topic_id']}_{slug}"
@@ -261,4 +268,147 @@ def run(args) -> int:
         print("build-vocab: no findings: " + ", ".join(empty))
     if errors:
         print("build-vocab: errors (rerun to retry): " + ", ".join(errors))
+    return 0
+
+
+# --- Caption-term expansion (prompt P7) -------------------------------------
+#
+# P6 tends to write descriptive phrases ("bilateral gynecomastia", "adult loa
+# loa worm") that captions rarely contain verbatim, so discovery and the
+# publication support check miss the plain textbook names ("gynecomastia").
+# P7 adds short terms to existing findings without touching their keys,
+# labels or categories, so stored panels keep their finding links.
+
+P7_VERSION = "p7.v1"
+P7_SYSTEM = """You improve the search phrases of a clinical visual-diagnosis image library. Images are found by matching phrases against figure captions and the article sentences that cite each figure.
+
+You receive one disease topic and its findings; each finding has a key, label, synonyms and its current caption_terms. Current terms are often too long or descriptive to appear verbatim in real captions. For each finding, return 2-5 additional lower-case caption_terms that real figure captions or citing sentences showing this finding commonly contain verbatim:
+- First, the plain textbook name of the finding as clinicians write it, usually 1-2 words (e.g. "gynecomastia", "megaesophagus", "loa loa", "calabar swelling", "romana sign", "sertoli cell only").
+- Then common variant spellings (British/American, hyphenation, singular/plural, eponym with or without the possessive) and short alternative names.
+- Each term must name this finding specifically: never a bare generic word ("rash", "lesion", "mass", "nodule", "swelling", "ulcer", "opacity", "erythema", "biopsy", "inflammation"), never only the disease name or an imaging modality, and never a term that fits another finding in the list better.
+- Write plain ASCII letters (no accents).
+
+Return every finding key you were given, exactly as given. Return only JSON."""
+P7_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "findings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string"},
+                    "caption_terms": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["key", "caption_terms"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["findings"],
+    "additionalProperties": False,
+}
+P7 = Prompt(name="p7_caption_terms", version=P7_VERSION, system=P7_SYSTEM, schema=P7_SCHEMA)
+MAX_EXPANDED_TERMS = 5
+MAX_TOTAL_CAPTION_TERMS = 12
+
+
+def _expand_request(topic: dict, rows: list[dict]) -> dict:
+    content = json.dumps(
+        {
+            "topic": topic["name"],
+            "synonyms": topic.get("synonyms") or [],
+            "findings": [
+                {"key": r["finding_key"], "label": r["label"], "synonyms": r.get("synonyms") or [],
+                 "caption_terms": r.get("caption_terms") or []}
+                for r in rows
+            ],
+        },
+        ensure_ascii=False,
+    )
+    return {
+        "stage": "p7",
+        "model": config.VP_VOCAB_MODEL,
+        "system": P7.system,
+        "user_content": content,
+        "schema": P7.schema,
+        "prompt_version": P7.version,
+        "reasoning_effort": config.VP_VOCAB_REASONING_EFFORT,
+    }
+
+
+def merge_expanded_terms(topic: dict, rows: list[dict], parsed: dict) -> int:
+    """Append P7's usable terms to ``rows`` in place; return the number added.
+
+    A term already used by another finding of the topic is skipped, so one
+    caption phrase never credits two findings.
+    """
+    disease_words = _disease_words(topic)
+    by_key = {r["finding_key"]: r for r in rows}
+    taken = {t for r in rows for t in r.get("caption_terms") or []}
+    added = 0
+    for item in (parsed or {}).get("findings") or []:
+        row = by_key.get(str(item.get("key") or ""))
+        if row is None:
+            continue
+        current = list(row.get("caption_terms") or [])
+        new = _usable_terms(item.get("caption_terms") or [], disease_words, taken)
+        new = new[:MAX_EXPANDED_TERMS][: max(0, MAX_TOTAL_CAPTION_TERMS - len(current))]
+        if not new:
+            continue
+        # Short plain names first: they are the likeliest caption matches.
+        row["caption_terms"] = [*new, *current]
+        row["caption_terms_version"] = P7.version
+        taken.update(new)
+        added += len(new)
+    return added
+
+
+def run_expand(args) -> int:
+    """``expand-terms``: add short caption terms to generated topic findings."""
+    wanted = set(getattr(args, "diseases", None) or [])
+    if getattr(args, "disease", "all") != "all":
+        wanted.add(args.disease)
+    topics = {diseases.topic_disease_key(t): t for t in diseases.load_topics()}
+    rows = _read_existing()
+    by_disease: dict[str, list[dict]] = {}
+    for row in rows:
+        by_disease.setdefault(row["disease_keys"][0], []).append(row)
+    todo = [
+        key for key in by_disease
+        if key in topics and (not wanted or key in wanted)
+        and (args.force or any(r.get("caption_terms_version") != P7.version for r in by_disease[key]))
+    ]
+    if args.limit:
+        todo = todo[: args.limit]
+    print(f"expand-terms: {len(todo)} topic(s) to expand")
+    if args.dry_run or not todo:
+        return 0
+    order = list(topics)
+    conn = db.init_db()
+    client = llm.LLMClient(db_conn=conn, budget_usd=args.budget_usd, max_retries=2)
+    done = added = 0
+    errors = []
+    try:
+        requests = (_expand_request(topics[k], by_disease[k]) for k in todo)
+        for res in client.iter_many(requests):
+            key = todo[res.index]
+            done += 1
+            if res.error is not None:
+                if isinstance(res.error, llm.BudgetExceeded):
+                    print("expand-terms: budget exhausted; stopping")
+                    break
+                errors.append(key)
+                print(f"expand-terms: {key}: error: {res.error}")
+                continue
+            n = merge_expanded_terms(topics[key], by_disease[key], res.parsed)
+            added += n
+            print(f"expand-terms: [{done}/{len(todo)}] {key}: +{n} term(s)")
+            if done % 25 == 0:
+                _write(rows, order)
+    finally:
+        _write(rows, order)
+        conn.close()
+    print(f"expand-terms: added {added} caption term(s) across {done - len(errors)} topic(s); "
+          f"{len(errors)} error(s)" + (": " + ", ".join(errors) if errors else ""))
     return 0

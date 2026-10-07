@@ -101,7 +101,7 @@ CAPTION_TERM_OVERRIDES: dict[str, list[str]] = {
 
 
 def _caption_norm(value: str) -> str:
-    return " ".join(re.sub(r"[^a-z0-9]+", " ", str(value).casefold()).split())
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", diseases.fold_accents(value).casefold()).split())
 
 
 def _singular(word: str) -> str:

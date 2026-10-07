@@ -25,6 +25,7 @@ import json
 import os
 import re
 import sqlite3
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
@@ -111,6 +112,31 @@ def topic_disease_key(topic: dict) -> str:
     return topic.get("pilot_key") or topic["topic_id"]
 
 
+def fold_accents(value: str) -> str:
+    """"Romaña" -> "Romana", "Ménétrier" -> "Menetrier"; dropping the letter
+    instead would split the word ("roma a sign")."""
+    decomposed = unicodedata.normalize("NFKD", str(value))
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
+_PARENTHETICAL = re.compile(r"\s*\([^)]*\)")
+
+
+def name_variants(name: str) -> list[str]:
+    """Searchable forms of a display name, most useful first.
+
+    Topic names carry a gloss in parentheses ("Loiasis (Loa Loa
+    Filariasis)", "Cardiac Fibroma (Gorlin-Goltz Syndrome)") that no article
+    title contains verbatim, so the name without it is searched; the gloss
+    itself is often an associated condition rather than a synonym and is not.
+    Accented names also get an unaccented form ("Menetrier Disease").
+    """
+    bare = " ".join(_PARENTHETICAL.sub(" ", name).split())
+    out = [bare] if bare and bare != name else []
+    out += [fold_accents(v) for v in (out or [name]) if fold_accents(v) != v]
+    return list(dict.fromkeys(out))
+
+
 def _topics_catalog() -> dict[str, dict]:
     pilot = _load_pilot()
     catalog: dict[str, dict] = {}
@@ -125,12 +151,13 @@ def _topics_catalog() -> dict[str, dict]:
             catalog[key] = {**pilot[key], **context}
             continue
         name = str(topic.get("name") or key).strip()
+        synonyms = [*name_variants(name), *(topic.get("synonyms") or [])]
         catalog[key] = {
             "name": name,
             "mondo_id": topic.get("mondo_id"),
             "mesh_id": topic.get("mesh_id"),
             "synonyms": [
-                s for s in dict.fromkeys(str(s).strip() for s in topic.get("synonyms") or [])
+                s for s in dict.fromkeys(str(s).strip() for s in synonyms)
                 if s and s.casefold() != name.casefold()
             ],
             "subtypes": [],
@@ -154,6 +181,18 @@ def load_diseases() -> dict[str, dict]:
 def disease_keys_from_catalog() -> tuple[str, ...]:
     """Return the configured catalog keys in stable order."""
     return tuple(load_diseases())
+
+
+def selected_keys(args) -> list[str]:
+    """Catalog keys a command targets: ``--diseases`` list, else ``--disease``."""
+    many = getattr(args, "diseases", None)
+    if many:
+        unknown = sorted(set(many) - set(load_diseases()))
+        if unknown:
+            raise SystemExit(f"unknown disease key(s): {', '.join(unknown)}")
+        return list(dict.fromkeys(many))
+    disease = getattr(args, "disease", "all")
+    return list(disease_keys_from_catalog()) if disease == "all" else [disease]
 
 
 # Kept as a module-level compatibility surface for stage code; each process

@@ -125,6 +125,17 @@ def build_overview_query(disease_terms: list[str], caption_terms: list[str]) -> 
             f"AND {_OVERVIEW_TYPES} AND {_OPEN}")
 
 
+def build_disease_query(disease_terms: list[str]) -> str:
+    """Any article whose title names the disease, without a caption clause.
+
+    For topics the caption-phrase passes leave nearly empty: their captions
+    rarely repeat the vocabulary's phrasing, so the figures are gated locally
+    on caption and citing text instead (``discover._store_article``).
+    """
+    dis = _disease_clause(disease_terms, ("TITLE",))
+    return f"({dis}) AND {_OPEN}" if dis else ""
+
+
 def _hit(rec: dict) -> Hit | None:
     pmcid = rec.get("pmcid")
     if not pmcid:
