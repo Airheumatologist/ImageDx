@@ -401,6 +401,9 @@ def _run_all(args: argparse.Namespace) -> int:
         if stop.is_set():
             return 0
         for name in ("extract", "report"):
+            if name == "extract" and args.skip_extract:
+                print("run-all: final: extract skipped (--skip-extract)")
+                continue
             scoped_args = argparse.Namespace(**vars(args))
             scoped_args.pmcids = None
             remaining = _remaining_budget()
@@ -495,6 +498,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-review-passes", action="store_true",
         help="run-all: skip the overview and manifestation rounds; the disease "
         "round and backfill still run",
+    )
+    shared.add_argument(
+        "--skip-extract", action="store_true",
+        help="run-all: skip the final library-wide text extraction (report still runs)",
     )
     shared.add_argument(
         "--max-runtime-seconds", type=int, default=14400,

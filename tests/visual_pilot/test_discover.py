@@ -396,13 +396,25 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
     stats = discover.discover(conn, ["sle", "gout"], per_pair=5, target=10,
                               pass_name="disease", log=lambda *_: None)
 
-    # Only the topic under the floor is searched, by title alone.
-    assert len(queries) == 1 and "systemic lupus" in queries[0] and "FIG:" not in queries[0]
+    # Only the topic under the floor is searched, by title alone: case
+    # reports first, then any article type.
+    assert len(queries) == 2 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
+    assert 'PUB_TYPE:"case reports"' in queries[0] and "PUB_TYPE" not in queries[1]
     status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
     assert status == {"PMC1:f1": "pending", "PMC1:f2": "caption_rejected"}
     attempt = conn.execute("SELECT finding_key FROM pair_search_attempts").fetchone()
     assert attempt[0] == discover.DISEASE_KEY and stats["pairs"] == 0
+    assert stats["pmcids"] == ["PMC1"]
     conn.close()
+
+
+def test_disease_pass_ranks_case_reports_before_research_and_reviews():
+    review, study, case = _hit("PMC1", ("Review",)), _hit("PMC2", ("Journal Article",)), \
+        _hit("PMC3", ("Journal Article",))
+    review.title, study.title = "Klinefelter syndrome: an update", "Bone density in 47,XXY men"
+    case.title = "A rare case of Klinefelter syndrome with gynecomastia"
+    ranked = sorted([review, study, case], key=discover.disease_pass_rank)
+    assert [h.pmcid for h in ranked] == ["PMC3", "PMC2", "PMC1"]
 
 
 def test_requeue_terms_and_errors(tmp_path, monkeypatch):

@@ -125,15 +125,25 @@ def build_overview_query(disease_terms: list[str], caption_terms: list[str]) -> 
             f"AND {_OVERVIEW_TYPES} AND {_OPEN}")
 
 
-def build_disease_query(disease_terms: list[str]) -> str:
+_CASE_TYPES = (
+    '(PUB_TYPE:"case reports" OR PUB_TYPE:"case-report" OR TITLE:case OR TITLE:"a patient")'
+)
+
+
+def build_disease_query(disease_terms: list[str], cases_only: bool = False) -> str:
     """Any article whose title names the disease, without a caption clause.
 
     For topics the caption-phrase passes leave nearly empty: their captions
     rarely repeat the vocabulary's phrasing, so the figures are gated locally
     on caption and citing text instead (``discover._store_article``).
+    ``cases_only`` keeps case reports and series, which picture patients far
+    more often than the disease's research papers and reviews.
     """
     dis = _disease_clause(disease_terms, ("TITLE",))
-    return f"({dis}) AND {_OPEN}" if dis else ""
+    if not dis:
+        return ""
+    cases = f" AND {_CASE_TYPES}" if cases_only else ""
+    return f"({dis}){cases} AND {_OPEN}"
 
 
 def _hit(rec: dict) -> Hit | None:

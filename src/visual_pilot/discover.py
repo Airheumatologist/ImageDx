@@ -53,7 +53,10 @@ PASSES = ("overview", "manifestation", "disease", "backfill")
 OVERVIEW_KEY = "_overview"
 DISEASE_KEY = "_disease"
 OVERVIEW_PER_DISEASE = 60
-DISEASE_PER_ROUND = 60
+# Case reports first: in the first disease pass they published ~9 images
+# per 100 articles, other research ~1 and reviews ~0.5.
+DISEASE_PER_ROUND = 200
+DISEASE_SEARCH_DEPTH = 600
 
 
 def _vocab(conn) -> list[dict]:
@@ -214,18 +217,52 @@ def find_overview_articles(disease_key: str, caption_terms: list[str], limit: in
                      "returned": [h.pmcid for h in hits], "new": new}]
 
 
+def disease_pass_rank(hit: europepmc.Hit) -> int:
+    """Case reports and series first, other research next, reviews last.
+
+    Unlike the review-first passes, atypical cases are not demoted: a rare
+    topic's case reports are titled "a rare case of ...".
+    """
+    types = [str(t) for t in hit.pub_types]
+    title = hit.title or ""
+    if any(source_quality._CASE_TYPE.search(t) for t in types) or \
+            source_quality._CASE_TITLE.search(title):
+        return 0
+    if any(source_quality._REVIEW_TYPE.search(t) for t in types) or \
+            re.search(r"\breview\b", title, re.I):
+        return 2
+    return 1
+
+
 def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
-    """Any article whose title names the disease (the ``disease`` pass)."""
-    query = europepmc.build_disease_query(
-        overview_disease_terms(diseases.load_diseases()[disease_key])
-    )
-    if not query:
-        return [], []
-    total, hits = europepmc.search(query, limit=SEARCH_DEPTH)
+    """Any article whose title names the disease (the ``disease`` pass).
+
+    The case-report query runs first; the unrestricted one fills the rest of
+    ``limit``, ranked by ``disease_pass_rank``.
+    """
+    terms = overview_disease_terms(diseases.load_diseases()[disease_key])
+    seen = set(skip)
     picked: list[tuple[europepmc.Hit, str]] = []
-    new = _take(hits, set(skip), limit, picked, "disease", broad_only=False)
-    return picked, [{"mode": "disease", "scope": "disease", "query": query, "total": total,
-                     "returned": [h.pmcid for h in hits], "new": new}]
+    attempts = []
+    for scope, cases_only in (("disease_cases", True), ("disease", False)):
+        if len(picked) >= limit:
+            break
+        query = europepmc.build_disease_query(terms, cases_only=cases_only)
+        if not query:
+            continue
+        total, hits = europepmc.search(query, limit=DISEASE_SEARCH_DEPTH)
+        new = []
+        for hit in sorted(hits, key=disease_pass_rank):
+            if len(picked) >= limit:
+                break
+            if hit.pmcid in seen or not europepmc.eligible(hit):
+                continue
+            seen.add(hit.pmcid)
+            new.append(hit.pmcid)
+            picked.append((hit, "disease"))
+        attempts.append({"mode": "disease", "scope": scope, "query": query, "total": total,
+                         "returned": [h.pmcid for h in hits], "new": new})
+    return picked, attempts
 
 
 def _record_attempts(conn, disease_key, finding_key, attempts) -> None:
