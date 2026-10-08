@@ -60,7 +60,10 @@ without a stated age is still published ("Not stated").
 Topics with fewer than `VP_TOPIC_IMAGE_FLOOR` (default 10) distinct published
 images also get a `disease` pass (`--pass disease`; `run-all` runs it once,
 after the manifestation round): any article whose title names the disease,
-with no caption clause, up to 60 new articles per topic per round. In every
+with no caption clause, up to 200 new articles per topic per round. A
+case-report query runs first and hits are ranked case reports and series,
+then other research, then reviews (in the first disease pass case reports
+published ~9 images per 100 articles, research ~1, reviews ~0.5). In every
 pass a figure is `pending` when its caption **or a sentence citing it** names
 an approved finding, the same text publication checks for source support.
 Topic names drop their parenthetical gloss for search ("Loiasis (Loa Loa
@@ -73,7 +76,8 @@ without changing finding keys. `requeue-terms` then returns discovery's
 `no_finding_term` drops that now name a finding to `pending`;
 `--retry-errors` also resets the attempt count of `vision_error` figures,
 except provider content refusals (HTTP 451). All three take `--diseases k1 k2
-...` (as do `discover` and `run-all`).
+...` (as do `discover` and `run-all`). `run-all --skip-extract` skips the
+final library-wide text extraction.
 
 Each query is logged in `pair_search_attempts` (`policy_version`
 `epmc-fig.v1`; overview queries under finding key `_overview`). `run-all`
