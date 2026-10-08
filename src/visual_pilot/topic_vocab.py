@@ -381,7 +381,8 @@ def run_expand(args) -> int:
     todo = [
         key for key in by_disease
         if key in topics and (not wanted or key in wanted)
-        and (args.force or any(r.get("caption_terms_version") != P7.version for r in by_disease[key]))
+        # A topic is done once any finding got terms; the rest may have had none to add.
+        and (args.force or all(r.get("caption_terms_version") != P7.version for r in by_disease[key]))
     ]
     if args.limit:
         todo = todo[: args.limit]
