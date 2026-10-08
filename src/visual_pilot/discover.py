@@ -378,6 +378,37 @@ def case_age_text(hit: europepmc.Hit, parsed: jats.ParsedArticle | None = None) 
     return " ".join(parts) or None
 
 
+# Disease-pass articles name the topic in their title, but a case report's
+# captions rarely repeat the finding vocabulary ("Chest CT on admission").
+# There a caption that names a patient image type passes the gate as well,
+# unless it reads as lab, animal or chart work; triage and the judge still
+# rule on the figure (other disease, treatment, diagram).
+_PATIENT_IMAGE = re.compile(
+    r"\b(?:photograph|photo|clinical (?:image|picture|appearance|features?)|radiograph"
+    r"|x-?rays?|ct|computed tomography|mri|magnetic resonance|ultrasound|ultrasonograph\w*"
+    r"|sonograph\w*|echocardiogra\w*|endoscop\w*|colonoscop\w*|gastroscop\w*|bronchoscop\w*"
+    r"|laryngoscop\w*|esophagogram|oesophagogram|barium|angiogra\w*|histolog\w*"
+    r"|histopatholog\w*|h&e|ha?ematoxylin|biopsy|immunohistochem\w*|microscop\w*|smear"
+    r"|fundus|fundoscop\w*|slit.?lamp|oct|optical coherence|dermoscop\w*|scans?|imaging"
+    r"|appearance|lesions?)\b",
+    re.I,
+)
+_NOT_PATIENT_IMAGE = re.compile(
+    r"\b(?:western|blots?|blotting|gels?|electrophoresis|pcr|qpcr|sequenc\w*|chromatogra\w*"
+    r"|pedigree|graphs?|plots?|curves?|kaplan|charts?|flow ?chart|diagram|schematic|tables?"
+    r"|algorithm|forest|mouse|mice|rats?|zebrafish|cell lines?|in vitro|knockout|cultured"
+    r"|culture|transfect\w*|rna|mrna|siRNA|protein expression|survival|prevalence"
+    r"|correlation|incidence|distribution)\b",
+    re.I,
+)
+
+
+def names_patient_image(caption) -> bool:
+    """The caption names a patient image type and no lab, animal or chart work."""
+    text = str(caption or "")
+    return bool(_PATIENT_IMAGE.search(text)) and not _NOT_PATIENT_IMAGE.search(text)
+
+
 def names_finding(caption, mentions, terms: list[str]) -> bool:
     """The caption or a sentence citing the figure names a finding term."""
     return any(
@@ -387,7 +418,7 @@ def names_finding(caption, mentions, terms: list[str]) -> bool:
 
 
 def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
-                   age_text: str | None = None) -> list[str]:
+                   age_text: str | None = None, image_gate: bool = False) -> list[str]:
     pmcid = article_row["pmcid"]
     fig_rows = []
     pending = []
@@ -395,7 +426,7 @@ def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
         row = parse_stage._figure_row(pmcid, fig, article_row["license_code"], bundle.resolver)
         if row["status"] == "pending" and not names_finding(
             fig.caption, fig.in_text_mentions, match_terms
-        ):
+        ) and not (image_gate and names_patient_image(fig.caption)):
             row["status"] = "caption_rejected"
             row["triage_json"] = db.to_json(
                 {"route": "drop", "reason": "no_finding_term", "source": "discover"}
@@ -444,7 +475,8 @@ def _ingest(conn, outcomes, disease_key: str, finding_key: str, picked, pass_nam
             continue
         bundle, parsed = outcome
         pending += len(_store_article(conn, article, bundle, parsed, match_terms, stats,
-                                      case_age_text(hit, parsed)))
+                                      case_age_text(hit, parsed),
+                                      image_gate=pass_name == "disease"))
         stats["pmcids"].append(hit.pmcid)
     conn.commit()
     stats["articles"] += len(picked)
@@ -674,7 +706,8 @@ def _scoped_figures(conn, disease_keys, where: str, params=()):
     """Figures of articles attributed to any of ``disease_keys``."""
     return conn.execute(
         "SELECT f.figure_id, f.caption, f.in_text_mentions_json, f.error, "
-        "a.primary_disease_keys_json FROM figures f JOIN articles a USING(pmcid) "
+        "a.primary_disease_keys_json, a.retrieval_evidence_json "
+        "FROM figures f JOIN articles a USING(pmcid) "
         f"WHERE {where} AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) je "
         "WHERE je.value IN (SELECT value FROM json_each(?)))",
         (*params, db.to_json(list(disease_keys))),
@@ -682,10 +715,12 @@ def _scoped_figures(conn, disease_keys, where: str, params=()):
 
 
 def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
-    """Return discovery's ``no_finding_term`` drops that now name a finding.
+    """Return discovery's ``no_finding_term`` drops that now pass the gate.
 
     After ``expand-terms`` adds plain caption terms, figures already parsed
     may match; they go back to ``pending`` for triage without a new search.
+    Figures of disease-pass articles also return when the caption names a
+    patient image type (``names_patient_image``).
     """
     terms: dict[str, list[str]] = {}
     moved = []
@@ -701,7 +736,11 @@ def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
                 terms[key] = disease_caption_terms(conn, key) if key in diseases.load_diseases() else []
             match += terms[key]
         mentions = db.from_json(row["in_text_mentions_json"], []) or []
-        if names_finding(row["caption"], mentions, match):
+        evidence = db.from_json(row["retrieval_evidence_json"], []) or []
+        disease_pass = any(isinstance(e, dict) and e.get("pass") == "disease" for e in evidence)
+        if names_finding(row["caption"], mentions, match) or (
+            disease_pass and names_patient_image(row["caption"])
+        ):
             moved.append(row["figure_id"])
     if not dry_run:
         conn.executemany(

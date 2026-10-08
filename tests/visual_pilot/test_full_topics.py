@@ -1,6 +1,7 @@
 """Full topic catalog and run throughput: catalog, scoped prompts, discovery, run-all."""
 
 import io
+import json
 import re
 import threading
 
@@ -34,6 +35,19 @@ def test_topics_catalog_keeps_pilot_keys_and_adds_every_topic(monkeypatch):
     # Pilot diseases outside the index stay in the catalog.
     assert "ad" in catalog
     assert catalog["vitiligo"]["subtypes"] == []
+
+
+def test_search_names_extend_topic_title_terms(tmp_path, monkeypatch):
+    monkeypatch.setenv("VP_CATALOG", "topics")
+    path = tmp_path / "topic_search_names.json"
+    path.write_text(json.dumps({"zenker_diverticulum": ["Zenker's diverticulum", "Zenker Diverticulum"]}))
+    monkeypatch.setattr(diseases, "SEARCH_NAMES_PATH", path)
+    catalog = diseases._catalog.__wrapped__("topics")
+    zenker = catalog["zenker_diverticulum"]
+    assert zenker["synonyms"].count("Zenker's diverticulum") == 1
+    assert "Zenker's diverticulum" in discover.overview_disease_terms(zenker)
+    # Names already in the catalog are not repeated.
+    assert len(zenker["synonyms"]) == len(diseases.load_diseases()["zenker_diverticulum"]["synonyms"]) + 1
 
 
 def test_pilot_catalog_is_the_curated_file(monkeypatch):

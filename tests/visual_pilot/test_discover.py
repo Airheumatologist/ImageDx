@@ -388,7 +388,8 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
         queries.append(query)
         return 1, [_hit("PMC1")]
 
-    parsed = _parsed(["Figure 1. Clinical photograph.", "Timeline of treatment."])
+    parsed = _parsed(["Figure 1. Clinical photograph.", "Timeline of treatment.",
+                      "Chest CT on admission.", "Western blot of patient fibroblasts."])
     parsed.figures[0].in_text_mentions = ["Figure 1 shows a malar rash sparing the folds."]
     monkeypatch.setattr(europepmc, "search", fake_search)
     monkeypatch.setattr(discover, "_fetch", lambda pmcid: (_Bundle(), parsed))
@@ -401,7 +402,10 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
     assert len(queries) == 2 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
     assert 'PUB_TYPE:"case reports"' in queries[0] and "PUB_TYPE" not in queries[1]
     status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
-    assert status == {"PMC1:f1": "pending", "PMC1:f2": "caption_rejected"}
+    # A caption naming a patient image type passes without a finding term;
+    # lab work does not.
+    assert status == {"PMC1:f1": "pending", "PMC1:f2": "caption_rejected",
+                      "PMC1:f3": "pending", "PMC1:f4": "caption_rejected"}
     attempt = conn.execute("SELECT finding_key FROM pair_search_attempts").fetchone()
     assert attempt[0] == discover.DISEASE_KEY and stats["pairs"] == 0
     assert stats["pmcids"] == ["PMC1"]
@@ -425,6 +429,18 @@ def test_requeue_terms_and_errors(tmp_path, monkeypatch):
         "INSERT INTO articles (pmcid, primary_disease_keys_json, status) "
         "VALUES ('PMC1', '[\"sle\"]', 'parsed')"
     )
+    conn.execute(
+        "INSERT INTO articles (pmcid, primary_disease_keys_json, retrieval_evidence_json, status) "
+        "VALUES ('PMC2', '[\"sle\"]', '[{\"pass\":\"disease\"}]', 'parsed')"
+    )
+    drop = '{"route":"drop","reason":"no_finding_term"}'
+    for fid, pmcid, caption in (("PMC1:f5", "PMC1", "Brain MRI on admission."),
+                                ("PMC2:f1", "PMC2", "Brain MRI on admission."),
+                                ("PMC2:f2", "PMC2", "Survival curve of the cohort.")):
+        conn.execute(
+            "INSERT INTO figures (figure_id, pmcid, caption, status, triage_json, attempts) "
+            "VALUES (?, ?, ?, 'caption_rejected', ?, 3)", (fid, pmcid, caption, drop),
+        )
     rows = [
         ("PMC1:f1", "Butterfly rash on the cheeks.", "caption_rejected",
          '{"route":"drop","reason":"no_finding_term"}', None),
@@ -439,9 +455,12 @@ def test_requeue_terms_and_errors(tmp_path, monkeypatch):
         )
     conn.commit()
 
-    assert discover.requeue_terms(conn, ["sle"]) == 1
+    assert discover.requeue_terms(conn, ["sle"]) == 2
     assert discover.requeue_errors(conn, ["sle"]) == 1
     got = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT figure_id, status, attempts FROM figures")}
     assert got["PMC1:f1"] == ("pending", 0) and got["PMC1:f2"] == ("caption_rejected", 3)
+    # The image-type gate applies to disease-pass articles only.
+    assert got["PMC2:f1"] == ("pending", 0) and got["PMC1:f5"][0] == "caption_rejected"
+    assert got["PMC2:f2"][0] == "caption_rejected"
     assert got["PMC1:f3"] == ("vision_error", 0) and got["PMC1:f4"] == ("vision_error", 3)
     conn.close()

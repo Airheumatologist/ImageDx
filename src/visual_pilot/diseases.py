@@ -35,6 +35,9 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOPICS_PATH = REPO_ROOT / "data" / "main_database_topics.json"
 TOPIC_VOCAB_PATH = DATA_DIR / "topic_findings_vocab.json"
+# Extra title-search names per catalog key ("Zenker's diverticulum" for
+# "Zenker Diverticulum (Pharyngoesophageal Pouch)"), appended to synonyms.
+SEARCH_NAMES_PATH = DATA_DIR / "topic_search_names.json"
 CATALOGS = ("topics", "pilot")
 
 # findings_vocab.category enum.
@@ -137,8 +140,24 @@ def name_variants(name: str) -> list[str]:
     return list(dict.fromkeys(out))
 
 
+def _search_names() -> dict[str, list[str]]:
+    if not SEARCH_NAMES_PATH.exists():
+        return {}
+    data = json.loads(SEARCH_NAMES_PATH.read_text(encoding="utf-8"))
+    return {str(k): [str(n).strip() for n in v if str(n).strip()] for k, v in data.items()}
+
+
+def _with_search_names(disease: dict, names: list[str]) -> dict:
+    if not names:
+        return disease
+    known = {str(s).casefold() for s in [disease.get("name"), *(disease.get("synonyms") or [])]}
+    extra = [n for n in dict.fromkeys(names) if n.casefold() not in known]
+    return {**disease, "synonyms": [*(disease.get("synonyms") or []), *extra]}
+
+
 def _topics_catalog() -> dict[str, dict]:
     pilot = _load_pilot()
+    search_names = _search_names()
     catalog: dict[str, dict] = {}
     for topic in load_topics():
         key = topic_disease_key(topic)
@@ -165,7 +184,8 @@ def _topics_catalog() -> dict[str, dict]:
         }
     for key, disease in pilot.items():
         catalog.setdefault(key, disease)
-    return catalog
+    return {key: _with_search_names(disease, search_names.get(key, []))
+            for key, disease in catalog.items()}
 
 
 @lru_cache(maxsize=None)
