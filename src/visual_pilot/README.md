@@ -93,7 +93,7 @@ Existing manual or locked representative selections are preserved.
 
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
 `VP_JUDGE_MODEL`, `VP_DESCRIBE_MODEL` (all default to the multimodal
-`step-5-preview-free` on OpenCode),
+`muse-spark-1.3-contributor` on OpenCode Go),
 `VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_LLM_PROVIDER` (default
 `opencode`), `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`, `VP_FETCH_CONCURRENCY`,
 `VP_NCBI_API_KEY`, `VP_DATA_DIR`. Provider keys come from `.env`

@@ -1,9 +1,10 @@
 """LLM provider layer for the visual pilot.
 
-OpenAI-compatible chat calls to OpenCode (``VP_LLM_PROVIDER=opencode``)
-with the schema in the system prompt and the JSON reply validated locally
-(the gateway has no JSON response mode), one repair retry on validation
-failure, an
+OpenAI-compatible calls to OpenCode (``VP_LLM_PROVIDER=opencode``) with
+the schema in the system prompt and the JSON reply validated locally.
+Muse Spark models go through the Responses API in JSON mode; the rest use
+chat completions without a JSON mode (step-5-preview-free has none). One
+repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 
@@ -425,6 +426,10 @@ class LLMClient:
             },
             {"role": "user", "content": self._user_parts(user_content, images)},
         ]
+        if config.uses_responses_api(model):
+            return self._with_retries(
+                lambda: self._send_responses(model, messages, effort)
+            ), "responses_json"
         extra_kwargs = {}
         if effort:
             extra_kwargs["extra_body"] = {"reasoning_effort": effort}
@@ -472,6 +477,63 @@ class LLMClient:
             return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
         return self._with_retries(_send), "prompt_json"
+
+    def _send_responses(self, model: str, messages: list[dict], effort: str):
+        """One streamed Responses API call in JSON mode (Muse Spark models).
+
+        Returns the chat-completions shape ``_call_with_validation`` reads.
+        """
+        system, user = messages[0]["content"], messages[1]["content"]
+        if isinstance(user, str):
+            user = [{"type": "text", "text": user}]
+        parts = [
+            {"type": "input_text", "text": p["text"]} if p["type"] == "text"
+            else {"type": "input_image", "image_url": p["image_url"]["url"]}
+            for p in user
+        ]
+        kwargs = {"reasoning": {"effort": effort}} if effort else {}
+        with _IN_FLIGHT:
+            stream = self._openai().responses.create(
+                model=model,
+                instructions=system,
+                input=[{"role": "user", "content": parts}],
+                text={"format": {"type": "json_object"}},
+                stream=True,
+                **kwargs,
+            )
+            content: list[str] = []
+            final = None
+            try:
+                for event in stream:
+                    if event.type == "response.output_text.delta":
+                        content.append(event.delta)
+                    elif event.type in ("response.completed", "response.incomplete"):
+                        final = event.response
+                    elif event.type in ("response.failed", "error"):
+                        response = httpx.Response(502, request=httpx.Request(
+                            "POST", self.base_url.rstrip("/") + "/responses"))
+                        raise openai.InternalServerError(
+                            f"provider error: {event.type}", response=response, body=None
+                        )
+            except _openai_httpx.TimeoutException as exc:
+                raise openai.APITimeoutError(request=stream.response.request) from exc
+            except _openai_httpx.TransportError as exc:
+                raise openai.APIConnectionError(
+                    message=f"stream interrupted: {exc}", request=stream.response.request
+                ) from exc
+            finally:
+                stream.close()
+        u = getattr(final, "usage", None)
+        usage = None
+        if u is not None:
+            details = getattr(u, "input_tokens_details", None)
+            usage = SimpleNamespace(
+                prompt_tokens=u.input_tokens,
+                completion_tokens=u.output_tokens,
+                cached_tokens=getattr(details, "cached_tokens", 0) or 0,
+            )
+        message = SimpleNamespace(content="".join(content))
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
     def _call_with_validation(
         self,

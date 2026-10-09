@@ -64,9 +64,23 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on OpenCode's multimodal step-5-preview-free.
+# Every LLM stage runs on OpenCode Go's multimodal muse-spark-1.3-contributor
+# (Meta may train on its prompts and completions in exchange for the discount).
 # -----------------------------------------------------------------------------
-DEFAULT_MODEL = "step-5-preview-free"
+DEFAULT_MODEL = "muse-spark-1.3-contributor"
+# Models OpenCode serves only through the Responses API (/responses).
+RESPONSES_API_MODELS = frozenset(
+    m.strip() for m in os.getenv(
+        "VP_RESPONSES_API_MODELS",
+        "muse-spark-1.2-contributor,muse-spark-1.3-contributor",
+    ).split(",") if m.strip()
+)
+
+
+def uses_responses_api(model: str) -> bool:
+    return model in RESPONSES_API_MODELS
+
+
 VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "opencode").strip().lower()
 VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", DEFAULT_MODEL)
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", DEFAULT_MODEL)
@@ -83,8 +97,8 @@ VP_LLM_MAX_REQUEST_SECONDS = max(1, _env_int("VP_LLM_MAX_REQUEST_SECONDS", 600))
 # Figures per P2 caption-triage batch. Smaller batches finish sooner (each
 # figure adds reasoning output) and spread across the VP_CONCURRENCY slots.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 20))
-# Per-stage reasoning effort sent as ``reasoning_effort`` (low/medium/high
-# for step-5-preview-free). Unset
+# Per-stage reasoning effort (low/medium/high): ``reasoning.effort`` on the
+# Responses API, ``reasoning_effort`` on chat completions. Unset
 # falls back to LLM_REASONING_EFFORT; empty means the model default. A set
 # effort is part of the llm_calls cache key.
 VP_TRIAGE_REASONING_EFFORT = os.getenv("VP_TRIAGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
@@ -175,6 +189,8 @@ VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 # extend at runtime with
 # VP_MODEL_PRICES_JSON='{"model": {"in": x, "cached_in": y, "out": z}}'.
 MODEL_PRICES = {
+    # OpenCode Go prices; Go usage counts against its monthly dollar limit.
+    "muse-spark-1.3-contributor": {"in": 0.10, "cached_in": 0.002, "out": 0.20},
     # Free on OpenCode for a limited time.
     "step-5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
 }

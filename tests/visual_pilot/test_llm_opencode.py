@@ -159,10 +159,58 @@ def test_judge_derives_compound_from_panel_count():
     assert judge._lists_several_panels({}) is False
 
 
-def test_default_model_is_free():
+def test_default_model_uses_responses_api():
     from src.visual_pilot import config
 
+    assert config.uses_responses_api(config.DEFAULT_MODEL)
+    assert not config.uses_responses_api("step-5-preview-free")
     assert config.model_price("step-5-preview-free") == (0.0, 0.0, 0.0)
+
+
+class _Responses:
+    def __init__(self):
+        self.calls = []
+        self.stream = None
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        usage = SimpleNamespace(
+            input_tokens=10, output_tokens=4,
+            input_tokens_details=SimpleNamespace(cached_tokens=3),
+        )
+        events = [
+            SimpleNamespace(type="response.output_text.delta", delta='{"ok"'),
+            SimpleNamespace(type="response.output_text.delta", delta=": true}"),
+            SimpleNamespace(type="response.completed", response=SimpleNamespace(usage=usage)),
+        ]
+        self.stream = _Stream(events)
+        return self.stream
+
+
+def test_responses_models_send_json_mode_with_images(monkeypatch):
+    monkeypatch.setattr(
+        llm.config, "llm_credentials", lambda provider: ("k", "https://example.invalid/v1")
+    )
+    client = llm.LLMClient(provider="opencode")
+    responses = _Responses()
+    client._client = SimpleNamespace(responses=responses)
+    image = llm.ImageInput(data_url="data:image/jpeg;base64,AAAA")
+    parsed, meta = client.call_json(
+        "p3", "muse-spark-1.3-contributor", "sys", "user", SCHEMA,
+        images=[image], reasoning_effort="low",
+    )
+    assert parsed == {"ok": True}
+    assert meta["response_format"] == "responses_json"
+    assert (meta["input_tokens"], meta["output_tokens"]) == (10, 4)
+    sent = responses.calls[0]
+    assert sent["text"] == {"format": {"type": "json_object"}}
+    assert sent["reasoning"] == {"effort": "low"}
+    assert sent["instructions"].startswith("sys")
+    assert sent["input"][0]["content"] == [
+        {"type": "input_text", "text": "user"},
+        {"type": "input_image", "image_url": "data:image/jpeg;base64,AAAA"},
+    ]
+    assert responses.stream.closed
 
 
 def test_normalize_unwraps_fenced_and_wrapped_json():

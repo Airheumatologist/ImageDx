@@ -430,12 +430,13 @@ pip install -r requirements.txt
 cp env.example .env   # fill in OPENCODE_API_KEY (discovery needs no key)
 ```
 
-Every stage runs on OpenCode's multimodal `step-5-preview-free` through the
-OpenCode Go gateway (`https://opencode.ai/zen/go/v1`). It is free for a
-limited time, so `config.MODEL_PRICES` lists it at $0; add a price with
-`VP_MODEL_PRICES_JSON` if you switch to a paid model and want `--budget-usd`
-to track spend. The gateway has no JSON response mode: the schema goes in the
-system prompt and replies are validated locally.
+Every stage runs on the multimodal `muse-spark-1.3-contributor` through the
+OpenCode Go gateway (`https://opencode.ai/zen/go/v1`, Responses API, JSON
+mode). Meta may train on its prompts and completions in exchange for the
+discounted price. `config.MODEL_PRICES` holds its Go price ($0.10 in / $0.20
+out per 1M tokens) so the ledger and `--budget-usd` track spend against Go's
+monthly limit. `step-5-preview-free` still works over chat completions (no
+JSON mode there: replies are unwrapped and validated locally).
 
 ## Usage
 
