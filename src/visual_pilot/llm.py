@@ -1,8 +1,9 @@
 """LLM provider layer for the visual pilot.
 
-OpenAI-compatible chat calls to StepFun (``VP_LLM_PROVIDER=stepfun``) in
-JSON mode with the schema in the system prompt and validated locally, one
-repair retry on validation failure, an
+OpenAI-compatible chat calls to OpenCode (``VP_LLM_PROVIDER=opencode``)
+with the schema in the system prompt and the JSON reply validated locally
+(the gateway has no JSON response mode), one repair retry on validation
+failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
 
@@ -19,6 +20,7 @@ import hashlib
 import json
 import threading
 import time
+import uuid
 from collections.abc import Iterable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
@@ -37,6 +39,9 @@ except ImportError:  # pragma: no cover - older openai uses httpx itself
     _openai_httpx = httpx
 
 from . import config, db, timing
+
+
+USER_AGENT = "image-dx-visual-pilot/1.0"
 
 
 class LLMError(Exception):
@@ -325,10 +330,16 @@ class LLMClient:
                     f"no API key configured for provider {self.provider!r}"
                 )
             # max_retries=0: transient retries are handled here so that
-            # budget/cache semantics stay under our control.
+            # budget/cache semantics stay under our control. The OpenCode Go
+            # gateway rejects requests without x-opencode-session and asks
+            # clients to name themselves in User-Agent.
             self._client = openai.OpenAI(
                 api_key=self.api_key, base_url=self.base_url,
                 timeout=self.timeout_seconds, max_retries=0,
+                default_headers={
+                    "User-Agent": USER_AGENT,
+                    "x-opencode-session": f"visual-pilot-{uuid.uuid4().hex}",
+                },
                 http_client=openai.DefaultHttpxClient(
                     transport=_DeadlineTransport(
                         config.VP_LLM_MAX_REQUEST_SECONDS
@@ -402,7 +413,7 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
     ):
-        """Single JSON-mode chat completion (StepFun has no json_schema mode)."""
+        """Single chat completion asking for JSON (no provider JSON mode)."""
         messages = [
             {
                 "role": "system",
@@ -423,14 +434,12 @@ class LLMClient:
                 return _stream()
 
         def _stream():
-            # Streamed: the Step Plan gateway never answers non-streaming
-            # requests that take more than a few seconds to generate.
+            # Streamed so a slow generation never sits on an idle socket.
+            # No response_format: OpenCode cannot route json_object requests
+            # for step-5-preview-free; _normalize unwraps fenced replies.
             stream = self._openai().chat.completions.create(
                 model=model,
                 messages=messages,
-                # No temperature=0: it doubles step-3.5-flash's reasoning
-                # length; the llm_calls cache keeps reruns reproducible.
-                response_format={"type": "json_object"},
                 stream=True,
                 stream_options={"include_usage": True},
                 **extra_kwargs,
@@ -462,7 +471,7 @@ class LLMClient:
             message = SimpleNamespace(content="".join(content))
             return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
-        return self._with_retries(_send), "json_object"
+        return self._with_retries(_send), "prompt_json"
 
     def _call_with_validation(
         self,
@@ -620,19 +629,40 @@ class LLMClient:
             self.conn.commit()
 
 
-def _normalize(content: str, schema: dict, defaults: dict) -> str:
-    """Repair top-level drift in a JSON-mode reply before schema validation.
-
-    Drops keys a closed schema (``additionalProperties: false``) forbids and
-    sets absent keys from ``defaults`` (callables get the reply object).
-    Anything else, including nested problems, is left to validation.
-    """
+def _unwrap_json(content: str) -> str:
+    """The JSON object in a reply that may wrap it in fences or prose."""
+    text = content.strip()
     try:
-        parsed = json.loads(content)
+        json.loads(text)
+        return text
+    except ValueError:
+        pass
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end <= start:
+        return content
+    candidate = text[start : end + 1]
+    try:
+        json.loads(candidate)
+    except ValueError:
+        return content
+    return candidate
+
+
+def _normalize(content: str, schema: dict, defaults: dict) -> str:
+    """Repair top-level drift in a JSON reply before schema validation.
+
+    Unwraps a JSON object from markdown fences or surrounding prose, drops
+    keys a closed schema (``additionalProperties: false``) forbids and sets
+    absent keys from ``defaults`` (callables get the reply object). Anything
+    else, including nested problems, is left to validation.
+    """
+    unwrapped = _unwrap_json(content)
+    try:
+        parsed = json.loads(unwrapped)
     except ValueError:
         return content
     if not isinstance(parsed, dict):
-        return content
+        return unwrapped
     changed = False
     allowed = schema.get("properties")
     if schema.get("additionalProperties") is False and allowed is not None:
@@ -643,14 +673,14 @@ def _normalize(content: str, schema: dict, defaults: dict) -> str:
         if key not in parsed:
             parsed[key] = value(parsed) if callable(value) else value
             changed = True
-    return json.dumps(parsed, ensure_ascii=False) if changed else content
+    return json.dumps(parsed, ensure_ascii=False) if changed else unwrapped
 
 
 def _cached_tokens(usage) -> int:
     """Prompt tokens served from the provider cache.
 
-    StepFun reports ``usage.cached_tokens``; the OpenAI-style
-    ``prompt_tokens_details.cached_tokens`` is accepted too.
+    OpenCode reports the OpenAI-style ``prompt_tokens_details.cached_tokens``;
+    a flat ``usage.cached_tokens`` is accepted too.
     """
     cached = getattr(usage, "cached_tokens", None)
     if cached is None:

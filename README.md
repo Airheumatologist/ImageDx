@@ -22,7 +22,7 @@ restricts a run to the ten pilot diseases.
                         Visual Findings Library pipeline
                         ================================
 
-  DISCOVERY                           LLM STAGES (StepFun)   
+  DISCOVERY                           LLM STAGES (OpenCode)  
   +---------------------------+       P2 caption triage      (text, batched)
   | Europe PMC REST search    |       P3 figure judgment     (vision)
   |  FIG: caption field,      |       P5 display captions    (text)
@@ -408,7 +408,7 @@ turborag/
 |       |-- publication.py       # publication eligibility rules
 |       |-- source_quality.py    # article tiers (review-first ranking)
 |       |-- curation_audit.py    # reversible publication audit
-|       |-- llm.py               # StepFun client: budget, cache, retries   
+|       |-- llm.py               # OpenCode client: budget, cache, retries  
 |       |-- prompts.py           # P2-P5 systems + JSON schemas
 |       |-- data/                # diseases.json, findings_vocab.json,
 |       |                        # topic_findings_vocab.json (generated)
@@ -427,13 +427,15 @@ Python 3.10+ is required (the macOS system `python3` is 3.9):
 ```bash
 uv venv --python 3.12 venv && source venv/bin/activate
 pip install -r requirements.txt
-cp env.example .env   # fill in STEPFUN_API_KEY (discovery needs no key)
+cp env.example .env   # fill in OPENCODE_API_KEY (discovery needs no key)
 ```
 
-The default models run on StepFun: `step-3.5-flash` for the text stages and
-the multimodal `step-3.7-flash` for the P3 vision judge (`step-3.5-flash`
-cannot read images). Both are paid; `config.MODEL_PRICES` holds their list
-prices so the ledger and `--budget-usd` track real spend.
+Every stage runs on OpenCode's multimodal `step-5-preview-free` through the
+OpenCode Go gateway (`https://opencode.ai/zen/go/v1`). It is free for a
+limited time, so `config.MODEL_PRICES` lists it at $0; add a price with
+`VP_MODEL_PRICES_JSON` if you switch to a paid model and want `--budget-usd`
+to track spend. The gateway has no JSON response mode: the schema goes in the
+system prompt and replies are validated locally.
 
 ## Usage
 
@@ -475,7 +477,7 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 | `VP_SEARCH_CONCURRENCY` / `VP_EPMC_RPS` | 8 / 8 | Europe PMC searches in flight / per second |
 | `VP_FETCH_CONCURRENCY` / `VP_S3_RPS` | 16 / 20 | article fetches in flight / per second |
 | `--batch-size` | 150 | articles per judge batch |
-| `VP_LLM_MAX_IN_FLIGHT` | 18 | all LLM calls in flight across stages (the Step Plan allows 20) |
+| `VP_LLM_MAX_IN_FLIGHT` | 32 | all LLM calls in flight across stages |
 
 A lower reasoning effort is roughly 10× faster per call but changes
 decisions; compare against earlier decisions before lowering it for triage

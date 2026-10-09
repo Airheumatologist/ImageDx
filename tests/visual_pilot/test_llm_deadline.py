@@ -43,7 +43,7 @@ def test_deadline_stream_passes_body_through_before_deadline():
 
 def test_client_uses_deadline_transport(monkeypatch):
     monkeypatch.setattr(llm.config, "llm_credentials", lambda provider: ("k", "https://example.invalid/v1"))
-    client = llm.LLMClient(provider="stepfun")._openai()
+    client = llm.LLMClient(provider="opencode")._openai()
     transport = client._client._transport
     assert isinstance(transport, llm._DeadlineTransport)
     assert transport.max_seconds == llm.config.VP_LLM_MAX_REQUEST_SECONDS

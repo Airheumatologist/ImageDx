@@ -1,4 +1,4 @@
-"""StepFun request shape and cost accounting for the LLM client."""
+"""OpenCode request shape and cost accounting for the LLM client."""
 
 import json
 from types import SimpleNamespace
@@ -60,22 +60,22 @@ def _client(monkeypatch, usage, failures=()):
     monkeypatch.setattr(
         llm.config, "llm_credentials", lambda provider: ("k", "https://example.invalid/v1")
     )
-    client = llm.LLMClient(provider="stepfun")
+    client = llm.LLMClient(provider="opencode")
     completions = _Completions(usage, failures)
     client._client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
     return client, completions
 
 
-def test_request_uses_json_mode_and_top_level_reasoning_effort(monkeypatch):
+def test_request_asks_for_json_in_prompt_with_reasoning_effort(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
     parsed, meta = client.call_json(
-        "p2", "step-3.5-flash", "sys", "user", SCHEMA, reasoning_effort="low"
+        "p2", "step-5-preview-free", "sys", "user", SCHEMA, reasoning_effort="low"
     )
     assert parsed == {"ok": True}
-    assert meta["response_format"] == "json_object"
+    assert meta["response_format"] == "prompt_json"
     sent = completions.calls[0]
-    assert sent["response_format"] == {"type": "json_object"}
+    assert "response_format" not in sent
     assert sent["stream"] is True
     assert completions.streams[0].closed
     assert sent["extra_body"] == {"reasoning_effort": "low"}
@@ -85,17 +85,20 @@ def test_request_uses_json_mode_and_top_level_reasoning_effort(monkeypatch):
 def test_empty_effort_sends_no_reasoning_field(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
     client, completions = _client(monkeypatch, usage)
-    client.call_json("p2", "step-3.5-flash", "sys", "user", SCHEMA, reasoning_effort="")
+    client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA, reasoning_effort="")
     assert "extra_body" not in completions.calls[0]
 
 
 def test_cost_prices_cached_prompt_tokens_at_cache_hit_rate(monkeypatch):
-    monkeypatch.delenv("VP_MODEL_PRICES_JSON", raising=False)
+    monkeypatch.setenv(
+        "VP_MODEL_PRICES_JSON",
+        '{"priced-model": {"in": 0.10, "cached_in": 0.02, "out": 0.30}}',
+    )
     usage = SimpleNamespace(
         prompt_tokens=1_000_000, completion_tokens=1_000_000, cached_tokens=400_000
     )
     client, _ = _client(monkeypatch, usage)
-    _, meta = client.call_json("p2", "step-3.5-flash", "sys", "user", SCHEMA)
+    _, meta = client.call_json("p2", "priced-model", "sys", "user", SCHEMA)
     # 600k uncached * $0.10 + 400k cached * $0.02 + 1M out * $0.30
     assert abs(meta["cost_usd"] - (0.06 + 0.008 + 0.30)) < 1e-9
 
@@ -112,7 +115,7 @@ def test_mid_stream_timeout_is_retried(monkeypatch):
     client, completions = _client(
         monkeypatch, usage, failures=[_openai_httpx.ReadTimeout("stalled")]
     )
-    parsed, meta = client.call_json("p2", "step-3.5-flash", "sys", "user", SCHEMA)
+    parsed, meta = client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA)
     assert parsed == {"ok": True}
     assert len(completions.calls) == 2
 
@@ -126,7 +129,7 @@ def test_fill_missing_supplies_echoed_keys_before_validation(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
     client, completions = _client(monkeypatch, usage)
     parsed, meta = client.call_json(
-        "p3", "step-3.7-flash", "sys", "user", schema, fill_missing={"figure_id": "PMC1:f1"}
+        "p3", "step-5-preview-free", "sys", "user", schema, fill_missing={"figure_id": "PMC1:f1"}
     )
     assert parsed == {"ok": True, "figure_id": "PMC1:f1"}
     assert meta["attempts"] == 1
@@ -154,3 +157,26 @@ def test_judge_derives_compound_from_panel_count():
     assert judge._lists_several_panels({"panels": [{}, {}]}) is True
     assert judge._lists_several_panels({"panels": [{}]}) is False
     assert judge._lists_several_panels({}) is False
+
+
+def test_default_model_is_free():
+    from src.visual_pilot import config
+
+    assert config.model_price("step-5-preview-free") == (0.0, 0.0, 0.0)
+
+
+def test_normalize_unwraps_fenced_and_wrapped_json():
+    fenced = '```json\n{"ok": true}\n```'
+    assert json.loads(llm._normalize(fenced, SCHEMA, {})) == {"ok": True}
+    prose = 'Here is the result: {"ok": true} Hope that helps.'
+    assert json.loads(llm._normalize(prose, SCHEMA, {})) == {"ok": True}
+    assert llm._normalize("not json", SCHEMA, {}) == "not json"
+
+
+def test_client_sends_opencode_session_and_user_agent(monkeypatch):
+    monkeypatch.setattr(
+        llm.config, "llm_credentials", lambda provider: ("k", "https://example.invalid/v1")
+    )
+    headers = llm.LLMClient(provider="opencode")._openai().default_headers
+    assert headers["User-Agent"] == llm.USER_AGENT
+    assert headers["x-opencode-session"].startswith("visual-pilot-")
