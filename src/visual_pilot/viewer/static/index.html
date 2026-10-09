@@ -38,6 +38,7 @@
     const search = document.getElementById("search");
     let diseases = [];
     let view = "all";
+    const openSpecialties = new Set();
 
     function matches(d, q) {
       if (!q) return true;
@@ -68,11 +69,17 @@
         if (!groups.has(name)) groups.set(name, []);
         groups.get(name).push(d);
       }
+      // Specialties start collapsed; a search opens every group so the matches show.
       for (const name of [...groups.keys()].sort()) {
-        const section = el("section", "specialty-group");
-        const heading = el("h2", "specialty-heading", name);
-        heading.append(el("span", "specialty-count", String(groups.get(name).length)));
+        const section = el("details", "specialty-group");
+        section.open = Boolean(q) || openSpecialties.has(name);
+        const heading = el("summary", "specialty-heading");
+        heading.append(el("span", "specialty-name", name), el("span", "specialty-count", String(groups.get(name).length)));
         section.append(heading, ...groups.get(name).map(row));
+        section.addEventListener("toggle", () => {
+          if (q) return;
+          if (section.open) openSpecialties.add(name); else openSpecialties.delete(name);
+        });
         list.append(section);
       }
     }

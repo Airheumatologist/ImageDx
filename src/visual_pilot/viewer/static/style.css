@@ -47,15 +47,30 @@ body.home { background: #fff; }
 .disease-row:hover, .disease-row:focus-visible { background: #f4f8f7; }
 .disease-row-name { display: block; font-size: 1.15rem; font-weight: 700; color: #111; }
 .disease-row-summary { display: block; margin-top: 4px; color: #6b717c; line-height: 1.4; }
+.specialty-group { border-bottom: 1px solid #e6e8eb; }
 .specialty-heading {
-  display: flex; align-items: center; gap: 10px; margin: 0; padding: 22px 28px 8px;
-  font-size: .82rem; letter-spacing: .06em; text-transform: uppercase; color: #2f6b66;
-  border-bottom: 1px solid #e6e8eb;
+  display: flex; align-items: center; gap: 10px; padding: 18px 28px 20px; cursor: pointer;
+  list-style: none;
 }
-.specialty-count { font-weight: 600; color: #8a909b; letter-spacing: 0; }
+.specialty-heading::-webkit-details-marker { display: none; }
+.specialty-heading::after {
+  content: ""; margin-left: auto; flex: none; width: 9px; height: 9px;
+  border-right: 2px solid #8a909b; border-bottom: 2px solid #8a909b; transform: rotate(45deg) translateY(-3px);
+  transition: transform .15s ease;
+}
+.specialty-group[open] > .specialty-heading::after { transform: rotate(-135deg) translateY(-3px); }
+.specialty-heading:hover { background: #f4f8f7; }
+.specialty-heading:focus-visible { outline: 2px solid #2f6b66; outline-offset: -2px; }
+.specialty-name { font-size: 1.15rem; font-weight: 700; color: #2f6b66; }
+.specialty-count { font-weight: 600; color: #8a909b; }
+.specialty-group[open] > .specialty-heading { border-bottom: 1px solid #e6e8eb; }
+.specialty-group .disease-row { padding-left: 48px; background: #fafbfc; }
+.specialty-group .disease-row:hover, .specialty-group .disease-row:focus-visible { background: #f4f8f7; }
+.specialty-group .disease-row:last-child { border-bottom: 0; }
 @media (max-width: 700px) {
   .home-header { padding: 14px 16px 16px; }
   .disease-row, .specialty-heading, .disease-list .empty { padding-left: 16px; padding-right: 16px; }
+  .specialty-group .disease-row { padding-left: 32px; }
 }
 
 #filters { display: flex; gap: 10px; padding: 12px 28px; flex-wrap: wrap; }
