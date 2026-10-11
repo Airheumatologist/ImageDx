@@ -158,22 +158,21 @@ def pair_funnel(conn, *, snapshot=None, records=None) -> dict:
 
 
 def library_rows(conn, disease_key=None, *, snapshot=None, records=None) -> list[dict]:
-    """Default library union: selected pair representatives plus Combined views."""
+    """Default library union: selected pair representatives, Combined views
+    and the unlabeled fill (``gallery.library_panel_ids`` per disease)."""
     from . import gallery
 
     with coverage.consistent_read(conn):
         snapshot = snapshot if snapshot is not None else gallery.coverage_snapshot(conn, disease_key)
         records = records if records is not None else publication.panel_records(conn, disease_key)
-        selected = {
-            panel_id for disease, findings in snapshot.items()
-            if disease_key is None or disease == disease_key
-            for record in findings.values() for panel_id in record["published_panel_ids"]
-        }
-        return [
-            row for row in records
-            if row["eligible"] and (disease_key is None or row["disease_key"] == disease_key)
-            and (row["panel_id"] in selected or row.get("plate_kind") == "combined")
-        ]
+        by_disease: dict[str, list[dict]] = {}
+        for row in records:
+            by_disease.setdefault(str(row.get("disease_key") or ""), []).append(row)
+        keys = [disease_key] if disease_key is not None else sorted(set(by_disease) | set(snapshot))
+        selected = set()
+        for key in keys:
+            selected |= gallery.library_panel_ids(snapshot, by_disease.get(key, []), key)
+        return [row for row in records if row["panel_id"] in selected]
 
 
 def pair_summary(snapshot: dict) -> dict:
@@ -212,11 +211,14 @@ def distribution(rows: list[dict], snapshot: dict) -> dict:
     """Pair finding counts use the gallery, not tags on every stored figure."""
     out = {
         "by_modality": Counter(), "by_subtype": Counter(), "by_disease": Counter(),
-        "by_finding": Counter(), "skin_tone": {},
+        "by_finding": Counter(), "unlabeled_by_disease": Counter(), "skin_tone": {},
     }
     for row in rows:
         for name, field in (("by_modality", "modality"), ("by_subtype", "subtype"), ("by_disease", "disease_key")):
             out[name][str(row.get(field))] += 1
+        if not row.get("eligible"):
+            # Library rows that are not finding-eligible are the unlabeled fill.
+            out["unlabeled_by_disease"][str(row.get("disease_key"))] += 1
         if row.get("modality") in {"clinical_photo", "dermoscopy", "capillaroscopy"} or row.get("skin_tone") is not None:
             out["skin_tone"].setdefault(row.get("disease_key") or "?", Counter())[row.get("skin_tone") or "unknown"] += 1
     for findings in snapshot.values():

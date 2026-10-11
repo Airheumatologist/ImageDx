@@ -128,6 +128,10 @@ VP_FINDING_GALLERY_CAP = _coverage_int("VP_FINDING_GALLERY_CAP", 20)
 # Topics with fewer distinct published images than this get the disease-wide
 # discovery pass (any article whose title names the disease).
 VP_TOPIC_IMAGE_FLOOR = _coverage_int("VP_TOPIC_IMAGE_FLOOR", 10)
+# A topic's default gallery tops up with unlabeled images (eligible except
+# that the source never names the model's finding label) until it shows this
+# many distinct images. They earn no pair credit. 0 disables the fill.
+VP_UNLABELED_FILL_TARGET = _coverage_int("VP_UNLABELED_FILL_TARGET", 20)
 
 
 def validate_coverage_settings() -> tuple[int, int, int]:

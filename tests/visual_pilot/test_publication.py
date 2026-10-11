@@ -100,6 +100,22 @@ def test_unknown_age_publishes_but_unsupported_label_rejects(tmp_path):
     record = _record(conn, "pl")
     assert record["eligible"] is False
     assert "no approved source-supported finding label" in record["reasons"]
+    assert record["unlabeled_publishable"] is True
+    conn.close()
+
+
+def test_unlabeled_publishable_only_when_label_is_the_sole_failure(tmp_path):
+    conn = make_db(tmp_path)
+    _seed_sle(conn)
+    add_article(conn, "PMC1", license_code="CC-BY-NC")
+    add_figure(
+        conn, "PMC1:nolabel", "PMC1",
+        caption="Discoid plaque in a 40-year-old patient with systemic lupus erythematosus",
+    )
+    add_panel(conn, tmp_path, "pl", "PMC1:nolabel", "PMC1", "sle")
+    record = _record(conn, "pl")
+    assert "no approved source-supported finding label" in record["reasons"]
+    assert record["unlabeled_publishable"] is False
     conn.close()
 
 

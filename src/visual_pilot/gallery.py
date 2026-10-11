@@ -9,6 +9,7 @@ reserves; nothing is deleted, truncated, or written here.
 
 from __future__ import annotations
 
+from . import config
 from .source_quality import TIER_SERIES
 
 # Panels built without article metadata rank as an ordinary study.
@@ -266,6 +267,63 @@ def select_gallery(
         ),
         "eligible_distinct": len(groups),
     }
+
+
+# Pseudo finding key that routes unlabeled candidates through select_gallery.
+_UNLABELED = "__unlabeled__"
+
+
+def select_unlabeled(
+    records: list[dict],
+    disease_key: str,
+    shown: set[str],
+    *,
+    target: int | None = None,
+) -> list[str]:
+    """Unlabeled images that top a topic's default view up to ``target``.
+
+    Candidates passed every publication gate except naming their finding
+    (``unlabeled_publishable``). They fill only the slots left after the
+    ``shown`` panels (distinct by hash), ranked and grouped exactly as a pair
+    gallery is, and earn no pair credit. Bytes already eligible as finding
+    evidence, published or reserve, never re-enter through this path.
+    """
+    target = config.VP_UNLABELED_FILL_TARGET if target is None else target
+    hash_of = {str(r["panel_id"]): str(r.get("sha256") or r["panel_id"]) for r in records}
+    slots = target - len({hash_of.get(pid, pid) for pid in shown})
+    if slots < 1:
+        return []
+    taken = {str(r["sha256"]) for r in records if r.get("eligible") and r.get("sha256")}
+    candidates = [
+        {**r, "eligible": True, "supported_finding_keys": [_UNLABELED]}
+        for r in records
+        if r.get("unlabeled_publishable")
+        and str(r.get("disease_key") or "") == disease_key
+        and not (r.get("sha256") and str(r["sha256"]) in taken)
+    ]
+    if not candidates:
+        return []
+    return select_gallery(candidates, disease_key, _UNLABELED, cap=slots)["published_panel_ids"]
+
+
+def library_panel_ids(snapshot: dict, records: list[dict], disease_key: str) -> set[str]:
+    """One topic's default library: the panel ids every default view shows.
+
+    The union of each pair's selected gallery, eligible whole-figure combined
+    plates (visible, no per-finding credit), then the unlabeled fill.
+    """
+    records = [r for r in records if str(r.get("disease_key") or "") == disease_key]
+    selected = {
+        str(panel_id)
+        for record in (snapshot.get(disease_key) or {}).values()
+        for panel_id in record.get("published_panel_ids") or []
+    }
+    selected.update(
+        str(r["panel_id"]) for r in records
+        if r.get("eligible") and r.get("plate_kind") == "combined"
+    )
+    selected.update(select_unlabeled(records, disease_key, selected))
+    return selected
 
 
 def published_coverage(conn, disease_key: str) -> dict[str, int]:

@@ -114,6 +114,9 @@ def rejection_category(reason: str) -> str:
     return "quality"
 
 
+NO_SUPPORTED_LABEL = "no approved source-supported finding label"
+
+
 def panel_eligibility(
     panel: dict, figure: dict, article: dict, approved_findings: set[str],
 ) -> dict:
@@ -163,7 +166,7 @@ def panel_eligibility(
     ))
     supported = _source_findings(panel, figure, approved_findings)
     if not supported:
-        reject("no approved source-supported finding label")
+        reject(NO_SUPPORTED_LABEL)
     try:
         valid_size = int(panel.get("width") or 0) > 0 and int(panel.get("height") or 0) > 0
     except (TypeError, ValueError):
@@ -176,6 +179,10 @@ def panel_eligibility(
     eligible = not reasons
     return {
         "eligible": eligible,
+        # Passes every gate except naming its finding: publishable as an
+        # unlabeled disease image (``gallery.library_panel_ids``), never as
+        # finding evidence.
+        "unlabeled_publishable": reasons == [NO_SUPPORTED_LABEL],
         "reasons": reasons,
         "rejection_categories": sorted({rejection_category(r) for r in reasons}),
         "supported_finding_keys": sorted(supported) if eligible and panel.get("plate_kind") != "combined" else [],

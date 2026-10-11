@@ -868,25 +868,14 @@ def _selected_panel_ids(
     """Panel ids the frozen selection publishes for this view.
 
     A ``finding`` filter picks exactly that pair's selected gallery (never
-    reserves). The default view is the union of every pair's gallery plus
-    eligible whole-figure combined plates, which stay visible in Combined
-    views but earn no per-finding credit.
+    reserves). The default view is ``gallery.library_panel_ids``: every
+    pair's gallery plus eligible whole-figure combined plates and the
+    unlabeled fill, which stay visible but earn no per-finding credit.
     """
-    findings = snapshot.get(disease, {})
     if finding is not None:
-        record = findings.get(finding) or {}
+        record = snapshot.get(disease, {}).get(finding) or {}
         return set(record.get("published_panel_ids") or [])
-    selected = {
-        panel_id
-        for record in findings.values()
-        for panel_id in record.get("published_panel_ids") or []
-    }
-    selected.update(
-        r["panel_id"]
-        for r in records
-        if r.get("eligible") and r.get("plate_kind") == "combined"
-    )
-    return selected
+    return gallery.library_panel_ids(snapshot, records, disease)
 
 
 def _display_panel_ids(selected: set[str], records: list[dict]) -> list[str]:

@@ -356,6 +356,13 @@ selected gallery, not by retrieved articles or stored rows.
   same configured disease is stored once as a plate. A plate showing one
   approved finding credits that pair once; a plate showing several
   (`plate_kind='combined'`, under "Combined views") credits no pair.
+- **Unlabeled fill.** A panel that passes every publication gate except
+  naming its finding (the source text never uses the vocabulary's wording)
+  is `unlabeled_publishable`. `gallery.library_panel_ids` tops each topic's
+  default view up with these, ranked as a pair gallery is, until the topic
+  shows `VP_UNLABELED_FILL_TARGET` (default 20; 0 disables) distinct images.
+  They show without a finding label, credit no pair, never appear under a
+  finding filter, and skip bytes already eligible as finding evidence.
 - **One source of truth.** The viewer, scheduler, and report read the same
   `gallery.coverage_snapshot`, so they agree on pair counts and IDs.
 

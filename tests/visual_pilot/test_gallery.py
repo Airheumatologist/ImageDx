@@ -315,3 +315,46 @@ def test_reviews_lead_and_atypical_case_reports_fall_to_reserves():
     out = gallery.select_gallery(panels, "sle", "malar_rash", cap=3)
     assert out["published_panel_ids"] == ["review", "series", "case"]
     assert out["reserve_panel_ids"] == ["atypical"]
+
+
+def _unlabeled(pid, index, **kwargs):
+    return gallery_panel(
+        pid, sha256=f"u-{index}", pmcid=f"PMC_U{index}",
+        eligible=False, supported=(), unlabeled_publishable=True, **kwargs,
+    )
+
+
+def test_unlabeled_fill_tops_up_to_target_only():
+    labeled = [_documented(f"p{i}", i) for i in range(3)]
+    unlabeled = [_unlabeled(f"u{i}", i) for i in range(10)]
+    records = labeled + unlabeled
+    shown = {"p0", "p1", "p2"}
+    picked = gallery.select_unlabeled(records, "sle", shown, target=5)
+    assert len(picked) == 2
+    assert set(picked) <= {f"u{i}" for i in range(10)}
+    assert gallery.select_unlabeled(records, "sle", shown, target=3) == []
+    assert gallery.select_unlabeled(records, "sle", shown, target=0) == []
+
+
+def test_unlabeled_fill_skips_finding_eligible_bytes_and_other_diseases():
+    labeled = gallery_panel("p0", sha256="shared", pmcid="PMC_0")
+    reserve = gallery_panel("r0", sha256="reserve-bytes", pmcid="PMC_R")
+    records = [
+        labeled, reserve,
+        _unlabeled("dup", 0, figure_id="PMC_D:fig1") | {"sha256": "shared"},
+        _unlabeled("dup2", 1) | {"sha256": "reserve-bytes"},
+        _unlabeled("other", 2, disease_key="ra"),
+        _unlabeled("ok", 3),
+    ]
+    assert gallery.select_unlabeled(records, "sle", {"p0"}, target=20) == ["ok"]
+
+
+def test_library_panel_ids_unions_pairs_combined_and_fill():
+    records = [
+        gallery_panel("p0", sha256="a", pmcid="PMC_0"),
+        gallery_panel("plate", sha256="b", pmcid="PMC_1", supported=(),
+                      plate_kind="combined"),
+        _unlabeled("u0", 0),
+    ]
+    snapshot = {"sle": {"malar_rash": {"published_panel_ids": ["p0"]}}}
+    assert gallery.library_panel_ids(snapshot, records, "sle") == {"p0", "plate", "u0"}

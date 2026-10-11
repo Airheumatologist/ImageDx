@@ -227,6 +227,38 @@ def test_combined_plate_visible_but_earns_no_finding_credit(tmp_path):
     assert "plate1" not in {r["panel_id"] for r in reserves["reserves"]}
 
 
+def test_unlabeled_images_fill_default_view_without_credit(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "VP_UNLABELED_FILL_TARGET", 4)
+    conn = make_db(tmp_path)
+    _seed_sle(conn)
+    _eligible_panels(conn, tmp_path, 2)
+    add_article(conn, "PMC7")
+    for i in range(5):
+        add_figure(conn, f"PMC7:fig{i}", "PMC7", caption=DISCOID_CAPTION)
+        add_panel(
+            conn, tmp_path, f"u{i}", f"PMC7:fig{i}", "PMC7", "sle",
+            findings=("malar_rash",), sha256=f"sha-u{i}",
+        )
+    conn.commit()
+    conn.close()
+    client = _app(tmp_path)
+
+    default = client.get("/api/diseases/sle/panels").json()
+    ids = _panel_ids(default)
+    assert {"p0", "p1"} <= ids
+    unlabeled = ids - {"p0", "p1"}
+    # Two slots remain under the target of four.
+    assert len(unlabeled) == 2 and unlabeled <= {f"u{i}" for i in range(5)}
+    for panel in default["panels"]:
+        if panel["panel_id"] in unlabeled:
+            assert panel["findings"] == []
+
+    filtered = client.get("/api/diseases/sle/panels?finding=malar_rash").json()
+    assert _panel_ids(filtered) == {"p0", "p1"}
+    reserves = client.get("/api/diseases/sle/reserves").json()
+    assert reserves["per_finding"]["malar_rash"]["published_distinct"] == 2
+
+
 def test_unapproved_finding_param_returns_empty(tmp_path):
     conn = make_db(tmp_path)
     _seed_sle(conn)
