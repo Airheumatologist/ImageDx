@@ -93,9 +93,7 @@
   "mycetoma": ["actinomycetoma", "eumycetoma"],
   "chronic_recurrent_multifocal_osteomyelitis": ["recurrent multifocal osteomyelitis", "nonbacterial osteitis"],
   "ludwigs_angina": ["Ludwig's angina"],
-  "timothy_syndrome": ["Timothy syndrome"],
   "finnish_congenital_nephrotic_syndrome": ["congenital nephrotic syndrome"],
-  "aspirin_exacerbated_respiratory_disease": ["aspirin-exacerbated respiratory disease"],
   "mevalonate_kinase_deficiency": ["mevalonate kinase deficiency", "hyper-IgD syndrome"],
   "senior_loken_syndrome": ["Senior-Loken syndrome"]
 }
