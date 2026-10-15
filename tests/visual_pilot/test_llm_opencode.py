@@ -159,11 +159,15 @@ def test_judge_derives_compound_from_panel_count():
     assert judge._lists_several_panels({}) is False
 
 
-def test_default_model_uses_responses_api():
+def test_default_model_uses_chat_json_mode():
     from src.visual_pilot import config
 
-    assert config.uses_responses_api(config.DEFAULT_MODEL)
+    assert config.DEFAULT_MODEL == "deepseek-v4.1-flash"
+    assert not config.uses_responses_api(config.DEFAULT_MODEL)
+    assert config.uses_json_mode(config.DEFAULT_MODEL)
+    assert config.uses_responses_api("muse-spark-1.3-contributor")
     assert not config.uses_responses_api("step-5-preview-free")
+    assert not config.uses_json_mode("step-5-preview-free")
     assert config.model_price("step-5-preview-free") == (0.0, 0.0, 0.0)
 
 
@@ -228,3 +232,43 @@ def test_client_sends_opencode_session_and_user_agent(monkeypatch):
     headers = llm.LLMClient(provider="opencode")._openai().default_headers
     assert headers["User-Agent"] == llm.USER_AGENT
     assert headers["x-opencode-session"].startswith("visual-pilot-")
+
+
+def test_requests_carry_the_output_token_cap(monkeypatch):
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA)
+    assert completions.calls[0]["max_tokens"] == llm.config.VP_LLM_MAX_OUTPUT_TOKENS
+
+
+def test_pacer_spaces_requests_to_the_rpm_cap(monkeypatch):
+    sleeps = []
+    clock = [100.0]
+    monkeypatch.setattr(llm.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    pacer = llm._RequestPacer(rpm=10)
+    for _ in range(3):
+        pacer.wait()
+    assert sleeps == [6.0, 12.0]
+    llm._RequestPacer(rpm=0).wait()  # unpaced: returns at once
+    assert sleeps == [6.0, 12.0]
+
+
+def test_every_attempt_waits_for_the_pacer(monkeypatch):
+    waits = []
+    monkeypatch.setattr(llm, "_PACER", SimpleNamespace(wait=lambda: waits.append(1)))
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA)
+    assert len(waits) == len(completions.calls) == 1
+
+
+def test_json_mode_models_send_response_format(monkeypatch):
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    _, meta = client.call_json("p2", "deepseek-v4.1-flash", "sys", "user", SCHEMA)
+    assert completions.calls[0]["response_format"] == {"type": "json_object"}
+    assert meta["response_format"] == "chat_json"
+    _, meta = client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA)
+    assert "response_format" not in completions.calls[1]
+    assert meta["response_format"] == "prompt_json"

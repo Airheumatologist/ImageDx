@@ -22,7 +22,7 @@ Fallbacks: Europe PMC fullTextXML for the XML itself; unresolved graphics get
 Everything is in memory: nothing here writes to disk. httpx calls go through
 a per-host token-bucket rate limiter (NCBI <=3 req/s, <=10 with
 ``VP_NCBI_API_KEY``; the public ``pmc-oa-opendata`` S3 bucket uses
-``config.VP_S3_RPS`` (default 20); other hosts ~5 req/s) plus retries on
+``config.VP_S3_RPS`` (default 150); other hosts ~5 req/s) plus retries on
 429/5xx.
 
 ``get_article_bundle`` accepts the article's S3 ``prefix`` and
@@ -67,7 +67,7 @@ _NCBI_RPS_WITH_KEY = 10.0
 _DEFAULT_RPS = 5.0
 
 # The public bucket is not an NCBI courtesy host; it gets its own limit
-# (contract C1/C3): config.VP_S3_RPS, default 20 req/s.
+# (contract C1/C3): config.VP_S3_RPS, default 150 req/s.
 _S3_HOST = urlparse(S3_BASE).netloc
 
 
@@ -141,9 +141,9 @@ def _default_host_rps() -> dict[str, float]:
     # Read env lazily so VP_NCBI_API_KEY can be set after import.
     rps = _NCBI_RPS_WITH_KEY if os.getenv("VP_NCBI_API_KEY") else _NCBI_RPS
     host_rps = {host: rps for host in _NCBI_HOSTS}
-    # Public S3 bucket: not an NCBI host; contract C1 VP_S3_RPS (default 20).
+    # Public S3 bucket: not an NCBI host; contract C1 VP_S3_RPS (default 150).
     # Read at call time so tests/deploys can adjust config.VP_S3_RPS.
-    host_rps[_S3_HOST] = float(getattr(config, "VP_S3_RPS", 20.0))
+    host_rps[_S3_HOST] = float(getattr(config, "VP_S3_RPS", 150.0))
     # Europe PMC REST search; discovery runs several searches at once.
     host_rps[urlparse(EPMC_REST).netloc] = float(getattr(config, "VP_EPMC_RPS", 8.0))
     return host_rps
@@ -157,10 +157,16 @@ _client: httpx.Client | None = None
 def http_client() -> httpx.Client:
     global _client
     if _client is None:
+        # Keep a warm connection per fetch worker; httpx keeps only 20.
+        workers = int(getattr(config, "VP_FETCH_CONCURRENCY", 16))
         _client = httpx.Client(
             timeout=httpx.Timeout(30.0, read=60.0),
             follow_redirects=True,
             headers={"User-Agent": USER_AGENT},
+            limits=httpx.Limits(
+                max_connections=max(100, 2 * workers),
+                max_keepalive_connections=max(20, workers),
+            ),
         )
     return _client
 

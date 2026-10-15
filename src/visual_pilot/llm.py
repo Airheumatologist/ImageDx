@@ -3,7 +3,8 @@
 OpenAI-compatible calls to OpenCode (``VP_LLM_PROVIDER=opencode``) with
 the schema in the system prompt and the JSON reply validated locally.
 Muse Spark models go through the Responses API in JSON mode; the rest use
-chat completions without a JSON mode (step-5-preview-free has none). One
+chat completions, in JSON mode for ``VP_JSON_MODE_MODELS`` (deepseek-v4.1-flash)
+and without one otherwise (step-5-preview-free has none). One
 repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
 mode, and concurrent batching.
@@ -11,7 +12,7 @@ mode, and concurrent batching.
 There is no provider batch API, so ``call_many``/``iter_many`` run requests
 on a thread pool of ``VP_CONCURRENCY`` workers, with a per-client timeout,
 lazy completion-order
-``iter_many``, and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
+``iter_many``, process-wide request pacing (``VP_LLM_RPM``), and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
 independent of ``max_retries``.
 """
 
@@ -89,6 +90,29 @@ class BatchResult:
 # Shared by every LLMClient so overlapping stages stay under the provider's
 # account-wide concurrency limit; held only while a request is open.
 _IN_FLIGHT = threading.BoundedSemaphore(config.VP_LLM_MAX_IN_FLIGHT)
+
+class _RequestPacer:
+    """Spaces requests evenly to stay under a requests-per-minute cap."""
+
+    def __init__(self, rpm: float) -> None:
+        self.interval = 60.0 / rpm if rpm > 0 else 0.0
+        self._next_allowed = 0.0
+        self._lock = threading.Lock()
+
+    def wait(self) -> None:
+        if not self.interval:
+            return
+        with self._lock:
+            now = time.monotonic()
+            slot = max(now, self._next_allowed)
+            self._next_allowed = slot + self.interval
+        if slot > now:
+            time.sleep(slot - now)
+        timing.record("limiter_wait", max(slot - now, 0.0), host="llm")
+
+
+# Shared by every LLMClient: the provider's rate limit is per account.
+_PACER = _RequestPacer(config.VP_LLM_RPM)
 
 # Error classes worth a retry (rate limits, network blips, server 5xx).
 _TRANSIENT_ERRORS = (
@@ -414,7 +438,7 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
     ):
-        """Single chat completion asking for JSON (no provider JSON mode)."""
+        """Single chat completion asking for JSON (JSON mode where routable)."""
         messages = [
             {
                 "role": "system",
@@ -433,6 +457,11 @@ class LLMClient:
         extra_kwargs = {}
         if effort:
             extra_kwargs["extra_body"] = {"reasoning_effort": effort}
+        if config.VP_LLM_MAX_OUTPUT_TOKENS:
+            extra_kwargs["max_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
+        json_mode = config.uses_json_mode(model)
+        if json_mode:
+            extra_kwargs["response_format"] = {"type": "json_object"}
 
         def _send():
             with _IN_FLIGHT:
@@ -440,8 +469,9 @@ class LLMClient:
 
         def _stream():
             # Streamed so a slow generation never sits on an idle socket.
-            # No response_format: OpenCode cannot route json_object requests
-            # for step-5-preview-free; _normalize unwraps fenced replies.
+            # OpenCode cannot route json_object requests for
+            # step-5-preview-free, so only JSON-mode models get
+            # response_format; _normalize unwraps fenced replies either way.
             stream = self._openai().chat.completions.create(
                 model=model,
                 messages=messages,
@@ -476,7 +506,7 @@ class LLMClient:
             message = SimpleNamespace(content="".join(content))
             return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
-        return self._with_retries(_send), "prompt_json"
+        return self._with_retries(_send), "chat_json" if json_mode else "prompt_json"
 
     def _send_responses(self, model: str, messages: list[dict], effort: str):
         """One streamed Responses API call in JSON mode (Muse Spark models).
@@ -492,6 +522,8 @@ class LLMClient:
             for p in user
         ]
         kwargs = {"reasoning": {"effort": effort}} if effort else {}
+        if config.VP_LLM_MAX_OUTPUT_TOKENS:
+            kwargs["max_output_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
         with _IN_FLIGHT:
             stream = self._openai().responses.create(
                 model=model,
@@ -592,6 +624,7 @@ class LLMClient:
         transient_attempt = 0
         rate_limit_attempt = 0
         while True:
+            _PACER.wait()  # every attempt is one provider request
             try:
                 return call()
             except _TRANSIENT_ERRORS as exc:

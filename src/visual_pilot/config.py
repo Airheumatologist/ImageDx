@@ -64,10 +64,10 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on OpenCode Go's multimodal muse-spark-1.3-contributor
-# (Meta may train on its prompts and completions in exchange for the discount).
+# Every LLM stage runs on OpenCode Go's multimodal deepseek-v4.1-flash, which
+# needs the workspace's Privacy settings to allow Global regions.
 # -----------------------------------------------------------------------------
-DEFAULT_MODEL = "muse-spark-1.3-contributor"
+DEFAULT_MODEL = "deepseek-v4.1-flash"
 # Models OpenCode serves only through the Responses API (/responses).
 RESPONSES_API_MODELS = frozenset(
     m.strip() for m in os.getenv(
@@ -81,6 +81,18 @@ def uses_responses_api(model: str) -> bool:
     return model in RESPONSES_API_MODELS
 
 
+# Chat-completions models OpenCode can route with response_format json_object
+# (step-5-preview-free cannot, so it relies on the prompt alone).
+JSON_MODE_MODELS = frozenset(
+    m.strip() for m in os.getenv("VP_JSON_MODE_MODELS", "deepseek-v4.1-flash").split(",")
+    if m.strip()
+)
+
+
+def uses_json_mode(model: str) -> bool:
+    return model in JSON_MODE_MODELS
+
+
 VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "opencode").strip().lower()
 VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", DEFAULT_MODEL)
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", DEFAULT_MODEL)
@@ -89,7 +101,7 @@ VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
-VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 16))
+VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 32))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Wall-clock cap on one LLM request. The timeouts above are per read, which
 # provider keep-alive bytes reset forever on a stalled request.
@@ -158,11 +170,12 @@ validate_coverage_settings()
 # Throughput settings: request rates, worker pools and caches.
 # -----------------------------------------------------------------------------
 # Request rate for the public S3 bucket (pmc-oa-opendata); NCBI hosts unchanged.
-VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 20.0))
+# The bucket is AWS Open Data and serves far more; this only keeps a run polite.
+VP_S3_RPS = max(0.1, _env_float("VP_S3_RPS", 150.0))
 # Worker pool size for fetches/parse/store (W5/W6/W7). Host-level rate
 # limiters (pmc.RATE_LIMITER) still cap per-host throughput, so this mainly
 # controls how much of the S3/LLM budget is kept in flight.
-VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 16))
+VP_FETCH_CONCURRENCY = max(1, _env_int("VP_FETCH_CONCURRENCY", 64))
 # Europe PMC searches run ahead of ingestion on this many workers, capped by
 # VP_EPMC_RPS requests/second to www.ebi.ac.uk.
 VP_SEARCH_CONCURRENCY = max(1, _env_int("VP_SEARCH_CONCURRENCY", 8))
@@ -171,11 +184,18 @@ VP_EPMC_RPS = max(0.1, _env_float("VP_EPMC_RPS", 8.0))
 # Europe PMC outages (each failed search is retried once at the pass end).
 VP_SEARCH_RETRY_COOLDOWN = max(0, _env_int("VP_SEARCH_RETRY_COOLDOWN", 60))
 # Max in-flight P3 vision-judge calls (W6).
-VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 16))
+VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 32))
 # Process-wide cap on in-flight LLM requests across every client and stage
 # (run-all overlaps triage with judge/describe). 429s back off and retry
 # (VP_RATE_LIMIT_RETRIES); lower this if the timings report shows many.
-VP_LLM_MAX_IN_FLIGHT = max(1, _env_int("VP_LLM_MAX_IN_FLIGHT", 32))
+VP_LLM_MAX_IN_FLIGHT = max(1, _env_int("VP_LLM_MAX_IN_FLIGHT", 64))
+# Output-token cap per LLM request (reasoning included; 0 = provider default).
+# Valid replies stay under ~8k; the cap turns a rare runaway generation into a
+# quick repair retry instead of minutes of output.
+VP_LLM_MAX_OUTPUT_TOKENS = max(0, _env_int("VP_LLM_MAX_OUTPUT_TOKENS", 16384))
+# Process-wide LLM requests per minute, spaced evenly (0 = unpaced). Set it to
+# a provider's per-minute limit so requests wait instead of failing with 429s.
+VP_LLM_RPM = max(0.0, _env_float("VP_LLM_RPM", 0.0))
 # Per-request LLM timeout for the P3 judge (W6).
 VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
 # Retries on HTTP 429 for provider calls (W3).

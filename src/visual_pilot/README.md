@@ -93,7 +93,7 @@ Existing manual or locked representative selections are preserved.
 
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
 `VP_JUDGE_MODEL`, `VP_DESCRIBE_MODEL` (all default to the multimodal
-`muse-spark-1.3-contributor` on OpenCode Go),
+`deepseek-v4.1-flash` on OpenCode Go),
 `VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_LLM_PROVIDER` (default
 `opencode`), `VP_IMAGE_MAX_EDGE`, `VP_CONCURRENCY`, `VP_FETCH_CONCURRENCY`,
 `VP_NCBI_API_KEY`, `VP_DATA_DIR`. Provider keys come from `.env`
@@ -175,5 +175,5 @@ panel gets a `panel_curation` exclusion (reason `treatment_related`). Disease a 
   `prepare_for_llm` (TIFF/other→PNG, downscale to `VP_IMAGE_MAX_EDGE`, in
   memory) + `to_data_url` send them inline.
 - **Rate limits.** Per-host limiting (NCBI ≤3 req/s, ≤10 with
-  `VP_NCBI_API_KEY`; S3 `VP_S3_RPS`, default 20; others ~5) with retries on
+  `VP_NCBI_API_KEY`; S3 `VP_S3_RPS`, default 150; others ~5) with retries on
   429/5xx. No image bytes are ever written to disk.

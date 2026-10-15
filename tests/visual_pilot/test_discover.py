@@ -464,3 +464,16 @@ def test_requeue_terms_and_errors(tmp_path, monkeypatch):
     assert got["PMC2:f2"][0] == "caption_rejected"
     assert got["PMC1:f3"] == ("vision_error", 0) and got["PMC1:f4"] == ("vision_error", 3)
     conn.close()
+
+
+def test_pmc_client_keeps_a_connection_per_fetch_worker(monkeypatch):
+    from src.visual_pilot import pmc
+
+    monkeypatch.setattr(pmc.config, "VP_FETCH_CONCURRENCY", 64)
+    monkeypatch.setattr(pmc, "_client", None)
+    try:
+        pool = pmc.http_client()._transport._pool
+        assert pool._max_keepalive_connections == 64
+        assert pool._max_connections == 128
+    finally:
+        pmc.set_http_client(None)
