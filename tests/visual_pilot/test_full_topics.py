@@ -47,7 +47,9 @@ def test_search_names_extend_topic_title_terms(tmp_path, monkeypatch):
     assert zenker["synonyms"].count("Zenker's diverticulum") == 1
     assert "Zenker's diverticulum" in discover.overview_disease_terms(zenker)
     # Names already in the catalog are not repeated.
-    assert len(zenker["synonyms"]) == len(diseases.load_diseases()["zenker_diverticulum"]["synonyms"]) + 1
+    monkeypatch.setattr(diseases, "SEARCH_NAMES_PATH", tmp_path / "missing.json")
+    base = diseases._catalog.__wrapped__("topics")["zenker_diverticulum"]
+    assert len(zenker["synonyms"]) == len(base["synonyms"]) + 1
 
 
 def test_pilot_catalog_is_the_curated_file(monkeypatch):
