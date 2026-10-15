@@ -8,9 +8,11 @@ Unimplemented stages print "not implemented yet" and exit with code 2.
 from __future__ import annotations
 
 import argparse
+import faulthandler
 import io
 import logging
 import queue
+import signal
 import sys
 import threading
 import time
@@ -583,6 +585,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="static site output directory (default: site/ at the repo root)",
     )
+    subs["export-site"].add_argument(
+        "--merge",
+        action="store_true",
+        help="keep an existing topic's files when the database shows fewer "
+        "images for it (for a database that holds only some topics)",
+    )
     for name in ("extract", "run-all"):
         subs[name].add_argument(
             "--image-only",
@@ -594,6 +602,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # `kill -USR1 <pid>` dumps every thread's stack to stderr (hung runs).
+    if hasattr(signal, "SIGUSR1"):
+        faulthandler.register(signal.SIGUSR1, all_threads=True)
     overridden = False
     for flag, name in (
         ("finding_image_floor", "VP_FINDING_IMAGE_FLOOR"),
