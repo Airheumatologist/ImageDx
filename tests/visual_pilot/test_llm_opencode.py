@@ -162,7 +162,8 @@ def test_judge_derives_compound_from_panel_count():
 def test_default_model_uses_chat_json_mode():
     from src.visual_pilot import config
 
-    assert config.DEFAULT_MODEL == "deepseek-v4.1-flash"
+    assert config.DEFAULT_MODEL == "longcat-2.5-preview-free"
+    assert config.uses_json_mode("deepseek-v4.1-flash")
     assert not config.uses_responses_api(config.DEFAULT_MODEL)
     assert config.uses_json_mode(config.DEFAULT_MODEL)
     assert config.uses_responses_api("muse-spark-1.3-contributor")
@@ -239,6 +240,15 @@ def test_requests_carry_the_output_token_cap(monkeypatch):
     client, completions = _client(monkeypatch, usage)
     client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA)
     assert completions.calls[0]["max_tokens"] == llm.config.VP_LLM_MAX_OUTPUT_TOKENS
+
+
+def test_effort_off_disables_thinking(monkeypatch):
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    client.call_json("p2", "longcat-2.5-preview-free", "sys", "user", SCHEMA, reasoning_effort="off")
+    client.call_json("p2", "longcat-2.5-preview-free", "sys", "user2", SCHEMA, reasoning_effort="low")
+    assert completions.calls[0]["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert completions.calls[1]["extra_body"] == {"reasoning_effort": "low"}
 
 
 def test_pacer_spaces_requests_to_the_rpm_cap(monkeypatch):

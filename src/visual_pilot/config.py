@@ -64,10 +64,11 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on OpenCode Go's multimodal deepseek-v4.1-flash, which
-# needs the workspace's Privacy settings to allow Global regions.
+# Every LLM stage runs on OpenCode Go's multimodal longcat-2.5-preview-free
+# (free for now). deepseek-v4.1-flash also works on Go once the workspace's
+# Privacy settings allow Global regions.
 # -----------------------------------------------------------------------------
-DEFAULT_MODEL = "deepseek-v4.1-flash"
+DEFAULT_MODEL = "longcat-2.5-preview-free"
 # Models OpenCode serves only through the Responses API (/responses).
 RESPONSES_API_MODELS = frozenset(
     m.strip() for m in os.getenv(
@@ -84,7 +85,9 @@ def uses_responses_api(model: str) -> bool:
 # Chat-completions models OpenCode can route with response_format json_object
 # (step-5-preview-free cannot, so it relies on the prompt alone).
 JSON_MODE_MODELS = frozenset(
-    m.strip() for m in os.getenv("VP_JSON_MODE_MODELS", "deepseek-v4.1-flash").split(",")
+    m.strip() for m in os.getenv(
+        "VP_JSON_MODE_MODELS", "longcat-2.5-preview-free,deepseek-v4.1-flash"
+    ).split(",")
     if m.strip()
 )
 
@@ -217,6 +220,7 @@ MODEL_PRICES = {
     "muse-spark-1.3-contributor": {"in": 0.10, "cached_in": 0.002, "out": 0.20},
     # Free on OpenCode for a limited time.
     "step-5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
+    "longcat-2.5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
 }
 
 

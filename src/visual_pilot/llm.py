@@ -3,7 +3,8 @@
 OpenAI-compatible calls to OpenCode (``VP_LLM_PROVIDER=opencode``) with
 the schema in the system prompt and the JSON reply validated locally.
 Muse Spark models go through the Responses API in JSON mode; the rest use
-chat completions, in JSON mode for ``VP_JSON_MODE_MODELS`` (deepseek-v4.1-flash)
+chat completions, in JSON mode for ``VP_JSON_MODE_MODELS`` (longcat-2.5-preview-free,
+deepseek-v4.1-flash)
 and without one otherwise (step-5-preview-free has none). One
 repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
@@ -455,7 +456,11 @@ class LLMClient:
                 lambda: self._send_responses(model, messages, effort)
             ), "responses_json"
         extra_kwargs = {}
-        if effort:
+        if effort == "off":
+            # reasoning_effort only trims thinking on longcat-2.5-preview-free;
+            # this switches it off.
+            extra_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+        elif effort:
             extra_kwargs["extra_body"] = {"reasoning_effort": effort}
         if config.VP_LLM_MAX_OUTPUT_TOKENS:
             extra_kwargs["max_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
@@ -521,7 +526,7 @@ class LLMClient:
             else {"type": "input_image", "image_url": p["image_url"]["url"]}
             for p in user
         ]
-        kwargs = {"reasoning": {"effort": effort}} if effort else {}
+        kwargs = {"reasoning": {"effort": effort}} if effort and effort != "off" else {}
         if config.VP_LLM_MAX_OUTPUT_TOKENS:
             kwargs["max_output_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
         with _IN_FLIGHT:

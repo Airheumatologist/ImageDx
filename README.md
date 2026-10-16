@@ -437,11 +437,12 @@ pip install -r requirements.txt
 cp env.example .env   # fill in OPENCODE_API_KEY (discovery needs no key)
 ```
 
-Every stage runs on the multimodal `deepseek-v4.1-flash` through the
+Every stage runs on the multimodal `longcat-2.5-preview-free` through the
 OpenCode Go gateway (`https://opencode.ai/zen/go/v1`, chat completions, JSON
-mode). Go serves it only when the workspace's Privacy settings allow Global
-regions. It has no entry in `config.MODEL_PRICES`, so the ledger records no
-cost and `--budget-usd` does not limit it; usage counts against Go's monthly
+mode). It is free for now, so `config.MODEL_PRICES` prices it at zero.
+`deepseek-v4.1-flash` (JSON mode too) works on Go when the workspace's Privacy
+settings allow Global regions; it has no entry in `config.MODEL_PRICES`, so
+the ledger records no cost for it and usage counts against Go's monthly
 limit. `muse-spark-1.3-contributor` still works over the Responses API, and
 `step-5-preview-free` over chat completions (no JSON mode there: replies are
 unwrapped and validated locally).
@@ -482,7 +483,7 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 | `VP_JUDGE_CONCURRENCY` | 32 | vision calls in flight |
 | `VP_CONCURRENCY` | 32 | triage/describe/extract calls in flight |
 | `VP_TRIAGE_BATCH` | 20 | figures per triage call |
-| `VP_*_REASONING_EFFORT` | `low` in `env.example` (empty = model default) | per stage: `TRIAGE`, `JUDGE`, `DESCRIBE`, `EXTRACT`, `VOCAB` |
+| `VP_*_REASONING_EFFORT` | `low` in `env.example` (empty = model default; `off` disables thinking) | per stage: `TRIAGE`, `JUDGE`, `DESCRIBE`, `EXTRACT`, `VOCAB` |
 | `VP_SEARCH_CONCURRENCY` / `VP_EPMC_RPS` | 8 / 8 | Europe PMC searches in flight / per second |
 | `VP_FETCH_CONCURRENCY` / `VP_S3_RPS` | 64 / 150 | article and image fetches in flight / per second |
 | `--batch-size` | 150 | articles per judge batch |
