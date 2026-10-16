@@ -1,10 +1,12 @@
 /* Disease page: clean image cards with source details available on demand. */
-const state = { tabs: [], open: new Set(), panels: [], vocab: [], eyeEvidence: [], hasPediatric: null, loading: false };
-const FILTER_IDS = ["f-subtype", "f-modality", "f-finding", "f-typicality", "f-skin-tone"];
+const state = { tabs: [], active: null, panels: [], eyeEvidence: [], hasPediatric: null, loading: false };
 let panelsRequest = 0;
 const $ = (id) => document.getElementById(id);
 const lb = $("lightbox");
-let previouslyFocused = null;
+// Card button -> { panel, src }, so the lightbox can step through a section's cards.
+const cardPanels = new WeakMap();
+let lbItems = [];
+let lbIndex = 0;
 
 function setText(el, value) {
   if (value) el.textContent = value;
@@ -14,16 +16,43 @@ function setText(el, value) {
 function closeLightbox() {
   if (lb.hidden) return;
   lb.hidden = true;
+  document.body.classList.remove("lb-open");
   $("lb-media").replaceChildren();
-  if (previouslyFocused?.isConnected) previouslyFocused.focus();
+  const trigger = lbItems[lbIndex];
+  if (trigger?.isConnected) trigger.focus();
+}
+
+function stepLightbox(delta) {
+  if (lbItems.length < 2) return;
+  showLightboxItem((lbIndex + delta + lbItems.length) % lbItems.length);
 }
 
 lb.addEventListener("click", (event) => {
   if (event.target === lb || event.target.closest("[data-close-lightbox]")) closeLightbox();
 });
+$("lb-prev").addEventListener("click", () => stepLightbox(-1));
+$("lb-next").addEventListener("click", () => stepLightbox(1));
+
+// Horizontal swipe on the image steps through the section on touch screens.
+let touchStart = null;
+const stage = lb.querySelector(".lb-stage");
+stage.addEventListener("touchstart", (event) => {
+  const t = event.touches[0];
+  touchStart = event.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null;
+}, { passive: true });
+stage.addEventListener("touchend", (event) => {
+  if (!touchStart) return;
+  const t = event.changedTouches[0];
+  const dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
+  touchStart = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) stepLightbox(dx < 0 ? 1 : -1);
+});
+
 document.addEventListener("keydown", (event) => {
   if (lb.hidden) return;
   if (event.key === "Escape") { event.preventDefault(); closeLightbox(); }
+  if (event.key === "ArrowLeft") { event.preventDefault(); stepLightbox(-1); }
+  if (event.key === "ArrowRight") { event.preventDefault(); stepLightbox(1); }
   if (event.key === "Tab") {
     const focusable = [...lb.querySelectorAll("button, a[href]")].filter(el => !el.disabled);
     if (!focusable.length) return;
@@ -33,8 +62,23 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-function openLightbox(panel, src) {
-  previouslyFocused = document.activeElement;
+function openLightbox(trigger) {
+  const scope = trigger.closest(".section-panel") || document;
+  lbItems = [...scope.querySelectorAll(".card-open")];
+  showLightboxItem(Math.max(0, lbItems.indexOf(trigger)));
+  lb.hidden = false;
+  document.body.classList.add("lb-open");
+  $("lb-close").focus();
+}
+
+function showLightboxItem(index) {
+  lbIndex = index;
+  const { panel, src } = cardPanels.get(lbItems[index]);
+  const multiple = lbItems.length > 1;
+  $("lb-prev").hidden = !multiple;
+  $("lb-next").hidden = !multiple;
+  $("lb-counter").textContent = multiple ? `${index + 1} / ${lbItems.length}` : "";
+  lb.scrollTop = 0;
   const image = VP.panelImage(panel, "lb-img", panel.image || src);
   image.setAttribute("aria-label", displayLabel(panel));
   $("lb-media").replaceChildren(image);
@@ -92,9 +136,6 @@ function openLightbox(panel, src) {
     }
     details.append(section);
   });
-
-  lb.hidden = false;
-  $("lb-close").focus();
 }
 
 function isStatedAgeLabel(age) {
@@ -134,16 +175,6 @@ function displayLabel(panel) {
   return findings.filter(Boolean).join(", ") || humanize(panel.body_site || panel.modality || "Clinical image");
 }
 
-function filters() {
-  const p = new URLSearchParams();
-  for (const [k, id] of [["subtype", "f-subtype"], ["modality", "f-modality"],
-    ["finding", "f-finding"], ["typicality", "f-typicality"]]) {
-    const v = $(id).value;
-    if (v) p.set(k, v);
-  }
-  return p;
-}
-
 function isPediatric(panel) {
   if (typeof panel.pediatric === "boolean") return panel.pediatric;
   if (panel.pediatric === true) return true;
@@ -171,58 +202,106 @@ function sectionPanels(tab) {
   let panels = state.panels;
   if (tab.key === "pediatric") panels = panels.filter(isPediatric);
   else panels = panels.filter(p => p.tab === tab.key);
-  // Skin tone only narrows the sections that expose it.
-  const skinTone = $("f-skin-tone").value;
-  if (tab.skin_tone_filter && skinTone) panels = panels.filter(p => p.skin_tone === skinTone);
   return panels;
 }
 
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
 function render() {
-  $("f-skin-tone").hidden = !state.tabs.some(t => t.skin_tone_filter);
   const content = $("content");
+  const nav = $("section-nav");
+  gridResize.disconnect();
   content.replaceChildren();
-  if (state.loading) { content.innerHTML = "<p class='empty'>Loading images…</p>"; return; }
-  const list = document.createElement("div");
-  list.className = "manifestations";
-  for (const tab of state.tabs) {
-    if (tab.key === "pediatric" && !state.hasPediatric) continue;
+  nav.replaceChildren();
+  if (state.loading) {
+    nav.hidden = true;
+    content.innerHTML = "<p class='empty'>Loading images…</p>";
+    return;
+  }
+  const tabs = state.tabs.filter(tab => !(tab.key === "pediatric" && !state.hasPediatric));
+  const entries = tabs.map(tab => {
     const panels = tab.evidence_only ? [] : sectionPanels(tab);
     const count = tab.evidence_only
       ? new Set(state.eyeEvidence.map(item => item.finding_key)).size
       : panels.length;
-    const section = document.createElement("details");
-    section.className = "manifestation";
-    const summary = document.createElement("summary");
-    const label = document.createElement("span");
-    label.className = "manifestation-name";
-    label.textContent = tab.label;
-    const meta = document.createElement("span");
-    meta.className = "manifestation-count";
-    meta.textContent = tab.evidence_only
-      ? `${count} finding${count === 1 ? "" : "s"} · no images yet`
-      : `${count} image${count === 1 ? "" : "s"}`;
-    summary.append(label, meta);
-    const body = document.createElement("div");
-    body.className = "manifestation-body";
-    section.append(summary, body);
-    // Build a section's images only when it is opened, so closed sections cost nothing.
-    const fill = () => {
-      if (body.childElementCount) return;
-      if (tab.evidence_only) renderEyeEvidence(body);
-      else renderSection(body, tab, panels);
-    };
-    section.addEventListener("toggle", () => {
-      if (section.open) { state.open.add(tab.key); fill(); }
-      else state.open.delete(tab.key);
-    });
-    if (state.open.has(tab.key)) { section.open = true; fill(); }
-    list.append(section);
+    return { tab, panels, count };
+  });
+  // One section shows at a time. Start from the URL hash, else the first section with images.
+  if (!entries.some(e => e.tab.key === state.active)) {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    const start = entries.find(e => e.tab.key === hash)
+      || entries.find(e => !e.tab.evidence_only && e.count) || entries[0];
+    state.active = start?.tab.key;
   }
-  content.append(list);
+  $("topic-meta").textContent = [state.panels.length && plural(state.panels.length, "image"), plural(entries.length, "section")]
+    .filter(Boolean).join(" · ");
+
+  for (const { tab, count } of entries) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "section-chip";
+    chip.id = `tab-${tab.key}`;
+    chip.dataset.key = tab.key;
+    chip.setAttribute("role", "tab");
+    const selected = tab.key === state.active;
+    chip.setAttribute("aria-selected", String(selected));
+    chip.setAttribute("aria-controls", "section-panel");
+    chip.tabIndex = selected ? 0 : -1;
+    const name = document.createElement("span");
+    name.textContent = tab.label;
+    const badge = document.createElement("span");
+    badge.className = "section-chip-count";
+    badge.textContent = String(count);
+    badge.setAttribute("aria-label", tab.evidence_only ? plural(count, "finding") : plural(count, "image"));
+    chip.append(name, badge);
+    chip.addEventListener("click", () => selectSection(tab.key));
+    nav.append(chip);
+  }
+  nav.hidden = entries.length < 2;
+
+  const entry = entries.find(e => e.tab.key === state.active);
+  if (!entry) return;
+  const panel = document.createElement("section");
+  panel.className = "section-panel";
+  panel.id = "section-panel";
+  panel.setAttribute("role", "tabpanel");
+  panel.setAttribute("aria-labelledby", `tab-${entry.tab.key}`);
+  if (entry.tab.evidence_only) renderEyeEvidence(panel);
+  else renderSection(panel, entry.tab, entry.panels);
+  content.append(panel);
+  // Keep the selected chip visible in the horizontally scrolling row.
+  const active = nav.querySelector("[aria-selected='true']");
+  if (active) nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
 }
 
+function selectSection(key) {
+  if (key === state.active) return;
+  state.active = key;
+  history.replaceState(null, "", `#${encodeURIComponent(key)}`);
+  render();
+  // render() rebuilt the chips; keep focus on the selected one so arrow keys keep working.
+  $(`tab-${key}`)?.focus({ preventScroll: true });
+  // If the chip row is stuck to the top, bring the new section's first row into view.
+  const nav = $("section-nav");
+  const navTop = nav.getBoundingClientRect().top + window.scrollY;
+  if (window.scrollY > navTop) window.scrollTo({ top: navTop });
+}
+
+// Arrow keys move between section tabs (WAI-ARIA tabs pattern).
+$("section-nav").addEventListener("keydown", (event) => {
+  const chips = [...event.currentTarget.querySelectorAll(".section-chip")];
+  const index = chips.indexOf(document.activeElement);
+  if (index < 0) return;
+  const next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: chips.length - 1 }[event.key];
+  if (next === undefined) return;
+  event.preventDefault();
+  selectSection(chips[(next + chips.length) % chips.length].dataset.key);
+});
+
 function renderSection(content, tab, panels) {
-  if (!panels.length) { content.innerHTML = "<p class='empty'>No images match the current filters.</p>"; return; }
+  if (!panels.length) { content.innerHTML = "<p class='empty'>No images yet.</p>"; return; }
   const groupBy = tab.key === "pediatric" ? "clinical_tab" : tab.group_by;
   if (!groupBy) {
     const combined = panels.filter(p => p.plate_kind === "combined");
@@ -293,9 +372,40 @@ function renderEyeEvidence(content) {
   content.append(list);
 }
 
+// Justified rows: images keep their own shape, and each full row is scaled to
+// exactly fill the width; the last row stays at the target height (--row).
+function cardRatio(card) {
+  return parseFloat(card.style.getPropertyValue("--ratio")) || 4 / 3;
+}
+
+function justify(gridEl) {
+  const width = gridEl.clientWidth;
+  if (!width) return;
+  const style = getComputedStyle(gridEl);
+  const target = parseFloat(style.getPropertyValue("--row")) || 200;
+  const gap = parseFloat(style.columnGap) || 0;
+  const place = (row, height) => row.forEach(card => {
+    card.style.width = `${Math.floor(cardRatio(card) * height * 100) / 100}px`;
+  });
+  let row = [];
+  for (const card of gridEl.children) {
+    row.push(card);
+    const ratios = row.reduce((sum, c) => sum + cardRatio(c), 0);
+    const available = width - gap * (row.length - 1);
+    if (ratios * target >= available) { place(row, available / ratios); row = []; }
+  }
+  place(row, target);
+}
+
+const gridResize = new ResizeObserver(entries => entries.forEach(entry => justify(entry.target)));
+
 function grid(panels) {
   const gridEl = document.createElement("div");
   gridEl.className = "grid";
+  let pending = 0;
+  const relayout = () => {
+    if (!pending) pending = requestAnimationFrame(() => { pending = 0; justify(gridEl); });
+  };
   for (const panel of panels) {
     const src = panel.thumb || panel.image;
     if (!src) continue;
@@ -306,24 +416,31 @@ function grid(panels) {
     open.className = "card-open";
     open.setAttribute("aria-label", `Open image: ${displayLabel(panel)}`);
     const image = VP.panelImage(panel, "thumb", src);
+    // Load eagerly: rows are laid out from every image's shape, so late loads would reflow them.
+    if (image.tagName === "IMG") image.loading = "eager";
+    image.addEventListener("load", () => {
+      const w = image.naturalWidth || image.width, h = image.naturalHeight || image.height;
+      if (w && h) { card.style.setProperty("--ratio", (w / h).toFixed(4)); relayout(); }
+    }, { once: true });
     const label = document.createElement("span");
     label.className = "card-label";
     label.textContent = displayLabel(panel);
     open.append(image, label);
-    open.addEventListener("click", () => openLightbox(panel, src));
+    cardPanels.set(open, { panel, src });
+    open.addEventListener("click", () => openLightbox(open));
     card.append(open);
     gridEl.append(card);
   }
+  gridResize.observe(gridEl);
   return gridEl;
 }
 
 function loadPanels() {
-  const params = filters();
   const request = ++panelsRequest;
   state.loading = true;
   render();
-  return VP.panels(DISEASE, params).then(d => {
-      // A previous tab or filter request must not replace the current view.
+  return VP.panels(DISEASE, new URLSearchParams()).then(d => {
+      // A previous request must not replace the current view.
       if (request !== panelsRequest) return;
       state.loading = false;
       state.panels = d.panels;
@@ -335,44 +452,26 @@ function loadPanels() {
           ? `${reserves} additional eligible image${reserves === 1 ? "" : "s"} held in reserve — galleries are capped at ${d.gallery_cap || 20} per finding.`
           : "";
       }
-      if (!params.toString() && state.hasPediatric === null) state.hasPediatric = d.panels.some(isPediatric);
+      if (state.hasPediatric === null) state.hasPediatric = d.panels.some(isPediatric);
       render();
     }).catch(() => {
       if (request !== panelsRequest) return;
       state.loading = false;
       state.panels = [];
       render();
-      $("content").innerHTML = "<p class='empty'>Images could not be loaded. Try changing a filter or switching sections.</p>";
+      $("content").innerHTML = "<p class='empty'>Images could not be loaded. Try switching sections.</p>";
     });
 }
 
 Promise.all([
   VP.diseases(),
   VP.tabs(DISEASE),
-  VP.vocab(DISEASE),
   VP.eyeEvidence(DISEASE),
-]).then(([diseases, tabs, vocab, eyeEvidence]) => {
+]).then(([diseases, tabs, eyeEvidence]) => {
   const disease = diseases.find(x => x.key === DISEASE) || {};
-  $("title").textContent = `${disease.name || DISEASE} — visual library`;
+  $("title").textContent = disease.name || humanize(DISEASE);
+  document.title = `${disease.name || humanize(DISEASE)} · Visual library`;
   state.tabs = tabs;
   state.eyeEvidence = eyeEvidence;
-  for (const subtype of disease.subtypes || []) {
-    const option = document.createElement("option"); option.value = subtype.key; option.textContent = subtype.label;
-    $("f-subtype").append(option);
-  }
-  const modalities = ["clinical_photo", "dermoscopy", "capillaroscopy", "histology_he", "histology_ihc", "immunofluorescence", "radiograph", "ct", "mri", "ultrasound", "echo", "pet", "endoscopy", "ophthalmic", "gross", "other"];
-  for (const modality of modalities) {
-    const option = document.createElement("option"); option.value = modality; option.textContent = humanize(modality);
-    $("f-modality").append(option);
-  }
-  state.vocab = vocab;
-  for (const item of vocab) {
-    const option = document.createElement("option"); option.value = item.finding_key; option.textContent = item.label;
-    $("f-finding").append(option);
-  }
-  for (const id of FILTER_IDS) $(id).addEventListener("change", () => {
-    if (id === "f-skin-tone") render();
-    else loadPanels();
-  });
   loadPanels();
 });

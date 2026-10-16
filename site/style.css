@@ -73,9 +73,6 @@ body.home { background: #fff; }
   .specialty-group .disease-row { padding-left: 32px; }
 }
 
-#filters { display: flex; gap: 10px; padding: 12px 28px; flex-wrap: wrap; }
-#filters[hidden] { display: none; }
-#filters select { padding: 6px 8px; border: 1px solid #ccd2dc; border-radius: 6px; background: #fff; }
 .reserves-note { padding: 0 28px; margin: 4px 0 0; color: #667; font-size: .85rem; }
 
 #content { padding: 8px 28px 40px; }
@@ -133,23 +130,159 @@ body.home { background: #fff; }
 .side h3 { font-size: .95rem; color: #445; }
 
 
-/* Disease page: manifestations as a vertical list of expandable sections */
-.manifestations { border-top: 1px solid #dfe3ea; }
-.manifestation { border-bottom: 1px solid #dfe3ea; }
-.manifestation summary {
-  display: flex; align-items: baseline; gap: 12px; padding: 16px 4px; cursor: pointer;
-  list-style: none;
+/* Topic page: quiet header, sticky section chips, collapsible image galleries.
+   Scoped to body.topic so the compare page keeps its own card and lightbox look. */
+.topic {
+  --ink: #14181f; --muted: #6b7280; --line: #eceef1; --tile: #f3f4f6;
+  --accent: #2f6b66; --gutter: 32px; --max: 1120px;
+  --pad: max(var(--gutter), calc((100% - var(--max)) / 2 + var(--gutter)));
+  background: #fff; color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
 }
-.manifestation summary::-webkit-details-marker { display: none; }
-.manifestation summary::after {
-  content: ""; margin-left: auto; align-self: center; flex: none; width: 9px; height: 9px;
-  border-right: 2px solid #667; border-bottom: 2px solid #667; transform: rotate(45deg) translateY(-3px);
-  transition: transform .15s ease;
+.topic.lb-open { overflow: hidden; }
+.topic :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.topic-header { padding: 28px var(--pad) 8px; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 2px; min-height: 36px; margin-left: -8px; padding: 0 12px 0 4px;
+  border-radius: 999px; color: var(--muted); font-size: .9rem; font-weight: 500; text-decoration: none;
 }
-.manifestation[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
-.manifestation summary:hover { background: #eef1f5; }
-.manifestation summary:focus-visible { outline: 3px solid #3b6fd4; outline-offset: -3px; }
-.manifestation-name { font-size: 1.1rem; font-weight: 650; color: #1c2333; }
-.manifestation-count { color: #667; font-size: .9rem; }
-.manifestation-body { padding: 4px 4px 22px; }
-.manifestation-body .evidence-intro { margin-top: 4px; }
+.back-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.topic-header h1 {
+  margin: 12px 0 6px; font-size: clamp(1.6rem, 1.15rem + 1.6vw, 2.25rem); font-weight: 700;
+  line-height: 1.15; letter-spacing: -.02em;
+}
+.topic-meta { margin: 0; color: var(--muted); font-size: .95rem; }
+.topic-meta:empty { display: none; }
+
+.section-nav {
+  position: sticky; top: 0; z-index: 10; display: flex; gap: 8px; overflow-x: auto;
+  padding: 12px var(--pad); border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .9); -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
+  scrollbar-width: none;
+}
+.section-nav::-webkit-scrollbar { display: none; }
+.section-nav[hidden] { display: none; }
+.section-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 0; border-radius: 999px;
+  background: var(--tile); color: var(--ink); font: inherit; font-size: .875rem; font-weight: 500; white-space: nowrap;
+  cursor: pointer; transition: background-color .15s ease, color .15s ease;
+}
+.section-chip-count { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.section-chip[aria-selected="true"] { background: var(--ink); color: #fff; }
+.section-chip[aria-selected="true"] .section-chip-count { color: rgba(255, 255, 255, .65); }
+
+.topic #content { padding: 0 var(--pad) 48px; }
+.topic .empty { color: var(--muted); margin: 8px 0; }
+.topic .reserves-note { padding: 0 var(--pad) 40px; margin: 0; color: var(--muted); font-size: .8rem; }
+
+.section-panel { padding-top: 20px; }
+.topic .group-header {
+  margin: 28px 0 12px; color: var(--muted); font-size: .75rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.section-panel > .group-header:first-child { margin-top: 4px; }
+
+/* Justified rows (see justify() in app.js): each card is as wide as its image at the
+   row's height (--ratio is the image's aspect ratio), so images show whole with no letterbox. */
+.topic .grid { --row: 200px; display: flex; flex-wrap: wrap; gap: 28px 16px; }
+.topic .panel-card, .topic .panel-card:hover {
+  --ratio: 1.333; flex: none; width: calc(var(--ratio) * var(--row)); min-width: 0; max-width: 100%;
+  background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible;
+}
+.topic .card-open { gap: 10px; cursor: pointer; }
+.topic .card-open:focus-visible { outline-offset: 4px; border-radius: 12px; }
+.topic .panel-card .thumb {
+  width: 100%; height: auto; aspect-ratio: var(--ratio); object-fit: cover;
+  border-radius: 12px; background: var(--tile); transition: filter .2s ease, transform .2s ease;
+}
+.topic .card-open:active .thumb { transform: scale(.98); }
+.topic .card-label {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+  padding: 0 2px; font-size: .925rem; font-weight: 500; line-height: 1.4;
+}
+.topic .evidence-intro { color: var(--muted); margin: 4px 0 16px; }
+.topic .evidence-grid { grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; }
+.topic .evidence-card { border: 0; border-radius: 14px; background: var(--tile); padding: 20px; }
+.topic .evidence-card p { color: #4b5563; }
+.topic .evidence-source + .evidence-source { border-top-color: #e2e4e8; }
+.topic .evidence-card a { color: var(--accent); }
+
+@media (hover: hover) {
+  .back-link:hover { color: var(--ink); background: var(--tile); }
+  .section-chip:hover:not([aria-selected="true"]) { background: #e7e9ec; }
+  .topic .card-open:hover .thumb { filter: brightness(.93); }
+  .topic .lb-close:hover { background: rgba(255, 255, 255, .28); }
+}
+
+/* Lightbox: the image on top at its own shape, details right below it.
+   The dialog shrinks to the image width (the details never widen it); full screen on phones. */
+.topic #lightbox {
+  align-items: flex-start; justify-content: flex-start; padding: 32px 24px; overflow-y: auto; overscroll-behavior: contain;
+  background: rgba(9, 11, 15, .78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.topic .lb-inner {
+  display: block; width: fit-content; min-width: min(560px, 100%); max-width: min(1040px, 100%);
+  height: auto; max-height: none; margin: auto; padding: 0; overflow: hidden;
+  border-radius: 16px; background: #fff; box-shadow: 0 24px 80px rgba(0, 0, 0, .35);
+}
+.lb-stage { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }
+.topic #lb-media { display: block; }
+.topic .lb-img {
+  display: block; width: auto; height: auto; max-width: 100%; max-height: 72vh;
+  margin: 0; border-radius: 0; background: none;
+}
+.lb-nav {
+  position: absolute; top: 50%; translate: 0 -50%; display: grid; place-items: center;
+  width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%;
+  background: rgba(0, 0, 0, .45); color: #fff; cursor: pointer; transition: background-color .15s ease;
+}
+.lb-nav:hover { background: rgba(0, 0, 0, .65); }
+.lb-nav[hidden] { display: none; }
+.lb-prev { left: 10px; }
+.lb-next { right: 10px; }
+.lb-nav svg, .topic .lb-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lb-counter {
+  position: absolute; bottom: 10px; left: 50%; translate: -50% 0; padding: 3px 9px; border-radius: 999px;
+  background: rgba(0, 0, 0, .5); color: #fff; font-size: .75rem; font-variant-numeric: tabular-nums;
+}
+.lb-counter:empty { display: none; }
+/* width: 0 + min-width: 100% keeps the text from setting the dialog width. */
+.topic .lb-info { width: 0; min-width: 100%; padding: 22px 28px 28px; }
+.topic .lb-info h2 { margin: 0 0 14px; font-size: 1.2rem; font-weight: 650; line-height: 1.3; letter-spacing: -.01em; }
+.topic #lb-details p { color: #4b5563; font-size: .875rem; line-height: 1.55; }
+.topic #lb-details strong { color: var(--ink); font-weight: 600; }
+.topic #lb-details a { color: var(--accent); }
+.topic .source-heading { margin: 22px 0 4px; color: var(--muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+.topic .source-item { border-top-color: var(--line); padding-top: 12px; }
+.topic .lb-close {
+  position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 2;
+  display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, .16); color: #fff; cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .topic { --gutter: 16px; }
+  .topic-header { padding-top: max(12px, env(safe-area-inset-top)); }
+  .back-link { min-height: 44px; }
+  .topic-header h1 { margin-top: 6px; }
+  .section-nav { padding-top: 10px; padding-bottom: 10px; }
+  .section-chip { padding: 10px 16px; }
+  .topic .grid { --row: 128px; gap: 20px 10px; }
+  .topic .panel-card .thumb { border-radius: 10px; }
+  .topic .card-label { font-size: .85rem; }
+
+  .topic #lightbox { padding: 0; background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .topic .lb-inner { width: 100%; min-width: 0; max-width: none; min-height: 100%; margin: 0; border-radius: 0; box-shadow: none; }
+  .lb-stage { padding-top: env(safe-area-inset-top); }
+  .topic .lb-img { max-height: 75vh; max-height: 75dvh; }
+  /* Arrows sit at the image's bottom corners, clear of the close button. */
+  .lb-nav { top: auto; bottom: 8px; translate: none; width: 36px; height: 36px; }
+  .lb-counter { bottom: 15px; }
+  .lb-prev { left: 8px; }
+  .lb-next { right: 8px; }
+  .topic .lb-info { padding: 18px 16px calc(32px + env(safe-area-inset-bottom)); }
+  .topic .lb-info h2 { font-size: 1.1rem; }
+  .topic .lb-close { right: 12px; background: rgba(0, 0, 0, .5); }
+}

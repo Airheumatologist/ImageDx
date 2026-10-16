@@ -3,44 +3,43 @@
 <head>
   <script>window.VP_STATIC = true;</script>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
   <title>Disease library</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header>
-    <a id="home-link" href="/">&larr; all diseases</a>
+<body class="topic">
+  <header class="topic-header">
+    <a id="home-link" class="back-link" href="/">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      All diseases
+    </a>
     <h1 id="title"></h1>
+    <p id="topic-meta" class="topic-meta"></p>
   </header>
-  <section id="filters">
-    <select id="f-subtype"><option value="">subtype: all</option></select>
-    <select id="f-modality"><option value="">modality: all</option></select>
-    <select id="f-finding"><option value="">finding: all</option></select>
-    <select id="f-typicality">
-      <option value="">typicality: all</option>
-      <option value="classic">classic</option>
-      <option value="variant">variant</option>
-      <option value="atypical">atypical</option>
-    </select>
-    <select id="f-skin-tone" hidden>
-      <option value="">skin tone: all</option>
-      <option value="light">light</option>
-      <option value="medium">medium</option>
-      <option value="dark">dark</option>
-      <option value="unknown">unknown</option>
-    </select>
-  </section>
-  <p id="reserves-note" class="reserves-note" hidden></p>
+  <div id="section-nav" class="section-nav" role="tablist" aria-label="Sections" hidden></div>
   <main id="content"></main>
+  <p id="reserves-note" class="reserves-note" hidden></p>
 
   <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title" hidden>
     <section class="lb-inner">
-      <button id="lb-close" class="lb-close" type="button" data-close-lightbox aria-label="Close image details">Close</button>
-      <div id="lb-media"></div>
+      <div class="lb-stage">
+        <div id="lb-media"></div>
+        <button id="lb-prev" class="lb-nav lb-prev" type="button" aria-label="Previous image">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <button id="lb-next" class="lb-nav lb-next" type="button" aria-label="Next image">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+        <span id="lb-counter" class="lb-counter"></span>
+      </div>
       <div class="lb-info">
         <h2 id="lb-title"></h2>
         <div id="lb-details"></div>
       </div>
+      <button id="lb-close" class="lb-close" type="button" data-close-lightbox aria-label="Close image details">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </section>
   </div>
 

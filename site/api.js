@@ -48,7 +48,8 @@ const VP = (() => {
     /* An element showing the panel: an <img>, or for a cropped panel of a
        whole figure (panel.crop = normalized [x0, y0, x1, y1]) a <canvas>
        holding that region. Drawing a cross-origin image to a canvas only
-       taints it, which does not affect display. */
+       taints it, which does not affect display. The canvas fires "load"
+       once drawn, like the <img>. */
     panelImage(panel, className = "", src = panel.thumb || panel.image) {
       const img = document.createElement("img");
       img.className = className;
@@ -68,6 +69,7 @@ const VP = (() => {
         canvas.width = Math.max(1, Math.round((x1 - x0) * img.naturalWidth));
         canvas.height = Math.max(1, Math.round((y1 - y0) * img.naturalHeight));
         canvas.getContext("2d").drawImage(img, sx, sy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+        canvas.dispatchEvent(new Event("load"));
       }, { once: true });
       img.src = src;
       return canvas;
