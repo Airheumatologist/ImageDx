@@ -82,6 +82,44 @@ def _is_locked(row: dict) -> bool:
     return bool(row.get("locked") or row.get("selection_source") == "manual")
 
 
+def _retained(row: dict) -> dict:
+    """A stored row kept verbatim as an inactive record."""
+    return {col: row.get(col) for col in _REPRESENTATIVE_COLUMNS}
+
+
+def _selection_source(existing: dict | None, panel_id: str, scoring: dict) -> tuple[str, int]:
+    """(selection_source, locked) for the elected lead; records replaced locks in ``scoring``."""
+    if existing is None:
+        return "auto", 0
+    if _is_locked(existing) and str(existing["panel_id"]) != panel_id:
+        scoring["replaced_selection"] = {
+            **existing,
+            "reason": "locked panel is no longer the selected gallery lead "
+            "for this approved disease/finding pair",
+        }
+        return "auto_replaced_invalid_lock", 0
+    is_locked = int(bool(existing.get("locked"))) if _is_locked(existing) else 0
+    source = existing["selection_source"] or (
+        "manual" if _is_locked(existing) else "auto"
+    )
+    prior = db.from_json(existing.get("scoring_json"), {}) or {}
+    if isinstance(prior, dict) and prior.get("replaced_selection"):
+        scoring["replaced_selection"] = prior["replaced_selection"]
+    return source, is_locked
+
+
+def _lead_row(pair: tuple[str, str], panel_id: str, panel_row: dict,
+              existing: dict | None, now: str) -> dict:
+    score, scoring = score_panel(panel_row)
+    source, is_locked = _selection_source(existing, panel_id, scoring)
+    return {
+        "disease_key": pair[0], "finding_key": pair[1],
+        "panel_id": panel_id, "score": score,
+        "scoring_json": json.dumps(scoring, sort_keys=True),
+        "selection_source": source, "locked": is_locked, "updated_at": now,
+    }
+
+
 def rebuild(conn: sqlite3.Connection, *, snapshot=None) -> dict:
     """Rebuild the persisted table from the current gallery selection.
 
@@ -125,42 +163,20 @@ def rebuild(conn: sqlite3.Connection, *, snapshot=None) -> dict:
             processed.add(pair)
             existing = current.get(pair)
             published = snapshot[disease_key][finding_key].get("published_panel_ids") or []
-            if not published:
-                if existing is not None and _is_locked(existing):
-                    rows.append({col: existing.get(col) for col in _REPRESENTATIVE_COLUMNS})
-                    inactive += 1
-                continue
-            panel_id = published[0]
-            score, scoring = score_panel(panel_rows.get(panel_id) or {})
-            if existing is not None and _is_locked(existing) and str(existing["panel_id"]) != panel_id:
-                source, is_locked = "auto_replaced_invalid_lock", 0
-                scoring["replaced_selection"] = {
-                    **existing,
-                    "reason": "locked panel is no longer the selected gallery lead "
-                    "for this approved disease/finding pair",
-                }
-            elif existing is not None:
-                is_locked = int(bool(existing.get("locked"))) if _is_locked(existing) else 0
-                source = existing["selection_source"] or (
-                    "manual" if _is_locked(existing) else "auto"
-                )
-                prior = db.from_json(existing.get("scoring_json"), {}) or {}
-                if isinstance(prior, dict) and prior.get("replaced_selection"):
-                    scoring["replaced_selection"] = prior["replaced_selection"]
-            else:
-                source, is_locked = "auto", 0
-            rows.append({
-                "disease_key": disease_key, "finding_key": finding_key,
-                "panel_id": panel_id, "score": score,
-                "scoring_json": json.dumps(scoring, sort_keys=True),
-                "selection_source": source, "locked": is_locked, "updated_at": now,
-            })
+            if published:
+                panel_id = published[0]
+                rows.append(_lead_row(
+                    pair, panel_id, panel_rows.get(panel_id) or {}, existing, now
+                ))
+            elif existing is not None and _is_locked(existing):
+                rows.append(_retained(existing))
+                inactive += 1
     # Locked rows for pairs no longer in the approved snapshot stay as
     # inactive records — the lock evidence is preserved, not deleted.
     for pair, row in current.items():
         if pair in processed or not _is_locked(row):
             continue
-        rows.append({col: row.get(col) for col in _REPRESENTATIVE_COLUMNS})
+        rows.append(_retained(row))
         inactive += 1
     with conn:
         conn.execute("DELETE FROM manifestation_representatives")

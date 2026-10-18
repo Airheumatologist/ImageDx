@@ -3,8 +3,8 @@
 Pure parser: ``parse_article(xml_text)`` returns a ``ParsedArticle`` with
 figure metadata (caption, graphic href, fig-level permissions, third-party
 detection, in-text mentions), the body section texts (kept in memory for
-stage 7), author surnames, the article-level copyright holder, journal and
-publisher names, and the corresponding-author / first-affiliation countries.
+stage 7), author surnames, the journal name, and the corresponding-author /
+first-affiliation countries.
 
 Everything is namespace-agnostic: elements are matched by local name so the
 parser works whether or not the document declares the xlink/JATS namespaces.
@@ -49,9 +49,7 @@ class ParsedArticle:
     body_sections: list[tuple[str, str]]
     authors: list[str]  # first 3 surnames
     author_count: int
-    article_copyright_holder: str | None
     journal_name: str | None
-    publisher_name: str | None
     corresp_country: str | None
     first_aff_country: str | None
 
@@ -381,9 +379,7 @@ def parse_article(xml_text: str) -> ParsedArticle:
         body_sections=_body_sections(root),
         authors=authors,
         author_count=author_count,
-        article_copyright_holder=article_holder,
         journal_name=journal,
-        publisher_name=publisher,
         corresp_country=_corresp_country(root, ids),
         first_aff_country=_first_aff_country(root),
     )

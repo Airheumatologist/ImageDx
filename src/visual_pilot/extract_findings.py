@@ -22,6 +22,7 @@ Panels' stored findings are then rebuilt as source='image' rows
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
 import unicodedata
@@ -30,7 +31,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from . import config, db, diseases, jats, llm, parse, pmc, timing
 from . import prompts
-from .prompts import P4
 from .store import slugify, upsert_proposed
 
 PILOT_KEYS = set(diseases.DISEASE_KEYS)
@@ -322,14 +322,8 @@ def _has_text_rows(conn, pmcid: str) -> bool:
 # ---------------------------------------------------------------------------
 # Stage entry point
 # ---------------------------------------------------------------------------
-def run(args) -> int:
-    conn = db.init_db()
-    if getattr(args, "image_only", False):
-        with conn:
-            image_rows = rebuild_image_rows(conn)
-        print(f"extract: {image_rows} image rows rebuilt")
-        conn.close()
-        return 0
+def _load_articles(conn, args) -> tuple[list[dict], int]:
+    """(parsed articles to extract, best retrieval score first; count skipped)."""
     disease = None if args.disease == "all" else args.disease
     rows = db.rows_with_status(conn, "articles", "parsed", disease=disease)
     if args.pmcids:
@@ -339,14 +333,95 @@ def run(args) -> int:
     articles.sort(key=lambda a: -(a["retrieval_score"] or 0.0))
     if args.limit:
         articles = articles[: args.limit]
+    if getattr(args, "force", False):
+        return articles, 0
+    todo = [a for a in articles if not _has_text_rows(conn, a["pmcid"])]
+    return todo, len(articles) - len(todo)
 
-    if not getattr(args, "force", False):
-        before = len(articles)
-        articles = [a for a in articles if not _has_text_rows(conn, a["pmcid"])]
-        skipped = before - len(articles)
-    else:
-        skipped = 0
 
+def _vocab_cache(conn, articles: list[dict]) -> dict[tuple[str, ...], list[dict]]:
+    # W8/B10: vocabulary once per distinct disease-key tuple, here on the
+    # main thread before any pooled work starts — prepare workers then never
+    # touch the shared sqlite connection.
+    vocab_cache: dict[tuple[str, ...], list[dict]] = {}
+    for article in articles:
+        key = _vocab_key(article)
+        if key not in vocab_cache:
+            vocab_cache[key] = _vocabulary(
+                conn, db.from_json(article["primary_disease_keys_json"], []) or []
+            )
+    return vocab_cache
+
+
+def _requests(articles, vocab_cache, window: int, submitted: list, stats: dict):
+    """Yield P4 call_json kwargs in article order, preparing just ahead.
+
+    W8: a fetch pool prepares articles just ahead of the LLM calls —
+    iter_many pulls a new request only when a slot frees, so P4 starts before
+    all articles finish preparing and prepared ctxs stay bounded to ~2x the
+    in-flight cap. ``submitted`` maps each yielded index to (article, ctx).
+    """
+    pending: deque = deque()  # (article, prepare future), input order
+    art_iter = iter(articles)
+    pool = ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY)
+    try:
+        while True:
+            for article in itertools.islice(art_iter, max(0, window - len(pending))):
+                pending.append(
+                    (article, pool.submit(prepare_article, article, vocab_cache[_vocab_key(article)]))
+                )
+            if not pending:
+                return
+            article, fut = pending.popleft()
+            try:
+                ctx = fut.result()
+            except Exception as exc:  # noqa: BLE001 - per-article isolation
+                print(f"{article['pmcid']}: fetch error {exc}")
+                stats["errors"] += 1
+                continue
+            if ctx is None:
+                stats["no_sections"] += 1
+                continue
+            submitted.append((article, ctx))
+            yield ctx["request"]
+    finally:
+        # Early stop: cancel not-yet-started prepares; running ones
+        # finish in the background and are discarded.
+        pool.shutdown(wait=False, cancel_futures=True)
+
+
+def _apply_results(conn, client, results, submitted: list, stats: dict) -> bool:
+    """Apply results in completion order; True if the budget ran out."""
+    budget_hit = False
+    for res in results:
+        with client.db_lock:  # iter_many workers commit on this connection
+            article, ctx = submitted[res.index]
+            if isinstance(res.error, llm.BudgetExceeded):
+                budget_hit = True  # leave the article parsed; stop cleanly
+            elif res.error is not None:
+                stats["errors"] += 1
+            else:
+                with conn:  # delete + reinsert per pmcid in one transaction
+                    apply_response(
+                        conn,
+                        article,
+                        ctx,
+                        res.parsed,
+                        bool((res.meta or {}).get("cached")),
+                        stats,
+                    )
+    return budget_hit
+
+
+def run(args) -> int:
+    conn = db.init_db()
+    if getattr(args, "image_only", False):
+        with conn:
+            image_rows = rebuild_image_rows(conn)
+        print(f"extract: {image_rows} image rows rebuilt")
+        conn.close()
+        return 0
+    articles, skipped = _load_articles(conn, args)
     print(f"extract: {len(articles)} parsed articles ({skipped} already extracted)")
     if args.dry_run or not articles:
         conn.close()
@@ -362,89 +437,15 @@ def run(args) -> int:
         "errors": 0,
         "image_rows": 0,
     }
-
-    # W8/B10: vocabulary once per distinct disease-key tuple, here on the
-    # main thread before any pooled work starts — prepare workers then never
-    # touch the shared sqlite connection.
-    vocab_cache: dict[tuple[str, ...], list[dict]] = {}
-    for article in articles:
-        key = _vocab_key(article)
-        if key not in vocab_cache:
-            vocab_cache[key] = _vocabulary(
-                conn, db.from_json(article["primary_disease_keys_json"], []) or []
-            )
-
-    # W8: stream P4 through client.iter_many. A fetch pool prepares articles
-    # just ahead of the LLM calls — iter_many pulls a new request only when
-    # a slot frees, so P4 starts before all articles finish preparing and
-    # prepared ctxs stay bounded to ~2x the in-flight cap. Results are
-    # applied and committed on this thread in completion order; per-article
-    # error isolation and stats accounting are unchanged.
-    window = max(1, 2 * client.concurrency)
+    # Results are applied and committed on this thread in completion order;
+    # per-article error isolation and stats accounting are unchanged.
     submitted: list[tuple[dict, dict]] = []  # consumed index -> (article, ctx)
-
-    def _requests():
-        """Yield P4 call_json kwargs in article order, preparing just ahead."""
-        pending: deque = deque()  # (article, prepare future), input order
-        art_iter = iter(articles)
-        pool = ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY)
-        try:
-            while True:
-                while len(pending) < window:
-                    article = next(art_iter, None)
-                    if article is None:
-                        break
-                    pending.append(
-                        (
-                            article,
-                            pool.submit(
-                                prepare_article,
-                                article,
-                                vocab_cache[_vocab_key(article)],
-                            ),
-                        )
-                    )
-                if not pending:
-                    return
-                article, fut = pending.popleft()
-                try:
-                    ctx = fut.result()
-                except Exception as exc:  # noqa: BLE001 - per-article isolation
-                    print(f"{article['pmcid']}: fetch error {exc}")
-                    stats["errors"] += 1
-                    continue
-                if ctx is None:
-                    stats["no_sections"] += 1
-                    continue
-                submitted.append((article, ctx))
-                yield ctx["request"]
-        finally:
-            # Early stop: cancel not-yet-started prepares; running ones
-            # finish in the background and are discarded.
-            pool.shutdown(wait=False, cancel_futures=True)
-
-    budget_hit = False
-    requests = _requests()
+    requests = _requests(
+        articles, _vocab_cache(conn, articles), max(1, 2 * client.concurrency), submitted, stats
+    )
     results = client.iter_many(requests)
     try:
-        for res in results:
-            with client.db_lock:  # iter_many workers commit on this connection
-                article, ctx = submitted[res.index]
-                if res.error is not None:
-                    if isinstance(res.error, llm.BudgetExceeded):
-                        budget_hit = True  # leave the article parsed; stop cleanly
-                    else:
-                        stats["errors"] += 1
-                    continue
-                with conn:  # delete + reinsert per pmcid in one transaction
-                    apply_response(
-                        conn,
-                        article,
-                        ctx,
-                        res.parsed,
-                        bool((res.meta or {}).get("cached")),
-                        stats,
-                    )
+        budget_hit = _apply_results(conn, client, results, submitted, stats)
     finally:
         requests.close()
         results.close()

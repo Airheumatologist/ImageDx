@@ -141,32 +141,36 @@ def caption_terms(disease_key: str, finding: dict, disease: dict | None = None) 
     disease_words = _disease_words(disease)
     raw = [re.sub(r"\(.*?\)", " ", str(finding.get("label") or "")),
            *finding_synonyms(disease_key, finding)]
-    out: list[str] = []
-    for value in raw:
-        original = text = _caption_norm(value)
-        for word in disease_words:
-            text = re.sub(rf"\b(in|of|associated with)\s+{re.escape(word)}\b", " ", text)
-            text = re.sub(rf"\b{re.escape(word)}\b", " ", text)
-        words = text.split()
-        while words and words[0] in _CAPTION_PREFIXES:
-            words = words[1:]
-        while words and words[-1] in {"in", "of", "with"}:
-            words = words[:-1]
-        if not words:
-            continue
-        if len(words) == 1 and text.split() != original.split() and (
-            words[0] in _GENERIC_TERMS or words[0].endswith(_ADJECTIVE_ENDINGS)
-        ):
-            # "inverse psoriasis" must not become "inverse".
-            words = original.split()
-        variants = {" ".join(words), " ".join([*words[:-1], _singular(words[-1])])}
-        if len(words) > 1 and words[-1] == "sign":
-            variants.add(" ".join(words[:-1]))
-        for term in sorted(variants):
-            if term in _GENERIC_TERMS or len(term) < 4:
-                continue
-            out.append(term)
-    return list(dict.fromkeys(out))
+    return list(dict.fromkeys(t for value in raw for t in _value_terms(value, disease_words)))
+
+
+def _finding_words(value: str, disease_words: list[str]) -> list[str]:
+    """The finding's words in one label/synonym, without disease names or filler."""
+    original = text = _caption_norm(value)
+    for word in disease_words:
+        text = re.sub(rf"\b(in|of|associated with)\s+{re.escape(word)}\b", " ", text)
+        text = re.sub(rf"\b{re.escape(word)}\b", " ", text)
+    words = text.split()
+    while words and words[0] in _CAPTION_PREFIXES:
+        words = words[1:]
+    while words and words[-1] in {"in", "of", "with"}:
+        words = words[:-1]
+    if len(words) == 1 and text.split() != original.split() and (
+        words[0] in _GENERIC_TERMS or words[0].endswith(_ADJECTIVE_ENDINGS)
+    ):
+        # "inverse psoriasis" must not become "inverse".
+        words = original.split()
+    return words
+
+
+def _value_terms(value: str, disease_words: list[str]) -> list[str]:
+    words = _finding_words(value, disease_words)
+    if not words:
+        return []
+    variants = {" ".join(words), " ".join([*words[:-1], _singular(words[-1])])}
+    if len(words) > 1 and words[-1] == "sign":
+        variants.add(" ".join(words[:-1]))
+    return [term for term in sorted(variants) if term not in _GENERIC_TERMS and len(term) >= 4]
 
 
 _STOPWORDS = frozenset({"of", "the", "in", "on", "with", "and", "a", "an", "at", "to", "for", "by"})

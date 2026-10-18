@@ -163,6 +163,22 @@ class _DeadlineTransport(_openai_httpx.HTTPTransport):
         return response
 
 
+def _chat_extra_kwargs(model: str, effort: str) -> dict:
+    """Provider kwargs for a chat completion: thinking/effort, token cap, JSON mode."""
+    extra_kwargs: dict = {}
+    if effort == "off":
+        # reasoning_effort only trims thinking on longcat-2.5-preview-free;
+        # this switches it off.
+        extra_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+    elif effort:
+        extra_kwargs["extra_body"] = {"reasoning_effort": effort}
+    if config.VP_LLM_MAX_OUTPUT_TOKENS:
+        extra_kwargs["max_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
+    if config.uses_json_mode(model):
+        extra_kwargs["response_format"] = {"type": "json_object"}
+    return extra_kwargs
+
+
 class LLMClient:
     """Provider-agnostic JSON caller with cache, ledger and budget guard."""
 
@@ -455,63 +471,56 @@ class LLMClient:
             return self._with_retries(
                 lambda: self._send_responses(model, messages, effort)
             ), "responses_json"
-        extra_kwargs = {}
-        if effort == "off":
-            # reasoning_effort only trims thinking on longcat-2.5-preview-free;
-            # this switches it off.
-            extra_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
-        elif effort:
-            extra_kwargs["extra_body"] = {"reasoning_effort": effort}
-        if config.VP_LLM_MAX_OUTPUT_TOKENS:
-            extra_kwargs["max_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
-        json_mode = config.uses_json_mode(model)
-        if json_mode:
-            extra_kwargs["response_format"] = {"type": "json_object"}
+        extra_kwargs = _chat_extra_kwargs(model, effort)
 
         def _send():
             with _IN_FLIGHT:
-                return _stream()
+                return self._stream_chat(model, messages, extra_kwargs)
 
-        def _stream():
-            # Streamed so a slow generation never sits on an idle socket.
-            # OpenCode cannot route json_object requests for
-            # step-5-preview-free, so only JSON-mode models get
-            # response_format; _normalize unwraps fenced replies either way.
-            stream = self._openai().chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=True,
-                stream_options={"include_usage": True},
-                **extra_kwargs,
-            )
-            content: list[str] = []
-            usage = None
-            got_choice = False
-            try:
-                for chunk in stream:
-                    if getattr(chunk, "usage", None):
-                        usage = chunk.usage
-                    if chunk.choices:
-                        got_choice = True
-                        content.append(chunk.choices[0].delta.content or "")
-            except _openai_httpx.TimeoutException as exc:
-                raise openai.APITimeoutError(request=stream.response.request) from exc
-            except _openai_httpx.TransportError as exc:
-                raise openai.APIConnectionError(
-                    message=f"stream interrupted: {exc}", request=stream.response.request
-                ) from exc
-            finally:
-                stream.close()
-            if not got_choice:
-                response = httpx.Response(502, request=httpx.Request(
-                    "POST", self.base_url.rstrip('/') + '/chat/completions'))
-                raise openai.InternalServerError(
-                    "provider error: empty choices returned", response=response, body=None
-                )
-            message = SimpleNamespace(content="".join(content))
-            return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
-
+        json_mode = "response_format" in extra_kwargs
         return self._with_retries(_send), "chat_json" if json_mode else "prompt_json"
+
+    def _stream_chat(self, model: str, messages: list[dict], extra_kwargs: dict):
+        """One streamed chat completion, returned in the non-streamed shape.
+
+        Streamed so a slow generation never sits on an idle socket.
+        OpenCode cannot route json_object requests for step-5-preview-free,
+        so only JSON-mode models get response_format; _normalize unwraps
+        fenced replies either way.
+        """
+        stream = self._openai().chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True,
+            stream_options={"include_usage": True},
+            **extra_kwargs,
+        )
+        content: list[str] = []
+        usage = None
+        got_choice = False
+        try:
+            for chunk in stream:
+                if getattr(chunk, "usage", None):
+                    usage = chunk.usage
+                if chunk.choices:
+                    got_choice = True
+                    content.append(chunk.choices[0].delta.content or "")
+        except _openai_httpx.TimeoutException as exc:
+            raise openai.APITimeoutError(request=stream.response.request) from exc
+        except _openai_httpx.TransportError as exc:
+            raise openai.APIConnectionError(
+                message=f"stream interrupted: {exc}", request=stream.response.request
+            ) from exc
+        finally:
+            stream.close()
+        if not got_choice:
+            response = httpx.Response(502, request=httpx.Request(
+                "POST", self.base_url.rstrip('/') + '/chat/completions'))
+            raise openai.InternalServerError(
+                "provider error: empty choices returned", response=response, body=None
+            )
+        message = SimpleNamespace(content="".join(content))
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
     def _send_responses(self, model: str, messages: list[dict], effort: str):
         """One streamed Responses API call in JSON mode (Muse Spark models).

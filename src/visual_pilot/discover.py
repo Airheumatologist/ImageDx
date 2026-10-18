@@ -35,14 +35,12 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
-import logging
 import re
 import time
 
 from . import config, db, diseases, europepmc, gallery, jats, pair_reporting, pair_terms, pmc, source_quality
 from . import parse as parse_stage
 
-logger = logging.getLogger(__name__)
 
 POLICY_VERSION = pair_reporting.DISCOVERY_POLICY
 DEFAULT_PER_PAIR = 25
@@ -123,24 +121,13 @@ def plan_diseases(conn, disease_keys, floor: int) -> list[tuple[str, None, int]]
 
 
 def _known_by_disease(conn) -> dict[str, set[str]]:
-    """Parsed articles per disease, read once per pass (see ``_known_pmcids``)."""
+    """Parsed articles per disease (their figures are queued or done), read once per pass."""
     out: dict[str, set[str]] = {}
     for row in conn.execute(
         "SELECT pmcid, primary_disease_keys_json FROM articles WHERE status='parsed'"
     ):
         for key in db.from_json(row["primary_disease_keys_json"], []) or []:
             out.setdefault(key, set()).add(row["pmcid"])
-    return out
-
-
-def _known_pmcids(conn, disease_key: str) -> set[str]:
-    """Articles already parsed for this disease (their figures are queued or done)."""
-    out = set()
-    for row in conn.execute(
-        "SELECT pmcid, primary_disease_keys_json FROM articles WHERE status='parsed'"
-    ):
-        if disease_key in (db.from_json(row["primary_disease_keys_json"], []) or []):
-            out.add(row["pmcid"])
     return out
 
 
@@ -531,124 +518,159 @@ def discover(conn, disease_keys, *, per_pair: int, target: int, max_pairs: int |
     """
     if pass_name not in PASSES:
         raise ValueError(f"unknown discovery pass {pass_name!r}")
-    started = time.monotonic()
-    stats: dict = {"pass": pass_name, "pairs": 0, "articles": 0, "fetch_errors": 0, "pmcids": []}
-    vocab = _vocab_by_disease(conn)
-    match_terms: dict[str, list[str]] = {}
+    run = _DiscoveryPass(conn, pass_name, per_pair=per_pair, max_runtime=max_runtime,
+                         log=log, on_articles=on_articles, should_stop=should_stop)
+    return run.execute(run.plan(disease_keys, target, max_pairs))
 
-    def terms_for(disease_key: str) -> list[str]:
-        if disease_key not in match_terms:
-            match_terms[disease_key] = disease_caption_terms(
-                conn, disease_key, vocab.get(disease_key) or []
+
+class _DiscoveryPass:
+    """State of one ``discover`` pass; see ``discover`` for the threading model."""
+
+    def __init__(self, conn, pass_name: str, *, per_pair: int, max_runtime: float | None,
+                 log, on_articles, should_stop) -> None:
+        self.conn = conn
+        self.pass_name = pass_name
+        self.per_pair = per_pair
+        self.max_runtime = max_runtime
+        self.log = log
+        self.on_articles = on_articles
+        self.should_stop = should_stop
+        self.started = time.monotonic()
+        self.stats: dict = {"pass": pass_name, "pairs": 0, "articles": 0, "fetch_errors": 0,
+                            "pmcids": []}
+        self.vocab = _vocab_by_disease(conn)
+        self.match_terms: dict[str, list[str]] = {}
+        self.known: dict[str, set[str]] = {}
+        self.overview = pass_name == "overview"
+        self.by_disease = pass_name == "disease"
+        self.scope = "reviews" if pass_name == "manifestation" else "all"
+        self.pool = self.search_pool = None
+
+    def terms_for(self, disease_key: str) -> list[str]:
+        if disease_key not in self.match_terms:
+            self.match_terms[disease_key] = disease_caption_terms(
+                self.conn, disease_key, self.vocab.get(disease_key) or []
             )
-        return match_terms[disease_key]
+        return self.match_terms[disease_key]
 
-    by_disease = pass_name == "disease"
-    if by_disease:
-        plan = plan_diseases(conn, disease_keys, int(config.VP_TOPIC_IMAGE_FLOOR))
-    else:
-        plan = plan_pairs(conn, disease_keys, target)
-    if max_pairs is not None:
-        plan = plan[:max_pairs]
-    if by_disease:
-        log(f"discover[{pass_name}]: {len(plan)} topic(s) under "
-            f"{config.VP_TOPIC_IMAGE_FLOOR} published images")
-    else:
-        log(f"discover[{pass_name}]: {len(plan)} pair(s) under target {target}")
-    known = _known_by_disease(conn)
+    def plan(self, disease_keys, target: int, max_pairs: int | None) -> list:
+        """Search jobs ``(disease_key, finding or None, have)`` in plan order."""
+        if self.by_disease:
+            plan = plan_diseases(self.conn, disease_keys, int(config.VP_TOPIC_IMAGE_FLOOR))[:max_pairs]
+            self.log(f"discover[{self.pass_name}]: {len(plan)} topic(s) under "
+                     f"{config.VP_TOPIC_IMAGE_FLOOR} published images")
+        else:
+            plan = plan_pairs(self.conn, disease_keys, target)[:max_pairs]
+            self.log(f"discover[{self.pass_name}]: {len(plan)} pair(s) under target {target}")
+        self.known = _known_by_disease(self.conn)
+        if self.overview:
+            return [(d, None, 0) for d in dict.fromkeys(d for d, _, _ in plan)]
+        return plan
 
-    def out_of_time() -> bool:
-        if should_stop is not None and should_stop():
-            log(f"discover[{pass_name}]: stopping early")
+    def out_of_time(self) -> bool:
+        if self.should_stop is not None and self.should_stop():
+            self.log(f"discover[{self.pass_name}]: stopping early")
             return True
-        if max_runtime is not None and time.monotonic() - started >= max_runtime:
-            log(f"discover[{pass_name}]: runtime limit reached")
+        if self.max_runtime is not None and time.monotonic() - self.started >= self.max_runtime:
+            self.log(f"discover[{self.pass_name}]: runtime limit reached")
             return True
         return False
 
-    overview = pass_name == "overview"
-    scope = "reviews" if pass_name == "manifestation" else "all"
-    if overview:
-        jobs = [(d, None, 0) for d in dict.fromkeys(d for d, _, _ in plan)]
-    else:
-        jobs = plan
-
-    def prepare(job):
+    def prepare(self, job):
         # Snapshot on this thread: ingest keeps adding to ``known``.
         disease_key = job[0]
-        terms = terms_for(disease_key) if overview else None
-        return job, set(known.get(disease_key, ())), terms
+        terms = self.terms_for(disease_key) if self.overview else None
+        return job, set(self.known.get(disease_key, ())), terms
 
-    def search(prepared):
+    def search(self, prepared):
         (disease_key, finding, _), skip, terms = prepared
-        if overview:
+        if self.overview:
             return find_overview_articles(disease_key, terms, OVERVIEW_PER_DISEASE, skip)
-        if by_disease:
+        if self.by_disease:
             return find_disease_articles(disease_key, DISEASE_PER_ROUND, skip)
-        _, picked, attempts = find_articles(disease_key, finding, per_pair, skip, scope=scope)
+        _, picked, attempts = find_articles(disease_key, finding, self.per_pair, skip,
+                                            scope=self.scope)
         return picked, attempts
 
+    @staticmethod
     def label(job) -> str:
         disease_key, finding, _ = job
         return disease_key if finding is None else f"{disease_key}/{finding['finding_key']}"
 
-    def ingest(job, result) -> None:
+    def _search_key(self, finding) -> str:
+        if self.overview:
+            return OVERVIEW_KEY
+        return DISEASE_KEY if self.by_disease else finding["finding_key"]
+
+    def ingest(self, job, result) -> None:
         disease_key, finding, have = job
         picked, attempts = result
-        mine = known.setdefault(disease_key, set())
+        mine = self.known.setdefault(disease_key, set())
         # Another pair may have ingested a hit since this search was submitted.
         picked = [(hit, mode) for hit, mode in picked if hit.pmcid not in mine]
-        key = OVERVIEW_KEY if overview else DISEASE_KEY if by_disease else finding["finding_key"]
-        outcomes = _fetch_all(pool, picked)
-        _record_attempts(conn, disease_key, key, attempts)
-        before = len(stats["pmcids"])
-        pending = _ingest(conn, outcomes, disease_key, key, picked, pass_name,
-                          terms_for(disease_key), stats)
-        new = stats["pmcids"][before:]
+        key = self._search_key(finding)
+        outcomes = _fetch_all(self.pool, picked)
+        _record_attempts(self.conn, disease_key, key, attempts)
+        before = len(self.stats["pmcids"])
+        pending = _ingest(self.conn, outcomes, disease_key, key, picked, self.pass_name,
+                          self.terms_for(disease_key), self.stats)
+        new = self.stats["pmcids"][before:]
         mine.update(new)
         if finding is not None:
-            stats["pairs"] += 1
+            self.stats["pairs"] += 1
         totals = "/".join(str(a["total"]) for a in attempts)
-        have_text = "" if overview else f" (have {have})"
-        log(f"discover[{pass_name}]: {label(job)}{have_text}: hits {totals}, "
-            f"{len(picked)} new article(s), {pending} figure(s) queued")
-        if new and on_articles is not None:
-            on_articles(new)
+        have_text = "" if self.overview else f" (have {have})"
+        self.log(f"discover[{self.pass_name}]: {self.label(job)}{have_text}: hits {totals}, "
+                 f"{len(picked)} new article(s), {pending} figure(s) queued")
+        if new and self.on_articles is not None:
+            self.on_articles(new)
 
-    def run_jobs(job_list) -> list:
+    def run_jobs(self, job_list) -> list:
+        """Search and ingest ``job_list``; return the jobs whose search failed."""
         failed = []
-        for job, result in _ahead(search_pool, job_list, search, window, prepare):
+        window = 4 * config.VP_SEARCH_CONCURRENCY
+        for job, result in _ahead(self.search_pool, job_list, self.search, window, self.prepare):
             if isinstance(result, pmc.PmcError):
-                log(f"discover[{pass_name}]: {label(job)}: search failed: {result}")
+                self.log(f"discover[{self.pass_name}]: {self.label(job)}: search failed: {result}")
                 failed.append(job)
                 continue
             if isinstance(result, Exception):
                 raise result
-            ingest(job, result)
-            if out_of_time():
+            self.ingest(job, result)
+            if self.out_of_time():
                 return []
         return failed
 
-    window = 4 * config.VP_SEARCH_CONCURRENCY
-    with ThreadPoolExecutor(config.VP_FETCH_CONCURRENCY) as pool, \
-            ThreadPoolExecutor(config.VP_SEARCH_CONCURRENCY) as search_pool:
-        if out_of_time():
-            return stats
-        failed = run_jobs(jobs)
-        if failed:
-            log(f"discover[{pass_name}]: retrying {len(failed)} failed search(es) "
-                f"in {config.VP_SEARCH_RETRY_COOLDOWN}s")
-            deadline = time.monotonic() + config.VP_SEARCH_RETRY_COOLDOWN
-            while time.monotonic() < deadline:
-                if out_of_time():
-                    return stats
-                time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
-            still = run_jobs(failed)
-            stats["search_failures"] = len(still)
-            if still:
-                log(f"discover[{pass_name}]: {len(still)} search(es) failed twice: "
-                    + ", ".join(label(job) for job in still[:20]))
-    return stats
+    def _cool_down(self) -> bool:
+        """Wait out the retry cooldown; False when the pass must stop instead."""
+        deadline = time.monotonic() + config.VP_SEARCH_RETRY_COOLDOWN
+        while time.monotonic() < deadline:
+            if self.out_of_time():
+                return False
+            time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
+        return True
+
+    def retry(self, failed: list) -> None:
+        self.log(f"discover[{self.pass_name}]: retrying {len(failed)} failed search(es) "
+                 f"in {config.VP_SEARCH_RETRY_COOLDOWN}s")
+        if not self._cool_down():
+            return
+        still = self.run_jobs(failed)
+        self.stats["search_failures"] = len(still)
+        if still:
+            self.log(f"discover[{self.pass_name}]: {len(still)} search(es) failed twice: "
+                     + ", ".join(self.label(job) for job in still[:20]))
+
+    def execute(self, jobs: list) -> dict:
+        with ThreadPoolExecutor(config.VP_FETCH_CONCURRENCY) as pool, \
+                ThreadPoolExecutor(config.VP_SEARCH_CONCURRENCY) as search_pool:
+            self.pool, self.search_pool = pool, search_pool
+            if self.out_of_time():
+                return self.stats
+            failed = self.run_jobs(jobs)
+            if failed:
+                self.retry(failed)
+        return self.stats
 
 
 FIXED_KEY = "_fixed"

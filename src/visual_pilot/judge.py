@@ -34,7 +34,6 @@ from PIL import Image
 from . import config, curation, db, diseases, gallery, llm, originals, pmc
 from .demographics import resolve_age
 from . import prompts
-from .prompts import P3
 
 MAX_ATTEMPTS = 3
 PILOT_KEYS = set(diseases.DISEASE_KEYS)
@@ -289,6 +288,49 @@ def fetch_and_prepare(figure: dict) -> tuple[str, bytes, bytes, str | None, tupl
 # ---------------------------------------------------------------------------
 # Post-validation of the P3 response 
 # ---------------------------------------------------------------------------
+def _clamp_bbox(bbox) -> list | None:
+    """Clamp a 4-value bbox to [0,1] and swap inverted corners; None if malformed."""
+    bbox = list(bbox or [])
+    if len(bbox) != 4:
+        return None
+    x0, y0, x1, y1 = [min(1.0, max(0.0, float(v))) for v in bbox]
+    return [min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)]
+
+
+def _validate_tags(panel: dict, valid_keys: set[str]) -> None:
+    """Finding keys, disease and subtype checked against the pilot vocabularies."""
+    # Unknown finding keys -> proposed_findings.
+    findings = []
+    for finding in panel.get("findings") or []:
+        if finding.get("finding_key") in valid_keys:
+            findings.append(finding)
+        else:
+            panel.setdefault("proposed_findings", []).append(finding.get("finding_key"))
+    panel["findings"] = findings
+    # Non-pilot / missing disease on an included panel -> excluded.
+    if panel.get("include") and panel.get("disease_key") not in PILOT_KEYS:
+        panel["include"] = False
+        panel["disease_key"] = None
+        panel["exclusion_reason"] = "other_disease"
+    # Subtype -> P3 enum; unmappable raw values are preserved in the
+    # rationale and the field set to null.
+    canon, dropped = normalize_subtype(panel.get("disease_key"), panel.get("subtype"))
+    if dropped is not None:
+        panel["subtype"] = None
+        note = f"[raw subtype: {dropped}]"
+        panel["rationale"] = ((panel.get("rationale") or "") + " " + note).strip()
+    else:
+        panel["subtype"] = canon
+
+
+def _apply_curation_gate(panel: dict, gate_figure: dict, article: dict, image_size) -> None:
+    reason = curation.exclusion_reason(panel, gate_figure, article, image_size=image_size)
+    if reason:
+        panel["include"] = False
+        panel["exclusion_reason"] = _curation_reason_key(reason)
+        panel["curation_reason"] = reason
+
+
 def post_validate(
     result: dict,
     valid_keys: set[str],
@@ -298,63 +340,29 @@ def post_validate(
     allowed_by_disease: dict[str, set[str]] | None = None,
 ) -> dict:
     out = dict(result)
+    raw_panels = result.get("panels") or []
+    gated = figure is not None and article is not None
+    gate_figure = {
+        **(figure or {}),
+        "figure_is_compound": out.get("figure_is_compound"),
+        "vision_panel_count": len(raw_panels),
+    }
     panels = []
-    for panel in result.get("panels") or []:
+    for panel in raw_panels:
         panel = dict(panel)
         if figure is not None:
             age = resolve_age(figure)
             panel["age_group"] = age["age_group"]
             panel["age_evidence"] = age["evidence"]
-        # bbox: clamp to [0,1]; swap inverted corners.
-        bbox = list(panel.get("bbox") or [])
-        if len(bbox) == 4:
-            bbox = [min(1.0, max(0.0, float(v))) for v in bbox]
-            x0, y0, x1, y1 = bbox
-            if x0 > x1:
-                x0, x1 = x1, x0
-            if y0 > y1:
-                y0, y1 = y1, y0
-            panel["bbox"] = [x0, y0, x1, y1]
-        # Unknown finding keys -> proposed_findings.
-        findings = []
-        for finding in panel.get("findings") or []:
-            if finding.get("finding_key") in valid_keys:
-                findings.append(finding)
-            else:
-                panel.setdefault("proposed_findings", []).append(
-                    finding.get("finding_key")
-                )
-        panel["findings"] = findings
-        # Non-pilot / missing disease on an included panel -> excluded.
-        if panel.get("include") and panel.get("disease_key") not in PILOT_KEYS:
-            panel["include"] = False
-            panel["disease_key"] = None
-            panel["exclusion_reason"] = "other_disease"
-        # Subtype -> P3 enum; unmappable raw values are preserved in the
-        # rationale and the field set to null.
-        canon, dropped = normalize_subtype(panel.get("disease_key"), panel.get("subtype"))
-        if dropped is not None:
-            panel["subtype"] = None
-            note = f"[raw subtype: {dropped}]"
-            panel["rationale"] = ((panel.get("rationale") or "") + " " + note).strip()
-        else:
-            panel["subtype"] = canon
-        if figure is not None and article is not None and panel.get("include"):
-            gate_figure = {
-                **figure,
-                "figure_is_compound": out.get("figure_is_compound"),
-                "vision_panel_count": len(result.get("panels") or []),
-            }
-            reason = curation.exclusion_reason(
-                panel, gate_figure, article, image_size=image_size
-            )
-            if reason:
-                panel["include"] = False
-                panel["exclusion_reason"] = _curation_reason_key(reason)
-                panel["curation_reason"] = reason
+        bbox = _clamp_bbox(panel.get("bbox"))
+        if bbox is not None:
+            panel["bbox"] = bbox
+        _validate_tags(panel, valid_keys)
+        if gated and panel.get("include"):
+            _apply_curation_gate(panel, gate_figure, article, image_size)
         panels.append(panel)
     out["panels"] = panels
-    if figure is not None and article is not None:
+    if gated:
         plate = curation.evaluate_plate(
             out, figure, article, allowed_by_disease or {}, image_size
         )
@@ -396,8 +404,28 @@ def _lists_several_panels(reply: dict) -> bool:
     return isinstance(panels, list) and len(panels) > 1
 
 
-def run(args) -> int:
-    conn = db.init_db()
+def _admit(conn, fig: dict, articles: dict[str, dict]) -> bool:
+    """Whether a queued figure goes to the judge (persisting an inherited license)."""
+    if fig["status"] == "vision_error" and (fig["attempts"] or 0) >= MAX_ATTEMPTS:
+        return False
+    article = articles.get(fig["pmcid"], {})
+    if not fig.get("effective_license") and article.get("license_code"):
+        # Older/imported rows may have only the article-level license.
+        # Parse normally copies this onto each figure; persist the same
+        # inherited value so the later storage stage sees the same gate.
+        fig["effective_license"] = article["license_code"]
+        conn.execute(
+            "UPDATE figures SET effective_license=? WHERE figure_id=?",
+            (fig["effective_license"], fig["figure_id"]),
+        )
+    # Re-assert the figure-level commercial license gate at the call
+    # boundary. Parse normally routes disallowed licenses out of this
+    # queue; this protects resumed/imported rows as well.
+    return pmc.license_allows(fig.get("effective_license")) is not None
+
+
+def _load_queue(conn, args) -> tuple[list[dict], dict[str, dict]]:
+    """(figures to judge in priority order, their articles by pmcid)."""
     disease = None if args.disease == "all" else args.disease
     rows = db.rows_with_status(
         conn,
@@ -414,46 +442,190 @@ def run(args) -> int:
             (db.to_json(sorted({r["pmcid"] for r in rows})),),
         )
     }
-    figures = []
-    for r in rows:
-        fig = dict(r)
-        if fig["status"] == "vision_error" and (fig["attempts"] or 0) >= MAX_ATTEMPTS:
-            continue
-        article = articles.get(fig["pmcid"], {})
-        if not fig.get("effective_license") and article.get("license_code"):
-            # Older/imported rows may have only the article-level license.
-            # Parse normally copies this onto each figure; persist the same
-            # inherited value so the later storage stage sees the same gate.
-            fig["effective_license"] = article["license_code"]
-            conn.execute(
-                "UPDATE figures SET effective_license=? WHERE figure_id=?",
-                (fig["effective_license"], fig["figure_id"]),
-            )
-        # Re-assert the figure-level commercial license gate at the call
-        # boundary. Parse normally routes disallowed licenses out of this
-        # queue; this protects resumed/imported rows as well.
-        if pmc.license_allows(fig.get("effective_license")) is None:
-            continue
-        figures.append(fig)
+    figures = [fig for fig in (dict(r) for r in rows) if _admit(conn, fig, articles)]
     conn.commit()
     figures = rank_figures(conn, figures, articles)
     if args.limit:
         figures = figures[: args.limit]
+    return figures, articles
 
+
+_FIGURE_SCRATCH = ("_original", "_image_size", "_format_note")
+
+
+class _JudgeRun:
+    """State shared by the request generator and the result loop of one run.
+
+    Streaming pipeline: a fetch pool prepares images just ahead of the judge
+    and client.iter_many pulls a new request only when an LLM slot frees, so
+    completed-but-unjudged images stay bounded to ~2x the in-flight cap and
+    the whole figure set's bytes are never held in memory at once. Everything
+    runs on the calling thread: figures are dispatched in rank_figures
+    priority order, results are applied and committed in completion order
+    (call order is not an input).
+    """
+
+    def __init__(self, conn, articles: dict[str, dict]) -> None:
+        self.conn = conn
+        self.articles = articles
+        self.allowed_by_disease = curation.approved_findings_by_disease(conn)
+        self.totals = {"accepted": 0, "rejected": 0, "errors": 0, "plates": 0}
+        self.reasons: Counter = Counter()
+        self.submitted: list[dict] = []  # BatchResult.index -> figure
+        self.vocab_cache: dict[tuple, list[dict]] = {}
+
+    def vocab_for(self, fig) -> list[dict]:
+        keys = tuple(
+            sorted(db.from_json(self.articles[fig["pmcid"]]["primary_disease_keys_json"], []))
+        )
+        if keys not in self.vocab_cache:
+            self.vocab_cache[keys] = vocab_for_diseases(self.conn, list(keys))
+        return self.vocab_cache[keys]
+
+    def _fail(self, fig: dict, error: str) -> None:
+        db.set_status(
+            self.conn, "figures", fig["figure_id"], "vision_error",
+            error=error[:500],
+            attempts=(fig["attempts"] or 0) + 1,
+        )
+        self.totals["errors"] += 1
+        self.conn.commit()
+
+    def _start_fetches(self, pending: deque, fig_iter, pool, window: int) -> None:
+        while len(pending) < window:
+            fig = next(fig_iter, None)
+            if fig is None:
+                return
+            if not fig["image_url"]:
+                db.set_status(
+                    self.conn, "figures", fig["figure_id"], "vision_error",
+                    error="needs_bytes",
+                )
+                self.conn.commit()
+                continue
+            pending.append((fig, pool.submit(fetch_and_prepare, fig)))
+
+    def requests(self, figures: list[dict]):
+        """Yield call_json kwargs in priority order, fetching just ahead."""
+        fetch_window = max(1, 2 * config.VP_JUDGE_CONCURRENCY)
+        pending: deque = deque()  # (figure, fetch future), priority order
+        fig_iter = iter(figures)
+        pool = ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY)
+        try:
+            while True:
+                self._start_fetches(pending, fig_iter, pool, fetch_window)
+                if not pending:
+                    return
+                fig, fut = pending.popleft()
+                try:
+                    fetched = fut.result()
+                except Exception as exc:  # noqa: BLE001 - per-figure isolation
+                    self._fail(fig, f"fetch: {exc}")
+                    continue
+                yield self._request(fig, *fetched)
+        finally:
+            # Early stop (budget/exception): cancel not-yet-started fetches;
+            # running ones finish in the background and are discarded.
+            pool.shutdown(wait=False, cancel_futures=True)
+
+    def _request(self, fig: dict, original: bytes, mime, prepared, note, image_size) -> dict:
+        article = self.articles[fig["pmcid"]]
+        vocab = self.vocab_for(fig)
+        fig["_valid_keys"] = {v["finding_key"] for v in vocab}
+        fig["_original"] = original
+        fig["_image_size"] = image_size
+        fig["_format_note"] = note
+        self.submitted.append(fig)
+        prompt = prompts.scoped(
+            "p3", db.from_json(article.get("primary_disease_keys_json"), [])
+        )
+        return {
+            "stage": "p3",
+            "model": config.VP_JUDGE_MODEL,
+            "system": prompt.system,
+            "user_content": user_content(fig, article, vocab),
+            "schema": prompt.schema,
+            "prompt_version": prompt.version,
+            "reasoning_effort": config.VP_JUDGE_REASONING_EFFORT,
+            "fill_missing": {
+                "figure_id": fig["figure_id"],
+                # P3 rule 4: a multi-panel figure is compound.
+                "figure_is_compound": _lists_several_panels,
+            },
+            "images": [
+                llm.ImageInput(
+                    data_url=pmc.to_data_url(mime, prepared),
+                    sha256=hashlib.sha256(original).hexdigest(),
+                )
+            ],
+        }
+
+    def _store_judgment(self, fig: dict, reply: dict) -> None:
+        parsed = post_validate(
+            reply, fig["_valid_keys"],
+            figure=fig, article=self.articles[fig["pmcid"]],
+            image_size=fig.get("_image_size"),
+            allowed_by_disease=self.allowed_by_disease,
+        )
+        status = figure_status(parsed)
+        sha256 = hashlib.sha256(fig["_original"]).hexdigest()
+        db.set_status(
+            self.conn,
+            "figures",
+            fig["figure_id"],
+            status,
+            vision_json=db.to_json(parsed),
+            image_format=fig["_format_note"],
+            sha256=sha256,
+            error=None,
+        )
+        if status == "vision_accepted":
+            # C5: hand the original bytes to the store stage. Bytes for
+            # every other outcome are dropped by apply().
+            originals.put(fig["figure_id"], sha256, fig["_original"])
+            self.totals["accepted"] += 1
+            if (parsed.get("plate") or {}).get("include"):
+                self.totals["plates"] += 1
+        else:
+            self.totals["rejected"] += 1
+            self.reasons.update(
+                panel.get("exclusion_reason") or "not_relevant"
+                for panel in parsed.get("panels") or []
+                if not panel.get("include")
+            )
+        self.conn.commit()
+
+    def apply(self, res) -> None:
+        """Persist one non-budget LLM result and drop the figure's bytes."""
+        fig = self.submitted[res.index]
+        if res.error is not None:
+            self._fail(fig, f"llm: {res.error}")
+        else:
+            self._store_judgment(fig, res.parsed or {})
+        for key in _FIGURE_SCRATCH:
+            fig.pop(key, None)
+
+    def summary(self, spent_usd: float) -> str:
+        totals = self.totals
+        summary = (
+            f"judge: {totals['accepted']} accepted ({totals['plates']} whole-figure "
+            f"plates), {totals['rejected']} rejected, {totals['errors']} errors, "
+            f"spend=${spent_usd:.4f}"
+        )
+        if self.reasons:
+            summary += " | rejections: " + ", ".join(
+                f"{k}={v}" for k, v in self.reasons.most_common()
+            )
+        return summary
+
+
+def run(args) -> int:
+    conn = db.init_db()
+    figures, articles = _load_queue(conn, args)
     if args.dry_run:
         print(f"judge: {len(figures)} figures in scope (metadata-prioritized)")
         conn.close()
         return 0
-
-    vocab_cache: dict[tuple, list[dict]] = {}
-
-    def vocab_for(fig) -> list[dict]:
-        keys = tuple(
-            sorted(db.from_json(articles[fig["pmcid"]]["primary_disease_keys_json"], []))
-        )
-        if keys not in vocab_cache:
-            vocab_cache[keys] = vocab_for_diseases(conn, list(keys))
-        return vocab_cache[keys]
 
     # Let the figure-level retry queue handle transient vision timeouts. A
     # single request should not occupy a worker for multiple full timeouts.
@@ -462,161 +634,24 @@ def run(args) -> int:
         concurrency=config.VP_JUDGE_CONCURRENCY,
         timeout_seconds=config.VP_JUDGE_TIMEOUT_SECONDS,
     )
-    allowed_by_disease = curation.approved_findings_by_disease(conn)
-    totals = {"accepted": 0, "rejected": 0, "errors": 0, "plates": 0}
-    reasons: Counter = Counter()
+    judge_run = _JudgeRun(conn, articles)
     budget_hit = False
-
-    # Streaming pipeline: a fetch pool prepares images just
-    # ahead of the judge and client.iter_many pulls a new request only when
-    # an LLM slot frees, so completed-but-unjudged images stay bounded to
-    # ~2x the in-flight cap and the whole figure set's bytes are never held
-    # in memory at once. Everything below runs on this thread: figures are
-    # dispatched in rank_figures priority order, results are applied and
-    # committed in completion order (call order is not an input).
-    fetch_window = max(1, 2 * config.VP_JUDGE_CONCURRENCY)
-    submitted: list[dict] = []  # BatchResult.index -> figure
-
-    def _requests():
-        """Yield call_json kwargs in priority order, fetching just ahead."""
-        pending: deque = deque()  # (figure, fetch future), priority order
-        fig_iter = iter(figures)
-        pool = ThreadPoolExecutor(max_workers=config.VP_FETCH_CONCURRENCY)
-        try:
-            while True:
-                while len(pending) < fetch_window:
-                    fig = next(fig_iter, None)
-                    if fig is None:
-                        break
-                    if not fig["image_url"]:
-                        db.set_status(
-                            conn, "figures", fig["figure_id"], "vision_error",
-                            error="needs_bytes",
-                        )
-                        conn.commit()
-                        continue
-                    pending.append((fig, pool.submit(fetch_and_prepare, fig)))
-                if not pending:
-                    return
-                fig, fut = pending.popleft()
-                try:
-                    original, mime, prepared, note, image_size = fut.result()
-                except Exception as exc:  # noqa: BLE001 - per-figure isolation
-                    db.set_status(
-                        conn, "figures", fig["figure_id"], "vision_error",
-                        error=f"fetch: {exc}"[:500],
-                        attempts=(fig["attempts"] or 0) + 1,
-                    )
-                    conn.commit()
-                    totals["errors"] += 1
-                    continue
-                article = articles[fig["pmcid"]]
-                vocab = vocab_for(fig)
-                fig["_valid_keys"] = {v["finding_key"] for v in vocab}
-                fig["_original"] = original
-                fig["_image_size"] = image_size
-                fig["_format_note"] = note
-                submitted.append(fig)
-                prompt = prompts.scoped(
-                    "p3", db.from_json(article.get("primary_disease_keys_json"), [])
-                )
-                yield {
-                    "stage": "p3",
-                    "model": config.VP_JUDGE_MODEL,
-                    "system": prompt.system,
-                    "user_content": user_content(fig, article, vocab),
-                    "schema": prompt.schema,
-                    "prompt_version": prompt.version,
-                    "reasoning_effort": config.VP_JUDGE_REASONING_EFFORT,
-                    "fill_missing": {
-                        "figure_id": fig["figure_id"],
-                        # P3 rule 4: a multi-panel figure is compound.
-                        "figure_is_compound": _lists_several_panels,
-                    },
-                    "images": [
-                        llm.ImageInput(
-                            data_url=pmc.to_data_url(mime, prepared),
-                            sha256=hashlib.sha256(original).hexdigest(),
-                        )
-                    ],
-                }
-        finally:
-            # Early stop (budget/exception): cancel not-yet-started fetches;
-            # running ones finish in the background and are discarded.
-            pool.shutdown(wait=False, cancel_futures=True)
-
-    requests = _requests()
+    requests = judge_run.requests(figures)
     results = client.iter_many(requests, max_in_flight=config.VP_JUDGE_CONCURRENCY)
     try:
         for res in results:
             with client.db_lock:  # iter_many workers commit on this connection
-                fig = submitted[res.index]
-                if res.error is not None:
-                    if isinstance(res.error, llm.BudgetExceeded):
-                        budget_hit = True  # leave status unchanged, stop cleanly
-                        break
-                    db.set_status(
-                        conn, "figures", fig["figure_id"], "vision_error",
-                        error=f"llm: {res.error}"[:500],
-                        attempts=(fig["attempts"] or 0) + 1,
-                    )
-                    totals["errors"] += 1
-                    conn.commit()
-                    fig.pop("_original", None)
-                    fig.pop("_image_size", None)
-                    fig.pop("_format_note", None)
-                    continue
-                parsed = post_validate(
-                    res.parsed or {}, fig["_valid_keys"],
-                    figure=fig, article=articles[fig["pmcid"]],
-                    image_size=fig.get("_image_size"),
-                    allowed_by_disease=allowed_by_disease,
-                )
-                status = figure_status(parsed)
-                sha256 = hashlib.sha256(fig["_original"]).hexdigest()
-                db.set_status(
-                    conn,
-                    "figures",
-                    fig["figure_id"],
-                    status,
-                    vision_json=db.to_json(parsed),
-                    image_format=fig["_format_note"],
-                    sha256=sha256,
-                    error=None,
-                )
-                if status == "vision_accepted":
-                    # C5: hand the original bytes to the store stage. Bytes for
-                    # every other outcome are dropped immediately below.
-                    originals.put(fig["figure_id"], sha256, fig["_original"])
-                    totals["accepted"] += 1
-                    if (parsed.get("plate") or {}).get("include"):
-                        totals["plates"] += 1
-                else:
-                    totals["rejected"] += 1
-                    for panel in parsed.get("panels") or []:
-                        if not panel.get("include"):
-                            reasons[panel.get("exclusion_reason") or "not_relevant"] += 1
-                conn.commit()
-                fig.pop("_original", None)
-                fig.pop("_image_size", None)
-                fig.pop("_format_note", None)
+                if isinstance(res.error, llm.BudgetExceeded):
+                    budget_hit = True  # leave status unchanged, stop cleanly
+                    break
+                judge_run.apply(res)
     finally:
         requests.close()
         results.close()
 
     if budget_hit:
         print(f"LLM budget exhausted (${client.spent_usd:.4f}); stopping cleanly. Rerun to resume.")
-
-    summary = (
-        f"judge: {totals['accepted']} accepted ({totals['plates']} whole-figure "
-        f"plates), {totals['rejected']} rejected, {totals['errors']} errors, "
-        f"spend=${client.spent_usd:.4f}"
-    )
-    if reasons:
-        summary += " | rejections: " + ", ".join(
-            f"{k}={v}" for k, v in reasons.most_common()
-        )
-    print(summary)
+    print(judge_run.summary(client.spent_usd))
     conn.close()
     return 0
 
@@ -698,6 +733,21 @@ def requeue_plates(conn, disease=None, pmcids=None, dry_run=False) -> dict:
     }
 
 
+def _restore_age_vetoes(vision: dict) -> dict:
+    """The judgment with panels vetoed only by the retired age gate re-included."""
+    restored = dict(vision)
+    restored["panels"] = []
+    for panel in vision.get("panels") or []:
+        panel = dict(panel)
+        if panel.get("curation_reason") == curation.RETIRED_AGE_REASON:
+            panel["include"] = True
+            panel.pop("exclusion_reason", None)
+            panel.pop("curation_reason", None)
+        restored["panels"].append(panel)
+    restored.pop("plate", None)
+    return restored
+
+
 def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
     """Lift the retired age gate from stored judgments (no LLM calls).
 
@@ -726,29 +776,21 @@ def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
         if pmc.license_allows(pmc.normalize_license(license_code)) is None:
             continue
         counts["examined"] += 1
-        restored = dict(vision)
-        restored["panels"] = []
-        for panel in panels:
-            panel = dict(panel)
-            if panel.get("curation_reason") == curation.RETIRED_AGE_REASON:
-                panel["include"] = True
-                panel.pop("exclusion_reason", None)
-                panel.pop("curation_reason", None)
-            restored["panels"].append(panel)
-        restored.pop("plate", None)
         valid_keys = {
             f.get("finding_key") for p in panels for f in p.get("findings") or []
         }
         parsed = post_validate(
-            restored, valid_keys, figure=row, article=dict(article) if article else {},
+            _restore_age_vetoes(vision), valid_keys, figure=row,
+            article=dict(article) if article else {},
             allowed_by_disease=allowed_by_disease,
         )
         status = figure_status(parsed)
         if status != "vision_accepted":
-            for p in parsed.get("panels") or []:
-                if not p.get("include"):
-                    reason = p.get("curation_reason") or p.get("exclusion_reason")
-                    counts["still_rejected"][str(reason or "model excluded panel")] += 1
+            counts["still_rejected"].update(
+                str(p.get("curation_reason") or p.get("exclusion_reason") or "model excluded panel")
+                for p in parsed.get("panels") or []
+                if not p.get("include")
+            )
             continue
         counts["requeued"] += 1
         if not dry_run:

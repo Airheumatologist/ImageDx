@@ -7,9 +7,8 @@ network, providers, or the main database.
 import json
 from types import SimpleNamespace
 
-from src.visual_pilot import config, db, gallery, llm, pair_reporting, report
+from src.visual_pilot import config, gallery, llm, pair_reporting, report
 from balanced_fixtures import (
-    MALAR_CAPTION,
     add_article,
     add_disease,
     add_figure,

@@ -102,7 +102,7 @@ def _parsed(captions, sections=()):
     ]
     return jats.ParsedArticle(
         figures=figs, body_sections=list(sections), authors=["Doe"], author_count=1,
-        article_copyright_holder=None, journal_name="J", publisher_name=None,
+        journal_name="J",
         corresp_country=None, first_aff_country=None,
     )
 

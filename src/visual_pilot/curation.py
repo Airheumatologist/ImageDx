@@ -255,6 +255,44 @@ def plate_structure(vision) -> dict | None:
     }
 
 
+def _plate_findings(patient: list, allowed: set[str]) -> list[dict]:
+    """Approved findings across the plate's patient panels, first seen first."""
+    plate_findings = []
+    seen: set[str] = set()
+    for panel in patient:
+        for item in _get(panel, "findings") or []:
+            key = item.get("finding_key") if isinstance(item, dict) else item
+            if not key or key in seen or key not in allowed:
+                continue
+            seen.add(key)
+            plate_findings.append({
+                "finding_key": key,
+                "evidence": item.get("evidence", "") if isinstance(item, dict) else "",
+            })
+    return plate_findings
+
+
+def _plate_rationale(labels: list[str], panels: list) -> str:
+    rationale = f"Whole-figure plate of {len(panels)} panels ({', '.join(labels)})."
+    parts = " ".join(
+        f"{label}: {_text(_get(panel, 'rationale'))}"
+        for label, panel in zip(labels, panels)
+        if _get(panel, "rationale")
+    )
+    rationale = (rationale + " " + parts).strip()
+    if len(rationale) > 1000:
+        rationale = rationale[:997].rsplit(" ", 1)[0] + "..."
+    return rationale
+
+
+def _plate_verdict(plate_class: str, plate_kind: str) -> tuple[bool, str | None]:
+    if plate_class != "single_disease":
+        return False, f"multi-panel plate: {plate_class}"
+    if plate_kind == "unlabeled":
+        return False, "unlabeled single-disease plate"
+    return True, None
+
+
 def evaluate_plate(
     vision: dict,
     figure: dict | None,
@@ -283,42 +321,16 @@ def evaluate_plate(
         return values.pop() if len(values) == 1 else default
 
     allowed = allowed_by_disease.get(structure["disease_key"]) or set()
-    plate_findings = []
-    seen: set[str] = set()
-    for panel in patient:
-        for item in _get(panel, "findings") or []:
-            key = item.get("finding_key") if isinstance(item, dict) else item
-            if not key or key in seen or key not in allowed:
-                continue
-            seen.add(key)
-            plate_findings.append({
-                "finding_key": key,
-                "evidence": item.get("evidence", "") if isinstance(item, dict) else "",
-            })
+    plate_findings = _plate_findings(patient, allowed)
     if not plate_findings:
         plate_kind, findings = "unlabeled", []
     elif len(plate_findings) == 1:
         plate_kind, findings = "same_finding", list(plate_findings)
     else:
         plate_kind, findings = "combined", []
-
-    rationale = f"Whole-figure plate of {len(panels)} panels ({', '.join(labels)})."
-    parts = " ".join(
-        f"{label}: {_text(_get(panel, 'rationale'))}"
-        for label, panel in zip(labels, panels)
-        if _get(panel, "rationale")
-    )
-    rationale = (rationale + " " + parts).strip()
-    if len(rationale) > 1000:
-        rationale = rationale[:997].rsplit(" ", 1)[0] + "..."
-
+    rationale = _plate_rationale(labels, panels)
     plate_class = structure["plate_class"]
-    if plate_class != "single_disease":
-        include, reason = False, f"multi-panel plate: {plate_class}"
-    elif plate_kind == "unlabeled":
-        include, reason = False, "unlabeled single-disease plate"
-    else:
-        include, reason = True, None
+    include, reason = _plate_verdict(plate_class, plate_kind)
     plate = {
         "panel_label": PLATE_LABEL,
         "bbox": [0, 0, 1, 1],
@@ -382,6 +394,123 @@ def source_exclusion_reason(figure: dict, article: dict | None = None) -> str | 
     return None
 
 
+def _is_compound(figure: dict, vision: dict) -> bool:
+    return (
+        _get(figure, "figure_is_compound") is True
+        or _get(figure, "compound") is True
+        or vision.get("figure_is_compound") is True
+        or len(vision.get("panels") or []) > 1
+        or (_get(figure, "vision_panel_count") or 0) > 1
+    )
+
+
+def _compound_reason(panel: dict, figure: dict) -> str | None:
+    """Tiles/snippets of a compound figure are never published; only the
+    whole-figure plate can pass, and only for a single-disease plate that
+    carries an approved finding."""
+    vision = _json_value(_get(figure, "vision_json"), {}) or {}
+    if not _is_compound(figure, vision):
+        return None
+    plate_kind = _get(panel, "plate_kind")
+    if plate_kind is None or _get(panel, "crop_mode") != "whole_figure":
+        return "multi-panel collage; skip whole source"
+    if plate_kind == "unlabeled":
+        return "unlabeled single-disease plate"
+    structure = plate_structure(vision)
+    plate_class = structure["plate_class"] if structure else "not_compound"
+    if plate_class != "single_disease":
+        return f"multi-panel plate: {plate_class}"
+    if structure["disease_key"] != _get(panel, "disease_key"):
+        return "multi-panel plate: disease mismatch"
+    return None
+
+
+def _attribution_reason(panel: dict, caption: str, article: dict) -> str | None:
+    """The caption (or a disease-focused title) must tie the panel to its disease."""
+    target = _text(_get(panel, "disease_key"))
+    if target not in _disease_matchers():
+        return None
+    caption_diseases = _diseases_in_text(caption)
+    if target in caption_diseases:
+        return None
+    if caption_diseases - {target} or _has_nonpilot_disease(caption):
+        return "caption identifies another disease"
+    # Disease-focused titles can establish scope for terse captions such
+    # as "Malar rash". General review topics alone cannot attribute a
+    # common finding like effusion or vasculitis to the target disease.
+    if target not in _diseases_in_text(_text(_get(article, "title"))):
+        return "disease association not stated in figure caption"
+    return None
+
+
+def _missing_bounds_reason(panel: dict, figure: dict) -> str | None:
+    """A panel without a bbox passes only as the figure's single full image."""
+    vision_panel_count = _get(figure, "vision_panel_count")
+    vision = _json_value(_get(figure, "vision_json"), {}) or {}
+    panels = vision.get("panels") or []
+    single_full_image = (
+        _get(figure, "figure_is_compound") is not True
+        and vision.get("figure_is_compound") is not True
+        and (vision_panel_count == 1 or (not vision_panel_count and len(panels) == 1))
+    )
+    if not single_full_image and _get(panel, "crop_mode") != "whole_figure":
+        return "missing or invalid panel bounds"
+    return None
+
+
+def _crop_size_reason(panel: dict, figure: dict, bbox, image_size) -> str | None:
+    x0, y0, x1, y1 = bbox
+    width, height = x1 - x0, y1 - y0
+    license_code = _text(_get(figure, "effective_license")).casefold()
+    if _get(panel, "crop_mode") == "whole_figure" or license_code.endswith("-nd"):
+        return None
+    # A small article subfigure is rarely useful in this library. In
+    # addition to area, require useful extent in each direction so narrow
+    # strips do not slip through on a large image.
+    too_small = width * height < 0.12 or width < 0.25 or height < 0.25
+    if not too_small and image_size:
+        too_small = min(int(width * image_size[0]), int(height * image_size[1])) < 160
+    return "panel crop too small for a useful image" if too_small else None
+
+
+def _bounds_reason(panel: dict, figure: dict, image_size) -> str | None:
+    bbox = _bbox(panel)
+    if bbox is None:
+        return _missing_bounds_reason(panel, figure)
+    return _crop_size_reason(panel, figure, bbox, image_size)
+
+
+def _lacks_allowed_finding(panel: dict, allowed_findings: set[str]) -> bool:
+    raw = _get(panel, "findings")
+    if raw is None:
+        raw = _json_value(_get(panel, "findings_json"), [])
+    plate_raw = _get(panel, "plate_findings")
+    if plate_raw is None:
+        plate_raw = _json_value(_get(panel, "plate_findings_json"), [])
+    keys = {
+        str(item.get("finding_key") if isinstance(item, dict) else item)
+        for item in [*(raw or []), *(plate_raw or [])]
+    }
+    return not keys & allowed_findings
+
+
+def _evidence_reason(
+    panel: dict, caption: str, panel_text: str, allowed_findings: set[str] | None
+) -> str | None:
+    evidence = _findings(panel)
+    evidence_text = " ".join(evidence)
+    if _NEGATIVE.search(" ".join((caption, panel_text, evidence_text))):
+        return "normal or control image"
+    if not evidence:
+        return "no specific clinical manifestation identified"
+    if allowed_findings is not None and _lacks_allowed_finding(panel, allowed_findings):
+        return "no finding approved for this disease"
+    # Veterinary terms in panel text can be absent from the parent caption.
+    if _VETERINARY.search(panel_text + " " + evidence_text):
+        return "veterinary image"
+    return None
+
+
 def exclusion_reason(
     panel: dict,
     figure: dict,
@@ -404,108 +533,18 @@ def exclusion_reason(
         reason = _get(panel, "exclusion_reason")
         return str(reason or "model excluded panel").replace("_", " ")
 
-    vision = _json_value(_get(figure, "vision_json"), {}) or {}
-    compound = (
-        _get(figure, "figure_is_compound") is True
-        or _get(figure, "compound") is True
-        or vision.get("figure_is_compound") is True
-        or len(vision.get("panels") or []) > 1
-        or (_get(figure, "vision_panel_count") or 0) > 1
-    )
-    if compound:
-        # Tiles/snippets of a compound figure are never published; only the
-        # whole-figure plate can pass, and only for a single-disease plate
-        # that carries an approved finding.
-        plate_kind = _get(panel, "plate_kind")
-        if plate_kind is None or _get(panel, "crop_mode") != "whole_figure":
-            return "multi-panel collage; skip whole source"
-        if plate_kind == "unlabeled":
-            return "unlabeled single-disease plate"
-        structure = plate_structure(vision)
-        plate_class = structure["plate_class"] if structure else "not_compound"
-        if plate_class != "single_disease":
-            return f"multi-panel plate: {plate_class}"
-        if structure["disease_key"] != _get(panel, "disease_key"):
-            return "multi-panel plate: disease mismatch"
-
-    source_reason = source_exclusion_reason(figure, article)
-    if source_reason:
-        return source_reason
     caption = _text(_get(figure, "caption"))
-    target = _text(_get(panel, "disease_key"))
-    matchers = _disease_matchers()
-    if target in matchers:
-        target_in_caption = target in _diseases_in_text(caption)
-        title = _text(_get(article, "title"))
-        target_in_title = target in _diseases_in_text(title)
-        other_diseases = _diseases_in_text(caption) - {target}
-        if (other_diseases or _has_nonpilot_disease(caption)) and not target_in_caption:
-            return "caption identifies another disease"
-        # Disease-focused titles can establish scope for terse captions such
-        # as "Malar rash". General review topics alone cannot attribute a
-        # common finding like effusion or vasculitis to the target disease.
-        if not target_in_caption and not target_in_title:
-            return "disease association not stated in figure caption"
-
     panel_text = " ".join((
         _text(_get(panel, "rationale")),
         _text(_get(panel, "modality")),
         _text(_get(panel, "body_site")),
     ))
-    if _BAD_PANEL.search(panel_text):
-        return "diagram, chart, or text-only panel"
-    bbox = _bbox(panel)
-    if bbox is None:
-        vision_panel_count = _get(figure, "vision_panel_count")
-        vision = _json_value(_get(figure, "vision_json"), {}) or {}
-        panels = vision.get("panels") or []
-        single_full_image = (
-            _get(figure, "figure_is_compound") is not True
-            and vision.get("figure_is_compound") is not True
-            and (vision_panel_count == 1 or (not vision_panel_count and len(panels) == 1))
-        )
-        if not single_full_image and _get(panel, "crop_mode") != "whole_figure":
-            return "missing or invalid panel bounds"
-    else:
-        x0, y0, x1, y1 = bbox
-        width, height = x1 - x0, y1 - y0
-        license_code = _text(_get(figure, "effective_license")).casefold()
-        whole_image = (
-            _get(panel, "crop_mode") == "whole_figure"
-            or license_code.endswith("-nd")
-        )
-        # A small article subfigure is rarely useful in this library. In
-        # addition to area, require useful extent in each direction so narrow
-        # strips do not slip through on a large image.
-        if not whole_image and (width * height < 0.12 or width < 0.25 or height < 0.25):
-            return "panel crop too small for a useful image"
-        if image_size and not whole_image:
-            px_w, px_h = int(width * image_size[0]), int(height * image_size[1])
-            if min(px_w, px_h) < 160:
-                return "panel crop too small for a useful image"
-
-    evidence = _findings(panel)
-    evidence_text = " ".join(evidence)
-    context = " ".join((caption, panel_text, evidence_text))
-    if _NEGATIVE.search(context):
-        return "normal or control image"
-    if not evidence:
-        return "no specific clinical manifestation identified"
-    if allowed_findings is not None:
-        raw = _get(panel, "findings")
-        if raw is None:
-            raw = _json_value(_get(panel, "findings_json"), [])
-        plate_raw = _get(panel, "plate_findings")
-        if plate_raw is None:
-            plate_raw = _json_value(_get(panel, "plate_findings_json"), [])
-        keys = {
-            str(item.get("finding_key") if isinstance(item, dict) else item)
-            for item in [*(raw or []), *(plate_raw or [])]
-        }
-        if not keys & allowed_findings:
-            return "no finding approved for this disease"
-
-    # Veterinary terms in panel text can be absent from the parent caption.
-    if _VETERINARY.search(panel_text + " " + evidence_text):
-        return "veterinary image"
-    return None
+    bad_panel = "diagram, chart, or text-only panel" if _BAD_PANEL.search(panel_text) else None
+    return (
+        _compound_reason(panel, figure)
+        or source_exclusion_reason(figure, article)
+        or _attribution_reason(panel, caption, article)
+        or bad_panel
+        or _bounds_reason(panel, figure, image_size)
+        or _evidence_reason(panel, caption, panel_text, allowed_findings)
+    )

@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import faulthandler
 import io
-import logging
 import queue
 import signal
 import sys
@@ -22,7 +21,6 @@ from datetime import datetime, timezone
 
 from . import config, db, diseases, timing
 
-logger = logging.getLogger(__name__)
 
 CommandFn = Callable[[argparse.Namespace], int]
 
@@ -166,8 +164,6 @@ def _run_all(args: argparse.Namespace) -> int:
     ``--max-runtime-seconds`` stops discovery and the next batch, leaving
     unfinished figures for the resume step of the next run.
     """
-    from . import discover, judge
-
     started = time.monotonic()
     deadline = started + int(args.max_runtime_seconds)
     if args.dry_run:
@@ -177,266 +173,329 @@ def _run_all(args: argparse.Namespace) -> int:
     _cmd_init(args)
     timings_path = _write_timings_report(quiet=True)
     print(f"run-all: timings report: {timings_path}")
-    read_conn = db.connect()
-    read_lock = threading.Lock()  # read_conn is shared by the pipeline threads
-    stop = threading.Event()
-
-    def out_of_time() -> bool:
-        return time.monotonic() >= deadline
-
-    def should_stop() -> bool:
-        return stop.is_set() or out_of_time()
-
+    run = _RunAll(args, deadline, timings_path)
     try:
-        with read_lock:
-            start_call_id = read_conn.execute(
-                "SELECT COALESCE(MAX(call_id), 0) AS m FROM llm_calls"
-            ).fetchone()["m"]
+        return run.execute()
+    finally:
+        run.close()
+        _write_timings_report(timings_path)
 
-        def _remaining_budget():
-            if args.budget_usd is None:
-                return None
-            with read_lock:
-                spent = read_conn.execute(
-                    "SELECT COALESCE(SUM(cost_usd), 0) AS s FROM llm_calls WHERE call_id > ?",
-                    (start_call_id,),
-                ).fetchone()["s"]
-            return args.budget_usd - spent
 
-        def _stage(name: str, pmcids, label: str) -> int:
-            remaining = _remaining_budget()
-            if remaining is not None and remaining <= 0:
-                print(f"run-all: budget ${args.budget_usd:.2f} exhausted before {name}; stopping")
-                return 4
-            # One namespace per call: stages run on more than one thread.
-            scoped = argparse.Namespace(**vars(args))
-            scoped.budget_usd = remaining
-            scoped.pmcids = pmcids
-            print(f"run-all: {label}: {name}" + (f" ({len(pmcids)} article(s))" if pmcids else ""))
-            with timing.stage(name):
-                return COMMANDS[name](scoped)
+_LEFTOVER_SQL = (
+    "SELECT DISTINCT f.pmcid FROM figures f JOIN articles a USING(pmcid) "
+    "WHERE (f.status IN ('pending','caption_kept','caption_uncertain','vision_accepted') "
+    "OR (f.status='vision_error' AND f.attempts < ?)) "
+    "AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) je "
+    "WHERE je.value IN (SELECT value FROM json_each(?))) "
+    "ORDER BY f.pmcid"
+)
 
-        def _finish(pmcids, label: str) -> int:
-            """judge (with vision_error retries) → store → describe."""
-            rc = _stage("judge", pmcids, label)
-            if rc != 0:
-                return rc
-            for _ in range(judge.MAX_ATTEMPTS - 1):
-                marks = ",".join("?" for _ in pmcids)
-                with read_lock:
-                    retry = read_conn.execute(
-                        "SELECT COUNT(*) AS n FROM figures WHERE status='vision_error' "
-                        f"AND attempts < ? AND pmcid IN ({marks})",
-                        (judge.MAX_ATTEMPTS, *pmcids),
-                    ).fetchone()["n"] if pmcids else 0
-                if not retry:
-                    break
-                rc = _stage("judge", pmcids, label)
-                if rc != 0:
-                    return rc
-            rc = _stage("store", pmcids, label)
-            if rc != 0:
-                return rc
-            return _stage("describe", pmcids, label)
 
-        def _pipeline(feed, prefix: str) -> int:
-            """Run ``feed(put)`` on a producer thread and drain what it puts.
+class _RunAll:
+    """State shared by one ``run-all`` invocation's rounds and pipeline threads."""
 
-            ``put(pmcids)`` hands newly parsed articles to the triage thread;
-            this thread judges, stores and describes each triaged batch.
-            """
-            arrivals: queue.Queue = queue.Queue()
-            triaged: queue.Queue = queue.Queue(maxsize=2)
-            errors: list[BaseException] = []
-            failed_rc: list[int] = []
+    def __init__(self, args: argparse.Namespace, deadline: float, timings_path) -> None:
+        self.args = args
+        self.deadline = deadline
+        self.timings_path = timings_path
+        self.read_conn = db.connect()
+        self.read_lock = threading.Lock()  # read_conn is shared by the pipeline threads
+        self.stop = threading.Event()
+        self.start_call_id = 0
 
-            def produce() -> None:
-                try:
-                    feed(arrivals.put)
-                except BaseException as exc:  # noqa: BLE001 - re-raised below
-                    errors.append(exc)
-                    stop.set()
-                finally:
-                    arrivals.put(_DONE)
+    def close(self) -> None:
+        self.read_conn.close()
 
-            def triage_worker() -> None:
-                batch_no = 0
-                seen: set[str] = set()
-                finished = False
-                try:
-                    while not finished:
-                        item = arrivals.get()
-                        if item is _DONE:
-                            break
-                        chunk = list(item)
-                        while len(chunk) < args.batch_size:
-                            try:
-                                item = arrivals.get(timeout=_FILL_WAIT_SECONDS)
-                            except queue.Empty:
-                                break
-                            if item is _DONE:
-                                finished = True
-                                break
-                            chunk.extend(item)
-                        chunk = [p for p in dict.fromkeys(chunk) if p not in seen]
-                        seen.update(chunk)
-                        for i in range(0, len(chunk), args.batch_size):
-                            if should_stop():
-                                return
-                            part = chunk[i : i + args.batch_size]
-                            batch_no += 1
-                            label = f"{prefix} batch {batch_no}"
-                            rc = _stage("triage", part, label)
-                            if rc != 0:
-                                failed_rc.append(rc)
-                                stop.set()
-                                return
-                            triaged.put((part, label))
-                except BaseException as exc:  # noqa: BLE001 - re-raised below
-                    errors.append(exc)
-                    stop.set()
-                finally:
-                    triaged.put(_DONE)
+    def out_of_time(self) -> bool:
+        return time.monotonic() >= self.deadline
 
-            threads = [
-                threading.Thread(target=produce, name="discover", daemon=True),
-                threading.Thread(target=triage_worker, name="triage", daemon=True),
-            ]
-            for thread in threads:
-                thread.start()
-            rc = 0
-            while True:
-                item = triaged.get()
-                if item is _DONE:
-                    break
-                if rc != 0 or should_stop():
-                    continue  # keep draining so the triage thread can exit
-                part, label = item
-                rc = _finish(part, label)
-                if rc != 0:
-                    stop.set()
-                _write_timings_report(timings_path, quiet=True)
-            for thread in threads:
-                thread.join()
-            if errors:
-                raise errors[0]
-            if out_of_time() and not stop.is_set():
-                print("run-all: runtime limit reached; unfinished figures resume next run")
-            return rc or (failed_rc[0] if failed_rc else 0)
+    def should_stop(self) -> bool:
+        return self.stop.is_set() or self.out_of_time()
 
-        def _feed_list(pmcids):
-            def feed(put):
-                for i in range(0, len(pmcids), args.batch_size):
-                    if should_stop():
-                        return
-                    put(pmcids[i : i + args.batch_size])
-            return feed
+    def _read(self, sql: str, params=()) -> list:
+        with self.read_lock:
+            return self.read_conn.execute(sql, params).fetchall()
 
-        if args.pmcids:
-            rc = _pipeline(_feed_list(list(args.pmcids)), "explicit PMCIDs")
-            if rc != 0:
-                return rc
-        else:
-            disease_keys = diseases.selected_keys(args)
-            # Resume: finish figures an interrupted run left mid-pipeline
-            # before discovering more articles.
-            with read_lock:
-                leftover = [
-                    row["pmcid"] for row in read_conn.execute(
-                        "SELECT DISTINCT f.pmcid FROM figures f JOIN articles a USING(pmcid) "
-                        "WHERE (f.status IN ('pending','caption_kept','caption_uncertain','vision_accepted') "
-                        "OR (f.status='vision_error' AND f.attempts < ?)) "
-                        "AND EXISTS (SELECT 1 FROM json_each(a.primary_disease_keys_json) je "
-                        "WHERE je.value IN (SELECT value FROM json_each(?))) "
-                        "ORDER BY f.pmcid",
-                        (judge.MAX_ATTEMPTS, db.to_json(disease_keys)),
-                    )
-                ]
-            if leftover and args.skip_resume:
-                print(f"run-all: skipping {len(leftover)} article(s) left mid-pipeline (--skip-resume)")
-            elif leftover:
-                print(f"run-all: resuming {len(leftover)} article(s) left mid-pipeline")
-                rc = _pipeline(_feed_list(leftover), "resume")
-                if rc != 0:
-                    return rc
-            schedule = (
-                [] if args.skip_review_passes else ["overview", "manifestation"]
-            ) + ["disease"] + ["backfill"] * int(args.max_rounds)
-            for round_no, pass_name in enumerate(schedule, 1):
-                if should_stop():
-                    print("run-all: runtime limit reached")
-                    break
-                if args.topic_image_target:
-                    from . import pair_reporting
+    def remaining_budget(self):
+        if self.args.budget_usd is None:
+            return None
+        spent = self._read(
+            "SELECT COALESCE(SUM(cost_usd), 0) AS s FROM llm_calls WHERE call_id > ?",
+            (self.start_call_id,),
+        )[0]["s"]
+        return self.args.budget_usd - spent
 
-                    with read_lock:
-                        counts = pair_reporting.topic_library_counts(read_conn)
-                    disease_keys = [
-                        k for k in disease_keys
-                        if counts.get(k, 0) < args.topic_image_target
-                    ]
-                    print(f"run-all: {len(disease_keys)} topic(s) still under "
-                          f"{args.topic_image_target} images")
-                    if not disease_keys:
-                        break
-                print(f"run-all: round {round_no}: discover ({pass_name})")
-                stats: dict = {}
+    def _scoped_args(self, name: str, pmcids):
+        """A per-call copy of args with the remaining budget; None once it is spent."""
+        remaining = self.remaining_budget()
+        if remaining is not None and remaining <= 0:
+            print(f"run-all: budget ${self.args.budget_usd:.2f} exhausted before {name}; stopping")
+            return None
+        # One namespace per call: stages run on more than one thread.
+        scoped = argparse.Namespace(**vars(self.args))
+        scoped.budget_usd = remaining
+        scoped.pmcids = pmcids
+        return scoped
 
-                def feed(put, pass_name=pass_name, stats=stats):
-                    sent: set[str] = set()
+    def stage(self, name: str, pmcids, label: str) -> int:
+        scoped = self._scoped_args(name, pmcids)
+        if scoped is None:
+            return 4
+        print(f"run-all: {label}: {name}" + (f" ({len(pmcids)} article(s))" if pmcids else ""))
+        with timing.stage(name):
+            return COMMANDS[name](scoped)
 
-                    def stream(pmcids):
-                        sent.update(pmcids)
-                        put(pmcids)
+    def _retryable(self, pmcids) -> int:
+        """Figures among ``pmcids`` whose vision call failed but may be retried."""
+        from . import judge
 
-                    conn = db.connect()
-                    try:
-                        with timing.stage("discover"):
-                            stats.update(discover.discover(
-                                conn, disease_keys, per_pair=args.per_pair,
-                                target=int(config.VP_FINDING_IMAGE_TARGET),
-                                max_runtime=deadline - time.monotonic(),
-                                pass_name=pass_name, on_articles=stream,
-                                should_stop=should_stop,
-                            ))
-                    finally:
-                        conn.close()
-                    unsent = [p for p in stats.get("pmcids") or [] if p not in sent]
-                    if unsent:
-                        put(unsent)
-
-                rc = _pipeline(feed, f"round {round_no}")
-                if rc != 0:
-                    return rc
-                if not stats.get("pmcids"):
-                    if pass_name != "backfill":
-                        print(f"run-all: {pass_name} pass found no new articles")
-                        continue
-                    print("run-all: no new articles for any under-target pair; done")
-                    break
-
-        if stop.is_set():
+        if not pmcids:
             return 0
+        marks = ",".join("?" for _ in pmcids)
+        return self._read(
+            "SELECT COUNT(*) AS n FROM figures WHERE status='vision_error' "
+            f"AND attempts < ? AND pmcid IN ({marks})",
+            (judge.MAX_ATTEMPTS, *pmcids),
+        )[0]["n"]
+
+    def finish(self, pmcids, label: str) -> int:
+        """judge (with vision_error retries) → store → describe."""
+        from . import judge
+
+        rc = self.stage("judge", pmcids, label)
+        for _ in range(judge.MAX_ATTEMPTS - 1):
+            if rc != 0 or not self._retryable(pmcids):
+                break
+            rc = self.stage("judge", pmcids, label)
+        if rc != 0:
+            return rc
+        return self.stage("store", pmcids, label) or self.stage("describe", pmcids, label)
+
+    def pipeline(self, feed, prefix: str) -> int:
+        return _Pipeline(self, prefix).run(feed)
+
+    def feed_list(self, pmcids):
+        def feed(put):
+            for i in range(0, len(pmcids), self.args.batch_size):
+                if self.should_stop():
+                    return
+                put(pmcids[i : i + self.args.batch_size])
+        return feed
+
+    def execute(self) -> int:
+        self.start_call_id = self._read(
+            "SELECT COALESCE(MAX(call_id), 0) AS m FROM llm_calls"
+        )[0]["m"]
+        if self.args.pmcids:
+            rc = self.pipeline(self.feed_list(list(self.args.pmcids)), "explicit PMCIDs")
+        else:
+            rc = self.discover_rounds(diseases.selected_keys(self.args))
+        if rc != 0:
+            return rc
+        if self.stop.is_set():
+            return 0
+        return self.final_stages()
+
+    def resume(self, disease_keys) -> int:
+        """Finish figures an interrupted run left mid-pipeline before discovering more."""
+        from . import judge
+
+        leftover = [
+            row["pmcid"]
+            for row in self._read(_LEFTOVER_SQL, (judge.MAX_ATTEMPTS, db.to_json(disease_keys)))
+        ]
+        if not leftover:
+            return 0
+        if self.args.skip_resume:
+            print(f"run-all: skipping {len(leftover)} article(s) left mid-pipeline (--skip-resume)")
+            return 0
+        print(f"run-all: resuming {len(leftover)} article(s) left mid-pipeline")
+        return self.pipeline(self.feed_list(leftover), "resume")
+
+    def _schedule(self) -> list[str]:
+        reviews = [] if self.args.skip_review_passes else ["overview", "manifestation"]
+        return reviews + ["disease"] + ["backfill"] * int(self.args.max_rounds)
+
+    def _topics_under_target(self, disease_keys) -> list[str]:
+        from . import pair_reporting
+
+        target = self.args.topic_image_target
+        with self.read_lock:
+            counts = pair_reporting.topic_library_counts(self.read_conn)
+        keys = [k for k in disease_keys if counts.get(k, 0) < target]
+        print(f"run-all: {len(keys)} topic(s) still under {target} images")
+        return keys
+
+    def discover_rounds(self, disease_keys) -> int:
+        rc = self.resume(disease_keys)
+        if rc != 0:
+            return rc
+        for round_no, pass_name in enumerate(self._schedule(), 1):
+            if self.should_stop():
+                print("run-all: runtime limit reached")
+                break
+            if self.args.topic_image_target:
+                disease_keys = self._topics_under_target(disease_keys)
+                if not disease_keys:
+                    break
+            print(f"run-all: round {round_no}: discover ({pass_name})")
+            stats: dict = {}
+            rc = self.pipeline(self._discover_feed(disease_keys, pass_name, stats), f"round {round_no}")
+            if rc != 0:
+                return rc
+            if stats.get("pmcids"):
+                continue
+            if pass_name != "backfill":
+                print(f"run-all: {pass_name} pass found no new articles")
+                continue
+            print("run-all: no new articles for any under-target pair; done")
+            break
+        return 0
+
+    def _discover_feed(self, disease_keys, pass_name: str, stats: dict):
+        """A feed that runs one discovery pass, streaming parsed articles to ``put``."""
+        from . import discover
+
+        def feed(put):
+            sent: set[str] = set()
+
+            def stream(pmcids):
+                sent.update(pmcids)
+                put(pmcids)
+
+            conn = db.connect()
+            try:
+                with timing.stage("discover"):
+                    stats.update(discover.discover(
+                        conn, disease_keys, per_pair=self.args.per_pair,
+                        target=int(config.VP_FINDING_IMAGE_TARGET),
+                        max_runtime=self.deadline - time.monotonic(),
+                        pass_name=pass_name, on_articles=stream,
+                        should_stop=self.should_stop,
+                    ))
+            finally:
+                conn.close()
+            unsent = [p for p in stats.get("pmcids") or [] if p not in sent]
+            if unsent:
+                put(unsent)
+
+        return feed
+
+    def final_stages(self) -> int:
         for name in ("extract", "report"):
-            if name == "extract" and args.skip_extract:
+            if name == "extract" and self.args.skip_extract:
                 print("run-all: final: extract skipped (--skip-extract)")
                 continue
-            scoped_args = argparse.Namespace(**vars(args))
-            scoped_args.pmcids = None
-            remaining = _remaining_budget()
-            if remaining is not None and remaining <= 0:
-                print(f"run-all: budget ${args.budget_usd:.2f} exhausted before {name}; stopping")
-                return 4
-            scoped_args.budget_usd = remaining
-            print(f"run-all: final: {name}")
-            with timing.stage(name):
-                rc = COMMANDS[name](scoped_args)
+            rc = self.stage(name, None, "final")
             if rc != 0:
                 return rc
         return 0
-    finally:
-        read_conn.close()
-        _write_timings_report(timings_path)
+
+
+class _Pipeline:
+    """One overlapped round: a producer thread feeds a triage thread, and the
+    calling thread judges, stores and describes each triaged batch.
+
+    ``feed(put)`` runs on the producer thread; ``put(pmcids)`` hands newly
+    parsed articles to the triage thread.
+    """
+
+    def __init__(self, run: _RunAll, prefix: str) -> None:
+        self.run_all = run
+        self.prefix = prefix
+        self.arrivals: queue.Queue = queue.Queue()
+        self.triaged: queue.Queue = queue.Queue(maxsize=2)
+        self.errors: list[BaseException] = []
+        self.failed_rc: list[int] = []
+        self.batch_no = 0
+        self.seen: set[str] = set()
+
+    def _fail(self, exc: BaseException) -> None:
+        self.errors.append(exc)
+        self.run_all.stop.set()
+
+    def _produce(self, feed) -> None:
+        try:
+            feed(self.arrivals.put)
+        except BaseException as exc:  # noqa: BLE001 - re-raised in run()
+            self._fail(exc)
+        finally:
+            self.arrivals.put(_DONE)
+
+    def _gather(self, first) -> tuple[list[str], bool]:
+        """Top ``first`` up to a batch, waiting briefly; True once the feed is done."""
+        chunk = list(first)
+        while len(chunk) < self.run_all.args.batch_size:
+            try:
+                item = self.arrivals.get(timeout=_FILL_WAIT_SECONDS)
+            except queue.Empty:
+                break
+            if item is _DONE:
+                return chunk, True
+            chunk.extend(item)
+        return chunk, False
+
+    def _triage_chunk(self, chunk: list[str]) -> bool:
+        """Triage the unseen articles batch by batch; False stops the worker."""
+        chunk = [p for p in dict.fromkeys(chunk) if p not in self.seen]
+        self.seen.update(chunk)
+        size = self.run_all.args.batch_size
+        for i in range(0, len(chunk), size):
+            if self.run_all.should_stop():
+                return False
+            part = chunk[i : i + size]
+            self.batch_no += 1
+            label = f"{self.prefix} batch {self.batch_no}"
+            rc = self.run_all.stage("triage", part, label)
+            if rc != 0:
+                self.failed_rc.append(rc)
+                self.run_all.stop.set()
+                return False
+            self.triaged.put((part, label))
+        return True
+
+    def _triage_worker(self) -> None:
+        try:
+            finished = False
+            while not finished:
+                item = self.arrivals.get()
+                if item is _DONE:
+                    break
+                chunk, finished = self._gather(item)
+                if not self._triage_chunk(chunk):
+                    return
+        except BaseException as exc:  # noqa: BLE001 - re-raised in run()
+            self._fail(exc)
+        finally:
+            self.triaged.put(_DONE)
+
+    def _drain(self) -> int:
+        rc = 0
+        while (item := self.triaged.get()) is not _DONE:
+            if rc != 0 or self.run_all.should_stop():
+                continue  # keep draining so the triage thread can exit
+            part, label = item
+            rc = self.run_all.finish(part, label)
+            if rc != 0:
+                self.run_all.stop.set()
+            _write_timings_report(self.run_all.timings_path, quiet=True)
+        return rc
+
+    def run(self, feed) -> int:
+        threads = [
+            threading.Thread(target=self._produce, args=(feed,), name="discover", daemon=True),
+            threading.Thread(target=self._triage_worker, name="triage", daemon=True),
+        ]
+        for thread in threads:
+            thread.start()
+        rc = self._drain()
+        for thread in threads:
+            thread.join()
+        if self.errors:
+            raise self.errors[0]
+        if self.run_all.out_of_time() and not self.run_all.stop.is_set():
+            print("run-all: runtime limit reached; unfinished figures resume next run")
+        return rc or (self.failed_rc[0] if self.failed_rc else 0)
 
 
 # Registry: later workstreams replace the None entries with their module's

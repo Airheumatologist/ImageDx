@@ -272,7 +272,7 @@ def test_run_all_triages_while_discovery_streams(tmp_path, monkeypatch):
         monkeypatch.setitem(cli.COMMANDS, name, record(name))
     triaged_first = threading.Event()
 
-    def fake_discover(conn, keys, *, pass_name, on_articles=None, should_stop=None, **kw):
+    def fake_discover(conn, keys, *, pass_name, on_articles=None, should_stop=None, **_kw):
         if pass_name != "overview":
             return {"pmcids": []}
         on_articles(["PMC1"])
@@ -313,7 +313,7 @@ def test_run_all_stops_inside_a_round_at_the_runtime_limit(tmp_path, monkeypatch
     clock = {"now": 1000.0}
     monkeypatch.setattr(cli.time, "monotonic", lambda: clock["now"])
 
-    def fake_discover(conn, keys, *, pass_name, on_articles=None, should_stop=None, **kw):
+    def fake_discover(conn, keys, *, pass_name, on_articles=None, should_stop=None, **_kw):
         for pmcid in ("PMC1", "PMC2", "PMC3"):
             if should_stop():
                 break

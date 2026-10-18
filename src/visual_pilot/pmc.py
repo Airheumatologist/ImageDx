@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import base64
 import io
-import logging
 import os
 import re
 import threading
@@ -52,7 +51,6 @@ from PIL import Image
 
 from . import config, timing
 
-logger = logging.getLogger(__name__)
 
 S3_BASE = "https://pmc-oa-opendata.s3.amazonaws.com"
 EPMC_REST = "https://www.ebi.ac.uk/europepmc/webservices/rest"

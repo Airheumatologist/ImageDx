@@ -128,6 +128,31 @@ def study_region_for(article_row, parsed: jats.ParsedArticle) -> str | None:
     return None
 
 
+def _metadata_media_files(meta: dict) -> set[str]:
+    media_files: set[str] = set()
+    for media in meta.get("media_urls") or []:
+        parts = str(media).split("?")[0].split("/", 3)
+        if len(parts) == 4 and parts[3]:
+            media_files.add(parts[3].rsplit("/", 1)[-1])
+    return media_files
+
+
+def _figure_s3_refs(fig_rows) -> tuple[str | None, set[str]]:
+    """(first S3 directory prefix, file names) from resolved figure image URLs."""
+    prefix = None
+    media_files: set[str] = set()
+    for row in fig_rows:
+        url = row.get("image_url") or ""
+        if not url.startswith(pmc.S3_BASE + "/"):
+            continue
+        dir_prefix, _, name = url[len(pmc.S3_BASE) + 1:].rpartition("/")
+        if prefix is None and dir_prefix:
+            prefix = dir_prefix
+        if name:
+            media_files.add(name)
+    return prefix, media_files
+
+
 def _c6_article_fields(article_row, bundle, fig_rows) -> dict:
     """C6: ``s3_prefix``/``media_files_json`` to persist on the article row.
 
@@ -140,21 +165,11 @@ def _c6_article_fields(article_row, bundle, fig_rows) -> dict:
     prefix = None
     if meta.get("pmcid") and meta.get("version") is not None:
         prefix = f"{meta['pmcid']}.{meta['version']}"
-    media_files: set[str] = set()
-    for media in meta.get("media_urls") or []:
-        parts = str(media).split("?")[0].split("/", 3)
-        if len(parts) == 4 and parts[3]:
-            media_files.add(parts[3].rsplit("/", 1)[-1])
+    media_files = _metadata_media_files(meta)
     if prefix is None or not media_files:
-        for row in fig_rows:
-            url = row.get("image_url") or ""
-            if not url.startswith(pmc.S3_BASE + "/"):
-                continue
-            dir_prefix, _, name = url[len(pmc.S3_BASE) + 1:].rpartition("/")
-            if prefix is None and dir_prefix:
-                prefix = dir_prefix
-            if name:
-                media_files.add(name)
+        ref_prefix, ref_files = _figure_s3_refs(fig_rows)
+        prefix = prefix if prefix is not None else ref_prefix
+        media_files |= ref_files
     fields: dict = {}
     if not _row_get(article_row, "s3_prefix") and prefix:
         fields["s3_prefix"] = prefix

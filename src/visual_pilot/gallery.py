@@ -122,6 +122,106 @@ def _alias_status(
     return "duplicate"
 
 
+def _choose_representatives(groups: list[dict], locked: str | None, rank) -> dict | None:
+    """Set each group's ``rep`` (the lock, else its best-ranked member).
+
+    Returns the group holding the lock, if any.
+    """
+    locked_group = None
+    for group in groups:
+        lock = next(
+            (m for m in group["members"] if locked is not None and str(m["panel_id"]) == locked),
+            None,
+        )
+        if lock is not None:
+            group["rep"] = lock
+            locked_group = group
+        else:
+            group["rep"] = min(group["members"], key=rank)
+    return locked_group
+
+
+def _rep_pmcid(group: dict) -> str:
+    return str(group["rep"].get("pmcid") or "")
+
+
+class _Selection:
+    """Published/reserve bookkeeping for one ``select_gallery`` call."""
+
+    def __init__(self, groups: list[dict], cap: int, rank) -> None:
+        self.groups = groups  # sorted by their representative's rank
+        self.cap = cap
+        self.rank = rank
+        self.reasons: dict[str, dict] = {}
+        self.published: list[str] = []
+        self.published_groups: list[dict] = []
+        self.selected: set[int] = set()
+        self.article_counts: dict[str, int] = {}
+
+    def full(self) -> bool:
+        return len(self.published) >= self.cap
+
+    def select(self, group: dict, status: str) -> None:
+        rep_id = str(group["rep"]["panel_id"])
+        self.published.append(rep_id)
+        self.published_groups.append(group)
+        self.selected.add(id(group))
+        self.reasons[rep_id] = {"status": status}
+        pmcid = _rep_pmcid(group)
+        self.article_counts[pmcid] = self.article_counts.get(pmcid, 0) + 1
+
+    def round_robin(self) -> None:
+        """Round-robin articles by their top group's (tier, -score, panel_id),
+        one group per article per round, at most two per article (counting
+        an already-selected lock)."""
+        by_article: dict[str, list[dict]] = {}
+        for group in self.groups:
+            if id(group) not in self.selected:
+                by_article.setdefault(_rep_pmcid(group), []).append(group)
+        order = sorted(by_article, key=lambda pmcid: self.rank(by_article[pmcid][0]["rep"]))
+        while not self.full() and self._round(order, by_article):
+            pass
+
+    def _round(self, order: list[str], by_article: dict[str, list[dict]]) -> bool:
+        progressed = False
+        for pmcid in order:
+            if self.full():
+                break
+            if self.article_counts.get(pmcid, 0) >= 2:
+                continue
+            remaining = [g for g in by_article[pmcid] if id(g) not in self.selected]
+            if remaining:
+                self.select(remaining[0], "published")
+                progressed = True
+        return progressed
+
+    def fill(self) -> None:
+        """The per-article preference is soft; fill remaining capacity from
+        the rest of the distinct groups in tier, then score order."""
+        for group in self.groups:
+            if self.full():
+                break
+            if id(group) not in self.selected:
+                self.select(group, "published")
+
+    def reserve_ids(self) -> list[str]:
+        reserves = [str(g["rep"]["panel_id"]) for g in self.groups if id(g) not in self.selected]
+        for rep_id in reserves:
+            self.reasons[rep_id] = {"status": "gallery_full"}
+        return reserves
+
+    def record_aliases(self) -> None:
+        for group in self.groups:
+            rep_id = str(group["rep"]["panel_id"])
+            member_ids = [str(m["panel_id"]) for m in group["members"]]
+            for member_id in member_ids:
+                if member_id != rep_id:
+                    self.reasons[member_id] = {
+                        "status": _alias_status(member_id, member_ids, group["keys_of"]),
+                        "representative_id": rep_id,
+                    }
+
+
 def select_gallery(
     panels: list[dict],
     disease_key: str,
@@ -167,103 +267,23 @@ def select_gallery(
         panel_id = str(panel["panel_id"])
         return (int(panel.get("article_tier", TIER_DEFAULT)), -scores[panel_id], panel_id)
 
-    def group_key(group: dict) -> tuple[int, float, str]:
-        return rank(group["rep"])
-
     locked = str(locked_panel_id) if locked_panel_id is not None else None
-    locked_group = None
-    for group in groups:
-        members = group["members"]
-        if locked is not None and any(
-            str(member["panel_id"]) == locked for member in members
-        ):
-            group["rep"] = next(
-                member for member in members if str(member["panel_id"]) == locked
-            )
-            locked_group = group
-        else:
-            group["rep"] = min(members, key=rank)
-    groups.sort(key=group_key)
+    locked_group = _choose_representatives(groups, locked, rank)
+    groups.sort(key=lambda group: rank(group["rep"]))
 
-    reasons: dict[str, dict] = {}
-    published: list[str] = []
-    published_groups: list[dict] = []
-    selected: set[int] = set()
-
-    def select(group: dict, status: str) -> None:
-        rep_id = str(group["rep"]["panel_id"])
-        published.append(rep_id)
-        published_groups.append(group)
-        selected.add(id(group))
-        reasons[rep_id] = {"status": status}
-
+    selection = _Selection(groups, cap, rank)
     if locked_group is not None:
-        select(locked_group, "locked")
-
-    # First pass: round-robin articles by their top group's (tier, -score, panel_id),
-    # one group per article per round, at most two per article (counting the
-    # already-selected lock).
-    by_article: dict[str, list[dict]] = {}
-    for group in groups:
-        if id(group) in selected:
-            continue
-        pmcid = str(group["rep"].get("pmcid") or "")
-        by_article.setdefault(pmcid, []).append(group)
-
-    def article_key(pmcid: str) -> tuple[float, str]:
-        return group_key(by_article[pmcid][0])
-
-    article_counts: dict[str, int] = {}
-    if locked_group is not None:
-        pmcid = str(locked_group["rep"].get("pmcid") or "")
-        article_counts[pmcid] = article_counts.get(pmcid, 0) + 1
-    while len(published) < cap:
-        progressed = False
-        for pmcid in sorted(by_article, key=article_key):
-            if len(published) >= cap:
-                break
-            if article_counts.get(pmcid, 0) >= 2:
-                continue
-            remaining = [g for g in by_article[pmcid] if id(g) not in selected]
-            if not remaining:
-                continue
-            select(remaining[0], "published")
-            article_counts[pmcid] = article_counts.get(pmcid, 0) + 1
-            progressed = True
-        if not progressed:
-            break
-
-    # Second pass: the per-article preference is soft; fill remaining capacity
-    # from the rest of the distinct groups in tier, then score order.
-    for group in groups:
-        if len(published) >= cap:
-            break
-        if id(group) not in selected:
-            select(group, "published")
-
-    reserves = [g for g in groups if id(g) not in selected]
-    reserve_ids = [str(g["rep"]["panel_id"]) for g in reserves]
-    for group in reserves:
-        reasons[str(group["rep"]["panel_id"])] = {"status": "gallery_full"}
-
-    for group in groups:
-        rep_id = str(group["rep"]["panel_id"])
-        member_ids = [str(m["panel_id"]) for m in group["members"]]
-        for member in group["members"]:
-            member_id = str(member["panel_id"])
-            if member_id == rep_id:
-                continue
-            reasons[member_id] = {
-                "status": _alias_status(member_id, member_ids, group["keys_of"]),
-                "representative_id": rep_id,
-            }
-
+        selection.select(locked_group, "locked")
+    selection.round_robin()
+    selection.fill()
+    reserve_ids = selection.reserve_ids()
+    selection.record_aliases()
     return {
-        "published_panel_ids": published,
+        "published_panel_ids": selection.published,
         "reserve_panel_ids": reserve_ids,
-        "selection_reasons": reasons,
+        "selection_reasons": selection.reasons,
         "identity_unknown_count": sum(
-            1 for group in published_groups if not group["documented"]
+            1 for group in selection.published_groups if not group["documented"]
         ),
         "eligible_distinct": len(groups),
     }

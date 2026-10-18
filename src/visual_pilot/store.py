@@ -607,6 +607,108 @@ def refresh_panel_metadata(conn) -> dict:
 # ---------------------------------------------------------------------------
 # Stage entry point
 # ---------------------------------------------------------------------------
+def _load_figures(conn, args) -> list[dict]:
+    disease = None if args.disease == "all" else args.disease
+    rows = db.rows_with_status(conn, "figures", "vision_accepted", disease=disease)
+    if args.pmcids:
+        wanted = set(args.pmcids)
+        rows = [r for r in rows if r["pmcid"] in wanted]
+    figures = [dict(r) for r in rows]
+    if args.limit:
+        figures = figures[: args.limit]
+    return figures
+
+
+def _article_rows(conn, figures: list[dict]) -> dict[str, dict | None]:
+    article_rows: dict[str, dict | None] = {}
+    for figure in figures:
+        pmcid = figure["pmcid"]
+        if pmcid not in article_rows:
+            row = conn.execute(
+                "SELECT * FROM articles WHERE pmcid = ?", (pmcid,)
+            ).fetchone()
+            article_rows[pmcid] = dict(row) if row is not None else None
+    return article_rows
+
+
+def _prepared_in_order(figures: list[dict], article_rows: dict, pool, ahead: int):
+    """Yield ``(figure, prepared or exception)`` in figure order, preparing
+    up to ``ahead`` figures on ``pool``."""
+    pending: dict[int, Future | Exception] = {}
+
+    def submit(index: int) -> None:
+        figure = figures[index]
+        article = article_rows[figure["pmcid"]]
+        if article is None:
+            pending[index] = ValueError(f"no articles row for {figure['pmcid']}")
+        else:
+            pending[index] = pool.submit(_prepare_figure, figure, article)
+
+    for index in range(min(ahead, len(figures))):
+        submit(index)
+    for index, figure in enumerate(figures):
+        outcome = pending.pop(index)
+        if isinstance(outcome, Future):
+            try:
+                outcome = outcome.result()
+            except Exception as exc:  # noqa: BLE001 - per-figure isolation
+                outcome = exc
+        if index + ahead < len(figures):
+            submit(index + ahead)
+        yield figure, outcome
+
+
+def _store_error(conn, fig: dict, exc: Exception, totals: dict) -> None:
+    # Keep vision_accepted so the figure is retried on the next run; any
+    # cached original for it is dropped (take() already consumed it).
+    originals.discard(fig["figure_id"])
+    db.set_status(
+        conn, "figures", fig["figure_id"], "vision_accepted",
+        error=f"store: {exc}"[:500],
+    )
+    totals["errors"] += 1
+    print(f"{fig['figure_id']}: store error {exc}")
+    conn.commit()
+
+
+def _store_figure(conn, figure: dict, article: dict, prepared) -> dict:
+    # One transaction per figure: panel rows, proposed-finding upserts and
+    # the status flip commit together or roll back together, so a rerun
+    # never double-counts proposals.
+    with conn:
+        stats = _apply_prepared(conn, figure, article, prepared)
+        final_status = (
+            "vision_rejected" if stats["panels"] == 0 and stats["excluded"] else "stored"
+        )
+        db.set_status(conn, "figures", figure["figure_id"], final_status, error=None)
+    return stats
+
+
+def _store_all(conn, figures: list[dict], article_rows: dict) -> dict:
+    """Store every figure; return the run totals."""
+    totals = {"stored": 0, "panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0, "errors": 0}
+    # W7: fetch + decode + crop hashing run on a VP_FETCH_CONCURRENCY pool
+    # with bounded lookahead (2x workers); results are applied on this thread
+    # strictly in figure order — one transaction per figure — so the sha256
+    # dedup check sees panels inserted earlier in the same run and the whole
+    # stage is identical to the sequential implementation.
+    workers = max(1, int(getattr(config, "VP_FETCH_CONCURRENCY", 8)))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for figure, outcome in _prepared_in_order(figures, article_rows, pool, workers * 2):
+            if isinstance(outcome, Exception):
+                _store_error(conn, figure, outcome, totals)
+                continue
+            try:
+                stats = _store_figure(conn, figure, article_rows[figure["pmcid"]], outcome)
+            except Exception as exc:  # noqa: BLE001 - per-figure isolation
+                _store_error(conn, figure, exc, totals)
+                continue
+            for key in ("panels", "whole_figure", "dedup", "proposed"):
+                totals[key] += stats[key]
+            totals["stored"] += 1
+    return totals
+
+
 def run(args) -> int:
     conn = db.init_db()
 
@@ -618,103 +720,13 @@ def run(args) -> int:
         )
         conn.close()
         return 0
-    disease = None if args.disease == "all" else args.disease
-    rows = db.rows_with_status(conn, "figures", "vision_accepted", disease=disease)
-    if args.pmcids:
-        wanted = set(args.pmcids)
-        rows = [r for r in rows if r["pmcid"] in wanted]
-    figures = [dict(r) for r in rows]
-    if args.limit:
-        figures = figures[: args.limit]
-
+    figures = _load_figures(conn, args)
     if args.dry_run:
         print(f"store: {len(figures)} vision_accepted figures would be stored")
         conn.close()
         return 0
 
-    article_rows: dict[str, dict | None] = {}
-    for figure in figures:
-        pmcid = figure["pmcid"]
-        if pmcid not in article_rows:
-            row = conn.execute(
-                "SELECT * FROM articles WHERE pmcid = ?", (pmcid,)
-            ).fetchone()
-            article_rows[pmcid] = dict(row) if row is not None else None
-
-    totals = {"stored": 0, "panels": 0, "whole_figure": 0, "dedup": 0, "proposed": 0, "errors": 0}
-
-    def _store_error(fig: dict, exc: Exception) -> None:
-        # Keep vision_accepted so the figure is retried on the next run; any
-        # cached original for it is dropped (take() already consumed it).
-        originals.discard(fig["figure_id"])
-        db.set_status(
-            conn, "figures", fig["figure_id"], "vision_accepted",
-            error=f"store: {exc}"[:500],
-        )
-        totals["errors"] += 1
-        print(f"{fig['figure_id']}: store error {exc}")
-        conn.commit()
-
-    # W7: fetch + decode + crop hashing run on a VP_FETCH_CONCURRENCY pool
-    # with bounded lookahead (2x workers); results are applied on this thread
-    # strictly in figure order — one transaction per figure — so the sha256
-    # dedup check sees panels inserted earlier in the same run and the whole
-    # stage is identical to the sequential implementation.
-    workers = max(1, int(getattr(config, "VP_FETCH_CONCURRENCY", 8)))
-    ahead = workers * 2
-    pending: dict[int, Future | Exception] = {}
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-
-        def submit(index: int) -> None:
-            figure = figures[index]
-            article = article_rows[figure["pmcid"]]
-            if article is None:
-                pending[index] = ValueError(
-                    f"no articles row for {figure['pmcid']}"
-                )
-            else:
-                pending[index] = pool.submit(_prepare_figure, figure, article)
-
-        for index in range(min(ahead, len(figures))):
-            submit(index)
-        for index, figure in enumerate(figures):
-            entry = pending.pop(index)
-            if isinstance(entry, Future):
-                try:
-                    outcome = entry.result()
-                except Exception as exc:  # noqa: BLE001 - per-figure isolation
-                    outcome = exc
-            else:
-                outcome = entry
-            follow = index + ahead
-            if follow < len(figures):
-                submit(follow)
-
-            if isinstance(outcome, Exception):
-                _store_error(figure, outcome)
-                continue
-            try:
-                # One transaction per figure: panel rows,
-                # proposed-finding upserts and the status flip commit together
-                # or roll back together, so a rerun never double-counts
-                # proposals.
-                with conn:
-                    stats = _apply_prepared(
-                        conn, figure, article_rows[figure["pmcid"]], outcome
-                    )
-                    final_status = (
-                        "vision_rejected"
-                        if stats["panels"] == 0 and stats["excluded"]
-                        else "stored"
-                    )
-                    db.set_status(conn, "figures", figure["figure_id"], final_status, error=None)
-            except Exception as exc:  # noqa: BLE001 - per-figure isolation
-                _store_error(figure, exc)
-                continue
-            for key in ("panels", "whole_figure", "dedup", "proposed"):
-                totals[key] += stats[key]
-            totals["stored"] += 1
-
+    totals = _store_all(conn, figures, _article_rows(conn, figures))
     print(
         f"store: {totals['stored']} figures stored, {totals['panels']} panels "
         f"({totals['whole_figure']} whole-figure, {totals['dedup']} deduped), "

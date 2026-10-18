@@ -14,14 +14,12 @@ rerun cost nothing for inputs already answered).
 from __future__ import annotations
 
 import json
-import logging
 import re
 
 from . import config, curation, db, diseases, llm, pmc
 from . import prompts
 from .prompts import P2
 
-logger = logging.getLogger(__name__)
 
 BATCH_SIZE = config.VP_TRIAGE_BATCH
 CAPTION_MAX_CHARS = 1500
@@ -252,12 +250,46 @@ def _bump_attempts(conn, figure_id: str, error: str | None = None) -> None:
         )
 
 
+def _route_item(conn, row: dict, item: dict, ctx) -> tuple[dict, str | None]:
+    """(possibly adjusted P2 item, figure status); None status for an unknown route."""
+    route = item.get("route")
+    deterministic_reason = curation.source_exclusion_reason(
+        {**row, "triage_json": None}, {"title": row.get("_article_title")}
+    )
+    # Third-party material is a hard exclusion even when other P2 fields
+    # conflict. Ambiguous internal classifications are retained for P3.
+    if item.get("third_party"):
+        return item, "caption_rejected"
+    if deterministic_reason:
+        item = dict(item)
+        item["route_adjustment"] = f"deterministic_source_exclusion: {deterministic_reason}"
+        item["route"] = "drop"
+        item["reason"] = deterministic_reason
+        return item, "caption_rejected"
+    if route != "drop":
+        return item, _ROUTE_STATUS.get(route)
+    if _contradictory_drop(conn, row, item, ctx):
+        item = dict(item)
+        item["route_adjustment"] = "uncertain_due_to_conflicting_patient_or_target_evidence"
+        item["route"] = "uncertain"
+        return item, "caption_uncertain"
+    return item, "caption_rejected"
+
+
+def _keep_montage_marker(row: dict, item: dict) -> dict:
+    """Keep the W2 marker so a re-dropped montage is not requeued again."""
+    prior = db.from_json(row.get("triage_json"), {}) or {}
+    if prior.get("montage_retriage") and not item.get("montage_retriage"):
+        item = dict(item)
+        item["montage_retriage"] = prior["montage_retriage"]
+    return item
+
+
 def _apply_batch(conn, rows, result, ctx=None) -> str | None:
     """Write one batch's results. Returns 'budget' on BudgetExceeded."""
-    batch_ids = {row["figure_id"] for row in rows}
+    if isinstance(result.error, llm.BudgetExceeded):
+        return "budget"
     if result.error is not None:
-        if isinstance(result.error, llm.BudgetExceeded):
-            return "budget"
         for row in rows:
             _bump_attempts(conn, row["figure_id"], str(result.error))
         return "error"
@@ -267,42 +299,16 @@ def _apply_batch(conn, rows, result, ctx=None) -> str | None:
     rows_by_id = {row["figure_id"]: dict(row) for row in rows}
     for item in parsed.get("results") or []:
         figure_id = item.get("figure_id")
-        if figure_id not in batch_ids or figure_id in seen:
+        if figure_id not in rows_by_id or figure_id in seen:
             continue
-        route = item.get("route")
         row = rows_by_id[figure_id]
-        deterministic_reason = curation.source_exclusion_reason(
-            {**row, "triage_json": None}, {"title": row.get("_article_title")}
-        )
-        # Third-party material is a hard exclusion even when other P2 fields
-        # conflict. Ambiguous internal classifications are retained for P3.
-        if item.get("third_party"):
-            status = "caption_rejected"
-        elif deterministic_reason:
-            item = dict(item)
-            item["route_adjustment"] = f"deterministic_source_exclusion: {deterministic_reason}"
-            item["route"] = "drop"
-            item["reason"] = deterministic_reason
-            status = "caption_rejected"
-        elif route == "drop" and _contradictory_drop(conn, rows_by_id[figure_id], item, ctx):
-            item = dict(item)
-            item["route_adjustment"] = "uncertain_due_to_conflicting_patient_or_target_evidence"
-            item["route"] = "uncertain"
-            status = "caption_uncertain"
-        elif route == "drop":
-            status = "caption_rejected"
-        else:
-            status = _ROUTE_STATUS.get(route)
+        item, status = _route_item(conn, row, item, ctx)
         if status is None:
             continue  # unknown route -> counts as missing
         seen.add(figure_id)
-        prior = db.from_json(rows_by_id[figure_id].get("triage_json"), {}) or {}
-        if prior.get("montage_retriage") and not item.get("montage_retriage"):
-            # Keep the W2 marker so a re-dropped montage is not requeued again.
-            item = dict(item)
-            item["montage_retriage"] = prior["montage_retriage"]
         db.set_status(
-            conn, "figures", figure_id, status, triage_json=db.to_json(item)
+            conn, "figures", figure_id, status,
+            triage_json=db.to_json(_keep_montage_marker(row, item)),
         )
     for row in rows:
         if row["figure_id"] not in seen:
@@ -426,15 +432,8 @@ def revisit_conflicting_rejections(conn, disease=None, pmcids=None, dry_run=Fals
     return count
 
 
-def run(args) -> int:
-    conn = db.init_db()
-    # One routing context per run: vocab rows, disease terms, article keys and
-    # compiled regexes are stable for the whole pass.
-    ctx = _RunContext(conn)
-    disease = None if args.disease == "all" else args.disease
-    if disease is not None and disease not in diseases.DISEASE_KEYS:
-        print(f"unknown disease {disease!r}")
-        return 2
+def _requeue_rejections(conn, args, disease: str | None, ctx) -> None:
+    """Return montage drops (on request) and contradictory drops to the queue."""
     if getattr(args, "retriage_montages", False):
         montages = requeue_montage_rejections(
             conn, disease=disease, pmcids=getattr(args, "pmcids", None),
@@ -449,13 +448,11 @@ def run(args) -> int:
     if revisited:
         verb = "would revisit" if args.dry_run else "re-queued"
         print(f"triage: {verb} {revisited} contradictory historical rejection(s)")
-    pmcid_filter = getattr(args, "pmcids", None)
-    rows = db.rows_with_status(
-        conn, "figures", "pending", disease=disease, limit=getattr(args, "limit", None),
-        pmcids=pmcid_filter or None,
-    )
-    # Give P2 the parent article context too: captions alone can be terse, but
-    # a broad article topic remains context only and cannot make a figure pass.
+
+
+def _with_article_context(conn, rows) -> list[dict]:
+    """Give P2 the parent article context too: captions alone can be terse, but
+    a broad article topic remains context only and cannot make a figure pass."""
     contextual_rows = []
     for source in rows:
         row = dict(source)
@@ -469,7 +466,44 @@ def run(args) -> int:
                 article["primary_disease_keys_json"], []
             )
         contextual_rows.append(row)
-    rows = contextual_rows
+    return contextual_rows
+
+
+def _triage_batches(conn, client, batches: list, ctx) -> bool:
+    """Run P2 over ``batches``, halving a failed batch once; True if the budget ran out."""
+    budget_hit = False
+    results = client.call_many(_p2_request(b) for b in batches)
+    for batch_rows, result in zip(batches, results):
+        attempts = [(batch_rows, result)]
+        if result.error is not None and not isinstance(result.error, llm.BudgetExceeded) and len(batch_rows) > 1:
+            middle = len(batch_rows) // 2
+            smaller_batches = (batch_rows[:middle], batch_rows[middle:])
+            attempts = list(zip(
+                smaller_batches,
+                client.call_many(_p2_request(part) for part in smaller_batches),
+            ))
+        for rows, outcome in attempts:
+            if _apply_batch(conn, rows, outcome, ctx) == "budget":
+                budget_hit = True
+            conn.commit()
+    return budget_hit
+
+
+def run(args) -> int:
+    conn = db.init_db()
+    # One routing context per run: vocab rows, disease terms, article keys and
+    # compiled regexes are stable for the whole pass.
+    ctx = _RunContext(conn)
+    disease = None if args.disease == "all" else args.disease
+    if disease is not None and disease not in diseases.DISEASE_KEYS:
+        print(f"unknown disease {disease!r}")
+        return 2
+    _requeue_rejections(conn, args, disease, ctx)
+    pmcid_filter = getattr(args, "pmcids", None)
+    rows = _with_article_context(conn, db.rows_with_status(
+        conn, "figures", "pending", disease=disease, limit=getattr(args, "limit", None),
+        pmcids=pmcid_filter or None,
+    ))
     batches = _batches(rows, BATCH_SIZE)
 
     if args.dry_run:
@@ -490,27 +524,7 @@ def run(args) -> int:
     # repeated full network timeouts inside a single batch attempt.
     client = llm.LLMClient(db_conn=conn, budget_usd=args.budget_usd, max_retries=0)
     print(f"triaging {len(rows)} figures in {len(batches)} batch(es)")
-    results = client.call_many(_p2_request(b) for b in batches)
-
-    budget_hit = False
-    for batch_rows, result in zip(batches, results):
-        if result.error is not None and not isinstance(result.error, llm.BudgetExceeded) and len(batch_rows) > 1:
-            middle = len(batch_rows) // 2
-            smaller_batches = (batch_rows[:middle], batch_rows[middle:])
-            for smaller_rows, smaller_result in zip(
-                smaller_batches,
-                client.call_many(_p2_request(part) for part in smaller_batches),
-            ):
-                if _apply_batch(conn, smaller_rows, smaller_result, ctx) == "budget":
-                    budget_hit = True
-                conn.commit()
-            continue
-        outcome = _apply_batch(conn, batch_rows, result, ctx)
-        if outcome == "budget":
-            budget_hit = True
-        conn.commit()
-
-    if budget_hit:
+    if _triage_batches(conn, client, batches, ctx):
         print(
             f"LLM budget exhausted (${client.spent_usd:.4f} spent); "
             "remaining figures left pending. Rerun to resume."

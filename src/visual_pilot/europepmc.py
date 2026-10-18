@@ -78,8 +78,8 @@ def _term_clauses(terms: list[str], mode: str, fields: tuple[str, ...]) -> list[
     for term in terms:
         if not term.strip():
             continue
-        for field in fields:
-            clause = _words_clause(term, field) if mode == "words" else f"{field}:{_quote(term)}"
+        for fld in fields:
+            clause = _words_clause(term, fld) if mode == "words" else f"{fld}:{_quote(term)}"
             if clause:
                 out.append(clause)
     return list(dict.fromkeys(out))

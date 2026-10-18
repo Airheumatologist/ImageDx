@@ -18,7 +18,7 @@ import sqlite3
 import re
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import APIRouter, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -572,14 +572,19 @@ def _routing_finding_keys(panel: dict) -> set[str]:
     return {_norm(k) for k in keys} if keys is not None else _finding_keys(panel)
 
 
-def _panel_json(
+def _col(row: sqlite3.Row, name: str):
+    """An optional joined column; None when the query did not select it."""
+    return row[name] if name in row.keys() else None
+
+
+def _approved_findings(
     row: sqlite3.Row,
+    plate_kind: str | None,
     approved: set[str],
     labels: dict[str, str],
     categories: dict[str, str],
-    terms: dict[str, list[str]],
-) -> dict:
-    plate_kind = row["plate_kind"] if "plate_kind" in row.keys() else None
+) -> tuple[list[dict], list[str]]:
+    """(displayable findings, routing finding keys) for one panel row."""
     raw = db.from_json(row["findings_json"], [])
     if plate_kind == "combined" and "plate_findings_json" in row.keys():
         # A combined plate stores no per-finding credit; display and routing
@@ -591,72 +596,85 @@ def _panel_json(
     body_site = _norm(row["body_site"])
     for f in raw:
         key = f.get("finding_key") if isinstance(f, dict) else f
-        if key and key in approved:
-            category = _norm(categories.get(key))
-            # Reject clear modality/site mismatches from automated visual tags.
-            if modality == "ophthalmic" and category != "eye":
-                continue
-            if modality in {"histology_he", "histology_ihc", "immunofluorescence"}:
-                if body_site in {"kidney", "renal"} and category != "histology":
-                    continue
-            if modality in {"mri", "ct", "radiograph", "ultrasound", "echo", "pet"} and category in {"skin", "nail", "mucosa", "clinical_msk"}:
-                continue
-            routing_findings.append(key)
-            findings.append(
-                {
-                    "key": key,
-                    "label": labels.get(key, key),
-                    "evidence": f.get("evidence", "") if isinstance(f, dict) else "",
-                }
-            )
-    mentions = db.from_json(row["in_text_mentions_json"], [])
-    caption = (row["figure_caption"] or "").strip()
-    source_text = " ".join(" ".join([caption, *[str(m) for m in mentions]]).casefold().split())
-    for f in findings:
-        f["source_supported"] = _finding_supported(f, source_text, terms.get(f["key"], []))
-    supported = [f for f in findings if f["source_supported"]]
+        if not key or key not in approved:
+            continue
+        if publication.modality_mismatch(modality, body_site, _norm(categories.get(key))):
+            continue
+        routing_findings.append(key)
+        findings.append(
+            {
+                "key": key,
+                "label": labels.get(key, key),
+                "evidence": f.get("evidence", "") if isinstance(f, dict) else "",
+            }
+        )
+    return findings, routing_findings
+
+
+def _panel_context(
+    supported: list[dict], source_text: str, caption: str, mentions: list, description: str
+) -> str:
+    """Curated description, else source-backed evidence, caption or first mention."""
+    if description:
+        return description
     evidence = [
         f["evidence"].strip() for f in supported
         if f.get("evidence", "").strip() and f["evidence"].strip().lower() != "visual"
         and " ".join(f["evidence"].casefold().split()) in source_text
     ]
-    shown_label = ", ".join(dict.fromkeys(f["label"] for f in supported))
     context = "; ".join(dict.fromkeys(evidence)) or caption
     if not context and mentions:
         context = str(mentions[0]).strip()
-    context = " ".join(context.split())
-    keys = row.keys()
-    display_title = (row["display_title"] or "").strip() if "display_title" in keys else ""
-    display_description = (row["display_description"] or "").strip() if "display_description" in keys else ""
-    if display_description:
-        context = display_description
-    display_section = row["display_section"] if "display_section" in keys else None
-    display_subsection = row["display_subsection"] if "display_subsection" in keys else None
-    context_summary = context if len(context) <= 320 else context[:317].rsplit(" ", 1)[0] + "…"
+    return " ".join(context.split())
+
+
+def _license_url(row: sqlite3.Row):
+    url = _col(row, "license_url")
+    if not url:
+        url = _col(row, "article_license_url")
+    if not url and str(_col(row, "figure_license") or "").startswith("http"):
+        url = row["figure_license"]
+    return url
+
+
+def _panel_json(
+    row: sqlite3.Row,
+    approved: set[str],
+    labels: dict[str, str],
+    categories: dict[str, str],
+    terms: dict[str, list[str]],
+) -> dict:
+    plate_kind = _col(row, "plate_kind")
+    findings, routing_findings = _approved_findings(row, plate_kind, approved, labels, categories)
+    mentions = db.from_json(row["in_text_mentions_json"], [])
+    caption = (row["figure_caption"] or "").strip()
+    source_text = " ".join(" ".join([caption, *[str(m) for m in mentions]]).casefold().split())
+    for f in findings:
+        f["source_supported"] = _finding_supported(f, source_text, terms.get(f["key"], []))
     findings = [f for f in findings if f["source_supported"]]
-    shown_label = ", ".join(dict.fromkeys(f["label"] for f in findings))
-    article_title = row["article_title"] if "article_title" in row.keys() else None
-    article_types = (
-        db.from_json(row["article_publication_types"], [])
-        if "article_publication_types" in row.keys() else []
+    display_title = (_col(row, "display_title") or "").strip()
+    context = _panel_context(
+        findings, source_text, caption, mentions, (_col(row, "display_description") or "").strip()
     )
+    display_section = _col(row, "display_section")
+    display_subsection = _col(row, "display_subsection")
+    context_summary = context if len(context) <= 320 else context[:317].rsplit(" ", 1)[0] + "…"
+    shown_label = ", ".join(dict.fromkeys(f["label"] for f in findings))
+    article_title = _col(row, "article_title")
+    article_types = db.from_json(_col(row, "article_publication_types"), [])
     doi_url = f"https://doi.org/{row['doi']}" if row["doi"] else row["source_url"]
-    license_url = row["license_url"] if "license_url" in row.keys() else None
-    if not license_url:
-        license_url = row["article_license_url"] if "article_license_url" in row.keys() else None
-    if not license_url and "figure_license" in row.keys() and str(row["figure_license"] or "").startswith("http"):
-        license_url = row["figure_license"]
+    license_url = _license_url(row)
     article_url = f"https://doi.org/{row['doi']}" if row["doi"] else (
         f"https://pmc.ncbi.nlm.nih.gov/articles/{row['pmcid']}/" if row["pmcid"] else row["source_url"]
     )
     age = demographics.resolve_age({
         "caption": caption, "in_text_mentions": mentions,
-        "case_age_text": row["case_age_text"] if "case_age_text" in row.keys() else None,
+        "case_age_text": _col(row, "case_age_text"),
     })
     age_group = age["age_group"]
     age_group_supported = age_group != "unknown"
     age_group_label = _age_group_label(age_group) if age_group_supported else "Not stated"
-    country = row["study_region"] or (row["article_country"] if "article_country" in row.keys() else None)
+    country = row["study_region"] or _col(row, "article_country")
     source_variant = {
         "article_title": article_title,
         "article_url": article_url,
@@ -902,6 +920,50 @@ def _display_panel_ids(selected: set[str], records: list[dict]) -> list[str]:
     return sorted(selected) + aliases
 
 
+def _merge_findings(existing: dict, p: dict) -> None:
+    """Add the duplicate's new findings; a source-backed copy replaces an unbacked one."""
+    by_key: dict[str, dict] = {}
+    for f in existing["findings"]:
+        by_key.setdefault(f["key"], f)
+    for f in p["findings"]:
+        current = by_key.get(f["key"])
+        if current is None:
+            existing["findings"].append(f)
+            by_key[f["key"]] = f
+        elif f.get("source_supported") and not current.get("source_supported"):
+            current.update(f)
+
+
+def _merge_ages(existing: dict, p: dict) -> None:
+    ages = set(existing.get("age_group_variants", []))
+    ages.update(a for a in (existing.get("age_group"), p.get("age_group")) if a)
+    existing["age_group_variants"] = sorted(ages)
+    labels = [variant.get("age_group_label") for variant in existing["source_variants"]]
+    labels.append(p.get("age_group_label"))
+    supported_age_labels = {label for label in labels if label and label != "Not stated"}
+    existing["age_group_label"] = " / ".join(sorted(supported_age_labels)) or "Not stated"
+    existing["pediatric"] = any(_is_pediatric(a) for a in ages)
+
+
+def _merge_duplicate(existing: dict, p: dict) -> None:
+    existing["attribution_variants"].append(p["attribution_text"])
+    existing["panel_ids"].append(p["panel_id"])
+    if p.get("figure_caption") not in existing["caption_variants"]:
+        existing["caption_variants"].append(p.get("figure_caption"))
+    _merge_findings(existing, p)
+    existing["_routing_findings"] = sorted(
+        _routing_finding_keys(existing) | _routing_finding_keys(p)
+    )
+    existing["plate_kind"] = existing.get("plate_kind") or p.get("plate_kind")
+    # Merge tag union fields when the duplicate adds information.
+    for field in ("disease_key", "subtype", "stage"):
+        if existing.get(field) != p.get(field):
+            existing[field] = None
+    _merge_ages(existing, p)
+    if p.get("source_variant") not in existing["source_variants"]:
+        existing["source_variants"].append(p["source_variant"])
+
+
 def _collapse_duplicates(panels: list[dict]) -> list[dict]:
     """Panels sharing an image sha256 collapse into one card that lists
     every row's attribution (dedup by sha256 done at store time)."""
@@ -914,44 +976,8 @@ def _collapse_duplicates(panels: list[dict]) -> list[dict]:
             p["caption_variants"] = [p.get("figure_caption")]
             p["panel_ids"] = [p["panel_id"]]
             grouped[key] = p
-            continue
-        existing["attribution_variants"].append(p["attribution_text"])
-        existing["panel_ids"].append(p["panel_id"])
-        if p.get("figure_caption") not in existing["caption_variants"]:
-            existing["caption_variants"].append(p.get("figure_caption"))
-        known = {f["key"] for f in existing["findings"]}
-        for f in p["findings"]:
-            if f["key"] not in known:
-                existing["findings"].append(f)
-                known.add(f["key"])
-            elif f.get("source_supported"):
-                current = next(item for item in existing["findings"] if item["key"] == f["key"])
-                if not current.get("source_supported"):
-                    current.update(f)
-        existing["_routing_findings"] = sorted(
-            _routing_finding_keys(existing) | _routing_finding_keys(p)
-        )
-        existing["plate_kind"] = existing.get("plate_kind") or p.get("plate_kind")
-        # Merge tag union fields when the duplicate adds information.
-        for field in ("disease_key", "subtype", "stage"):
-            if existing.get(field) != p.get(field):
-                existing[field] = None
-        ages = set(existing.get("age_group_variants", []))
-        if existing.get("age_group"):
-            ages.add(existing["age_group"])
-        if p.get("age_group"):
-            ages.add(p["age_group"])
-        existing["age_group_variants"] = sorted(ages)
-        supported_age_labels = {
-            variant.get("age_group_label") for variant in existing["source_variants"]
-            if variant.get("age_group_label") and variant.get("age_group_label") != "Not stated"
-        }
-        if p.get("age_group_label") and p["age_group_label"] != "Not stated":
-            supported_age_labels.add(p["age_group_label"])
-        existing["age_group_label"] = " / ".join(sorted(supported_age_labels)) or "Not stated"
-        existing["pediatric"] = any(_is_pediatric(a) for a in ages)
-        if p.get("source_variant") not in existing["source_variants"]:
-            existing["source_variants"].append(p["source_variant"])
+        else:
+            _merge_duplicate(existing, p)
     return list(grouped.values())
 
 
@@ -1063,6 +1089,445 @@ def _query_panels(
 
 
 # ---------------------------------------------------------------------------
+# Route bodies (each takes an open connection)
+# ---------------------------------------------------------------------------
+def _require_disease(conn, key: str) -> None:
+    if not _known_disease(conn, key):
+        raise HTTPException(404, "unknown disease")
+
+
+def _panel_lookups(conn, key: str):
+    """(approved finding keys, categories, row -> panel JSON) for one disease."""
+    approved = _approved_keys(conn, key)
+    categories = _categories(conn)
+    labels = _labels(conn)
+    terms = _finding_terms(conn)
+    return approved, categories, lambda row: _panel_json(row, approved, labels, categories, terms)
+
+
+def _diseases_json(conn) -> list[dict]:
+    catalog = load_diseases()
+    return [
+        {
+            "key": r["disease_key"],
+            "name": r["name"],
+            "specialty": catalog.get(r["disease_key"], {}).get("specialty"),
+            "summary": catalog.get(r["disease_key"], {}).get("summary"),
+            "synonyms": db.from_json(r["synonyms_json"], []),
+            "subtypes": db.from_json(r["subtypes_json"], []),
+        }
+        for r in conn.execute("SELECT * FROM diseases ORDER BY disease_key")
+    ]
+
+
+def _published_counts(conn) -> dict[str, dict[str, int]]:
+    """pmcid -> disease -> images published in that disease's default gallery."""
+    published: dict[str, dict[str, int]] = {}
+    for (disease,) in conn.execute("SELECT disease_key FROM diseases ORDER BY disease_key"):
+        with coverage.consistent_read(conn):
+            records, snapshot, rows = _gallery_inputs(conn, disease)
+        for pid in _selected_panel_ids(snapshot, disease, None, records):
+            if pid in rows:
+                counts = published.setdefault(rows[pid]["pmcid"], {})
+                counts[disease] = counts.get(disease, 0) + 1
+    return published
+
+
+def _articles_json(conn) -> list[dict]:
+    """Parsed source articles with their published image counts per disease."""
+    published = _published_counts(conn)
+    out = []
+    for r in conn.execute(
+        "SELECT pmcid, doi, title, journal, year, license_code, license_url, "
+        "publication_types_json, primary_disease_keys_json FROM articles "
+        "WHERE status='parsed' ORDER BY year DESC, pmcid"
+    ):
+        counts = published.get(r["pmcid"], {})
+        out.append({
+            "pmcid": r["pmcid"],
+            "title": re.sub(r"<[^>]+>", "", html.unescape(r["title"] or "")).strip(),
+            "journal": r["journal"],
+            "year": r["year"],
+            "license_code": r["license_code"],
+            "license_url": r["license_url"],
+            "publication_types": db.from_json(r["publication_types_json"], []) or [],
+            "disease_keys": db.from_json(r["primary_disease_keys_json"], []) or [],
+            "article_url": f"https://doi.org/{r['doi']}" if r["doi"]
+            else f"https://pmc.ncbi.nlm.nih.gov/articles/{r['pmcid']}/",
+            "published_images": counts,
+            "published_total": sum(counts.values()),
+        })
+    # Articles contributing images first; SQL order (newest) within.
+    return sorted(out, key=lambda a: a["published_total"] == 0)
+
+
+def _vocab_json(conn, disease: str | None) -> list[dict]:
+    rows = list(conn.execute("SELECT * FROM findings_vocab WHERE approved=1"))
+    if disease:
+        rows = [r for r in rows if disease in db.from_json(r["disease_keys_json"], [])]
+    return [
+        {
+            "finding_key": r["finding_key"],
+            "label": r["label"],
+            "category": r["category"],
+            "disease_keys": db.from_json(r["disease_keys_json"], []),
+        }
+        for r in rows
+    ]
+
+
+def _tabs_json(conn, key: str) -> list[dict]:
+    _require_disease(conn, key)
+    tabs = _tabs_for(key)
+    _, categories, make = _panel_lookups(conn, key)
+    with coverage.consistent_read(conn):
+        records, snapshot, rows = _gallery_inputs(conn, key)
+        eye_evidence = _eye_evidence(conn, key)
+    # Tab availability mirrors the default gallery: the union of all
+    # pairs' selected images plus combined plates — never reserves.
+    selected = _selected_panel_ids(snapshot, key, None, records)
+    panels = [make(rows[pid]) for pid in sorted(selected) if pid in rows]
+    for panel in panels:
+        route_panel(panel, key, categories)
+
+    available = {panel["tab"] for panel in panels}
+    if any(panel["pediatric"] for panel in panels):
+        available.add("pediatric")
+    # The catch-all view is useful only when routing actually leaves
+    # visible panels uncategorized.
+    if "other" in available:
+        tabs = [*tabs, {"key": "other", "label": "Other"}]
+    evidence_only_eye = (
+        "eye" not in available
+        and any(t["key"] == "eye" for t in tabs)
+        and bool(eye_evidence)
+    )
+    if evidence_only_eye:
+        available.add("eye")
+    return [
+        {
+            "key": t["key"],
+            "label": t["label"],
+            "group_by": t.get("group_by"),
+            "group_order": t.get("group_order"),
+            "skin_tone_filter": bool(t.get("skin_tone_filter")),
+            "cross_cutting": bool(t.get("cross_cutting")),
+            "evidence_only": evidence_only_eye and t["key"] == "eye",
+        }
+        for t in tabs
+        if t["key"] in available
+    ]
+
+
+def _eye_evidence_json(conn, key: str) -> list[dict]:
+    _require_disease(conn, key)
+    return _eye_evidence(conn, key)
+
+
+def _route_for_display(panel: dict, key: str, categories: dict[str, str]) -> None:
+    route_panel(panel, key, categories)
+    panel["clinical_tab"] = panel["tab"]
+    panel["source_variant"]["clinical_tab"] = panel["clinical_tab"]
+    panel["source_variant"]["clinical_group"] = panel["clinical_group"]
+
+
+def _finalize_display(panel: dict, key: str) -> None:
+    """Settle a collapsed panel's clinical tab/group and pediatric flag."""
+    panel["clinical_tab"] = panel["tab"]
+    sle_skin = key == "sle" and panel["tab"] == "skin"
+    if not sle_skin:
+        panel["clinical_group"] = None
+    elif not panel.get("clinical_group"):
+        panel["clinical_group"] = _clinical_group(panel)
+    panel["pediatric"] = panel.get("pediatric") or any(
+        _is_pediatric(age) for age in panel.get("age_group_variants", [])
+    )
+    panel.pop("_routing_findings", None)
+
+
+def _panels_json(conn, key: str, finding: str | None, filters: dict[str, str | None]) -> dict:
+    _require_disease(conn, key)
+    approved, categories, make = _panel_lookups(conn, key)
+    if finding and finding not in approved:
+        # unapproved/proposed findings are never shown
+        return {"panels": [], "count": 0, "representatives": {}, "reserves": {}}
+    # One consistent read covers eligibility, selection, the joined
+    # rows, and the primary mapping so they can never disagree.
+    with coverage.consistent_read(conn):
+        records, snapshot, rows = _gallery_inputs(conn, key)
+        representative_map = representatives.mapping_for_disease(
+            conn,
+            key,
+            snapshot=snapshot,
+            panels={str(r["panel_id"]): r for r in records},
+        )
+    # The gallery is selected once per (disease, finding) pair — capped
+    # at config.VP_FINDING_GALLERY_CAP distinct groups — before any
+    # filter runs, so filters below can only shrink that fixed set,
+    # never mint a separate allowance.
+    selected = _selected_panel_ids(snapshot, key, finding, records)
+    reserves = {
+        finding_key: record["reserve_distinct"]
+        for finding_key, record in snapshot.get(key, {}).items()
+    }
+    panels = [make(rows[pid]) for pid in _display_panel_ids(selected, records) if pid in rows]
+    for field, value in filters.items():
+        if value:
+            panels = [p for p in panels if _norm(p.get(field)) == _norm(value)]
+    for p in panels:
+        _route_for_display(p, key, categories)
+    panels = _collapse_duplicates(panels)
+    _mark_representatives(panels, representative_map)
+    for p in panels:
+        _finalize_display(p, key)
+    return {
+        "panels": _sort_panels(panels), "count": len(panels),
+        "representatives": representative_map,
+        # Per-finding reserve counts (distinct eligible groups held
+        # because the gallery cap is full); inspect via /reserves.
+        "reserves": reserves,
+        "gallery_cap": config.VP_FINDING_GALLERY_CAP,
+    }
+
+
+def _reserve_panels(record: dict, finding_key: str, rows: dict, make) -> list[dict]:
+    reasons = record.get("selection_reasons") or {}
+    out = []
+    for pid in record.get("reserve_panel_ids") or []:
+        row = rows.get(pid)
+        if row is None:
+            continue
+        panel = make(row)
+        panel.pop("_routing_findings", None)
+        panel["reserve"] = True
+        panel["finding_key"] = finding_key
+        panel["selection_reason"] = reasons.get(pid) or {}
+        out.append(panel)
+    return out
+
+
+def _reserves_json(conn, key: str, finding: str | None) -> dict:
+    """Eligible images held back by the gallery cap, per finding pair."""
+    _require_disease(conn, key)
+    approved, _, make = _panel_lookups(conn, key)
+    reserves: list[dict] = []
+    per_finding: dict[str, dict] = {}
+    if not finding or finding in approved:
+        records, snapshot, rows = _gallery_inputs(conn, key)
+        findings_map = snapshot.get(key, {})
+        if finding:
+            findings_map = {finding: findings_map.get(finding) or {}}
+        for finding_key in sorted(findings_map):
+            record = findings_map[finding_key] or {}
+            per_finding[finding_key] = {
+                "eligible_distinct": record.get("eligible_distinct", 0),
+                "published_distinct": record.get("published_distinct", 0),
+                "reserve_distinct": record.get("reserve_distinct", 0),
+                "tier": record.get("tier"),
+                "blocked_reason": record.get("blocked_reason"),
+                "selection_reasons": record.get("selection_reasons") or {},
+            }
+            reserves.extend(_reserve_panels(record, finding_key, rows, make))
+    return {
+        "disease_key": key, "finding": finding,
+        "gallery_cap": config.VP_FINDING_GALLERY_CAP,
+        "count": len(reserves), "reserves": reserves,
+        "per_finding": per_finding,
+    }
+
+
+def _findings_json(conn, key: str) -> list[dict]:
+    _require_disease(conn, key)
+    # Approved vocab keys only — proposed findings are never shown.
+    rows = conn.execute(
+        "SELECT df.*, fv.label AS vocab_label, fv.disease_keys_json FROM disease_findings df "
+        "JOIN findings_vocab fv "
+        "  ON fv.finding_key = df.finding_key AND fv.approved = 1 "
+        "WHERE df.disease_key = ? "
+        "ORDER BY CASE df.source WHEN 'text' THEN 0 ELSE 1 END, "
+        "COALESCE(df.frequency_pct_high, -1) DESC, df.id",
+        (key,),
+    )
+    seen: set[tuple] = set()
+    out = []
+    for r in rows:
+        pair = (r["finding_key"], r["pmcid"])
+        if key not in db.from_json(r["disease_keys_json"], []) or pair in seen:
+            continue
+        seen.add(pair)
+        out.append(
+            {
+                "finding_key": r["finding_key"],
+                "label": r["vocab_label"],
+                "subtype": r["subtype"],
+                "frequency_text": r["frequency_text"],
+                "pct_low": r["frequency_pct_low"],
+                "pct_high": r["frequency_pct_high"],
+                "quote": r["quote"],
+                "pmcid": r["pmcid"],
+                "source": r["source"],
+            }
+        )
+        if len(out) >= 12:
+            break
+    return out
+
+
+def _spec_selection(spec: dict, snapshot: dict, records: list[dict]) -> set[str]:
+    """Each compare side draws from the same frozen selection as the library
+    views: the named pair's gallery, the union of the named pairs' galleries,
+    or the default union plus combined plates."""
+    disease = spec["disease"]
+    if spec.get("findings_any") and not spec.get("finding"):
+        findings_map = snapshot.get(disease, {})
+        return {
+            pid
+            for fk in spec["findings_any"]
+            for pid in (findings_map.get(fk) or {}).get("published_panel_ids") or []
+        }
+    return _selected_panel_ids(snapshot, disease, spec.get("finding") or None, records)
+
+
+# Compare-spec list filters: spec key -> panel field compared after _norm.
+_SPEC_FIELD_FILTERS = {"body_sites": "body_site", "subtype_in": "subtype", "modalities": "modality"}
+
+
+def _apply_spec_filters(panels: list[dict], spec: dict) -> list[dict]:
+    if spec.get("finding"):
+        panels = [p for p in panels if spec["finding"] in _finding_keys(p)]
+    if spec.get("findings_any"):
+        wanted = {_norm(f) for f in spec["findings_any"]}
+        panels = [p for p in panels if _finding_keys(p) & wanted]
+    for spec_key, field in _SPEC_FIELD_FILTERS.items():
+        if spec.get(spec_key):
+            wanted = {_norm(v) for v in spec[spec_key]}
+            panels = [p for p in panels if _norm(p.get(field)) in wanted]
+    return panels
+
+
+def _compare_side(conn, spec: dict) -> dict:
+    _, _, make = _panel_lookups(conn, spec["disease"])
+    records, snapshot, rows = _gallery_inputs(conn, spec["disease"])
+    selected = _spec_selection(spec, snapshot, records)
+    panels = [make(rows[pid]) for pid in _display_panel_ids(selected, records) if pid in rows]
+    panels = _apply_spec_filters(_collapse_duplicates(panels), spec)
+    return {"label": spec["label"], "panels": _sort_panels(panels)[:6], "disease": spec["disease"]}
+
+
+def _compare_json(conn) -> list[dict]:
+    return [
+        {
+            "title": pair["title"],
+            "left": _compare_side(conn, pair["left"]),
+            "right": _compare_side(conn, pair["right"]),
+        }
+        for pair in COMPARISONS
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+router = APIRouter()
+
+
+def _with_conn(request: Request, fn, *args):
+    c = db.connect(request.app.state.data_dir / config.DB_FILENAME)
+    try:
+        return fn(c, *args)
+    finally:
+        c.close()
+
+
+def _page(name: str) -> HTMLResponse:
+    return HTMLResponse((STATIC_DIR / name).read_text(encoding="utf-8"))
+
+
+async def _no_cache(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@router.get("/", response_class=HTMLResponse)
+def index() -> HTMLResponse:
+    return _page("index.html")
+
+
+@router.get("/disease/{key}", response_class=HTMLResponse)
+def disease_page(request: Request, key: str) -> HTMLResponse:
+    _with_conn(request, _require_disease, key)
+    return _page("disease.html")
+
+
+@router.get("/compare/sle-dm-skin", response_class=HTMLResponse)
+def compare_page() -> HTMLResponse:
+    return _page("compare.html")
+
+
+@router.get("/api/diseases")
+def api_diseases(request: Request) -> list[dict]:
+    return _with_conn(request, _diseases_json)
+
+
+@router.get("/api/articles")
+def api_articles(request: Request) -> list[dict]:
+    """Parsed source articles with their published image counts per disease."""
+    return _with_conn(request, _articles_json)
+
+
+@router.get("/api/vocab")
+def api_vocab(request: Request, disease: str | None = Query(default=None)) -> list[dict]:
+    return _with_conn(request, _vocab_json, disease)
+
+
+@router.get("/api/diseases/{key}/tabs")
+def api_tabs(request: Request, key: str) -> list[dict]:
+    return _with_conn(request, _tabs_json, key)
+
+
+@router.get("/api/diseases/{key}/eye-evidence")
+def api_eye_evidence(request: Request, key: str) -> list[dict]:
+    return _with_conn(request, _eye_evidence_json, key)
+
+
+@router.get("/api/diseases/{key}/panels")
+def api_panels(
+    request: Request,
+    key: str,
+    modality: str | None = None,
+    subtype: str | None = None,
+    skin_tone: str | None = None,
+    finding: str | None = None,
+    typicality: str | None = None,
+) -> dict:
+    filters = {"modality": modality, "subtype": subtype,
+               "skin_tone": skin_tone, "typicality": typicality}
+    return _with_conn(request, _panels_json, key, finding, filters)
+
+
+@router.get("/api/diseases/{key}/reserves")
+def api_reserves(request: Request, key: str, finding: str | None = None) -> dict:
+    """Inspection path for eligible images held back by the gallery cap.
+
+    Reserves are never merged into the default gallery response; each
+    entry carries the finding pair it belongs to and the selection
+    reason that held it back.
+    """
+    return _with_conn(request, _reserves_json, key, finding)
+
+
+@router.get("/api/diseases/{key}/findings")
+def api_findings(request: Request, key: str) -> list[dict]:
+    return _with_conn(request, _findings_json, key)
+
+
+@router.get("/api/compare/sle-dm-skin")
+def api_compare(request: Request) -> list[dict]:
+    return _with_conn(request, _compare_json)
+
+
+# ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 def create_app(data_dir: str | None = None) -> FastAPI:
@@ -1079,428 +1544,9 @@ def create_app(data_dir: str | None = None) -> FastAPI:
     finally:
         initialized.close()
 
-    def conn() -> sqlite3.Connection:
-        return db.connect(data_root / config.DB_FILENAME)
-
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-    @app.middleware("http")
-    async def _no_cache(request, call_next):
-        response = await call_next(request)
-        response.headers["Cache-Control"] = "no-cache"
-        return response
-
-    def _page(name: str) -> HTMLResponse:
-        return HTMLResponse((STATIC_DIR / name).read_text(encoding="utf-8"))
-
-    @app.get("/", response_class=HTMLResponse)
-    def index() -> HTMLResponse:
-        return _page("index.html")
-
-    @app.get("/disease/{key}", response_class=HTMLResponse)
-    def disease_page(key: str) -> HTMLResponse:
-        c = conn()
-        try:
-            if not _known_disease(c, key):
-                raise HTTPException(404, "unknown disease")
-            return _page("disease.html")
-        finally:
-            c.close()
-
-    @app.get("/compare/sle-dm-skin", response_class=HTMLResponse)
-    def compare_page() -> HTMLResponse:
-        return _page("compare.html")
-
-    @app.get("/api/diseases")
-    def api_diseases() -> list[dict]:
-        catalog = load_diseases()
-        c = conn()
-        try:
-            return [
-                {
-                    "key": r["disease_key"],
-                    "name": r["name"],
-                    "specialty": catalog.get(r["disease_key"], {}).get("specialty"),
-                    "summary": catalog.get(r["disease_key"], {}).get("summary"),
-                    "synonyms": db.from_json(r["synonyms_json"], []),
-                    "subtypes": db.from_json(r["subtypes_json"], []),
-                }
-                for r in c.execute("SELECT * FROM diseases ORDER BY disease_key")
-            ]
-        finally:
-            c.close()
-
-    @app.get("/api/articles")
-    def api_articles() -> list[dict]:
-        """Parsed source articles with their published image counts per disease."""
-        c = conn()
-        try:
-            published: dict[str, dict[str, int]] = {}
-            for (disease,) in c.execute("SELECT disease_key FROM diseases ORDER BY disease_key"):
-                with coverage.consistent_read(c):
-                    records, snapshot, rows = _gallery_inputs(c, disease)
-                for pid in _selected_panel_ids(snapshot, disease, None, records):
-                    if pid in rows:
-                        counts = published.setdefault(rows[pid]["pmcid"], {})
-                        counts[disease] = counts.get(disease, 0) + 1
-            out = []
-            for r in c.execute(
-                "SELECT pmcid, doi, title, journal, year, license_code, license_url, "
-                "publication_types_json, primary_disease_keys_json FROM articles "
-                "WHERE status='parsed' ORDER BY year DESC, pmcid"
-            ):
-                counts = published.get(r["pmcid"], {})
-                out.append({
-                    "pmcid": r["pmcid"],
-                    "title": re.sub(r"<[^>]+>", "", html.unescape(r["title"] or "")).strip(),
-                    "journal": r["journal"],
-                    "year": r["year"],
-                    "license_code": r["license_code"],
-                    "license_url": r["license_url"],
-                    "publication_types": db.from_json(r["publication_types_json"], []) or [],
-                    "disease_keys": db.from_json(r["primary_disease_keys_json"], []) or [],
-                    "article_url": f"https://doi.org/{r['doi']}" if r["doi"]
-                    else f"https://pmc.ncbi.nlm.nih.gov/articles/{r['pmcid']}/",
-                    "published_images": counts,
-                    "published_total": sum(counts.values()),
-                })
-            # Articles contributing images first; SQL order (newest) within.
-            return sorted(out, key=lambda a: a["published_total"] == 0)
-        finally:
-            c.close()
-
-    @app.get("/api/vocab")
-    def api_vocab(disease: str | None = Query(default=None)) -> list[dict]:
-        c = conn()
-        try:
-            rows = list(c.execute("SELECT * FROM findings_vocab WHERE approved=1"))
-            if disease:
-                rows = [r for r in rows if disease in db.from_json(r["disease_keys_json"], [])]
-            return [
-                {
-                    "finding_key": r["finding_key"],
-                    "label": r["label"],
-                    "category": r["category"],
-                    "disease_keys": db.from_json(r["disease_keys_json"], []),
-                }
-                for r in rows
-            ]
-        finally:
-            c.close()
-
-    @app.get("/api/diseases/{key}/tabs")
-    def api_tabs(key: str) -> list[dict]:
-        c = conn()
-        try:
-            if not _known_disease(c, key):
-                raise HTTPException(404, "unknown disease")
-            tabs = _tabs_for(key)
-            approved = _approved_keys(c, key)
-            categories = _categories(c)
-            labels = _labels(c)
-            terms = _finding_terms(c)
-            with coverage.consistent_read(c):
-                records, snapshot, rows = _gallery_inputs(c, key)
-                eye_evidence = _eye_evidence(c, key)
-            # Tab availability mirrors the default gallery: the union of all
-            # pairs' selected images plus combined plates — never reserves.
-            selected = _selected_panel_ids(snapshot, key, None, records)
-            panels = [
-                _panel_json(rows[pid], approved, labels, categories, terms)
-                for pid in sorted(selected)
-                if pid in rows
-            ]
-            for panel in panels:
-                route_panel(panel, key, categories)
-
-            available = {panel["tab"] for panel in panels}
-            if any(panel["pediatric"] for panel in panels):
-                available.add("pediatric")
-            # The catch-all view is useful only when routing actually leaves
-            # visible panels uncategorized.
-            if "other" in available:
-                tabs = [*tabs, {"key": "other", "label": "Other"}]
-            evidence_only_eye = (
-                "eye" not in available
-                and any(t["key"] == "eye" for t in tabs)
-                and bool(eye_evidence)
-            )
-            if evidence_only_eye:
-                available.add("eye")
-            return [
-                {
-                    "key": t["key"],
-                    "label": t["label"],
-                    "group_by": t.get("group_by"),
-                    "group_order": t.get("group_order"),
-                    "skin_tone_filter": bool(t.get("skin_tone_filter")),
-                    "cross_cutting": bool(t.get("cross_cutting")),
-                    "evidence_only": evidence_only_eye and t["key"] == "eye",
-                }
-                for t in tabs
-                if t["key"] in available
-            ]
-        finally:
-            c.close()
-
-    @app.get("/api/diseases/{key}/eye-evidence")
-    def api_eye_evidence(key: str) -> list[dict]:
-        c = conn()
-        try:
-            if not _known_disease(c, key):
-                raise HTTPException(404, "unknown disease")
-            return _eye_evidence(c, key)
-        finally:
-            c.close()
-
-    @app.get("/api/diseases/{key}/panels")
-    def api_panels(
-        key: str,
-        modality: str | None = None,
-        subtype: str | None = None,
-        skin_tone: str | None = None,
-        finding: str | None = None,
-        typicality: str | None = None,
-    ) -> dict:
-        c = conn()
-        try:
-            if not _known_disease(c, key):
-                raise HTTPException(404, "unknown disease")
-            approved = _approved_keys(c, key)
-            categories = _categories(c)
-            labels = _labels(c)
-            terms = _finding_terms(c)
-            if finding and finding not in approved:
-                # unapproved/proposed findings are never shown
-                return {"panels": [], "count": 0, "representatives": {}, "reserves": {}}
-            # One consistent read covers eligibility, selection, the joined
-            # rows, and the primary mapping so they can never disagree.
-            with coverage.consistent_read(c):
-                records, snapshot, rows = _gallery_inputs(c, key)
-                representative_map = representatives.mapping_for_disease(
-                    c,
-                    key,
-                    snapshot=snapshot,
-                    panels={str(r["panel_id"]): r for r in records},
-                )
-            # The gallery is selected once per (disease, finding) pair — capped
-            # at config.VP_FINDING_GALLERY_CAP distinct groups — before any
-            # filter runs, so filters below can only shrink that fixed set,
-            # never mint a separate allowance.
-            selected = _selected_panel_ids(snapshot, key, finding, records)
-            reserves = {
-                finding_key: record["reserve_distinct"]
-                for finding_key, record in snapshot.get(key, {}).items()
-            }
-            panels = [
-                _panel_json(rows[pid], approved, labels, categories, terms)
-                for pid in _display_panel_ids(selected, records)
-                if pid in rows
-            ]
-            if modality:
-                panels = [p for p in panels if _norm(p.get("modality")) == _norm(modality)]
-            if subtype:
-                panels = [p for p in panels if _norm(p.get("subtype")) == _norm(subtype)]
-            if skin_tone:
-                panels = [p for p in panels if _norm(p.get("skin_tone")) == _norm(skin_tone)]
-            if typicality:
-                panels = [p for p in panels if _norm(p.get("typicality")) == _norm(typicality)]
-            for p in panels:
-                route_panel(p, key, categories)
-                p["clinical_tab"] = p["tab"]
-                p["source_variant"]["clinical_tab"] = p["clinical_tab"]
-                p["source_variant"]["clinical_group"] = p["clinical_group"]
-            panels = _collapse_duplicates(panels)
-            _mark_representatives(panels, representative_map)
-            for p in panels:
-                p["clinical_tab"] = p["tab"]
-                if key == "sle" and p["tab"] == "skin" and not p.get("clinical_group"):
-                    p["clinical_group"] = _clinical_group(p)
-                elif not (key == "sle" and p["tab"] == "skin"):
-                    p["clinical_group"] = None
-                p["pediatric"] = p.get("pediatric") or any(
-                    _is_pediatric(age) for age in p.get("age_group_variants", [])
-                )
-                p.pop("_routing_findings", None)
-            return {
-                "panels": _sort_panels(panels), "count": len(panels),
-                "representatives": representative_map,
-                # Per-finding reserve counts (distinct eligible groups held
-                # because the gallery cap is full); inspect via /reserves.
-                "reserves": reserves,
-                "gallery_cap": config.VP_FINDING_GALLERY_CAP,
-            }
-        finally:
-            c.close()
-
-    @app.get("/api/diseases/{key}/reserves")
-    def api_reserves(key: str, finding: str | None = None) -> dict:
-        """Inspection path for eligible images held back by the gallery cap.
-
-        Reserves are never merged into the default gallery response; each
-        entry carries the finding pair it belongs to and the selection
-        reason that held it back.
-        """
-        c = conn()
-        try:
-            if not _known_disease(c, key):
-                raise HTTPException(404, "unknown disease")
-            approved = _approved_keys(c, key)
-            categories = _categories(c)
-            labels = _labels(c)
-            terms = _finding_terms(c)
-            empty = {
-                "disease_key": key, "finding": finding,
-                "gallery_cap": config.VP_FINDING_GALLERY_CAP,
-                "count": 0, "reserves": [], "per_finding": {},
-            }
-            if finding and finding not in approved:
-                return empty
-            records, snapshot, rows = _gallery_inputs(c, key)
-            findings_map = snapshot.get(key, {})
-            if finding:
-                findings_map = {finding: findings_map.get(finding) or {}}
-            reserves = []
-            per_finding = {}
-            for finding_key in sorted(findings_map):
-                record = findings_map[finding_key] or {}
-                reasons = record.get("selection_reasons") or {}
-                per_finding[finding_key] = {
-                    "eligible_distinct": record.get("eligible_distinct", 0),
-                    "published_distinct": record.get("published_distinct", 0),
-                    "reserve_distinct": record.get("reserve_distinct", 0),
-                    "tier": record.get("tier"),
-                    "blocked_reason": record.get("blocked_reason"),
-                    "selection_reasons": reasons,
-                }
-                for pid in record.get("reserve_panel_ids") or []:
-                    row = rows.get(pid)
-                    if row is None:
-                        continue
-                    panel = _panel_json(row, approved, labels, categories, terms)
-                    panel.pop("_routing_findings", None)
-                    panel["reserve"] = True
-                    panel["finding_key"] = finding_key
-                    panel["selection_reason"] = reasons.get(pid) or {}
-                    reserves.append(panel)
-            return {
-                "disease_key": key, "finding": finding,
-                "gallery_cap": config.VP_FINDING_GALLERY_CAP,
-                "count": len(reserves), "reserves": reserves,
-                "per_finding": per_finding,
-            }
-        finally:
-            c.close()
-
-    @app.get("/api/diseases/{key}/findings")
-    def api_findings(key: str) -> list[dict]:
-        c = conn()
-        try:
-            if not _known_disease(c, key):
-                raise HTTPException(404, "unknown disease")
-            # Approved vocab keys only — proposed findings are never shown.
-            rows = list(
-                c.execute(
-                    "SELECT df.*, fv.label AS vocab_label, fv.disease_keys_json FROM disease_findings df "
-                    "JOIN findings_vocab fv "
-                    "  ON fv.finding_key = df.finding_key AND fv.approved = 1 "
-                    "WHERE df.disease_key = ? "
-                    "ORDER BY CASE df.source WHEN 'text' THEN 0 ELSE 1 END, "
-                    "COALESCE(df.frequency_pct_high, -1) DESC, df.id",
-                    (key,),
-                )
-            )
-            seen: set[tuple] = set()
-            out = []
-            for r in rows:
-                if key not in db.from_json(r["disease_keys_json"], []):
-                    continue
-                pair = (r["finding_key"], r["pmcid"])
-                if pair in seen:
-                    continue
-                seen.add(pair)
-                out.append(
-                    {
-                        "finding_key": r["finding_key"],
-                        "label": r["vocab_label"],
-                        "subtype": r["subtype"],
-                        "frequency_text": r["frequency_text"],
-                        "pct_low": r["frequency_pct_low"],
-                        "pct_high": r["frequency_pct_high"],
-                        "quote": r["quote"],
-                        "pmcid": r["pmcid"],
-                        "source": r["source"],
-                    }
-                )
-                if len(out) >= 12:
-                    break
-            return out
-        finally:
-            c.close()
-
-    @app.get("/api/compare/sle-dm-skin")
-    def api_compare() -> list[dict]:
-        c = conn()
-        try:
-            labels = _labels(c)
-            out = []
-            for pair in COMPARISONS:
-                entry = {"title": pair["title"], "left": {"label": pair["left"]["label"]}, "right": {"label": pair["right"]["label"]}}
-                for side in ("left", "right"):
-                    spec = pair[side]
-                    approved = _approved_keys(c, spec["disease"])
-                    categories = _categories(c)
-                    terms = _finding_terms(c)
-                    records, snapshot, rows = _gallery_inputs(c, spec["disease"])
-                    # Each side draws from the same frozen selection as the
-                    # library views: the named pair's gallery, the union of
-                    # the named pairs' galleries, or the default union plus
-                    # combined plates — then post-filters narrow that set.
-                    if spec.get("finding"):
-                        selected = _selected_panel_ids(
-                            snapshot, spec["disease"], spec["finding"], records
-                        )
-                    elif spec.get("findings_any"):
-                        findings_map = snapshot.get(spec["disease"], {})
-                        selected = {
-                            pid
-                            for fk in spec["findings_any"]
-                            for pid in (findings_map.get(fk) or {}).get(
-                                "published_panel_ids"
-                            )
-                            or []
-                        }
-                    else:
-                        selected = _selected_panel_ids(
-                            snapshot, spec["disease"], None, records
-                        )
-                    panels = [
-                        _panel_json(rows[pid], approved, labels, categories, terms)
-                        for pid in _display_panel_ids(selected, records)
-                        if pid in rows
-                    ]
-                    panels = _collapse_duplicates(panels)
-                    if spec.get("finding"):
-                        panels = [p for p in panels if spec["finding"] in _finding_keys(p)]
-                    if spec.get("findings_any"):
-                        wanted = {_norm(f) for f in spec["findings_any"]}
-                        panels = [p for p in panels if _finding_keys(p) & wanted]
-                    if spec.get("body_sites"):
-                        wanted = {_norm(b) for b in spec["body_sites"]}
-                        panels = [p for p in panels if _norm(p.get("body_site")) in wanted]
-                    if spec.get("subtype_in"):
-                        wanted = {_norm(s) for s in spec["subtype_in"]}
-                        panels = [p for p in panels if _norm(p.get("subtype")) in wanted]
-                    if spec.get("modalities"):
-                        wanted = {_norm(m) for m in spec["modalities"]}
-                        panels = [p for p in panels if _norm(p.get("modality")) in wanted]
-                    entry[side]["panels"] = _sort_panels(panels)[:6]
-                    entry[side]["disease"] = spec["disease"]
-                out.append(entry)
-            return out
-        finally:
-            c.close()
-
+    app.middleware("http")(_no_cache)
+    app.include_router(router)
     return app
 
 

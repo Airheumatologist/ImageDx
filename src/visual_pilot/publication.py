@@ -49,7 +49,27 @@ def finding_supported(finding: dict, source_text: str, terms: list[str]) -> bool
     return pair_terms.caption_matches(source_text, terms, mode="words")
 
 
-def _source_findings(panel: dict, figure: dict, approved: set[str]) -> set[str]:
+def _norm(value) -> str:
+    return str(value or "").strip().lower()
+
+
+# Automated visual tags with a clear modality/site mismatch are rejected.
+_HISTOLOGY_MODALITIES = {"histology_he", "histology_ihc", "immunofluorescence"}
+_IMAGING_MODALITIES = {"mri", "ct", "radiograph", "ultrasound", "echo", "pet"}
+_SURFACE_CATEGORIES = {"skin", "nail", "mucosa", "clinical_msk"}
+
+
+def modality_mismatch(modality: str, body_site: str, category: str) -> bool:
+    """A finding category the panel's (normalized) modality and site rule out."""
+    if modality == "ophthalmic":
+        return category != "eye"
+    if modality in _HISTOLOGY_MODALITIES and body_site in {"kidney", "renal"}:
+        return category != "histology"
+    return modality in _IMAGING_MODALITIES and category in _SURFACE_CATEGORIES
+
+
+def _finding_lookups(figure: dict) -> tuple[dict, dict]:
+    """(terms, categories) by finding key, from the figure's cache or the vocab."""
     terms = figure.get("_finding_terms")
     categories = figure.get("_finding_categories")
     vocab = diseases.load_findings_vocab() if terms is None or categories is None else []
@@ -57,6 +77,11 @@ def _source_findings(panel: dict, figure: dict, approved: set[str]) -> set[str]:
         terms = finding_terms(vocab)
     if categories is None:
         categories = {row["finding_key"]: row["category"] for row in vocab}
+    return terms, categories
+
+
+def _source_findings(panel: dict, figure: dict, approved: set[str]) -> set[str]:
+    terms, categories = _finding_lookups(figure)
     mentions = db.from_json(figure.get("in_text_mentions_json"), []) or []
     caption = str(figure.get("caption") or "")
     text = " ".join(" ".join([caption, *map(str, mentions)]).casefold().split())
@@ -64,21 +89,12 @@ def _source_findings(panel: dict, figure: dict, approved: set[str]) -> set[str]:
     if panel.get("plate_kind") == "combined":
         raw = db.from_json(panel.get("plate_findings_json"), []) or raw
     supported = set()
-    modality = str(panel.get("modality") or "").strip().lower()
-    site = str(panel.get("body_site") or "").strip().lower()
+    modality = _norm(panel.get("modality"))
+    site = _norm(panel.get("body_site"))
     for item in raw:
         key = item.get("finding_key") if isinstance(item, dict) else item
-        if key not in approved:
+        if key not in approved or modality_mismatch(modality, site, _norm(categories.get(key))):
             continue
-        category = str(categories.get(key) or "").strip().lower()
-        if modality == "ophthalmic" and category != "eye":
-            continue
-        if modality in {"histology_he", "histology_ihc", "immunofluorescence"}:
-            if site in {"kidney", "renal"} and category != "histology":
-                continue
-        if modality in {"mri", "ct", "radiograph", "ultrasound", "echo", "pet"}:
-            if category in {"skin", "nail", "mucosa", "clinical_msk"}:
-                continue
         if finding_supported({"key": key}, text, terms.get(key, [])):
             supported.add(str(key))
     return supported
@@ -117,65 +133,79 @@ def rejection_category(reason: str) -> str:
 NO_SUPPORTED_LABEL = "no approved source-supported finding label"
 
 
-def panel_eligibility(
-    panel: dict, figure: dict, article: dict, approved_findings: set[str],
-) -> dict:
-    """Evaluate retained evidence without changing judgments or audit records."""
-    panel, figure, article = dict(panel), dict(figure), dict(article)
-    reasons = []
-
-    def reject(reason):
-        if reason and reason not in reasons:
-            reasons.append(reason)
-
-    if panel.get("_audit_excluded"):
-        reject("current-hash audit exclusion")
+def _license_reasons(panel: dict, figure: dict, article: dict) -> list[str]:
     # Never replace an explicitly restrictive source license with a panel label.
+    reasons = []
     for source, raw in (
         ("article", article.get("license_code")),
         ("figure", figure.get("effective_license")),
         ("panel", panel.get("license_code")),
     ):
-        if raw or source in {"article", "panel"}:
-            allowed = pmc.license_allows(pmc.normalize_license(raw))
-            if allowed is None:
-                reject(f"{source} license disallows publication")
-            elif allowed == "whole_figure" and panel.get("crop_mode") != "whole_figure":
-                reject(f"{source} license permits whole figures only")
+        if not raw and source == "figure":
+            continue
+        allowed = pmc.license_allows(pmc.normalize_license(raw))
+        if allowed is None:
+            reasons.append(f"{source} license disallows publication")
+        elif allowed == "whole_figure" and panel.get("crop_mode") != "whole_figure":
+            reasons.append(f"{source} license permits whole figures only")
+    return reasons
+
+
+def _source_reasons(figure: dict, article: dict) -> list[str]:
+    """Third-party figures, retracted sources and notices."""
+    reasons = []
     triage = db.from_json(figure.get("triage_json"), {}) or {}
     permissions_third_party, _ = jats._third_party(figure.get("fig_permissions_text"), None, [])
     if triage.get("third_party") or triage.get("route") == "third_party" or permissions_third_party:
-        reject("third-party figure")
+        reasons.append("third-party figure")
     metadata = article.get("source_metadata") or {}
     if metadata.get("retraction_status") == "retracted":
-        reject("source article is retracted")
+        reasons.append("source article is retracted")
     types = db.from_json(article.get("publication_types_json"), []) or metadata.get("publication_types") or []
     if isinstance(types, str):
         types = [types]
     if not passes_type_filter(types, article.get("article_type")):
-        reject("source is a notice, not an article")
+        reasons.append("source is a notice, not an article")
+    return reasons
+
+
+def _retained_reason(panel: dict, figure: dict) -> str | None:
+    """The stored judgment's own exclusion of this panel (or plate), if any."""
     vision = db.from_json(figure.get("vision_json"), {}) or {}
     retained = vision.get("plate") if panel.get("plate_kind") else next(
         (row for row in vision.get("panels", []) if row.get("panel_label") == panel.get("panel_label")),
         None,
     )
     if retained and retained.get("include") is False:
-        reject("retained judgment: " + str(retained.get("exclusion_reason") or "model excluded panel").replace("_", " "))
-    reject(curation.exclusion_reason(
-        panel, figure, article, allowed_findings=approved_findings,
-    ))
-    supported = _source_findings(panel, figure, approved_findings)
-    if not supported:
-        reject(NO_SUPPORTED_LABEL)
+        return "retained judgment: " + str(retained.get("exclusion_reason") or "model excluded panel").replace("_", " ")
+    return None
+
+
+def _valid_size(panel: dict) -> bool:
     try:
-        valid_size = int(panel.get("width") or 0) > 0 and int(panel.get("height") or 0) > 0
+        return int(panel.get("width") or 0) > 0 and int(panel.get("height") or 0) > 0
     except (TypeError, ValueError):
-        valid_size = False
-    if not valid_size:
-        reject("invalid stored image dimensions")
-    # Pages draw the panel from the figure's public PMC S3 image.
-    if not figure.get("image_url"):
-        reject("missing figure image_url")
+        return False
+
+
+def panel_eligibility(
+    panel: dict, figure: dict, article: dict, approved_findings: set[str],
+) -> dict:
+    """Evaluate retained evidence without changing judgments or audit records."""
+    panel, figure, article = dict(panel), dict(figure), dict(article)
+    supported = _source_findings(panel, figure, approved_findings)
+    candidates = [
+        "current-hash audit exclusion" if panel.get("_audit_excluded") else None,
+        *_license_reasons(panel, figure, article),
+        *_source_reasons(figure, article),
+        _retained_reason(panel, figure),
+        curation.exclusion_reason(panel, figure, article, allowed_findings=approved_findings),
+        None if supported else NO_SUPPORTED_LABEL,
+        None if _valid_size(panel) else "invalid stored image dimensions",
+        # Pages draw the panel from the figure's public PMC S3 image.
+        None if figure.get("image_url") else "missing figure image_url",
+    ]
+    reasons = list(dict.fromkeys(r for r in candidates if r))
     eligible = not reasons
     return {
         "eligible": eligible,

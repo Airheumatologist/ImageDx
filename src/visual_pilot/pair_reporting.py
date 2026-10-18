@@ -35,126 +35,157 @@ def next_action(record: dict, pending: int) -> str:
     return "Run another bounded discovery round for this pair"
 
 
+_REJECTION_CATEGORIES = (
+    "license/third-party", "source type", "no patient image", "age unclear",
+    "attribution unclear/other disease", "unsupported finding", "mixed plate",
+    "quality", "retrieval error",
+)
+_PENDING_ARTICLE_STATUSES = {"candidate", "license_ok", "relevant"}
+
+
+def _pending_pmcids(explicit, discovered, articles, figures, disease) -> set[str]:
+    """Articles with pair work left: explicit candidates not yet resolved,
+    plus discovered articles with unfinished figures."""
+    def explicit_pending(row) -> bool:
+        article = articles.get(row["pmcid"], {})
+        return (
+            article.get("status") in _PENDING_ARTICLE_STATUSES
+            and row["status"] in {"pending", "selected", "covered"}
+            and (
+                article["status"] != "relevant"
+                or disease in db.from_json(article["primary_disease_keys_json"], [])
+            )
+        )
+
+    return {row["pmcid"] for row in explicit if explicit_pending(row)} | {
+        row["pmcid"] for row in figures
+        if row["pmcid"] in discovered and row["status"] in _UNFINISHED_FIGURES
+    }
+
+
+def _panel_rejections(records, disease, finding) -> Counter:
+    """Rejection categories of ineligible panels labeled with this pair's finding."""
+    rejected: Counter = Counter()
+    for panel in records:
+        if panel.get("disease_key") != disease or panel["eligible"]:
+            continue
+        raw = [
+            *(db.from_json(panel.get("findings_json"), []) or []),
+            *(db.from_json(panel.get("plate_findings_json"), []) or []),
+        ]
+        keys = {item.get("finding_key") if isinstance(item, dict) else item for item in raw}
+        if finding in keys:
+            rejected.update(panel["rejection_categories"])
+    return rejected
+
+
+def _strategy(attempt: dict) -> dict:
+    return {
+        "policy_version": attempt["policy_version"],
+        "round_no": attempt["round_no"], "query": attempt["query"],
+        "query_filter_hash": attempt["query_filter_hash"],
+        "depth": attempt["depth"], "status": attempt["status"],
+        "returned_unique_articles": len(set(db.from_json(attempt["returned_pmcids_json"], []) or [])),
+        "new_unique_articles": len(set(db.from_json(attempt["new_pmcids_json"], []) or [])),
+        "error": attempt["error"], "completed_at": attempt["completed_at"],
+    }
+
+
+def _milestone(record: dict) -> str:
+    if not record["cap_remaining"]:
+        return "full"
+    if not record["target_deficit"]:
+        return "target_reached"
+    return "floor_reached" if not record["floor_deficit"] else "floor_deficit"
+
+
+def _pair_funnel_row(disease: str, finding: str, record: dict, data: dict) -> dict:
+    articles = data["articles"]
+    pair_attempts = [
+        attempt for attempt in data["attempts"]
+        if attempt["disease_key"] == disease and attempt["finding_key"] == finding
+    ]
+    matched = [
+        row for row in data["candidates"]
+        if row["disease_key"] == disease and row["finding_key"] == finding
+    ]
+    explicit = [
+        row for row in matched
+        if row["provenance_status"] == "explicit"
+        and row["provenance_disease_key"] == disease
+    ]
+    discovered = {
+        pmcid
+        for attempt in pair_attempts
+        if attempt["policy_version"] == DISCOVERY_POLICY
+        for pmcid in db.from_json(attempt["new_pmcids_json"], []) or []
+    }
+    ids = {row["pmcid"] for row in explicit} | discovered
+    licensed = {
+        pmcid for pmcid in ids if pmcid in articles
+        and pmc.license_allows(pmc.normalize_license(articles[pmcid].get("license_code"))) is not None
+    }
+    supported_figures = {
+        row["figure_id"] for row in data["figures"]
+        if row["pmcid"] in ids and caption_supports_pair(
+            row, articles.get(row["pmcid"], {}), disease, data["vocab"][finding],
+        )
+    }
+    pending = _pending_pmcids(explicit, discovered, articles, data["figures"], disease)
+    rejected = _panel_rejections(data["records"], disease, finding)
+    rejected["license/third-party"] += sum(
+        articles.get(row["pmcid"], {}).get("status") == "license_rejected" for row in explicit
+    )
+    rejected["retrieval error"] += sum(bool(attempt["error"]) for attempt in pair_attempts)
+    return {
+        **record,
+        "retrieved_unique_articles": len(ids),
+        "licensed_articles": len(licensed),
+        "pair_supported_caption_figures": len(supported_figures),
+        "unresolved_legacy_candidates": len(matched) - len(explicit),
+        "pending_work": len(pending),
+        "attempted_strategies": [_strategy(attempt) for attempt in pair_attempts],
+        "last_deficit_reduction": record["last_deficit_reduction_at"],
+        "next_action": next_action(record, len(pending)),
+        "rejection_categories": {
+            category: rejected.get(category, 0) for category in _REJECTION_CATEGORIES
+        },
+        "selection_reserves": {
+            "distinct_groups": record["reserve_distinct"],
+            "duplicate_or_diversity_rows": sum(
+                item.get("status") in {"duplicate", "same_patient", "reused_image", "source_family"}
+                for item in record["selection_reasons"].values()
+            ),
+        },
+        "milestone": _milestone(record),
+    }
+
+
 def pair_funnel(conn, *, snapshot=None, records=None) -> dict:
     from . import gallery
 
     with coverage.consistent_read(conn):
         snapshot = snapshot if snapshot is not None else gallery.coverage_snapshot(conn)
         records = records if records is not None else publication.panel_records(conn)
-        vocab = {row["finding_key"]: dict(row) for row in conn.execute(
-            "SELECT * FROM findings_vocab WHERE approved=1"
-        )}
-        articles = {row["pmcid"]: dict(row) for row in conn.execute("SELECT * FROM articles")}
-        figures = [dict(row) for row in conn.execute("SELECT * FROM figures")]
-        candidates = [dict(row) for row in conn.execute("SELECT * FROM manifestation_candidates")]
-        attempts = [dict(row) for row in conn.execute(
-            "SELECT * FROM pair_search_attempts ORDER BY policy_version,round_no,attempt_id"
-        )]
-        out = {}
-        for disease, findings in snapshot.items():
-            disease_out = out.setdefault(disease, {})
-            for finding, record in findings.items():
-                matched = [
-                    row for row in candidates
-                    if row["disease_key"] == disease and row["finding_key"] == finding
-                ]
-                explicit = [
-                    row for row in matched
-                    if row["provenance_status"] == "explicit"
-                    and row["provenance_disease_key"] == disease
-                ]
-                discovered = {
-                    pmcid
-                    for attempt in attempts
-                    if attempt["disease_key"] == disease and attempt["finding_key"] == finding
-                    and attempt["policy_version"] == DISCOVERY_POLICY
-                    for pmcid in db.from_json(attempt["new_pmcids_json"], []) or []
-                }
-                ids = {row["pmcid"] for row in explicit} | discovered
-                licensed = {
-                    pmcid for pmcid in ids if pmcid in articles
-                    and pmc.license_allows(pmc.normalize_license(articles[pmcid].get("license_code"))) is not None
-                }
-                supported_figures = {
-                    row["figure_id"] for row in figures
-                    if row["pmcid"] in ids and caption_supports_pair(
-                        row, articles.get(row["pmcid"], {}), disease, vocab[finding],
-                    )
-                }
-                pending = {
-                    row["pmcid"] for row in explicit
-                    if articles.get(row["pmcid"], {}).get("status") in {"candidate", "license_ok", "relevant"}
-                    and row["status"] in {"pending", "selected", "covered"}
-                    and (
-                        articles[row["pmcid"]]["status"] != "relevant"
-                        or disease in db.from_json(articles[row["pmcid"]]["primary_disease_keys_json"], [])
-                    )
-                } | {
-                    row["pmcid"] for row in figures
-                    if row["pmcid"] in discovered and row["status"] in _UNFINISHED_FIGURES
-                }
-                rejected = Counter()
-                for panel in records:
-                    if panel.get("disease_key") != disease or panel["eligible"]:
-                        continue
-                    raw = [
-                        *(db.from_json(panel.get("findings_json"), []) or []),
-                        *(db.from_json(panel.get("plate_findings_json"), []) or []),
-                    ]
-                    keys = {item.get("finding_key") if isinstance(item, dict) else item for item in raw}
-                    if finding in keys:
-                        rejected.update(panel["rejection_categories"])
-                for row in explicit:
-                    status = articles.get(row["pmcid"], {}).get("status")
-                    if status == "license_rejected":
-                        rejected["license/third-party"] += 1
-                strategies = []
-                for attempt in attempts:
-                    if attempt["disease_key"] != disease or attempt["finding_key"] != finding:
-                        continue
-                    strategies.append({
-                        "policy_version": attempt["policy_version"],
-                        "round_no": attempt["round_no"], "query": attempt["query"],
-                        "query_filter_hash": attempt["query_filter_hash"],
-                        "depth": attempt["depth"], "status": attempt["status"],
-                        "returned_unique_articles": len(set(db.from_json(attempt["returned_pmcids_json"], []) or [])),
-                        "new_unique_articles": len(set(db.from_json(attempt["new_pmcids_json"], []) or [])),
-                        "error": attempt["error"], "completed_at": attempt["completed_at"],
-                    })
-                    if attempt["error"]:
-                        rejected["retrieval error"] += 1
-                rejection_categories = {
-                    category: rejected.get(category, 0) for category in (
-                        "license/third-party", "source type", "no patient image", "age unclear",
-                        "attribution unclear/other disease", "unsupported finding", "mixed plate",
-                        "quality", "retrieval error",
-                    )
-                }
-                disease_out[finding] = {
-                    **record,
-                    "retrieved_unique_articles": len(ids),
-                    "licensed_articles": len(licensed),
-                    "pair_supported_caption_figures": len(supported_figures),
-                    "unresolved_legacy_candidates": len(matched) - len(explicit),
-                    "pending_work": len(pending),
-                    "attempted_strategies": strategies,
-                    "last_deficit_reduction": record["last_deficit_reduction_at"],
-                    "next_action": next_action(record, len(pending)),
-                    "rejection_categories": rejection_categories,
-                    "selection_reserves": {
-                        "distinct_groups": record["reserve_distinct"],
-                        "duplicate_or_diversity_rows": sum(
-                            item.get("status") in {"duplicate", "same_patient", "reused_image", "source_family"}
-                            for item in record["selection_reasons"].values()
-                        ),
-                    },
-                    "milestone": (
-                        "full" if not record["cap_remaining"] else
-                        "target_reached" if not record["target_deficit"] else
-                        "floor_reached" if not record["floor_deficit"] else "floor_deficit"
-                    ),
-                }
-        return out
+        data = {
+            "records": records,
+            "vocab": {row["finding_key"]: dict(row) for row in conn.execute(
+                "SELECT * FROM findings_vocab WHERE approved=1"
+            )},
+            "articles": {row["pmcid"]: dict(row) for row in conn.execute("SELECT * FROM articles")},
+            "figures": [dict(row) for row in conn.execute("SELECT * FROM figures")],
+            "candidates": [dict(row) for row in conn.execute("SELECT * FROM manifestation_candidates")],
+            "attempts": [dict(row) for row in conn.execute(
+                "SELECT * FROM pair_search_attempts ORDER BY policy_version,round_no,attempt_id"
+            )],
+        }
+        return {
+            disease: {
+                finding: _pair_funnel_row(disease, finding, record, data)
+                for finding, record in findings.items()
+            }
+            for disease, findings in snapshot.items()
+        }
 
 
 def library_rows(conn, disease_key=None, *, snapshot=None, records=None) -> list[dict]:
