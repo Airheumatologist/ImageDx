@@ -363,6 +363,13 @@ selected gallery, not by retrieved articles or stored rows.
   shows `VP_UNLABELED_FILL_TARGET` (default 20; 0 disables) distinct images.
   They show without a finding label, credit no pair, never appear under a
   finding filter, and skip bytes already eligible as finding evidence.
+- **Topic cap.** `VP_TOPIC_IMAGE_CAP` (default 0, off) limits a topic's
+  default view to that many distinct images: pair galleries round-robin
+  (each pair's best first), then combined plates, then the unlabeled fill.
+  Pair credit is unaffected. `run-all --topic-image-target N` drops a topic
+  from later discovery rounds once its default view shows N images.
+  `--skip-resume` leaves unfinished figures to another run working on them
+  and goes straight to discovery, so two runs can share the database.
 - **One source of truth.** The viewer, scheduler, and report read the same
   `gallery.coverage_snapshot`, so they agree on pair counts and IDs.
 

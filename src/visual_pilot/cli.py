@@ -352,7 +352,9 @@ def _run_all(args: argparse.Namespace) -> int:
                         (judge.MAX_ATTEMPTS, db.to_json(disease_keys)),
                     )
                 ]
-            if leftover:
+            if leftover and args.skip_resume:
+                print(f"run-all: skipping {len(leftover)} article(s) left mid-pipeline (--skip-resume)")
+            elif leftover:
                 print(f"run-all: resuming {len(leftover)} article(s) left mid-pipeline")
                 rc = _pipeline(_feed_list(leftover), "resume")
                 if rc != 0:
@@ -364,6 +366,19 @@ def _run_all(args: argparse.Namespace) -> int:
                 if should_stop():
                     print("run-all: runtime limit reached")
                     break
+                if args.topic_image_target:
+                    from . import pair_reporting
+
+                    with read_lock:
+                        counts = pair_reporting.topic_library_counts(read_conn)
+                    disease_keys = [
+                        k for k in disease_keys
+                        if counts.get(k, 0) < args.topic_image_target
+                    ]
+                    print(f"run-all: {len(disease_keys)} topic(s) still under "
+                          f"{args.topic_image_target} images")
+                    if not disease_keys:
+                        break
                 print(f"run-all: round {round_no}: discover ({pass_name})")
                 stats: dict = {}
 
@@ -500,6 +515,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-review-passes", action="store_true",
         help="run-all: skip the overview and manifestation rounds; the disease "
         "round and backfill still run",
+    )
+    shared.add_argument(
+        "--topic-image-target", type=int, default=None,
+        help="run-all: drop a topic from later rounds once its default library "
+        "shows this many distinct images (default: every round runs every topic)",
+    )
+    shared.add_argument(
+        "--skip-resume", action="store_true",
+        help="run-all: leave figures an earlier run left mid-pipeline (e.g. to "
+        "another run working on them) and go straight to discovery",
     )
     shared.add_argument(
         "--skip-extract", action="store_true",

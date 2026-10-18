@@ -175,6 +175,16 @@ def library_rows(conn, disease_key=None, *, snapshot=None, records=None) -> list
         return [row for row in records if row["panel_id"] in selected]
 
 
+def topic_library_counts(conn) -> dict[str, int]:
+    """Distinct images (by sha256) each topic's default library shows."""
+    hashes: dict[str, set[str]] = {}
+    for row in library_rows(conn):
+        hashes.setdefault(str(row.get("disease_key") or ""), set()).add(
+            str(row.get("sha256") or row["panel_id"])
+        )
+    return {key: len(values) for key, values in hashes.items()}
+
+
 def pair_summary(snapshot: dict) -> dict:
     """Retain the legacy histogram while exposing all three coverage milestones."""
     floor, target, cap = config.validate_coverage_settings()

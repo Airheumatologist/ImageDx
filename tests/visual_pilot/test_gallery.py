@@ -358,3 +358,19 @@ def test_library_panel_ids_unions_pairs_combined_and_fill():
     ]
     snapshot = {"sle": {"malar_rash": {"published_panel_ids": ["p0"]}}}
     assert gallery.library_panel_ids(snapshot, records, "sle") == {"p0", "plate", "u0"}
+
+
+def test_library_cap_takes_pairs_round_robin_then_plates():
+    records = [gallery_panel(f"a{i}", sha256=f"a{i}", pmcid=f"PMC_A{i}") for i in range(3)]
+    records += [gallery_panel(f"b{i}", sha256=f"b{i}", pmcid=f"PMC_B{i}") for i in range(3)]
+    records += [
+        gallery_panel("alias", sha256="a0", pmcid="PMC_X"),
+        gallery_panel("plate", sha256="p", pmcid="PMC_P", supported=(), plate_kind="combined"),
+    ]
+    snapshot = {"sle": {
+        "malar_rash": {"published_panel_ids": ["a0", "a1", "a2"]},
+        "alopecia": {"published_panel_ids": ["b0", "b1", "b2", "alias"]},
+    }}
+    capped = gallery.library_panel_ids(snapshot, records, "sle", cap=4)
+    assert capped == {"b0", "a0", "b1", "a1", "alias"}
+    assert len(gallery.library_panel_ids(snapshot, records, "sle", cap=0)) == 8

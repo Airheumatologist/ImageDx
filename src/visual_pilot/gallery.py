@@ -306,23 +306,45 @@ def select_unlabeled(
     return select_gallery(candidates, disease_key, _UNLABELED, cap=slots)["published_panel_ids"]
 
 
-def library_panel_ids(snapshot: dict, records: list[dict], disease_key: str) -> set[str]:
+def library_panel_ids(
+    snapshot: dict, records: list[dict], disease_key: str, *, cap: int | None = None,
+) -> set[str]:
     """One topic's default library: the panel ids every default view shows.
 
     The union of each pair's selected gallery, eligible whole-figure combined
-    plates (visible, no per-finding credit), then the unlabeled fill.
+    plates (visible, no per-finding credit), then the unlabeled fill. A
+    ``cap`` (default ``VP_TOPIC_IMAGE_CAP``; 0 = none) keeps that many
+    distinct images, taking pair galleries round-robin (each pair's best
+    first), then combined plates, then the fill.
     """
+    cap = config.VP_TOPIC_IMAGE_CAP if cap is None else cap
     records = [r for r in records if str(r.get("disease_key") or "") == disease_key]
-    selected = {
-        str(panel_id)
-        for record in (snapshot.get(disease_key) or {}).values()
-        for panel_id in record.get("published_panel_ids") or []
-    }
-    selected.update(
+    pairs = snapshot.get(disease_key) or {}
+    galleries = [
+        [str(pid) for pid in pairs[key].get("published_panel_ids") or []]
+        for key in sorted(pairs)
+    ]
+    ordered = [
+        g[i]
+        for i in range(max((len(g) for g in galleries), default=0))
+        for g in galleries if i < len(g)
+    ]
+    ordered += sorted(
         str(r["panel_id"]) for r in records
         if r.get("eligible") and r.get("plate_kind") == "combined"
     )
-    selected.update(select_unlabeled(records, disease_key, selected))
+    ordered += select_unlabeled(records, disease_key, set(ordered))
+    if cap < 1:
+        return set(ordered)
+    hash_of = {str(r["panel_id"]): str(r.get("sha256") or r["panel_id"]) for r in records}
+    selected: set[str] = set()
+    hashes: set[str] = set()
+    for pid in ordered:
+        sha = hash_of.get(pid, pid)
+        if sha not in hashes and len(hashes) >= cap:
+            continue
+        hashes.add(sha)
+        selected.add(pid)
     return selected
 
 
