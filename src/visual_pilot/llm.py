@@ -23,6 +23,8 @@ import hashlib
 import json
 import threading
 import time
+import urllib.parse
+import urllib.request
 import uuid
 from collections.abc import Iterable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
@@ -147,6 +149,18 @@ class _DeadlineStream(_openai_httpx.SyncByteStream):
 
     def close(self) -> None:
         self._stream.close()
+
+
+def _env_proxy(url: str) -> str | None:
+    """The environment's HTTPS proxy for ``url`` (None if NO_PROXY bypasses it).
+
+    httpx applies HTTPS_PROXY/NO_PROXY only to transports it builds itself,
+    so an explicit transport has to be given the proxy.
+    """
+    host = urllib.parse.urlsplit(url).hostname or ""
+    if not host or urllib.request.proxy_bypass(host):
+        return None
+    return urllib.request.getproxies().get("https")
 
 
 class _DeadlineTransport(_openai_httpx.HTTPTransport):
@@ -368,7 +382,8 @@ class LLMClient:
                 },
                 http_client=openai.DefaultHttpxClient(
                     transport=_DeadlineTransport(
-                        config.VP_LLM_MAX_REQUEST_SECONDS
+                        config.VP_LLM_MAX_REQUEST_SECONDS,
+                        proxy=_env_proxy(self.base_url),
                     ),
                 ),
             )

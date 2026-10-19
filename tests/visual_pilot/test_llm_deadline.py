@@ -47,3 +47,13 @@ def test_client_uses_deadline_transport(monkeypatch):
     transport = client._client._transport
     assert isinstance(transport, llm._DeadlineTransport)
     assert transport.max_seconds == llm.config.VP_LLM_MAX_REQUEST_SECONDS
+
+
+def test_env_proxy_honors_https_proxy_and_no_proxy(monkeypatch):
+    for name in ("HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(name, raising=False)
+    assert llm._env_proxy("https://opencode.ai/zen/go/v1") is None
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.invalid:3128")
+    monkeypatch.setenv("NO_PROXY", "localhost,internal.invalid")
+    assert llm._env_proxy("https://opencode.ai/zen/go/v1") == "http://proxy.invalid:3128"
+    assert llm._env_proxy("https://internal.invalid/v1") is None
