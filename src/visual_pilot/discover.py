@@ -234,20 +234,40 @@ def disease_pass_rank(hit: europepmc.Hit) -> int:
     return 1
 
 
-def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
-    """Any article whose title names the disease (the ``disease`` pass).
+# Disease-pass queries in expected-yield order: (scope, cases only, fields).
+# Many case reports name the disease only in the abstract or the discussion
+# ("a 2-year-old with fever and a truncal rash"), so title search misses them.
+DISEASE_SCOPES = (
+    ("disease_cases", True, ("TITLE",)),
+    ("disease_abstract_cases", True, ("TITLE", "ABSTRACT")),
+    ("disease", False, ("TITLE",)),
+    ("disease_text_cases", True, ()),
+)
 
-    The case-report query runs first; the unrestricted one fills the rest of
-    ``limit``, ranked by ``disease_pass_rank``.
+
+def _full_text_terms(terms: list[str]) -> list[str]:
+    """Drop short one-word names ("Boil"): in full text they match everyday prose."""
+    return [t for t in terms if len(t.split()) > 1 or len(t) >= 6]
+
+
+def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
+    """Any article naming the disease (the ``disease`` pass).
+
+    Case reports naming it in the title come first, then case reports naming
+    it in the abstract, then any article titled with it, then case reports
+    naming it anywhere in the full text, until ``limit``; each query's hits
+    are ranked by ``disease_pass_rank``.
     """
     terms = overview_disease_terms(diseases.load_diseases()[disease_key])
     seen = set(skip)
     picked: list[tuple[europepmc.Hit, str]] = []
     attempts = []
-    for scope, cases_only in (("disease_cases", True), ("disease", False)):
+    for scope, cases_only, fields in DISEASE_SCOPES:
         if len(picked) >= limit:
             break
-        query = europepmc.build_disease_query(terms, cases_only=cases_only)
+        query = europepmc.build_disease_query(
+            terms if fields else _full_text_terms(terms), cases_only=cases_only, fields=fields,
+        )
         if not query:
             continue
         total, hits = europepmc.search(query, limit=DISEASE_SEARCH_DEPTH)
@@ -378,11 +398,12 @@ def case_age_text(hit: europepmc.Hit, parsed: jats.ParsedArticle | None = None) 
     return " ".join(parts) or None
 
 
-# Disease-pass articles name the topic in their title, but a case report's
-# captions rarely repeat the finding vocabulary ("Chest CT on admission").
-# There a caption that names a patient image type passes the gate as well,
-# unless it reads as lab, animal or chart work; triage and the judge still
-# rule on the figure (other disease, treatment, diagram).
+# Disease-pass articles name the topic, but a case report's captions rarely
+# repeat the finding vocabulary ("Chest CT on admission", "Rash on the
+# trunk"). There a caption that names a patient image type, a lesion or body
+# site, or the disease itself passes the gate as well, unless it reads as lab,
+# animal or chart work; triage and the judge still rule on the figure (other
+# disease, treatment, diagram).
 _PATIENT_IMAGE = re.compile(
     r"\b(?:photograph|photo|clinical (?:image|picture|appearance|features?)|radiograph"
     r"|x-?rays?|ct|computed tomography|mri|magnetic resonance|ultrasound|ultrasonograph\w*"
@@ -403,10 +424,30 @@ _NOT_PATIENT_IMAGE = re.compile(
 )
 
 
-def names_patient_image(caption) -> bool:
-    """The caption names a patient image type and no lab, animal or chart work."""
+_CLINICAL_VIEW = re.compile(
+    r"\b(?:rash\w*|eruptions?|exanthem\w*|enanthem\w*|erythema\w*|macul\w*|papul\w*|pustul\w*"
+    r"|vesic\w*|bullae?|nodul\w*|plaques?|patch(?:es)?|scal(?:e|es|ing|y)|crust\w*|fissur\w*"
+    r"|ulcer\w*|erosions?|abscess\w*|swelling|swollen|cysts?|granulomas?|boils?|petechia\w*"
+    r"|purpur\w*|face|facial|cheeks?|forehead|lips?|mouth|tongue|palate|neck|trunk|chest"
+    r"|abdomen|abdominal|umbilic\w*|groin|perine\w*|genital\w*|buttocks?|scalp|beard|axillae?"
+    r"|axillary|arms?|forearms?|hands?|fingers?|nails?|legs?|thighs?|shins?|feet|foot|toes?"
+    r"|eyes?|eyelids?)\b",
+    re.I,
+)
+
+
+def names_patient_image(caption, disease_terms: list[str] = ()) -> bool:
+    """The caption reads as a patient image and names no lab, animal or chart work.
+
+    A patient image type ("Chest CT"), a lesion or body site ("rash on the
+    trunk") or the disease itself (``disease_terms``: "napkin rash") counts.
+    """
     text = str(caption or "")
-    return bool(_PATIENT_IMAGE.search(text)) and not _NOT_PATIENT_IMAGE.search(text)
+    if _NOT_PATIENT_IMAGE.search(text):
+        return False
+    return bool(_PATIENT_IMAGE.search(text) or _CLINICAL_VIEW.search(text)) or (
+        bool(disease_terms) and pair_terms.caption_matches(text, list(disease_terms))
+    )
 
 
 def names_finding(caption, mentions, terms: list[str]) -> bool:
@@ -418,7 +459,10 @@ def names_finding(caption, mentions, terms: list[str]) -> bool:
 
 
 def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
-                   age_text: str | None = None, image_gate: bool = False) -> list[str]:
+                   age_text: str | None = None,
+                   image_gate: list[str] | None = None) -> list[str]:
+    """Store the article's figures; ``image_gate`` (the disease's names) opens
+    the patient-image gate of disease-pass articles."""
     pmcid = article_row["pmcid"]
     fig_rows = []
     pending = []
@@ -426,7 +470,7 @@ def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
         row = parse_stage._figure_row(pmcid, fig, article_row["license_code"], bundle.resolver)
         if row["status"] == "pending" and not names_finding(
             fig.caption, fig.in_text_mentions, match_terms
-        ) and not (image_gate and names_patient_image(fig.caption)):
+        ) and not (image_gate is not None and names_patient_image(fig.caption, image_gate)):
             row["status"] = "caption_rejected"
             row["triage_json"] = db.to_json(
                 {"route": "drop", "reason": "no_finding_term", "source": "discover"}
@@ -474,9 +518,10 @@ def _ingest(conn, outcomes, disease_key: str, finding_key: str, picked, pass_nam
             stats["fetch_errors"] += 1
             continue
         bundle, parsed = outcome
+        gate = (overview_disease_terms(diseases.load_diseases()[disease_key])
+                if pass_name == "disease" else None)
         pending += len(_store_article(conn, article, bundle, parsed, match_terms, stats,
-                                      case_age_text(hit, parsed),
-                                      image_gate=pass_name == "disease"))
+                                      case_age_text(hit, parsed), image_gate=gate))
         stats["pmcids"].append(hit.pmcid)
     conn.commit()
     stats["articles"] += len(picked)
@@ -719,9 +764,10 @@ def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
 
     After ``expand-terms`` adds plain caption terms, figures already parsed
     may match; they go back to ``pending`` for triage without a new search.
-    Figures of disease-pass articles also return when the caption names a
-    patient image type (``names_patient_image``).
+    Figures of disease-pass articles also return when the caption reads as a
+    patient image (``names_patient_image``).
     """
+    catalog = diseases.load_diseases()
     terms: dict[str, list[str]] = {}
     moved = []
     rows = _scoped_figures(
@@ -733,13 +779,14 @@ def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
         match = []
         for key in keys:
             if key not in terms:
-                terms[key] = disease_caption_terms(conn, key) if key in diseases.load_diseases() else []
+                terms[key] = disease_caption_terms(conn, key) if key in catalog else []
             match += terms[key]
         mentions = db.from_json(row["in_text_mentions_json"], []) or []
         evidence = db.from_json(row["retrieval_evidence_json"], []) or []
         disease_pass = any(isinstance(e, dict) and e.get("pass") == "disease" for e in evidence)
+        names = [t for key in keys if key in catalog for t in overview_disease_terms(catalog[key])]
         if names_finding(row["caption"], mentions, match) or (
-            disease_pass and names_patient_image(row["caption"])
+            disease_pass and names_patient_image(row["caption"], names)
         ):
             moved.append(row["figure_id"])
     if not dry_run:
