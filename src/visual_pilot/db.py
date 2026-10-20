@@ -318,10 +318,12 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     # check_same_thread=False lets LLMClient.call_many share one connection
     # across its worker threads; callers must serialize writes (llm.py does
     # this with a lock).
-    conn = sqlite3.connect(path, timeout=30, check_same_thread=False)
+    # Parallel run-all workers share the database; a 30 s wait was not always
+    # enough for another worker's write to commit.
+    conn = sqlite3.connect(path, timeout=120, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA busy_timeout=120000")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
