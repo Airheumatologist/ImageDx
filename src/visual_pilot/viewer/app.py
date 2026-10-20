@@ -1126,6 +1126,8 @@ def create_app(data_dir: str | None = None) -> FastAPI:
                     "subtypes": db.from_json(r["subtypes_json"], []),
                 }
                 for r in c.execute("SELECT * FROM diseases ORDER BY disease_key")
+                # seed() never deletes, so topics retired from the catalog stay in older databases.
+                if r["disease_key"] in catalog
             ]
         finally:
             c.close()

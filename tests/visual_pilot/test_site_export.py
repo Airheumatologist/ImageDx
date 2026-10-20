@@ -84,3 +84,16 @@ def test_merge_skips_known_images_and_figures_and_stops_at_the_cap(tmp_path, mon
     assert [p["panel_id"] for p in panels] == ["p0", "p1", "m0", "m1"]
     articles = {a["pmcid"]: a for a in json.loads((old / "data" / "articles.json").read_text())}
     assert articles["P2"]["published_images"] == {"a": 2} and articles["P1"]["published_images"] == {"a": 2}
+
+
+def test_article_counts_follow_the_published_panels():
+    from src.visual_pilot import site_export
+
+    rows = [  # the API counts finding picks only, so fill images read as 0 there
+        {"pmcid": "P1", "title": "fresh", "published_images": {}, "published_total": 0},
+        {"pmcid": "P2", "title": "unshown", "published_images": {"a": 1}, "published_total": 1},
+        {"pmcid": "P1", "title": "stale", "published_images": {"a": 9}, "published_total": 9},
+    ]
+    shown = {"a": [{"pmcid": "P1"}, {"pmcid": "P1"}], "b": [{"pmcid": "P1"}]}
+    assert site_export._article_rows(rows, shown) == [
+        {"pmcid": "P1", "title": "fresh", "published_images": {"a": 2, "b": 1}, "published_total": 3}]

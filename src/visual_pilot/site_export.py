@@ -47,10 +47,7 @@ def export(out: Path = DEFAULT_OUT, data_dir: str | None = None, log=print) -> d
     data = out / "data"
     diseases = _get(client, "/api/diseases")
     _write(data / "diseases.json", diseases)
-    # Only articles that contribute a published image; the rest were screened out.
-    articles = [a for a in _get(client, "/api/articles") if a["published_total"]]
-    _write(data / "articles.json", articles)
-    totals = {}
+    totals, shown = {}, {}
     for d in diseases:
         key = d["key"]
         _write(data / key / "tabs.json", _get(client, f"/api/diseases/{key}/tabs"))
@@ -60,6 +57,9 @@ def export(out: Path = DEFAULT_OUT, data_dir: str | None = None, log=print) -> d
         panels["panels"] = [p for p in panels["panels"] if p.get("image")]
         _write(data / key / "panels.json", panels)
         totals[key] = len(panels["panels"])
+        shown[key] = panels["panels"]
+    # Only articles that contribute a published image; the rest were screened out.
+    _write(data / "articles.json", _article_rows(_get(client, "/api/articles"), shown))
     compare = _get(client, "/api/compare/sle-dm-skin")
     _write(data / "compare-sle-dm-skin.json", compare)
 
@@ -73,6 +73,24 @@ def export(out: Path = DEFAULT_OUT, data_dir: str | None = None, log=print) -> d
     log(f"export-site: {out} — {sum(totals.values())} image(s): "
         + ", ".join(f"{k}={n}" for k, n in totals.items()))
     return totals
+
+
+def _article_rows(rows: list[dict], shown: dict[str, list[dict]]) -> list[dict]:
+    """``rows`` (article metadata, first row per pmcid wins) for the articles
+    whose images the topics in ``shown`` publish, counted from those panels so
+    the article list always matches the topic pages, unlabeled fill included."""
+    counts: dict[str, Counter] = {}
+    for key, panels in shown.items():
+        for panel in panels:
+            counts.setdefault(panel.get("pmcid"), Counter())[key] += 1
+    out, done = [], set()
+    for row in rows:
+        pmcid = row.get("pmcid")
+        if pmcid in counts and pmcid not in done:
+            done.add(pmcid)
+            images = dict(sorted(counts[pmcid].items()))
+            out.append({**row, "published_images": images, "published_total": sum(images.values())})
+    return out
 
 
 def _read(path: Path, default=None):
@@ -129,8 +147,8 @@ def merge(existing: Path, fresh: Path, log=print) -> dict:
     A topic gaining images keeps its existing vocabulary and eye evidence and
     gains any tab its new images need; a topic the site lacks comes from the
     database whole. ``articles.json`` counts each article's images per topic
-    on that basis. Pages, assets and ``diseases.json`` come from the fresh
-    export. Returns ``{topic: "fresh" | "kept" | "merged"}``.
+    from the merged topic pages. Pages, assets and ``diseases.json`` come from
+    the fresh export. Returns ``{topic: "fresh" | "kept" | "merged"}``.
     """
     old_data, new_data = existing / "data", fresh / "data"
     topics = {d["key"] for d in json.loads((new_data / "diseases.json").read_text(encoding="utf-8"))}
@@ -141,29 +159,10 @@ def merge(existing: Path, fresh: Path, log=print) -> dict:
     if source.get("sle") != "fresh" and (old_data / "compare-sle-dm-skin.json").exists():
         shutil.copy2(old_data / "compare-sle-dm-skin.json", new_data / "compare-sle-dm-skin.json")
 
-    old_rows, fresh_rows = _read(old_data / "articles.json", []), _read(new_data / "articles.json", [])
-    gained = {k: Counter(p.get("pmcid") for p in v) for k, v in added.items() if source[k] == "merged"}
-    merged: dict[str, dict] = {}
-
-    def _add(row: dict, images: dict) -> None:
-        if not images:
-            return
-        entry = merged.setdefault(row["pmcid"], {**row, "published_images": {}})
-        entry["published_images"].update(images)
-        entry["disease_keys"] = sorted(set(entry.get("disease_keys") or [])
-                                       | set(row.get("disease_keys") or []))
-
-    for row in old_rows:
-        _add(row, {k: n for k, n in (row.get("published_images") or {}).items()
-                   if source.get(k) in ("kept", "merged")})
-    for row in fresh_rows:
-        images = {k: n for k, n in (row.get("published_images") or {}).items() if source.get(k) == "fresh"}
-        images.update({k: merged.get(row["pmcid"], {}).get("published_images", {}).get(k, 0) + c[row["pmcid"]]
-                       for k, c in gained.items() if c.get(row["pmcid"])})
-        _add(row, images)
-    for entry in merged.values():
-        entry["published_total"] = sum(entry["published_images"].values())
-    _write(new_data / "articles.json", list(merged.values()))
+    # Fresh rows carry the database's metadata, including the articles behind new images.
+    rows = _read(new_data / "articles.json", []) + _read(old_data / "articles.json", [])
+    shown = {key: (_read(new_data / key / "panels.json", {}) or {}).get("panels") or [] for key in topics}
+    _write(new_data / "articles.json", _article_rows(rows, shown))
 
     shutil.rmtree(existing)
     shutil.move(str(fresh), str(existing))
