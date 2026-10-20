@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from collections import Counter
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -74,59 +75,102 @@ def export(out: Path = DEFAULT_OUT, data_dir: str | None = None, log=print) -> d
     return totals
 
 
-def _panel_count(topic_dir: Path) -> int:
-    path = topic_dir / "panels.json"
-    if not path.exists():
-        return -1
-    return len(json.loads(path.read_text(encoding="utf-8")).get("panels") or [])
+def _read(path: Path, default=None):
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else default
+
+
+def _is_new(panel: dict, seen: set) -> bool:
+    """Not already shown: no shared image hash, panel or figure (a crop of a
+    figure the topic already shows would repeat it)."""
+    keys = {panel.get("sha256"), panel.get("panel_id"), panel.get("figure_id")} - {None, ""}
+    return not keys & seen
+
+
+def _merge_topic(old_dir: Path, new_dir: Path, cap: int) -> tuple[str, list[dict]]:
+    """Fold one topic's fresh export into its existing files, in ``new_dir``.
+
+    Returns the topic's source (``fresh``, ``kept`` or ``merged``) and the
+    panels it gained from the database.
+    """
+    old = _read(old_dir / "panels.json")
+    fresh = _read(new_dir / "panels.json", {"panels": []})
+    if old is None:
+        return "fresh", fresh.get("panels") or []
+    panels = list(old.get("panels") or [])
+    seen = {v for p in panels for v in (p.get("sha256"), p.get("panel_id"), p.get("figure_id")) if v}
+    added = []
+    for panel in fresh.get("panels") or []:
+        if cap and len(panels) + len(added) >= cap:
+            break
+        if _is_new(panel, seen):
+            # The database's gallery picks do not carry over to the site's.
+            added.append({**panel, "is_representative": False, "representative_findings": []})
+            seen.update(v for v in (panel.get("sha256"), panel.get("panel_id"), panel.get("figure_id")) if v)
+    fresh_tabs = _read(new_dir / "tabs.json", [])
+    shutil.rmtree(new_dir, ignore_errors=True)
+    shutil.copytree(old_dir, new_dir)
+    if not added:
+        return "kept", []
+    _write(new_dir / "panels.json", {**old, "panels": panels + added, "count": len(panels) + len(added)})
+    tabs = _read(new_dir / "tabs.json", [])
+    known = {t.get("key") for t in tabs}
+    used = {p.get("tab") for p in added}
+    _write(new_dir / "tabs.json", tabs + [t for t in fresh_tabs if t.get("key") in used - known])
+    return "merged", added
 
 
 def merge(existing: Path, fresh: Path, log=print) -> dict:
     """Fold a fresh export into an existing site, topic by topic.
 
-    A topic keeps its existing files unless the fresh export shows at least
-    as many images for it, so a database that holds only some topics never
-    empties the others. ``articles.json`` keeps each article's per-topic
-    image counts from whichever side supplied that topic. Pages, assets and
-    ``diseases.json`` come from the fresh export. Returns
-    ``{topic: "fresh" | "kept"}``.
+    A topic keeps every image it already shows and gains the database's
+    images it does not show yet (no shared image hash, panel or figure), up
+    to ``VP_TOPIC_IMAGE_CAP`` when set, so a database that holds only some
+    topics, or fewer images than the site, never empties or shrinks one.
+    A topic gaining images keeps its existing vocabulary and eye evidence and
+    gains any tab its new images need; a topic the site lacks comes from the
+    database whole. ``articles.json`` counts each article's images per topic
+    on that basis. Pages, assets and ``diseases.json`` come from the fresh
+    export. Returns ``{topic: "fresh" | "kept" | "merged"}``.
     """
     old_data, new_data = existing / "data", fresh / "data"
     topics = {d["key"] for d in json.loads((new_data / "diseases.json").read_text(encoding="utf-8"))}
-    source = {}
+    cap = int(config.VP_TOPIC_IMAGE_CAP or 0)
+    source, added = {}, {}
     for key in sorted(topics):
-        old_n, new_n = _panel_count(old_data / key), _panel_count(new_data / key)
-        source[key] = "kept" if old_n > new_n else "fresh"
-        if source[key] == "kept":
-            shutil.rmtree(new_data / key, ignore_errors=True)
-            shutil.copytree(old_data / key, new_data / key)
-    if source.get("sle") == "kept" and (old_data / "compare-sle-dm-skin.json").exists():
+        source[key], added[key] = _merge_topic(old_data / key, new_data / key, cap)
+    if source.get("sle") != "fresh" and (old_data / "compare-sle-dm-skin.json").exists():
         shutil.copy2(old_data / "compare-sle-dm-skin.json", new_data / "compare-sle-dm-skin.json")
 
-    def _articles(root: Path) -> list[dict]:
-        path = root / "articles.json"
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
-
+    old_rows, fresh_rows = _read(old_data / "articles.json", []), _read(new_data / "articles.json", [])
+    gained = {k: Counter(p.get("pmcid") for p in v) for k, v in added.items() if source[k] == "merged"}
     merged: dict[str, dict] = {}
-    for side, rows in (("kept", _articles(old_data)), ("fresh", _articles(new_data))):
-        for row in rows:
-            images = {k: n for k, n in (row.get("published_images") or {}).items()
-                      if source.get(k) == side}
-            if not images:
-                continue
-            entry = merged.setdefault(row["pmcid"], {**row, "published_images": {}})
-            entry["published_images"].update(images)
-            entry["disease_keys"] = sorted(set(entry.get("disease_keys") or [])
-                                           | set(row.get("disease_keys") or []))
+
+    def _add(row: dict, images: dict) -> None:
+        if not images:
+            return
+        entry = merged.setdefault(row["pmcid"], {**row, "published_images": {}})
+        entry["published_images"].update(images)
+        entry["disease_keys"] = sorted(set(entry.get("disease_keys") or [])
+                                       | set(row.get("disease_keys") or []))
+
+    for row in old_rows:
+        _add(row, {k: n for k, n in (row.get("published_images") or {}).items()
+                   if source.get(k) in ("kept", "merged")})
+    for row in fresh_rows:
+        images = {k: n for k, n in (row.get("published_images") or {}).items() if source.get(k) == "fresh"}
+        images.update({k: merged.get(row["pmcid"], {}).get("published_images", {}).get(k, 0) + c[row["pmcid"]]
+                       for k, c in gained.items() if c.get(row["pmcid"])})
+        _add(row, images)
     for entry in merged.values():
         entry["published_total"] = sum(entry["published_images"].values())
     _write(new_data / "articles.json", list(merged.values()))
 
     shutil.rmtree(existing)
     shutil.move(str(fresh), str(existing))
-    kept = sorted(k for k, s in source.items() if s == "kept")
-    log(f"export-site --merge: {len(source) - len(kept)} topic(s) from the database, "
-        f"{len(kept)} kept from the existing site")
+    counts = Counter(source.values())
+    log(f"export-site --merge: {counts['merged']} topic(s) gained "
+        f"{sum(len(v) for k, v in added.items() if source[k] == 'merged')} image(s), "
+        f"{counts['fresh']} came whole from the database, {counts['kept']} unchanged")
     return source
 
 

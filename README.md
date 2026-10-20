@@ -558,6 +558,12 @@ normalized `crop` box the page draws in a canvas. `.github/workflows/pages.yml`
 deploys `site/` on every push to `main` that changes it (repository
 Settings → Pages → Source: GitHub Actions).
 
+`export-site --merge` folds a database that holds only some topics (or only
+part of a topic's images) into the existing site: each topic keeps every image
+it already shows and gains the database's images it does not show yet (no
+shared image hash, panel or figure), up to `VP_TOPIC_IMAGE_CAP`; topics the
+site lacks come whole from the database, and no topic ever shrinks.
+
 See `src/visual_pilot/README.md` for stage details, env vars and PMC access
 notes.
 

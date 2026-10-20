@@ -618,8 +618,9 @@ def build_parser() -> argparse.ArgumentParser:
     subs["export-site"].add_argument(
         "--merge",
         action="store_true",
-        help="keep an existing topic's files when the database shows fewer "
-        "images for it (for a database that holds only some topics)",
+        help="keep every image the existing site shows and add the database's "
+        "new ones per topic, up to VP_TOPIC_IMAGE_CAP (for a database that holds "
+        "only some topics or images)",
     )
     for name in ("extract", "run-all"):
         subs[name].add_argument(
