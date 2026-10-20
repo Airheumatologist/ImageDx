@@ -138,14 +138,10 @@ def build_disease_query(disease_terms: list[str], cases_only: bool = False,
     rarely repeat the vocabulary's phrasing, so the figures are gated locally
     on caption and citing text instead (``discover._store_article``).
     ``cases_only`` keeps case reports and series, which picture patients far
-    more often than the disease's research papers and reviews. Empty
-    ``fields`` matches the full text, where a case report may name the
-    disease only in its discussion.
+    more often than the disease's research papers and reviews; with
+    ``fields=("TITLE", "ABSTRACT")`` they may name it in the abstract only.
     """
-    if fields:
-        dis = _disease_clause(disease_terms, fields)
-    else:
-        dis = " OR ".join(_quote(t) for t in disease_terms if t.strip())
+    dis = _disease_clause(disease_terms, fields)
     if not dis:
         return ""
     cases = f" AND {_CASE_TYPES}" if cases_only else ""

@@ -566,8 +566,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="overview: reviews/case series surveying each disease; manifestation: "
         "reviews/case series about each under-target finding; backfill: any article "
         "type; disease: case reports naming a topic under VP_TOPIC_IMAGE_FLOOR "
-        "images in the title, abstract or full text, and any article titled with "
-        "it (default: backfill)",
+        "images in the title or abstract, and any article titled with it "
+        "(default: backfill)",
     )
     subs["triage"].add_argument(
         "--retriage-montages",

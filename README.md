@@ -173,8 +173,8 @@ that merely discuss the disease:
   first two, and hits are taken reviews first (`source_quality.article_tier`);
 - topics under `VP_TOPIC_IMAGE_FLOOR` images also get the `disease` pass,
   which searches by disease name rather than caption: case reports naming it
-  in the title, then in the abstract, then any article titled with it, then
-  case reports naming it anywhere in the full text. Its figures pass the
+  in the title, then in the abstract, then any article titled with it (never
+  the full text, where the disease is mostly a differential). Its figures pass the
   local gate when the caption names a patient image type, a lesion or body
   site ("rash on the trunk") or the disease itself;
 - only notices (errata, retractions, corrections) are dropped, and

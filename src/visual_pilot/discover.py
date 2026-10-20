@@ -235,28 +235,22 @@ def disease_pass_rank(hit: europepmc.Hit) -> int:
 
 
 # Disease-pass queries in expected-yield order: (scope, cases only, fields).
-# Many case reports name the disease only in the abstract or the discussion
-# ("a 2-year-old with fever and a truncal rash"), so title search misses them.
+# Many case reports name the disease only in the abstract, so title search
+# misses them. Full text is not searched: there the disease is mostly a
+# differential or a serology result, and the judge let mimics through.
 DISEASE_SCOPES = (
     ("disease_cases", True, ("TITLE",)),
     ("disease_abstract_cases", True, ("TITLE", "ABSTRACT")),
     ("disease", False, ("TITLE",)),
-    ("disease_text_cases", True, ()),
 )
-
-
-def _full_text_terms(terms: list[str]) -> list[str]:
-    """Drop short one-word names ("Boil"): in full text they match everyday prose."""
-    return [t for t in terms if len(t.split()) > 1 or len(t) >= 6]
 
 
 def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
     """Any article naming the disease (the ``disease`` pass).
 
     Case reports naming it in the title come first, then case reports naming
-    it in the abstract, then any article titled with it, then case reports
-    naming it anywhere in the full text, until ``limit``; each query's hits
-    are ranked by ``disease_pass_rank``.
+    it in the abstract, then any article titled with it, until ``limit``;
+    each query's hits are ranked by ``disease_pass_rank``.
     """
     terms = overview_disease_terms(diseases.load_diseases()[disease_key])
     seen = set(skip)
@@ -265,9 +259,7 @@ def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
     for scope, cases_only, fields in DISEASE_SCOPES:
         if len(picked) >= limit:
             break
-        query = europepmc.build_disease_query(
-            terms if fields else _full_text_terms(terms), cases_only=cases_only, fields=fields,
-        )
+        query = europepmc.build_disease_query(terms, cases_only=cases_only, fields=fields)
         if not query:
             continue
         total, hits = europepmc.search(query, limit=DISEASE_SEARCH_DEPTH)

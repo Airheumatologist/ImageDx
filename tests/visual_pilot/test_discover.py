@@ -399,14 +399,13 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
                               pass_name="disease", log=lambda *_: None)
 
     # Only the topic under the floor is searched, by name and never by
-    # caption: case reports by title, then by abstract, any article by
-    # title, then case reports by full text.
-    assert len(queries) == 4 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
+    # caption: case reports by title, then by abstract, then any article by
+    # title; never the full text.
+    assert len(queries) == 3 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
     assert 'PUB_TYPE:"case reports"' in queries[0] and "ABSTRACT:" not in queries[0]
     assert 'PUB_TYPE:"case reports"' in queries[1] and 'ABSTRACT:"systemic lupus' in queries[1]
     assert "PUB_TYPE" not in queries[2] and "ABSTRACT:" not in queries[2]
-    assert 'PUB_TYPE:"case reports"' in queries[3] and "TITLE:\"systemic" not in queries[3]
-    assert queries[3].startswith('("systemic lupus erythematosus"')
+    assert all(q.startswith("(TITLE:") for q in queries)
     status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
     # A caption naming a patient image type or a lesion passes without a
     # finding term; lab work and charts do not.
@@ -429,11 +428,6 @@ def test_names_patient_image_accepts_lesions_sites_and_the_disease_name():
     assert not discover.names_patient_image("Timeline of treatment", ["umbilical granuloma"])
     assert not discover.names_patient_image("Incidence of umbilical granuloma by year",
                                             ["umbilical granuloma"])
-
-
-def test_full_text_terms_drop_short_single_words():
-    assert discover._full_text_terms(["Boil", "furuncle", "Skin abscess"]) == [
-        "furuncle", "Skin abscess"]
 
 
 def test_disease_pass_ranks_case_reports_before_research_and_reviews():
