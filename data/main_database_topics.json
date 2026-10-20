@@ -3,14 +3,14 @@
     "title": "Visual Findings Library — Main Database Topic Index",
     "description": "Authoritative master index of clinical disease topics for the Visual Findings Library. Each active topic is a disease or syndrome that produces clinical images (photographs, endoscopy, fundus, dermoscopy, or characteristic radiology). General non-visual diseases and single manifestations are excluded.",
     "version": "3.3.0",
-    "total_topics": 1116,
+    "total_topics": 1115,
     "total_specialties": 20,
     "curation_policy": {
       "inclusion_criteria": "Disease- or syndrome-level topic with clinical images: patient photographs, endoscopic or fundus photographs, dermoscopy, or a disease-specific radiologic sign, plus pathology where that is how the disease is recognized.",
       "exclusion_criteria": "General non-visual conditions (hypothyroidism, uncomplicated diabetes mellitus, essential hypertension, coronary artery disease, asthma, GERD). Single manifestations, complications, and imaging-only anatomic variants (malar rash, digital ulcer, Eisenmenger physiology, retinal vein occlusion, papillary necrosis, Horner syndrome). Umbrella infections without one phenotype (osteomyelitis, septic arthritis).",
       "topic_grain": "One disease or syndrome. Sites and complications stay inside that topic and are not separate topics."
     },
-    "excluded_topics": 75,
+    "excluded_topics": 76,
     "audited_on": "2026-10-09"
   },
   "specialties": {
@@ -28755,38 +28755,6 @@
         "pilot_status": "main_expansion"
       },
       {
-        "topic_id": "mevalonate_kinase_deficiency",
-        "name": "Mevalonate Kinase Deficiency",
-        "specialty": "Rheumatology",
-        "subspecialty": "Autoinflammatory Syndromes",
-        "mondo_id": "MONDO:0017708",
-        "mesh_id": "D056587",
-        "synonyms": [
-          "MKD",
-          "Hyper-IgD syndrome (HIDS)",
-          "Hyperimmunoglobulinemia D with periodic fever"
-        ],
-        "clinical_manifestations": [
-          "Autosomal recessive autoinflammatory disorder caused by mutations in the MVK gene, impairing the isoprenoid biosynthesis pathway and causing uninhibited IL-1beta release",
-          "Recurrent, abrupt febrile episodes lasting 3 to 7 days recurring every 4 to 6 weeks, frequently triggered by routine childhood vaccinations, minor infections, physical exertion, or emotional stress",
-          "Bedside physical hallmark: striking, massive, painful, tender bilateral cervical lymphadenopathy accompanying fever spikes",
-          "Cutaneous manifestations: polymorphic cutaneous eruption consisting of widespread maculopapular rashes, urticarial plaques, purpuric lesions on the limbs, or tender erythematous nodules",
-          "Mucocutaneous and joint signs: painful, recurrent aphthous oral ulcers and genital ulcers; symmetric, non-destructive, non-erosive polyarthritis or polyarthralgias involving predominantly the knees, ankles, and wrists; severe abdominal colic, vomiting, and diarrhea"
-        ],
-        "radiological_manifestations": [
-          "Cervical Soft-Tissue Ultrasound: Massive enlargement of cervical lymph node stations with preserved fatty hilum and intense hypervascularity on color Doppler without liquefactive necrosis",
-          "Musculoskeletal Ultrasound / Joint MRI: Marked joint effusion, synovial hypertrophy, and soft-tissue edema around large joints during attacks without cartilage loss or bony erosions",
-          "Abdominal Ultrasound: Splenomegaly and mesenteric lymphadenopathy during acute febrile crises"
-        ],
-        "pathology_manifestations": [
-          "Laboratory Biomarkers (Diagnostic Hallmark): Markedly elevated serum immunoglobulin D (IgD >100 IU/mL) in >80% of patients, commonly accompanied by elevated serum IgA, and massive urinary excretion of mevalonic acid during febrile attacks",
-          "Skin Biopsy: Superficial perivascular infiltrate of neutrophils, lymphocytes, and histiocytes with leukocytoclasia or neutrophilic eccrine hidradenitis; negative direct immunofluorescence",
-          "Lymph Node Histopathology: Reactive follicular hyperplasia with marked interfollicular plasmacytosis and sinus histiocytosis"
-        ],
-        "inclusion_rationale": "Core pediatric and adult autoinflammatory syndrome presenting with vaccination-triggered fever attacks, dramatic photographs of massive tender cervical lymphadenopathy, aphthous stomatitis, and polymorphic erythematous eruptions.",
-        "pilot_status": "main_expansion"
-      },
-      {
         "topic_id": "papa_syndrome",
         "name": "PAPA Syndrome",
         "specialty": "Rheumatology",
@@ -57335,38 +57303,6 @@
       "pilot_status": "main_expansion"
     },
     {
-      "topic_id": "mevalonate_kinase_deficiency",
-      "name": "Mevalonate Kinase Deficiency",
-      "specialty": "Rheumatology",
-      "subspecialty": "Autoinflammatory Syndromes",
-      "mondo_id": "MONDO:0017708",
-      "mesh_id": "D056587",
-      "synonyms": [
-        "MKD",
-        "Hyper-IgD syndrome (HIDS)",
-        "Hyperimmunoglobulinemia D with periodic fever"
-      ],
-      "clinical_manifestations": [
-        "Autosomal recessive autoinflammatory disorder caused by mutations in the MVK gene, impairing the isoprenoid biosynthesis pathway and causing uninhibited IL-1beta release",
-        "Recurrent, abrupt febrile episodes lasting 3 to 7 days recurring every 4 to 6 weeks, frequently triggered by routine childhood vaccinations, minor infections, physical exertion, or emotional stress",
-        "Bedside physical hallmark: striking, massive, painful, tender bilateral cervical lymphadenopathy accompanying fever spikes",
-        "Cutaneous manifestations: polymorphic cutaneous eruption consisting of widespread maculopapular rashes, urticarial plaques, purpuric lesions on the limbs, or tender erythematous nodules",
-        "Mucocutaneous and joint signs: painful, recurrent aphthous oral ulcers and genital ulcers; symmetric, non-destructive, non-erosive polyarthritis or polyarthralgias involving predominantly the knees, ankles, and wrists; severe abdominal colic, vomiting, and diarrhea"
-      ],
-      "radiological_manifestations": [
-        "Cervical Soft-Tissue Ultrasound: Massive enlargement of cervical lymph node stations with preserved fatty hilum and intense hypervascularity on color Doppler without liquefactive necrosis",
-        "Musculoskeletal Ultrasound / Joint MRI: Marked joint effusion, synovial hypertrophy, and soft-tissue edema around large joints during attacks without cartilage loss or bony erosions",
-        "Abdominal Ultrasound: Splenomegaly and mesenteric lymphadenopathy during acute febrile crises"
-      ],
-      "pathology_manifestations": [
-        "Laboratory Biomarkers (Diagnostic Hallmark): Markedly elevated serum immunoglobulin D (IgD >100 IU/mL) in >80% of patients, commonly accompanied by elevated serum IgA, and massive urinary excretion of mevalonic acid during febrile attacks",
-        "Skin Biopsy: Superficial perivascular infiltrate of neutrophils, lymphocytes, and histiocytes with leukocytoclasia or neutrophilic eccrine hidradenitis; negative direct immunofluorescence",
-        "Lymph Node Histopathology: Reactive follicular hyperplasia with marked interfollicular plasmacytosis and sinus histiocytosis"
-      ],
-      "inclusion_rationale": "Core pediatric and adult autoinflammatory syndrome presenting with vaccination-triggered fever attacks, dramatic photographs of massive tender cervical lymphadenopathy, aphthous stomatitis, and polymorphic erythematous eruptions.",
-      "pilot_status": "main_expansion"
-    },
-    {
       "topic_id": "papa_syndrome",
       "name": "PAPA Syndrome",
       "specialty": "Rheumatology",
@@ -66088,6 +66024,40 @@
       "inclusion_rationale": "A translucent dorsal nail-fold nodule with an associated nail groove is typically recognizable and is commonly photographed.",
       "audit_status": "excluded",
       "audit_reason": "No commercially licensed open-access patient image found after title, abstract and full-text case-report searches of Europe PMC (2026-10-19); topic removed from the active index."
+    },
+    {
+      "topic_id": "mevalonate_kinase_deficiency",
+      "name": "Mevalonate Kinase Deficiency",
+      "specialty": "Rheumatology",
+      "subspecialty": "Autoinflammatory Syndromes",
+      "mondo_id": "MONDO:0017708",
+      "mesh_id": "D056587",
+      "synonyms": [
+        "MKD",
+        "Hyper-IgD syndrome (HIDS)",
+        "Hyperimmunoglobulinemia D with periodic fever"
+      ],
+      "clinical_manifestations": [
+        "Autosomal recessive autoinflammatory disorder caused by mutations in the MVK gene, impairing the isoprenoid biosynthesis pathway and causing uninhibited IL-1beta release",
+        "Recurrent, abrupt febrile episodes lasting 3 to 7 days recurring every 4 to 6 weeks, frequently triggered by routine childhood vaccinations, minor infections, physical exertion, or emotional stress",
+        "Bedside physical hallmark: striking, massive, painful, tender bilateral cervical lymphadenopathy accompanying fever spikes",
+        "Cutaneous manifestations: polymorphic cutaneous eruption consisting of widespread maculopapular rashes, urticarial plaques, purpuric lesions on the limbs, or tender erythematous nodules",
+        "Mucocutaneous and joint signs: painful, recurrent aphthous oral ulcers and genital ulcers; symmetric, non-destructive, non-erosive polyarthritis or polyarthralgias involving predominantly the knees, ankles, and wrists; severe abdominal colic, vomiting, and diarrhea"
+      ],
+      "radiological_manifestations": [
+        "Cervical Soft-Tissue Ultrasound: Massive enlargement of cervical lymph node stations with preserved fatty hilum and intense hypervascularity on color Doppler without liquefactive necrosis",
+        "Musculoskeletal Ultrasound / Joint MRI: Marked joint effusion, synovial hypertrophy, and soft-tissue edema around large joints during attacks without cartilage loss or bony erosions",
+        "Abdominal Ultrasound: Splenomegaly and mesenteric lymphadenopathy during acute febrile crises"
+      ],
+      "pathology_manifestations": [
+        "Laboratory Biomarkers (Diagnostic Hallmark): Markedly elevated serum immunoglobulin D (IgD >100 IU/mL) in >80% of patients, commonly accompanied by elevated serum IgA, and massive urinary excretion of mevalonic acid during febrile attacks",
+        "Skin Biopsy: Superficial perivascular infiltrate of neutrophils, lymphocytes, and histiocytes with leukocytoclasia or neutrophilic eccrine hidradenitis; negative direct immunofluorescence",
+        "Lymph Node Histopathology: Reactive follicular hyperplasia with marked interfollicular plasmacytosis and sinus histiocytosis"
+      ],
+      "inclusion_rationale": "Core pediatric and adult autoinflammatory syndrome presenting with vaccination-triggered fever attacks, dramatic photographs of massive tender cervical lymphadenopathy, aphthous stomatitis, and polymorphic erythematous eruptions.",
+      "pilot_status": "main_expansion",
+      "audit_status": "excluded",
+      "audit_reason": "Only image (neonatal Sweet syndrome associated with mevalonate kinase deficiency) was excluded by the mimic audit, leaving no commercially licensed open-access image (2026-10-20); topic removed from the active index."
     }
   ]
 }
