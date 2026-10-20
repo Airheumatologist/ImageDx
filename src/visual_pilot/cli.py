@@ -161,7 +161,7 @@ def _run_all(args: argparse.Namespace) -> int:
 
     Within a round the stages overlap (``_pipeline``): discovery streams
     newly parsed articles to a triage thread, which hands batches of up to
-    ``--batch-size`` articles to this thread for judge → store → describe.
+    ``--batch-size`` articles to this thread for judge → store → describe → audit-mimics.
     The next round plans only after the current one is fully drained.
     ``--max-runtime-seconds`` stops discovery and the next batch, leaving
     unfinished figures for the resume step of the next run.
@@ -217,7 +217,7 @@ def _run_all(args: argparse.Namespace) -> int:
                 return COMMANDS[name](scoped)
 
         def _finish(pmcids, label: str) -> int:
-            """judge (with vision_error retries) → store → describe."""
+            """judge (with vision_error retries) → store → describe → audit-mimics."""
             rc = _stage("judge", pmcids, label)
             if rc != 0:
                 return rc
@@ -237,7 +237,10 @@ def _run_all(args: argparse.Namespace) -> int:
             rc = _stage("store", pmcids, label)
             if rc != 0:
                 return rc
-            return _stage("describe", pmcids, label)
+            rc = _stage("describe", pmcids, label)
+            if rc != 0:
+                return rc
+            return _stage("audit-mimics", pmcids, label)
 
         def _pipeline(feed, prefix: str) -> int:
             """Run ``feed(put)`` on a producer thread and drain what it puts.
@@ -450,6 +453,7 @@ COMMANDS: dict[str, CommandFn | None] = {
     "requeue-age-vetoes": _lazy("judge", "run_requeue_age_vetoes"),
     "store": _lazy("store"),
     "describe": _lazy("describe"),
+    "audit-mimics": _lazy("mimic_audit"),
     "extract": _lazy("extract_findings"),
     "report": _lazy("report"),
     "serve": _lazy("viewer"),
