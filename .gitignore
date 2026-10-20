@@ -45,3 +45,6 @@ reports/
 
 # Local SSH keys
 .ssh/
+
+# export-site --merge scratch export (moved into site/ when the merge finishes)
+site.fresh/
