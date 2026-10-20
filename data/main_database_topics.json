@@ -3,14 +3,14 @@
     "title": "Visual Findings Library — Main Database Topic Index",
     "description": "Authoritative master index of clinical disease topics for the Visual Findings Library. Each active topic is a disease or syndrome that produces clinical images (photographs, endoscopy, fundus, dermoscopy, or characteristic radiology). General non-visual diseases and single manifestations are excluded.",
     "version": "3.3.0",
-    "total_topics": 1115,
+    "total_topics": 1114,
     "total_specialties": 20,
     "curation_policy": {
       "inclusion_criteria": "Disease- or syndrome-level topic with clinical images: patient photographs, endoscopic or fundus photographs, dermoscopy, or a disease-specific radiologic sign, plus pathology where that is how the disease is recognized.",
       "exclusion_criteria": "General non-visual conditions (hypothyroidism, uncomplicated diabetes mellitus, essential hypertension, coronary artery disease, asthma, GERD). Single manifestations, complications, and imaging-only anatomic variants (malar rash, digital ulcer, Eisenmenger physiology, retinal vein occlusion, papillary necrosis, Horner syndrome). Umbrella infections without one phenotype (osteomyelitis, septic arthritis).",
       "topic_grain": "One disease or syndrome. Sites and complications stay inside that topic and are not separate topics."
     },
-    "excluded_topics": 76,
+    "excluded_topics": 77,
     "audited_on": "2026-10-09"
   },
   "specialties": {
@@ -13276,7 +13276,8 @@
         "mondo_id": "",
         "mesh_id": "D006232",
         "synonyms": [
-          "enteroviral vesicular stomatitis with exanthem"
+          "enteroviral vesicular stomatitis with exanthem",
+          "HFMD"
         ],
         "pilot_status": "image_expansion_v3",
         "clinical_manifestations": [
@@ -14974,30 +14975,6 @@
         "radiological_manifestations": [],
         "pathology_manifestations": [],
         "inclusion_rationale": "Tender pus-filled follicular abscesses and multi-headed carbuncles are visible on clinical photographs of the neck, back, buttocks and thighs."
-      },
-      {
-        "topic_id": "hand_foot_mouth_disease",
-        "name": "Hand-Foot-and-Mouth Disease",
-        "specialty": "Infectious Diseases",
-        "subspecialty": "Enteroviral Exanthems",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "HFMD",
-          "Coxsackievirus A16 infection",
-          "Enterovirus 71 infection"
-        ],
-        "pilot_status": "image_expansion_v4",
-        "expansion_tier": 1,
-        "clinical_manifestations": [
-          "Grayish-white or clear oval vesicles on an erythematous base on the palms, soles, fingers and toes",
-          "Painful vesicles and ulcers on the tongue, buccal mucosa, gingiva and palate",
-          "Oval vesicular or papular eruption on the buttocks and perianal or genital skin",
-          "Peeling of the skin of the fingertips and toes during convalescence"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Oval vesicles on the palms, soles and buttocks with oral ulcers are visually distinctive on clinical photographs and oral examination images."
       },
       {
         "topic_id": "infectious_mononucleosis",
@@ -43566,7 +43543,8 @@
       "mondo_id": "",
       "mesh_id": "D006232",
       "synonyms": [
-        "enteroviral vesicular stomatitis with exanthem"
+        "enteroviral vesicular stomatitis with exanthem",
+        "HFMD"
       ],
       "pilot_status": "image_expansion_v3",
       "clinical_manifestations": [
@@ -59984,30 +59962,6 @@
       "inclusion_rationale": "Tender pus-filled follicular abscesses and multi-headed carbuncles are visible on clinical photographs of the neck, back, buttocks and thighs."
     },
     {
-      "topic_id": "hand_foot_mouth_disease",
-      "name": "Hand-Foot-and-Mouth Disease",
-      "specialty": "Infectious Diseases",
-      "subspecialty": "Enteroviral Exanthems",
-      "mondo_id": null,
-      "mesh_id": null,
-      "synonyms": [
-        "HFMD",
-        "Coxsackievirus A16 infection",
-        "Enterovirus 71 infection"
-      ],
-      "pilot_status": "image_expansion_v4",
-      "expansion_tier": 1,
-      "clinical_manifestations": [
-        "Grayish-white or clear oval vesicles on an erythematous base on the palms, soles, fingers and toes",
-        "Painful vesicles and ulcers on the tongue, buccal mucosa, gingiva and palate",
-        "Oval vesicular or papular eruption on the buttocks and perianal or genital skin",
-        "Peeling of the skin of the fingertips and toes during convalescence"
-      ],
-      "radiological_manifestations": [],
-      "pathology_manifestations": [],
-      "inclusion_rationale": "Oval vesicles on the palms, soles and buttocks with oral ulcers are visually distinctive on clinical photographs and oral examination images."
-    },
-    {
       "topic_id": "infectious_mononucleosis",
       "name": "Infectious Mononucleosis (Epstein-Barr Virus)",
       "specialty": "Infectious Diseases",
@@ -66054,6 +66008,32 @@
       "pilot_status": "main_expansion",
       "audit_status": "excluded",
       "audit_reason": "Only image (neonatal Sweet syndrome associated with mevalonate kinase deficiency) was excluded by the mimic audit, leaving no commercially licensed open-access image (2026-10-20); topic removed from the active index."
+    },
+    {
+      "topic_id": "hand_foot_mouth_disease",
+      "name": "Hand-Foot-and-Mouth Disease",
+      "specialty": "Infectious Diseases",
+      "subspecialty": "Enteroviral Exanthems",
+      "mondo_id": null,
+      "mesh_id": null,
+      "synonyms": [
+        "HFMD",
+        "Coxsackievirus A16 infection",
+        "Enterovirus 71 infection"
+      ],
+      "pilot_status": "image_expansion_v4",
+      "expansion_tier": 1,
+      "clinical_manifestations": [
+        "Grayish-white or clear oval vesicles on an erythematous base on the palms, soles, fingers and toes",
+        "Painful vesicles and ulcers on the tongue, buccal mucosa, gingiva and palate",
+        "Oval vesicular or papular eruption on the buttocks and perianal or genital skin",
+        "Peeling of the skin of the fingertips and toes during convalescence"
+      ],
+      "radiological_manifestations": [],
+      "pathology_manifestations": [],
+      "inclusion_rationale": "Oval vesicles on the palms, soles and buttocks with oral ulcers are visually distinctive on clinical photographs and oral examination images.",
+      "audit_status": "excluded",
+      "audit_reason": "Duplicate of hand_foot_and_mouth_disease (same disease, MeSH D006232); merged into it on 2026-10-20 with its images, findings and the HFMD synonym. Coxsackievirus A16 and enterovirus 71 infection were not carried over: both viruses also cause herpangina and neurologic disease, so they are broader than HFMD."
     }
   ]
 }
