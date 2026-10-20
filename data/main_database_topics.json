@@ -4486,7 +4486,6 @@
         "mesh_id": "D062685",
         "synonyms": [
           "KRT17 steatocystoma",
-          "multiple sebaceous cysts",
           "steatocystomatosis"
         ],
         "pilot_status": "image_expansion_v3",
@@ -6148,8 +6147,7 @@
         "mesh_id": "",
         "synonyms": [
           "LMDF",
-          "facial idiopathic granulomas with regressive evolution",
-          "granulomatous rosacea"
+          "facial idiopathic granulomas with regressive evolution"
         ],
         "pilot_status": "image_expansion_v3",
         "clinical_manifestations": [
@@ -36167,7 +36165,6 @@
       "mesh_id": "D062685",
       "synonyms": [
         "KRT17 steatocystoma",
-        "multiple sebaceous cysts",
         "steatocystomatosis"
       ],
       "pilot_status": "image_expansion_v3",
@@ -37829,8 +37826,7 @@
       "mesh_id": "",
       "synonyms": [
         "LMDF",
-        "facial idiopathic granulomas with regressive evolution",
-        "granulomatous rosacea"
+        "facial idiopathic granulomas with regressive evolution"
       ],
       "pilot_status": "image_expansion_v3",
       "clinical_manifestations": [
