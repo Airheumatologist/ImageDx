@@ -7,8 +7,7 @@
     "mesh_id": "D008180",
     "synonyms": [
       "systemic lupus erythematosus",
-      "SLE",
-      "lupus"
+      "SLE"
     ],
     "subtypes": [
       {
@@ -49,8 +48,6 @@
     "mesh_id": "D003882",
     "synonyms": [
       "dermatomyositis",
-      "juvenile dermatomyositis",
-      "JDM",
       "amyopathic dermatomyositis",
       "CADM",
       "anti-MDA5"
@@ -339,8 +336,6 @@
       "atopic dermatitis",
       "AD",
       "atopic eczema",
-      "eczema",
-      "neurodermatitis",
       "infantile eczema"
     ],
     "subtypes": [
