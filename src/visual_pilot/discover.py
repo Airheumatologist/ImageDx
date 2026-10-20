@@ -501,20 +501,27 @@ def _fetch_all(pool, picked) -> list:
 
 def _ingest(conn, outcomes, disease_key: str, finding_key: str, picked, pass_name: str,
             match_terms: list[str], stats: dict) -> int:
-    """Store fetched hits and commit; return the number of figures queued."""
+    """Store fetched hits and commit; return the number of figures queued.
+
+    Each article commits on its own: a disease-pass job can bring 200
+    articles, and one transaction across all of them held the write lock past
+    the judge thread's busy_timeout ("database is locked").
+    """
     pending = 0
+    gate = (overview_disease_terms(diseases.load_diseases()[disease_key])
+            if pass_name == "disease" else None)
     for (hit, mode), outcome in zip(picked, outcomes):
         article = _upsert_article(conn, hit, disease_key, finding_key, mode, pass_name)
         if isinstance(outcome, Exception):
             db.set_status(conn, "articles", hit.pmcid, "parse_error", error=str(outcome))
             stats["fetch_errors"] += 1
+            conn.commit()
             continue
         bundle, parsed = outcome
-        gate = (overview_disease_terms(diseases.load_diseases()[disease_key])
-                if pass_name == "disease" else None)
         pending += len(_store_article(conn, article, bundle, parsed, match_terms, stats,
                                       case_age_text(hit, parsed), image_gate=gate))
         stats["pmcids"].append(hit.pmcid)
+        conn.commit()
     conn.commit()
     stats["articles"] += len(picked)
     return pending
