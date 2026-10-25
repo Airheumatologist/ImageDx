@@ -117,7 +117,7 @@ P2_SCHEMA = {
 P2 = Prompt(name="p2_caption_triage", version=P2_VERSION, system=P2_SYSTEM, schema=P2_SCHEMA)
 
 
-P3_VERSION = "p3.v5"
+P3_VERSION = "p3.v6"
 _OTHER_EXAMPLES = ("polymyositis", "inclusion body myositis", "psoriatic arthritis")
 
 
@@ -144,7 +144,7 @@ P3_TEMPLATE = f"""You curate images for a clinical visual-diagnosis library cove
 Rules:
 1. Identify every panel (use the panel letters in the image or caption; a single-image figure is panel "A"). Give each panel a tight normalized bbox [x0, y0, x1, y1] in 0–1 image coordinates.
 2. `include` = true only if the panel is a real human-patient image that visibly shows a specific clinical manifestation of one of the configured target diseases. Exclude diagrams, schematics, mechanisms, pathways, classification charts/tables, text-only graphics, normal or control images, veterinary images or animal models, other diseases (including comparison panels of other diseases{_EXCLUDED}), unreadable quality, and images where the caption indicates third-party copyright.
-3. Tag the disease **the panel shows**, using panel-specific caption evidence or a disease-focused article title together with a specific captioned manifestation; a broad article topic or general in-text mention alone is insufficient. Figures, especially in reviews, often contrast diseases. A complication that can occur in the disease is not enough to establish attribution. Exclude panels where the caption identifies another disease or where the manifestation's disease association is unclear. Do not propagate a broad term such as vasculitis into every subtype/group: assign only the subtype directly supported for that panel.
+3. Tag the disease **the panel shows**, using panel-specific caption evidence or a disease-focused article title together with a specific captioned manifestation; a broad article topic or general in-text mention alone is insufficient. Figures, especially in reviews, often contrast diseases. A complication that can occur in the disease is not enough to establish attribution. Exclude panels where the caption identifies another disease or where the manifestation's disease association is unclear. A title such as "X presenting as Y", "X mimicking Y" or "Y-like X" is about X: when X is not a configured disease, exclude the panel as other_disease, even though it looks like Y. Likewise exclude a panel when the article's diagnosis is another disease and the configured disease is only a differential, a misdiagnosis or a serology result. Do not propagate a broad term such as vasculitis into every subtype/group: assign only the subtype directly supported for that panel.
 4. A montage, collage or multi-panel figure is stored only as the complete figure, never as crops. Set `figure_is_compound` true, still identify every panel with its bbox, and classify each panel exactly as rules 2, 3 and 6–12 describe (disease, modality, findings and the other fields). Set a panel's `include` true if that panel on its own would qualify under rule 2; otherwise set `include` false with its specific `exclusion_reason` (diagram, chart, normal_control, other_disease, not_patient_image, poor_quality, third_party). Do not skip or merge panels: a single diagram, chart, control or other-disease panel keeps the whole figure out of the library.
 5. A single-image figure must be clear and substantial. Inside a compound figure, small panels are classified like any other panel and are not excluded for size alone; they are never stored separately.
 6. `findings`: use only `finding_key` values from the vocabulary provided, each with the caption or in-text phrase that supports it (or "visual" if you identified it only from the image). Put anything clearly present but missing from the vocabulary in `proposed_findings` as short clinical terms. Do not invent a manifestation from article context. If none can be named, exclude the panel.
@@ -349,6 +349,32 @@ P5_SCHEMA = {
     "additionalProperties": False,
 }
 P5 = Prompt(name="p5_display_caption", version=P5_VERSION, system=P5_SYSTEM, schema=P5_SCHEMA)
+
+
+P8_VERSION = "p8.v3"
+P8_SYSTEM = """You audit a clinical image library for misattributed images. Each image is filed under one TOPIC disease, which the vision judge assigned from the image and its caption; look-alike diseases can slip through. You receive the topic with its synonyms and subtypes, the source article's title and abstract, the figure caption and the sentences citing the figure. Decide what disease the patient in this figure has.
+
+Rules:
+- "X presenting as Y", "X mimicking Y", "X masquerading as Y", "Y-like X": the patient has X, not Y.
+- When the title or abstract gives the patient's diagnosis as a different disease (a tumour, a histiocytosis, another infection, a congenital remnant, a nevus), the image shows that disease even if it resembles the topic.
+- The topic named only as a differential, an initial misdiagnosis, a serology or test result, or a risk factor does not make the image the topic.
+- A synonym, subtype or complication of the topic counts as the topic (e.g. candidal diaper dermatitis for diaper dermatitis; vaccine-strain rubella for rubella), unless the article's diagnosis is a different disease.
+- Tell a look-alike from a predisposition. When a different disease produced the lesion itself (perianal ulcers of inflammatory bowel disease called diaper dermatitis, a fistula opening called a carbuncle, an umbilical polyp that is a Meckel's diverticulum), the image shows that disease. When an underlying condition only made the patient prone to the topic (a furuncle in a neutropenic newborn, a carbuncle in diabetes), the image is still the topic.
+- A composite figure counts as the topic when each panel shows the topic or one of its subtypes, including in different patients (e.g. candidal diaper dermatitis in an infant and in an incontinent adult). The congenital form of an infection (congenital rubella syndrome) is that infection.
+- Answer "uncertain" when the text does not let you tell, or when the image could show the topic or a different disease the article also describes.
+
+Return JSON: {"verdict": "topic" | "other_disease" | "uncertain", "actual_diagnosis": the disease the image shows, "reason": one sentence}."""
+P8_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "verdict": {"type": "string", "enum": ["topic", "other_disease", "uncertain"]},
+        "actual_diagnosis": {"type": "string"},
+        "reason": {"type": "string"},
+    },
+    "required": ["verdict", "actual_diagnosis", "reason"],
+    "additionalProperties": False,
+}
+P8 = Prompt(name="p8_mimic_audit", version=P8_VERSION, system=P8_SYSTEM, schema=P8_SCHEMA)
 
 
 _TEMPLATES = {

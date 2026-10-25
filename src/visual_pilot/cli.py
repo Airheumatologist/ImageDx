@@ -159,7 +159,7 @@ def _run_all(args: argparse.Namespace) -> int:
 
     Within a round the stages overlap (``_pipeline``): discovery streams
     newly parsed articles to a triage thread, which hands batches of up to
-    ``--batch-size`` articles to this thread for judge → store → describe.
+    ``--batch-size`` articles to this thread for judge → store → describe → audit-mimics.
     The next round plans only after the current one is fully drained.
     ``--max-runtime-seconds`` stops discovery and the next batch, leaving
     unfinished figures for the resume step of the next run.
@@ -259,7 +259,7 @@ class _RunAll:
         )[0]["n"]
 
     def finish(self, pmcids, label: str) -> int:
-        """judge (with vision_error retries) → store → describe."""
+        """judge (with vision_error retries) → store → describe → audit-mimics."""
         from . import judge
 
         rc = self.stage("judge", pmcids, label)
@@ -269,7 +269,11 @@ class _RunAll:
             rc = self.stage("judge", pmcids, label)
         if rc != 0:
             return rc
-        return self.stage("store", pmcids, label) or self.stage("describe", pmcids, label)
+        return (
+            self.stage("store", pmcids, label)
+            or self.stage("describe", pmcids, label)
+            or self.stage("audit-mimics", pmcids, label)
+        )
 
     def pipeline(self, feed, prefix: str) -> int:
         return _Pipeline(self, prefix).run(feed)
@@ -509,6 +513,7 @@ COMMANDS: dict[str, CommandFn | None] = {
     "requeue-age-vetoes": _lazy("judge", "run_requeue_age_vetoes"),
     "store": _lazy("store"),
     "describe": _lazy("describe"),
+    "audit-mimics": _lazy("mimic_audit"),
     "extract": _lazy("extract_findings"),
     "report": _lazy("report"),
     "serve": _lazy("viewer"),
@@ -624,8 +629,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="backfill",
         help="overview: reviews/case series surveying each disease; manifestation: "
         "reviews/case series about each under-target finding; backfill: any article "
-        "type; disease: any article whose title names a topic under "
-        "VP_TOPIC_IMAGE_FLOOR images (default: backfill)",
+        "type; disease: case reports naming a topic under VP_TOPIC_IMAGE_FLOOR "
+        "images in the title or abstract, and any article titled with it "
+        "(default: backfill)",
     )
     subs["triage"].add_argument(
         "--retriage-montages",
@@ -672,8 +678,9 @@ def build_parser() -> argparse.ArgumentParser:
     subs["export-site"].add_argument(
         "--merge",
         action="store_true",
-        help="keep an existing topic's files when the database shows fewer "
-        "images for it (for a database that holds only some topics)",
+        help="keep every image the existing site shows and add the database's "
+        "new ones per topic, up to VP_TOPIC_IMAGE_CAP (for a database that holds "
+        "only some topics or images)",
     )
     for name in ("extract", "run-all"):
         subs[name].add_argument(

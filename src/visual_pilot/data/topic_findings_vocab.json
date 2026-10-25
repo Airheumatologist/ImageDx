@@ -32092,7 +32092,6 @@
   "category": "skin",
   "synonyms": [
    "Multiple truncal cystic papules",
-   "Multiple sebaceous cysts",
    "Steatocystomas of chest and arms"
   ],
   "caption_terms": [
@@ -117028,7 +117027,9 @@
    "oral vesicular eruption",
    "oral ulcers",
    "vesiculoulcerative stomatitis",
-   "canker-like oral lesions"
+   "canker-like oral lesions",
+   "Mouth ulcers",
+   "Oral erosions"
   ],
   "caption_terms": [
    "vesiculoulcerative stomatitis",
@@ -117038,7 +117039,10 @@
    "oral vesicular lesions",
    "shallow oral ulcers",
    "tongue vesicles",
-   "hard palate ulcers"
+   "hard palate ulcers",
+   "vesicles on tongue",
+   "buccal mucosa vesicles",
+   "palatal ulcers"
   ],
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
@@ -117056,7 +117060,13 @@
    "hand-foot vesicles",
    "palmoplantar vesicular eruption",
    "acral vesicles",
-   "palmar and plantar lesions"
+   "palmar and plantar lesions",
+   "Hand vesicles",
+   "Palmar papulovesicular eruption",
+   "Vesicular hand lesions",
+   "Foot vesicles",
+   "Plantar papulovesicular eruption",
+   "Vesicular foot lesions"
   ],
   "caption_terms": [
    "hand foot vesicles",
@@ -117064,7 +117074,13 @@
    "palmoplantar vesicles",
    "vesicles on the hands and feet",
    "palmar vesicles",
-   "plantar vesicles"
+   "plantar vesicles",
+   "vesicles on palm",
+   "vesicular eruption on hands",
+   "palm vesicles",
+   "vesicles on soles",
+   "vesicular eruption on feet",
+   "sole vesicles"
   ],
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
@@ -117081,7 +117097,10 @@
   "synonyms": [
    "gluteal vesicular eruption",
    "buttock vesicular eruption",
-   "perineal vesicles"
+   "perineal vesicles",
+   "Buttock vesicles",
+   "Gluteal papulovesicular lesions",
+   "Perianal vesicular eruption"
   ],
   "caption_terms": [
    "gluteal vesicular eruption",
@@ -117089,7 +117108,10 @@
    "vesicles on the buttocks",
    "buttock vesicles",
    "gluteal vesicular lesions",
-   "perineal vesicles"
+   "perineal vesicles",
+   "vesicles on buttocks",
+   "buttock papulovesicles",
+   "papulovesicular lesions on buttocks"
   ],
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
@@ -117107,7 +117129,9 @@
    "nail loss",
    "exfoliative nail dystrophy",
    "nail shedding",
-   "nail plate avulsion"
+   "nail plate avulsion",
+   "Proximal nail plate separation",
+   "Delayed nail dystrophy"
   ],
   "caption_terms": [
    "exfoliative nail dystrophy",
@@ -117115,7 +117139,9 @@
    "nail loss",
    "onychomadesis",
    "nail shedding",
-   "exfoliation of the nails"
+   "exfoliation of the nails",
+   "proximal nail shedding",
+   "nail plate separation"
   ],
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
@@ -125940,139 +125966,6 @@
    "pas positive hyphae",
    "fungal elements in stratum corneum",
    "septate hyphae in cornified layer"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
- },
- {
-  "finding_key": "hand_foot_mouth_disease_palmar_vesicles",
-  "label": "Vesicles on palms",
-  "disease_keys": [
-   "hand_foot_mouth_disease"
-  ],
-  "category": "skin",
-  "synonyms": [
-   "Hand vesicles",
-   "Palmar papulovesicular eruption",
-   "Vesicular hand lesions"
-  ],
-  "caption_terms": [
-   "vesicles on palm",
-   "palmar vesicles",
-   "vesicular eruption on hands",
-   "palm vesicles"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
- },
- {
-  "finding_key": "hand_foot_mouth_disease_plantar_vesicles",
-  "label": "Vesicles on soles",
-  "disease_keys": [
-   "hand_foot_mouth_disease"
-  ],
-  "category": "skin",
-  "synonyms": [
-   "Foot vesicles",
-   "Plantar papulovesicular eruption",
-   "Vesicular foot lesions"
-  ],
-  "caption_terms": [
-   "vesicles on soles",
-   "plantar vesicles",
-   "vesicular eruption on feet",
-   "sole vesicles"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
- },
- {
-  "finding_key": "hand_foot_mouth_disease_oral_vesicles_ulcers",
-  "label": "Oral vesicles and ulcers",
-  "disease_keys": [
-   "hand_foot_mouth_disease"
-  ],
-  "category": "mucosa",
-  "synonyms": [
-   "Mouth ulcers",
-   "Enanthem",
-   "Oral erosions",
-   "Herpangina-like ulcers"
-  ],
-  "caption_terms": [
-   "oral ulcers",
-   "vesicles on tongue",
-   "buccal mucosa vesicles",
-   "palatal ulcers"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
- },
- {
-  "finding_key": "hand_foot_mouth_disease_buttock_papulovesicles",
-  "label": "Papulovesicular eruption on buttocks",
-  "disease_keys": [
-   "hand_foot_mouth_disease"
-  ],
-  "category": "skin",
-  "synonyms": [
-   "Buttock vesicles",
-   "Gluteal papulovesicular lesions",
-   "Perianal vesicular eruption"
-  ],
-  "caption_terms": [
-   "vesicles on buttocks",
-   "buttock papulovesicles",
-   "gluteal vesicular eruption",
-   "papulovesicular lesions on buttocks"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
- },
- {
-  "finding_key": "hand_foot_mouth_disease_fingertip_desquamation",
-  "label": "Fingertip skin peeling",
-  "disease_keys": [
-   "hand_foot_mouth_disease"
-  ],
-  "category": "skin",
-  "synonyms": [
-   "Acral desquamation",
-   "Fingertip peeling",
-   "Periungual desquamation"
-  ],
-  "caption_terms": [
-   "fingertip peeling",
-   "desquamation of fingertips",
-   "skin peeling on fingers",
-   "periungual desquamation"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
- },
- {
-  "finding_key": "hand_foot_mouth_disease_onychomadesis",
-  "label": "Onychomadesis",
-  "disease_keys": [
-   "hand_foot_mouth_disease"
-  ],
-  "category": "nail",
-  "synonyms": [
-   "Nail shedding",
-   "Proximal nail plate separation",
-   "Delayed nail dystrophy"
-  ],
-  "caption_terms": [
-   "onychomadesis",
-   "nail shedding",
-   "proximal nail shedding",
-   "nail plate separation"
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
@@ -328309,5 +328202,27 @@
   "model": "deepseek-v4.1-flash",
   "prompt_version": "p6.v1",
   "caption_terms_version": "p7.v2"
+ },
+ {
+  "finding_key": "hand_foot_and_mouth_disease_fingertip_desquamation",
+  "label": "Fingertip skin peeling",
+  "disease_keys": [
+   "hand_foot_and_mouth_disease"
+  ],
+  "category": "skin",
+  "synonyms": [
+   "Acral desquamation",
+   "Fingertip peeling",
+   "Periungual desquamation"
+  ],
+  "caption_terms": [
+   "fingertip peeling",
+   "desquamation of fingertips",
+   "skin peeling on fingers",
+   "periungual desquamation"
+  ],
+  "source": "llm_topic_vocab",
+  "model": "muse-spark-1.3-contributor",
+  "prompt_version": "p6.v1"
  }
 ]

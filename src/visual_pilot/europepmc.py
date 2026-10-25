@@ -130,16 +130,18 @@ _CASE_TYPES = (
 )
 
 
-def build_disease_query(disease_terms: list[str], cases_only: bool = False) -> str:
-    """Any article whose title names the disease, without a caption clause.
+def build_disease_query(disease_terms: list[str], cases_only: bool = False,
+                        fields: tuple[str, ...] = ("TITLE",)) -> str:
+    """Any article naming the disease in ``fields``, without a caption clause.
 
     For topics the caption-phrase passes leave nearly empty: their captions
     rarely repeat the vocabulary's phrasing, so the figures are gated locally
     on caption and citing text instead (``discover._store_article``).
     ``cases_only`` keeps case reports and series, which picture patients far
-    more often than the disease's research papers and reviews.
+    more often than the disease's research papers and reviews; with
+    ``fields=("TITLE", "ABSTRACT")`` they may name it in the abstract only.
     """
-    dis = _disease_clause(disease_terms, ("TITLE",))
+    dis = _disease_clause(disease_terms, fields)
     if not dis:
         return ""
     cases = f" AND {_CASE_TYPES}" if cases_only else ""

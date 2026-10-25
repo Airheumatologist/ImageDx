@@ -1117,6 +1117,8 @@ def _diseases_json(conn) -> list[dict]:
             "subtypes": db.from_json(r["subtypes_json"], []),
         }
         for r in conn.execute("SELECT * FROM diseases ORDER BY disease_key")
+        # seed() never deletes, so topics retired from the catalog stay in older databases.
+        if r["disease_key"] in catalog
     ]
 
 

@@ -293,3 +293,13 @@ def test_primary_representative_comes_from_selected_gallery(tmp_path):
     card = next(p for p in payload["panels"] if primary in p["panel_ids"])
     assert card["is_representative"] is True
     assert card["representative_findings"] == ["malar_rash"]
+
+
+def test_topics_retired_from_the_catalog_leave_the_disease_list(tmp_path):
+    conn = make_db(tmp_path)
+    _seed_sle(conn)
+    add_disease(conn, "digital_mucous_cyst", "Digital mucous cyst")  # retired, still in the db
+    conn.commit()
+    conn.close()
+    keys = {d["key"] for d in _app(tmp_path).get("/api/diseases").json()}
+    assert "sle" in keys and "digital_mucous_cyst" not in keys

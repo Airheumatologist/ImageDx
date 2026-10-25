@@ -389,7 +389,8 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
         return 1, [_hit("PMC1")]
 
     parsed = _parsed(["Figure 1. Clinical photograph.", "Timeline of treatment.",
-                      "Chest CT on admission.", "Western blot of patient fibroblasts."])
+                      "Chest CT on admission.", "Western blot of patient fibroblasts.",
+                      "Erythematous rash on the trunk.", "Prevalence of rash by age group."])
     parsed.figures[0].in_text_mentions = ["Figure 1 shows a malar rash sparing the folds."]
     monkeypatch.setattr(europepmc, "search", fake_search)
     monkeypatch.setattr(discover, "_fetch", lambda pmcid: (_Bundle(), parsed))
@@ -397,19 +398,36 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
     stats = discover.discover(conn, ["sle", "gout"], per_pair=5, target=10,
                               pass_name="disease", log=lambda *_: None)
 
-    # Only the topic under the floor is searched, by title alone: case
-    # reports first, then any article type.
-    assert len(queries) == 2 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
-    assert 'PUB_TYPE:"case reports"' in queries[0] and "PUB_TYPE" not in queries[1]
+    # Only the topic under the floor is searched, by name and never by
+    # caption: case reports by title, then by abstract, then any article by
+    # title; never the full text.
+    assert len(queries) == 3 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
+    assert 'PUB_TYPE:"case reports"' in queries[0] and "ABSTRACT:" not in queries[0]
+    assert 'PUB_TYPE:"case reports"' in queries[1] and 'ABSTRACT:"systemic lupus' in queries[1]
+    assert "PUB_TYPE" not in queries[2] and "ABSTRACT:" not in queries[2]
+    assert all(q.startswith("(TITLE:") for q in queries)
     status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
-    # A caption naming a patient image type passes without a finding term;
-    # lab work does not.
+    # A caption naming a patient image type or a lesion passes without a
+    # finding term; lab work and charts do not.
     assert status == {"PMC1:f1": "pending", "PMC1:f2": "caption_rejected",
-                      "PMC1:f3": "pending", "PMC1:f4": "caption_rejected"}
+                      "PMC1:f3": "pending", "PMC1:f4": "caption_rejected",
+                      "PMC1:f5": "pending", "PMC1:f6": "caption_rejected"}
     attempt = conn.execute("SELECT finding_key FROM pair_search_attempts").fetchone()
     assert attempt[0] == discover.DISEASE_KEY and stats["pairs"] == 0
     assert stats["pmcids"] == ["PMC1"]
     conn.close()
+
+
+def test_names_patient_image_accepts_lesions_sites_and_the_disease_name():
+    assert discover.names_patient_image("Erythematous rash on the trunk")
+    assert discover.names_patient_image("Polypoid nodule protruding from the umbilicus")
+    assert discover.names_patient_image("The patient's genitalia, day 3.")
+    assert not discover.names_patient_image("Follow-up on day 3.")
+    assert discover.names_patient_image("Napkin rash, day 3.", ["napkin rash"])
+    assert discover.names_patient_image("Umbilical granuloma at presentation", ["umbilical granuloma"])
+    assert not discover.names_patient_image("Timeline of treatment", ["umbilical granuloma"])
+    assert not discover.names_patient_image("Incidence of umbilical granuloma by year",
+                                            ["umbilical granuloma"])
 
 
 def test_disease_pass_ranks_case_reports_before_research_and_reviews():

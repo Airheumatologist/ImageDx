@@ -26,8 +26,8 @@ restricts a run to the ten pilot diseases.
   +---------------------------+       P2 caption triage      (text, batched)
   | Europe PMC REST search    |       P3 figure judgment     (vision)
   |  FIG: caption field,      |       P5 display captions    (text)
-  |  license + OA filters     |       P4 finding extraction  (text)
-  +---------------------------+
+  |  license + OA filters     |       P8 mimic audit         (text)
+  +---------------------------+       P4 finding extraction  (text)
               |
               v
  +=====================================================================+
@@ -63,6 +63,13 @@ restricts a run to the ten pilot diseases.
  | 5. DESCRIBE    describe.py  (P5)              -> display captions   |
  |    standalone title + description, viewer section/subsection;       |
  |    treatment images excluded from the library                       |
+ +=====================================================================+
+              |
+              v
+ +=====================================================================+
+ | 5b. AUDIT      mimic_audit.py  (P8)           -> mimic exclusions   |
+ |    title + abstract + caption: does the image show the topic or a   |
+ |    look-alike? other_disease / uncertain excluded, reversibly       |
  +=====================================================================+
               |
               v
@@ -171,6 +178,12 @@ that merely discuss the disease:
   pair: reviews and case series about the finding), then `backfill` (any
   article type); systematic reviews and meta-analyses are excluded from the
   first two, and hits are taken reviews first (`source_quality.article_tier`);
+- topics under `VP_TOPIC_IMAGE_FLOOR` images also get the `disease` pass,
+  which searches by disease name rather than caption: case reports naming it
+  in the title, then in the abstract, then any article titled with it (never
+  the full text, where the disease is mostly a differential). Its figures pass the
+  local gate when the caption names a patient image type, a lesion or body
+  site ("rash on the trunk") or the disease itself;
 - only notices (errata, retractions, corrections) are dropped, and
   `pmc.license_allows` re-checks every license locally;
 - up to `--per-pair` (default 25) new articles per pair per round are
@@ -264,6 +277,24 @@ a P5 change.
 P5 also flags `treatment_related` images that slipped past triage. A flagged
 panel gets a reversible `panel_curation` exclusion (reason
 `treatment_related`).
+
+### 5b. `audit-mimics`: look-alike diseases (`mimic_audit.py`, prompt P8)
+
+The vision judge attributes an image from what it shows, so a mimic can pass
+as the topic ("Langerhans cell histiocytosis presented as persistent diaper
+dermatitis", "Becker nevus presenting as pseudofolliculitis barbae"). For
+each new panel, P8 (text only, `VP_DESCRIBE_MODEL`) reads the topic with its
+synonyms and subtypes, the article title and abstract, the caption and the
+citing sentences, and answers `topic`, `other_disease` or `uncertain`. The
+last two get a reversible `panel_curation` exclusion whose reason starts
+with `mimic_audit` and names the diagnosis; a later `topic` verdict lifts it,
+and exclusions from other stages or manual review are never touched.
+`run-all` runs it after `describe` in every batch; on its own:
+
+```bash
+python3 -m src.visual_pilot.cli audit-mimics                     # every panel (cached)
+python3 -m src.visual_pilot.cli audit-mimics --disease rubella
+```
 
 ### 6. `extract`: text findings (`extract_findings.py`, prompt P4)
 
@@ -526,6 +557,12 @@ figure in the public PMC open-data bucket, and cropped panels carry a
 normalized `crop` box the page draws in a canvas. `.github/workflows/pages.yml`
 deploys `site/` on every push to `main` that changes it (repository
 Settings → Pages → Source: GitHub Actions).
+
+`export-site --merge` folds a database that holds only some topics (or only
+part of a topic's images) into the existing site: each topic keeps every image
+it already shows and gains the database's images it does not show yet (no
+shared image hash, panel or figure), up to `VP_TOPIC_IMAGE_CAP`; topics the
+site lacks come whole from the database, and no topic ever shrinks.
 
 See `src/visual_pilot/README.md` for stage details, env vars and PMC access
 notes.

@@ -3,7 +3,7 @@
     "title": "Visual Findings Library — Main Database Topic Index",
     "description": "The single disease list of the Visual Findings Library, grouped by specialty. Every topic is a disease or syndrome with published images in the library; a topic with no images is removed. General non-visual diseases and single manifestations are excluded.",
     "version": "4.1.0",
-    "total_topics": 1723,
+    "total_topics": 1643,
     "total_specialties": 20,
     "curation_policy": {
       "inclusion_criteria": "Disease- or syndrome-level topic with clinical images: patient photographs, endoscopic or fundus photographs, dermoscopy, or a disease-specific radiologic sign, plus pathology where that is how the disease is recognized.",
@@ -2395,8 +2395,7 @@
         "mondo_id": "MONDO:0008207",
         "mesh_id": "D010392",
         "synonyms": [
-          "PV",
-          "pemphigus"
+          "PV"
         ],
         "clinical_manifestations": [
           "Painful, extensive, persistent oral mucosal ulcerations and erosions (buccal mucosa, palate, gingiva)",
@@ -2865,7 +2864,6 @@
         "mondo_id": "MONDO:0016012",
         "mesh_id": "D009182",
         "synonyms": [
-          "cutaneous T-cell lymphoma",
           "Alibert-Bazin syndrome"
         ],
         "clinical_manifestations": [
@@ -4337,7 +4335,6 @@
         "mesh_id": "D062685",
         "synonyms": [
           "KRT17 steatocystoma",
-          "multiple sebaceous cysts",
           "steatocystomatosis"
         ],
         "clinical_manifestations": [
@@ -4962,8 +4959,7 @@
         "mesh_id": "D008067",
         "synonyms": [
           "simple lipoma",
-          "subcutaneous lipoma",
-          "adipose tumor"
+          "subcutaneous lipoma"
         ],
         "clinical_manifestations": [
           "Soft, doughy, freely movable subcutaneous nodule with normal overlying skin",
@@ -5635,7 +5631,6 @@
         "mondo_id": "MONDO:0018327",
         "mesh_id": "D005918",
         "synonyms": [
-          "glomangioma",
           "subungual glomus tumor",
           "glomus body tumor"
         ],
@@ -5873,8 +5868,7 @@
         "mesh_id": "",
         "synonyms": [
           "LMDF",
-          "facial idiopathic granulomas with regressive evolution",
-          "granulomatous rosacea"
+          "facial idiopathic granulomas with regressive evolution"
         ],
         "clinical_manifestations": [
           "Centrofacial yellow-red smooth papules concentrated around the eyelids",
@@ -6088,7 +6082,6 @@
         "synonyms": [
           "piloleiomyoma",
           "cutaneous leiomyomatosis",
-          "Reed syndrome",
           "HLRCC"
         ],
         "clinical_manifestations": [
@@ -6342,7 +6335,6 @@
         "mesh_id": "D014581",
         "synonyms": [
           "hives",
-          "wheals",
           "chronic idiopathic urticaria",
           "CSU"
         ],
@@ -6365,9 +6357,7 @@
         "mesh_id": null,
         "synonyms": [
           "Winkler disease",
-          "chondrodermatitis nodularis chronica helicis",
-          "ear nodule",
-          "helical nodule"
+          "chondrodermatitis nodularis chronica helicis"
         ],
         "clinical_manifestations": [
           "Firm, tender, keratotic nodule of the helix or antihelix of the ear, usually 0.5 to 1 cm across",
@@ -7739,8 +7729,7 @@
         "mesh_id": "D006111",
         "synonyms": [
           "Basedow disease",
-          "exophthalmic goiter",
-          "thyrotoxicosis"
+          "exophthalmic goiter"
         ],
         "clinical_manifestations": [
           "Graves' orbitopathy / ophthalmopathy: bilateral or asymmetric proptosis (exophthalmos), lid retraction (Dalrymple sign), lid lag on downward gaze (von Graefe sign), chemosis, conjunctival injection, periorbital edema",
@@ -7768,8 +7757,7 @@
         "synonyms": [
           "McCune-Albright syndrome (MAS)",
           "polyostotic fibrous dysplasia with precocious puberty",
-          "POFD",
-          "osteitis fibrosa disseminata"
+          "POFD"
         ],
         "clinical_manifestations": [
           "Hallmark Cutaneous Macules: Large, unilateral, flat hyperpigmented café-au-lait skin macules featuring jagged, irregular margins classically described as resembling the 'coast of Maine' ('coast-of-Maine' sign), distinct from smooth regular Neurofibromatosis type 1 patches; typically respect the dorsal or ventral midline of the body and are concentrated over the sacrum, buttocks, posterior thorax, nape of the neck, and forehead",
@@ -9215,9 +9203,7 @@
         "synonyms": [
           "malignant carcinoid syndrome",
           "GI neuroendocrine tumor syndrome",
-          "midgut carcinoid",
-          "carcinoid heart disease",
-          "Hedinger syndrome"
+          "midgut carcinoid"
         ],
         "clinical_manifestations": [
           "Hallmark paroxysmal cutaneous flushing: Sudden, dramatic, fiery red to purplish/violaceous erythema of the face, neck, and upper chest, provoked by emotional stress, alcohol, or tyramine-rich foods, accompanied by burning sensation, conjunctival injection, lacrimation, and tachycardia",
@@ -9275,8 +9261,7 @@
           "coeliac disease",
           "gluten-sensitive enteropathy",
           "celiac sprue",
-          "nontropical sprue",
-          "Duhring disease"
+          "nontropical sprue"
         ],
         "clinical_manifestations": [
           "Pathognomonic skin finding: Dermatitis herpetiformis (Duhring disease) presenting as intensely pruritic, stinging, burning, polymorphic grouped erythematous papules, urticarial plaques, and tense vesicles (resembling herpes clusters) symmetrically distributed on extensor surfaces (elbows, knees, buttocks, upper back, posterior scalp, and sacrum), with prominent excoriations and post-inflammatory hyperpigmentation",
@@ -9418,7 +9403,6 @@
         "synonyms": [
           "achalasia cardiae",
           "cardiospasm",
-          "megaesophagus",
           "idiopathic esophageal achalasia",
           "Chagas megaesophagus"
         ],
@@ -10536,7 +10520,6 @@
         "mondo_id": null,
         "mesh_id": "D012005",
         "synonyms": [
-          "Procidentia",
           "Full-thickness rectal prolapse",
           "Mucosal rectal prolapse",
           "External rectal prolapse"
@@ -10649,7 +10632,6 @@
           "PMP",
           "peritoneal mucinosis",
           "mucinous ascites",
-          "appendiceal mucinous neoplasm",
           "mucinous peritoneal carcinomatosis"
         ],
         "clinical_manifestations": [
@@ -11356,7 +11338,6 @@
         "mesh_id": "D016634",
         "synonyms": [
           "CTCL",
-          "mycosis fungoides",
           "Sézary syndrome"
         ],
         "clinical_manifestations": [
@@ -11413,8 +11394,7 @@
           "Zinsser-Cole-Engman syndrome",
           "dyskeratosis congenita syndrome",
           "DKC",
-          "congenital dyskeratosis",
-          "telomere biology disorder"
+          "congenital dyskeratosis"
         ],
         "clinical_manifestations": [
           "Pathognomonic Mucocutaneous Diagnostic Triad (Present in >85-90%): (1) Reticulated, lacy, mottled, grayish-brown cutaneous hyperpigmentation predominantly distributed across the neck, upper chest, shoulders, and face, often producing a classic 'dirty neck' appearance with interspersed hypopigmented atrophic macules; (2) Severe progressive nail dystrophy: progressive longitudinal ridging, splitting, thinning, and brittleness of fingernails and toenails, evolving into pterygium unguis (inward growth of proximal nail fold) and eventual complete loss of nail plates (anonychia); (3) Premalignant oral mucosal leukoplakia: thickened, painless, persistent, adherent white patches and plaques on the dorsal and lateral surfaces of the tongue, buccal mucosa, and gingiva, carrying a high lifetime risk of transformation into aggressive squamous cell carcinoma",
@@ -11671,7 +11651,6 @@
           "ASMD",
           "Niemann-Pick disease type A",
           "Niemann-Pick disease type B",
-          "Niemann-Pick disease type C",
           "sphingomyelin lipidosis",
           "NPD"
         ],
@@ -11908,7 +11887,6 @@
         "mesh_id": "D034721",
         "synonyms": [
           "systemic mast cell disease",
-          "urticaria pigmentosa",
           "aggressive systemic mastocytosis",
           "SM"
         ],
@@ -13063,7 +13041,6 @@
         "mesh_id": "D002862",
         "synonyms": [
           "Chromomycosis",
-          "pigmented fungal infection",
           "Fonsecaea pedrosoi infection",
           "Cladophialophora carrionii infection"
         ],
@@ -13725,10 +13702,7 @@
         "specialty": "Infectious Diseases",
         "mondo_id": "MONDO:0005370",
         "mesh_id": "D009079",
-        "synonyms": [
-          "mucormycosis",
-          "zygomycosis"
-        ],
+        "synonyms": [],
         "clinical_manifestations": [
           "Rapidly progressing, lethal black necrotic eschar on the hard palate, nasal turbinates, or nasal septum",
           "Marked periorbital edema, dark dusky facial discoloration, and chemosis",
@@ -13754,9 +13728,7 @@
         "mesh_id": "D012373",
         "synonyms": [
           "RMSF",
-          "Rickettsia rickettsii infection",
-          "spotted fever rickettsiosis",
-          "tick typhus"
+          "Rickettsia rickettsii infection"
         ],
         "clinical_manifestations": [
           "Hallmark exanthem: Erupts 2-4 days into fever as small (1-5 mm), blanching, pink-to-erythematous macules on the wrists, forearms, ankles, palms, and soles; centrifugally and centripetally spreads to the trunk, face, and extremities",
@@ -13930,7 +13902,6 @@
         "synonyms": [
           "disseminated strongyloidiasis",
           "Strongyloides stercoralis hyperinfection",
-          "larva currens",
           "severe strongyloidiasis"
         ],
         "clinical_manifestations": [
@@ -14040,8 +14011,6 @@
         "mesh_id": "D014376",
         "synonyms": [
           "TB",
-          "phthisis",
-          "consumption",
           "Koch disease"
         ],
         "clinical_manifestations": [
@@ -14284,7 +14253,8 @@
         "mondo_id": "",
         "mesh_id": "D006232",
         "synonyms": [
-          "enteroviral vesicular stomatitis with exanthem"
+          "enteroviral vesicular stomatitis with exanthem",
+          "HFMD"
         ],
         "clinical_manifestations": [
           "Oval gray vesicles on the palms, soles, and buttocks",
@@ -15020,8 +14990,7 @@
         "mesh_id": "D014010",
         "synonyms": [
           "tinea versicolor",
-          "Malassezia furfur infection",
-          "versicolor"
+          "Malassezia furfur infection"
         ],
         "clinical_manifestations": [
           "Multiple hypo- or hyperpigmented macules with fine branny scale on trunk and shoulders",
@@ -15292,8 +15261,7 @@
         "synonyms": [
           "bubonic plague",
           "pneumonic plague",
-          "Black Death",
-          "yersiniosis"
+          "Black Death"
         ],
         "clinical_manifestations": [
           "Massive tender buboes - inguinal, axillary, or cervical lymph nodes swollen to several centimeters",
@@ -15490,8 +15458,7 @@
         "synonyms": [
           "Rickettsia africae infection",
           "Mediterranean spotted fever",
-          "boutonneuse fever",
-          "tick typhus"
+          "boutonneuse fever"
         ],
         "clinical_manifestations": [
           "Inoculation eschar ('tache noire') at the tick-bite site with regional lymphadenitis",
@@ -15514,7 +15481,6 @@
         "mesh_id": "D001196",
         "synonyms": [
           "Ascaris lumbricoides infection",
-          "roundworm",
           "biliary ascariasis"
         ],
         "clinical_manifestations": [
@@ -15609,8 +15575,6 @@
         "mondo_id": "MONDO:0005136",
         "mesh_id": "D008288",
         "synonyms": [
-          "Plasmodium falciparum",
-          "Plasmodium vivax",
           "cerebral malaria"
         ],
         "clinical_manifestations": [
@@ -15682,7 +15646,6 @@
         "mesh_id": "",
         "synonyms": [
           "Conidiobolus coronatus infection",
-          "basidiobolomycosis",
           "rhinofacial zygomycosis",
           "subcutaneous phycomycosis"
         ],
@@ -15818,27 +15781,6 @@
         "inclusion_rationale": "Interdigital maceration and plantar scaling are visible on clinical photographs of the feet, and dermoscopy shows the scale pattern."
       },
       {
-        "topic_id": "hand_foot_mouth_disease",
-        "name": "Hand-Foot-and-Mouth Disease",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "HFMD",
-          "Coxsackievirus A16 infection",
-          "Enterovirus 71 infection"
-        ],
-        "clinical_manifestations": [
-          "Grayish-white or clear oval vesicles on an erythematous base on the palms, soles, fingers and toes",
-          "Painful vesicles and ulcers on the tongue, buccal mucosa, gingiva and palate",
-          "Oval vesicular or papular eruption on the buttocks and perianal or genital skin",
-          "Peeling of the skin of the fingertips and toes during convalescence"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Oval vesicles on the palms, soles and buttocks with oral ulcers are visually distinctive on clinical photographs and oral examination images."
-      },
-      {
         "topic_id": "infectious_mononucleosis",
         "name": "Infectious Mononucleosis (Epstein-Barr Virus)",
         "specialty": "Infectious Diseases",
@@ -15916,9 +15858,7 @@
         "mondo_id": null,
         "mesh_id": null,
         "synonyms": [
-          "Fusarium infection",
           "disseminated Fusarium infection",
-          "Fusarium solani infection",
           "cutaneous fusariosis"
         ],
         "clinical_manifestations": [
@@ -15944,8 +15884,7 @@
         "synonyms": [
           "Babesia microti infection",
           "human babesiosis",
-          "Babesia infection",
-          "piroplasmosis"
+          "Babesia infection"
         ],
         "clinical_manifestations": [
           "Scleral icterus (yellow sclerae) from hemolysis",
@@ -16834,8 +16773,7 @@
           "Ormond's disease",
           "idiopathic retroperitoneal fibrosis",
           "RPF",
-          "IgG4-related retroperitoneal fibrosis",
-          "periaortitis"
+          "IgG4-related retroperitoneal fibrosis"
         ],
         "clinical_manifestations": [
           "Deep-seated, dull, non-colicky, persistent lower back, lumbar, flank, or lower abdominal pain radiating into the groins, testicles, or thighs, worse at night and poorly responsive to position changes",
@@ -19507,8 +19445,7 @@
         "mesh_id": "D017241",
         "synonyms": [
           "mitochondrial encephalomyopathy lactic acidosis stroke",
-          "MELAS",
-          "m.3243A>G"
+          "MELAS"
         ],
         "clinical_manifestations": [
           "Stroke-like episodes in childhood/young adults with hemianopia, aphasia, or hemiparesis",
@@ -19968,8 +19905,7 @@
         "synonyms": [
           "Arnold-Chiari malformation",
           "Chiari I malformation",
-          "tonsillar ectopia",
-          "syrinx"
+          "tonsillar ectopia"
         ],
         "clinical_manifestations": [
           "Scoliosis, often cervicothoracic, visible on standing back photograph or spinal radiograph",
@@ -21483,7 +21419,6 @@
         "mondo_id": "MONDO:0001670",
         "mesh_id": "D005901",
         "synonyms": [
-          "buphthalmos",
           "trabeculodysgenesis"
         ],
         "clinical_manifestations": [
@@ -21527,9 +21462,7 @@
         "specialty": "Ophthalmology",
         "mondo_id": "MONDO:0005133",
         "mesh_id": "D014141",
-        "synonyms": [
-          "Chlamydia trachomatis ocular infection"
-        ],
+        "synonyms": [],
         "clinical_manifestations": [
           "Follicular conjunctivitis of the upper tarsus",
           "Herbert pits and Arlt line in healed disease",
@@ -22540,8 +22473,7 @@
         "synonyms": [
           "Actinomyces canaliculitis",
           "lacrimal canaliculitis",
-          "canalicular concretion",
-          "Actinomyces israelii infection"
+          "canalicular concretion"
         ],
         "clinical_manifestations": [
           "Swollen, inflamed lower punctum with mucopurulent discharge",
@@ -22845,8 +22777,7 @@
         "synonyms": [
           "lattice retinal degeneration",
           "peripheral retinal degeneration",
-          "vitreoretinal lattice degeneration",
-          "lattice"
+          "vitreoretinal lattice degeneration"
         ],
         "clinical_manifestations": [
           "Spindle- or lattice-shaped peripheral retinal thinning with a white, glistening sheen, usually temporal and superior",
@@ -23551,7 +23482,6 @@
         "synonyms": [
           "Codman tumor",
           "benign chondroblastoma",
-          "epiphyseal giant cell tumor",
           "calcifying giant cell tumor"
         ],
         "clinical_manifestations": [
@@ -23782,7 +23712,6 @@
         "mesh_id": "D012512",
         "synonyms": [
           "Ewing's sarcoma",
-          "primitive neuroectodermal tumor",
           "PNET"
         ],
         "clinical_manifestations": [
@@ -24356,9 +24285,7 @@
         "specialty": "Orthopedics",
         "mondo_id": "MONDO:0005910",
         "mesh_id": "D010017",
-        "synonyms": [
-          "benign osteoblastoma-like lesion"
-        ],
+        "synonyms": [],
         "clinical_manifestations": [
           "Severe, dull, aching bone pain characteristically worsening at night and dramatically relieved within 20-30 minutes by low-dose aspirin or NSAIDs",
           "Painful scoliosis (concavity toward the side of the spinal lesion in posterior arch)",
@@ -26188,7 +26115,6 @@
         "mondo_id": "MONDO:0007037",
         "mesh_id": "D000130",
         "synonyms": [
-          "chondrodystrophy",
           "FGFR3 dwarfism"
         ],
         "clinical_manifestations": [
@@ -28875,7 +28801,6 @@
         "synonyms": [
           "Subperiosteal hematoma",
           "neonatal skull hematoma",
-          "birth-related scalp swelling",
           "subperiosteal skull hemorrhage",
           "newborn cranial hematoma"
         ],
@@ -29682,8 +29607,7 @@
         "mondo_id": "MONDO:0018152",
         "mesh_id": "D011663",
         "synonyms": [
-          "PAP",
-          "pulmonary alveolar microlithiasis"
+          "PAP"
         ],
         "clinical_manifestations": [
           "Cyanosis and tachypnea disproportionate to physical examination findings",
@@ -32136,7 +32060,6 @@
         "mondo_id": "MONDO:0008753",
         "mesh_id": "D000474",
         "synonyms": [
-          "Ochronosis",
           "Alkaptonuric ochronosis",
           "Homogentisic acid oxidase deficiency"
         ],
@@ -32592,8 +32515,7 @@
         "mesh_id": "D002781",
         "synonyms": [
           "acquired cholesteatoma",
-          "COM with cholesteatoma",
-          "keratoma"
+          "COM with cholesteatoma"
         ],
         "clinical_manifestations": [
           "Otoscopy: pearly-white keratin mass or crust within an attic retraction pocket",
@@ -32734,7 +32656,6 @@
         "mesh_id": "D000077274",
         "synonyms": [
           "NPC",
-          "lymphoepithelioma",
           "EBV nasopharyngeal carcinoma"
         ],
         "clinical_manifestations": [
@@ -32927,8 +32848,7 @@
         "mesh_id": "D009452",
         "synonyms": [
           "acoustic neuroma",
-          "acoustic schwannoma",
-          "cerebellopontine angle tumor"
+          "acoustic schwannoma"
         ],
         "clinical_manifestations": [
           "Facial palsy with asymmetric smile and failure of eye closure in large tumors, visible on facial photograph",
@@ -34344,7 +34264,6 @@
         "synonyms": [
           "canker sores",
           "aphthous ulcers",
-          "aphthae",
           "RAS"
         ],
         "clinical_manifestations": [
@@ -34408,7 +34327,6 @@
         "mesh_id": null,
         "synonyms": [
           "oral potentially malignant disorders",
-          "oral premalignant lesions",
           "speckled leukoplakia"
         ],
         "clinical_manifestations": [
@@ -35214,7 +35132,6 @@
         "mondo_id": "MONDO:0023158",
         "mesh_id": "",
         "synonyms": [
-          "perihepatitis",
           "gonococcal perihepatitis",
           "FHC syndrome"
         ],
@@ -35287,7 +35204,6 @@
         "mesh_id": "D006399",
         "synonyms": [
           "imperforate hymen",
-          "hematocolpos",
           "membrane occlusion of vagina"
         ],
         "clinical_manifestations": [
@@ -36166,8 +36082,7 @@
         "mesh_id": "D007021",
         "synonyms": [
           "hypospadias",
-          "distal hypospadias",
-          "chordee"
+          "distal hypospadias"
         ],
         "clinical_manifestations": [
           "Urethral meatus located on the ventral shaft rather than the tip",
@@ -36214,8 +36129,7 @@
         "mesh_id": "",
         "synonyms": [
           "PUV",
-          "urethral valves",
-          "congenital obstructive urethral lesion"
+          "urethral valves"
         ],
         "clinical_manifestations": [
           "Cystoscopy: obstructing membrane folds in the posterior urethra",
@@ -36342,7 +36256,6 @@
         "mesh_id": null,
         "synonyms": [
           "testicular hydrocele",
-          "scrotal swelling",
           "epididymal cyst",
           "spermatocele of the epididymis",
           "hydrocele of the spermatic cord"
