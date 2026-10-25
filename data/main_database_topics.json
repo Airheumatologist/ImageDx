@@ -1380,23 +1380,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "char_syndrome",
-        "name": "Char Syndrome (Patent Ductus Arteriosus with Facial Dysmorphism and Hand Anomalies)",
-        "specialty": "Cardiology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Patent Ductus Arteriosus with Facial Dysmorphism and Hand Anomalies"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "Characteristic \"duck-bill\" mouth with flat nasal bridge, patent ductus arteriosus on echo, and hypoplasia/aplasia of the 5th finger middle phalanges on hand X-ray"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "geleophysic_dysplasia",
         "name": "Geleophysic Dysplasia (Acromelic Dysplasia with Progressive Cardiac Valvular Disease)",
         "specialty": "Cardiology",
@@ -7032,21 +7015,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "erythema_toxicum_neonatorum",
-        "name": "Erythema Toxicum Neonatorum",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "blotchy pustules after birth, palms and soles spared."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "transient_neonatal_pustular_melanosis",
         "name": "Transient Neonatal Pustular Melanosis",
         "specialty": "Dermatology",
@@ -7111,19 +7079,6 @@
         "clinical_manifestations": [
           "purpura progressing to full-thickness necrosis of breast, thigh, or abdomen."
         ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "heparin_induced_skin_necrosis",
-        "name": "Heparin-Induced Skin Necrosis",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
@@ -7358,21 +7313,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "poikiloderma_of_civatte",
-        "name": "Poikiloderma of Civatte",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "red-brown reticulate pigment and telangiectasia on the sides of the neck."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "xanthelasma_palpebrarum",
         "name": "Xanthelasma palpebrarum",
         "specialty": "Dermatology",
@@ -7501,21 +7441,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "perianal_streptococcal_dermatitis",
-        "name": "Perianal streptococcal dermatitis",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a sharp bright-red perianal rash in a child."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "loxoscelism",
         "name": "Loxoscelism (recluse spider envenomation)",
         "specialty": "Dermatology",
@@ -7527,53 +7452,6 @@
         "summary": null,
         "clinical_manifestations": [
           "a red, white, and blue plaque that becomes a necrotic eschar."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "cnidarian_envenomation",
-        "name": "Cnidarian envenomation",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "linear whip-like tentacle welts."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "fire_ant_envenomation",
-        "name": "Fire ant envenomation",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "clustered sterile pustules on a red base."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "flagellate_dermatosis",
-        "name": "Flagellate dermatosis (bleomycin and shiitake)",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "bleomycin and shiitake"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "whip-like hyperpigmented streaks on the trunk."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -7595,55 +7473,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "acrodynia",
-        "name": "Acrodynia (pink disease)",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "pink disease"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "painful pink peeling hands and feet from mercury."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "non_freezing_cold_injury",
-        "name": "Non-freezing cold injury (trench foot)",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "trench foot"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "swollen anesthetic feet that later blister, without tissue ice."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "cutaneous_radiation_injury",
-        "name": "Cutaneous radiation injury",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "geometric erythema, moist desquamation, and late poikiloderma in a treatment field."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "mycoplasma_induced_rash_and_mucositis",
         "name": "Mycoplasma-induced rash and mucositis (MIRM / RIME)",
         "specialty": "Dermatology",
@@ -7656,21 +7485,6 @@
         "summary": null,
         "clinical_manifestations": [
           "severe mucositis of two or more sites with sparse skin lesions."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "acquired_hypertrichosis_lanuginosa",
-        "name": "Acquired hypertrichosis lanuginosa",
-        "specialty": "Dermatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "sudden downy lanugo as a paraneoplastic eruption."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -9123,19 +8937,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "chronic_hypoparathyroidism",
-        "name": "Chronic Hypoparathyroidism",
-        "specialty": "Endocrinology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "tumor_induced_osteomalacia",
         "name": "Tumor-Induced Osteomalacia",
         "specialty": "Endocrinology",
@@ -9256,36 +9057,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "hiv_associated_lipodystrophy",
-        "name": "HIV-associated lipodystrophy",
-        "specialty": "Endocrinology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "facial and limb lipoatrophy with a dorsocervical fat pad."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "familial_male_limited_precocious_puberty",
-        "name": "Familial male-limited precocious puberty",
-        "specialty": "Endocrinology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "phallic enlargement and growth acceleration with prepubertal-sized testes."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "johanson_blizzard_syndrome",
         "name": "Johanson-Blizzard syndrome",
         "specialty": "Endocrinology",
@@ -9312,51 +9083,6 @@
         "summary": null,
         "clinical_manifestations": [
           "achalasia, alacrima, and ACTH-resistant adrenal insufficiency with hyperpigmentation."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "pomc_deficiency",
-        "name": "POMC deficiency",
-        "specialty": "Endocrinology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "red hair, pale skin, adrenal insufficiency, and early severe obesity."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "hyperparathyroidism_jaw_tumor_syndrome",
-        "name": "Hyperparathyroidism–jaw tumor syndrome",
-        "specialty": "Endocrinology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "multiple ossifying fibromas of the jaws with parathyroid tumors."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "vitamin_d_resistant_rickets_type_ii_with_alopecia",
-        "name": "Vitamin D–resistant rickets type II with alopecia",
-        "specialty": "Endocrinology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "severe rachitic bones with absent scalp and body hair."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -11449,23 +11175,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "tylosis_with_esophageal_cancer",
-        "name": "Tylosis with Esophageal Cancer (Howel-Evans Syndrome)",
-        "specialty": "Gastroenterology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Howel-Evans Syndrome"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "Thick yellow waxy palmoplantar keratoderma + oral leukoplakia paired with mid/distal squamous esophageal carcinoma on endoscopy/barium swallow"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "autoimmune_atrophic_gastritis",
         "name": "Autoimmune Metaplastic Atrophic Gastritis and Pernicious Anemia",
         "specialty": "Gastroenterology",
@@ -12868,21 +12577,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "pearson_marrow_pancreas_syndrome",
-        "name": "Pearson marrow-pancreas syndrome",
-        "specialty": "Hematology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "vacuolated marrow precursors and ring sideroblasts with pancreatic failure."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "hypereosinophilic_syndrome",
         "name": "Idiopathic hypereosinophilic syndrome",
         "specialty": "Hematology",
@@ -13010,19 +12704,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "juvenile_myelomonocytic_leukemia",
-        "name": "Juvenile Myelomonocytic Leukemia",
-        "specialty": "Hematology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "aplastic_anemia",
         "name": "Aplastic Anemia",
         "specialty": "Hematology",
@@ -13075,34 +12756,8 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "hemoglobin_barts_hydrops_fetalis",
-        "name": "Hemoglobin Bart's Hydrops Fetalis",
-        "specialty": "Hematology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "hemoglobin_c_disease",
         "name": "Hemoglobin C Disease",
-        "specialty": "Hematology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "hemoglobin_sc_disease",
-        "name": "Hemoglobin SC Disease",
         "specialty": "Hematology",
         "mondo_id": null,
         "mesh_id": null,
@@ -16375,21 +16030,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "erysipeloid",
-        "name": "Erysipeloid",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a sharp nonpurulent violaceous plaque on a fish- or meat-handler’s hand."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "inhalation_anthrax",
         "name": "Inhalation anthrax",
         "specialty": "Infectious Diseases",
@@ -16444,21 +16084,6 @@
         "summary": null,
         "clinical_manifestations": [
           "internal-jugular septic thrombosis and cavitary pulmonary emboli after Fusobacterium pharyngitis."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "pinta",
-        "name": "Pinta",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "colored pintids that end in achromic patches."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -16544,21 +16169,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "emergomycosis",
-        "name": "Emergomycosis",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "disseminated molluscum-like papules in advanced HIV in southern Africa."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "chronic_disseminated_candidiasis",
         "name": "Chronic disseminated (hepatosplenic) candidiasis",
         "specialty": "Infectious Diseases",
@@ -16638,21 +16248,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "trichuriasis",
-        "name": "Trichuriasis",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "threadlike worms carpeting prolapsed rectal mucosa."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "botulism",
         "name": "Botulism",
         "specialty": "Infectious Diseases",
@@ -16709,19 +16304,6 @@
       {
         "topic_id": "subdural_empyema",
         "name": "Subdural Empyema",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "epidemic_typhus",
-        "name": "Epidemic Typhus",
         "specialty": "Infectious Diseases",
         "mondo_id": null,
         "mesh_id": null,
@@ -16798,19 +16380,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "black_piedra",
-        "name": "Black Piedra",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "white_piedra",
         "name": "White Piedra",
         "specialty": "Infectious Diseases",
@@ -16839,19 +16408,6 @@
       {
         "topic_id": "ebola_virus_disease",
         "name": "Ebola Virus Disease",
-        "specialty": "Infectious Diseases",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "marburg_virus_disease",
-        "name": "Marburg Virus Disease",
         "specialty": "Infectious Diseases",
         "mondo_id": null,
         "mesh_id": null,
@@ -17985,21 +17541,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "acute_pyelonephritis_and_renal_abscess",
-        "name": "Acute pyelonephritis and renal abscess",
-        "specialty": "Nephrology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "striated nephrogram, perinephric stranding, rim-enhancing collection."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "renal_tuberculosis",
         "name": "Renal tuberculosis",
         "specialty": "Nephrology",
@@ -18065,23 +17606,6 @@
         "summary": null,
         "clinical_manifestations": [
           "Pathognomonic bilateral extreme congenital microcoria (fixed pinhole pupils <2 mm) with iris atrophy + neonatal nephrotic anasarca and enlarged hyperechoic kidneys on US"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "frasier_syndrome",
-        "name": "Frasier Syndrome (WT1 Splice-Site Nephropathy with Gonadal Dysgenesis)",
-        "specialty": "Nephrology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "WT1 Splice-Site Nephropathy with Gonadal Dysgenesis"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "46,XY complete female external genitalia, nephrotic edema (FSGS), and pelvic streak gonads with calcified gonadoblastoma on pelvic MRI/US"
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -20688,21 +20212,6 @@
         "inclusion_rationale": "The string sign and crescent-shaped intramural hematoma on neck CTA and fat-saturated MRI are the characteristic images."
       },
       {
-        "topic_id": "acute_ischemic_stroke",
-        "name": "Acute Ischemic Stroke and Transient Ischemic Attack",
-        "specialty": "Neurology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "hyperdense MCA, DWI restriction, CTA occlusion."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "intracerebral_hemorrhage",
         "name": "Intracerebral hemorrhage",
         "specialty": "Neurology",
@@ -20712,21 +20221,6 @@
         "summary": null,
         "clinical_manifestations": [
           "hyperdense parenchymal hematoma, edema, mass effect."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "aneurysmal_subarachnoid_hemorrhage_and_saccular_aneurysm",
-        "name": "Aneurysmal subarachnoid hemorrhage and saccular aneurysm",
-        "specialty": "Neurology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "basal cistern blood, CTA/DSA aneurysm."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -21281,23 +20775,6 @@
         "summary": null,
         "clinical_manifestations": [
           "Unilateral congenital upper-eyelid ptosis at rest with rapid upward eyelid retraction (\"wink\") upon jaw opening or lateral pterygoid contraction (trigemino-oculomotor synkinesis)."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "adie_tonic_pupil_syndrome",
-        "name": "Adie Tonic Pupil (Holmes-Adie Syndrome)",
-        "specialty": "Neurology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Holmes-Adie Syndrome"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "Unilateral dilated pupil with light-near dissociation, sectoral iris sphincter palsy with \"vermiform\" writhing on slit-lamp exam, and dramatic constriction to dilute 0.125% pilocarpine."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -23383,21 +22860,6 @@
         "inclusion_rationale": "Peripheral lattice lesions with white sheen, pigment borders and atrophic holes are recognized on ophthalmoscopy and ultra-widefield fundus photography."
       },
       {
-        "topic_id": "diabetic_retinopathy",
-        "name": "Nonproliferative Diabetic Retinopathy and Diabetic Macular Edema",
-        "specialty": "Ophthalmology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "microaneurysms, hemorrhages, exudates; OCT cysts."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "branch_retinal_artery_occlusion",
         "name": "Branch retinal artery occlusion",
         "specialty": "Ophthalmology",
@@ -23812,34 +23274,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "mooren_ulcer",
-        "name": "Mooren Ulcer",
-        "specialty": "Ophthalmology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a painful peripheral ulcer with an overhanging central edge."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "terrien_marginal_degeneration",
-        "name": "Terrien Marginal Degeneration",
-        "specialty": "Ophthalmology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "thygeson_superficial_punctate_keratitis",
         "name": "Thygeson Superficial Punctate Keratitis",
         "specialty": "Ophthalmology",
@@ -23919,19 +23353,6 @@
         "synonyms": [
           "BPES"
         ],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "floppy_eyelid_syndrome",
-        "name": "Floppy Eyelid Syndrome",
-        "specialty": "Ophthalmology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
         "summary": null,
         "clinical_manifestations": [],
         "radiological_manifestations": [],
@@ -26286,19 +25707,6 @@
         "clinical_manifestations": [
           "median nerve enlargement/flattening on ultrasound/MRI."
         ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "de_quervain_tenosynovitis",
-        "name": "De Quervain Tenosynovitis",
-        "specialty": "Orthopedics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
@@ -29531,21 +28939,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "acute_viral_bronchiolitis",
-        "name": "Acute viral bronchiolitis",
-        "specialty": "Pediatrics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "hyperinflation, peribronchial cuffing, patchy atelectasis."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "neonatal_hypoxic_ischemic_encephalopathy",
         "name": "Neonatal hypoxic-ischemic encephalopathy",
         "specialty": "Pediatrics",
@@ -29555,21 +28948,6 @@
         "summary": null,
         "clinical_manifestations": [
           "basal ganglia/thalamic or watershed injury on MRI."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "germinal_matrix_intraventricular_hemorrhage",
-        "name": "Germinal Matrix–Intraventricular Hemorrhage",
-        "specialty": "Pediatrics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "echogenic germinal matrix/ventricular blood on cranial ultrasound."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -29636,21 +29014,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "jejunoileal_atresia",
-        "name": "Jejunoileal atresia",
-        "specialty": "Pediatrics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a mesenteric gap or apple-peel bowel, with a microcolon on contrast enema."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "conjoined_twins",
         "name": "Conjoined twins",
         "specialty": "Pediatrics",
@@ -29692,23 +29055,6 @@
         "summary": null,
         "clinical_manifestations": [
           "alopecia with erosive periorificial dermatitis."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "tyrosinemia_type_ii",
-        "name": "Tyrosinemia type II (Richner-Hanhart syndrome)",
-        "specialty": "Pediatrics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Richner-Hanhart syndrome"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "painful palmoplantar keratoderma and dendritic corneal ulcers."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -29798,21 +29144,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "fetal_warfarin_embryopathy",
-        "name": "Fetal warfarin embryopathy",
-        "specialty": "Pediatrics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "nasal hypoplasia and stippled epiphyses."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "vacterl_association",
         "name": "VACTERL Association",
         "specialty": "Pediatrics",
@@ -29849,19 +29180,6 @@
         "synonyms": [
           "Sly Syndrome"
         ],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "roberts_syndrome",
-        "name": "Roberts Syndrome",
-        "specialty": "Pediatrics",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
         "summary": null,
         "clinical_manifestations": [],
         "radiological_manifestations": [],
@@ -31101,21 +30419,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "tracheobronchial_adenoid_cystic_carcinoma",
-        "name": "Tracheobronchial Adenoid Cystic Carcinoma",
-        "specialty": "Pulmonology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "Fleshy lobulated tracheal tumor on bronchoscopy, longitudinal tracheal wall thickening on CT, and \"Swiss-cheese\" cribriform cylinders on histology"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "lymphomatoid_granulomatosis",
         "name": "Lymphomatoid Granulomatosis",
         "specialty": "Pulmonology",
@@ -31272,21 +30575,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "idiopathic_nonspecific_interstitial_pneumonia",
-        "name": "Idiopathic nonspecific interstitial pneumonia",
-        "specialty": "Pulmonology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "basal ground glass and reticulation with subpleural sparing."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "radiation_induced_lung_injury",
         "name": "Radiation-induced lung injury",
         "specialty": "Pulmonology",
@@ -31326,21 +30614,6 @@
         "summary": null,
         "clinical_manifestations": [
           "upper-lobe nodules, eggshell nodes, and progressive massive fibrosis."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "asbestos_related_pleural_plaques",
-        "name": "Asbestos-related pleural plaques",
-        "specialty": "Pulmonology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "holly-leaf and diaphragmatic calcified plaques. Fibrotic asbestosis stays out because its usual-interstitial pattern duplicates idiopathic pulmonary fibrosis."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -33138,24 +32411,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "basic_calcium_phosphate_deposition_disease",
-        "name": "Basic Calcium Phosphate Crystal Deposition Disease (Milwaukee Shoulder Syndrome)",
-        "specialty": "Rheumatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Milwaukee Shoulder Syndrome",
-          "Basic calcium phosphate deposition disease"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "periarticular calcification, Milwaukee shoulder."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "complex_regional_pain_syndrome",
         "name": "Complex regional pain syndrome",
         "specialty": "Rheumatology",
@@ -33201,45 +32456,6 @@
       {
         "topic_id": "enteropathic_arthritis",
         "name": "Enteropathic Arthritis",
-        "specialty": "Rheumatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "jaccoud_arthropathy",
-        "name": "Jaccoud Arthropathy",
-        "specialty": "Rheumatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "palindromic_rheumatism",
-        "name": "Palindromic Rheumatism",
-        "specialty": "Rheumatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "drug_induced_lupus_erythematosus",
-        "name": "Drug-Induced Lupus Erythematosus",
         "specialty": "Rheumatology",
         "mondo_id": null,
         "mesh_id": null,
@@ -33309,36 +32525,6 @@
         ],
         "summary": null,
         "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "magic_syndrome",
-        "name": "MAGIC Syndrome",
-        "specialty": "Rheumatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "primary_raynaud_phenomenon",
-        "name": "Primary Raynaud Phenomenon",
-        "specialty": "Rheumatology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Primary Raynaud disease"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "sharply demarcated white-blue-red digits. Secondary Raynaud stays inside systemic sclerosis."
-        ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
@@ -33872,19 +33058,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "chronic_rhinosinusitis_without_nasal_polyps",
-        "name": "Chronic Rhinosinusitis without Nasal Polyps",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "allergic_fungal_rhinosinusitis",
         "name": "Allergic fungal rhinosinusitis",
         "specialty": "Otolaryngology",
@@ -33911,19 +33084,6 @@
           "fenestral lucency at fissula ante fenestram, stapes fixation.",
           "a lucent halo at the fissula ante fenestram; Schwartze sign may show through the drum."
         ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "chronic_suppurative_otitis_media",
-        "name": "Chronic Suppurative Otitis Media",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
@@ -34034,21 +33194,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "keratosis_obturans",
-        "name": "Keratosis obturans",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a keratin plug that expands the bony canal over an intact drum."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "silent_sinus_syndrome",
         "name": "Silent sinus syndrome",
         "specialty": "Otolaryngology",
@@ -34128,36 +33273,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "preauricular_sinus_and_cyst",
-        "name": "Preauricular sinus and cyst",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a pit anterior to the helix."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "reinke_edema",
-        "name": "Reinke edema",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "diffuse gelatinous swelling of both vocal folds."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "laryngocele",
         "name": "Laryngocele",
         "specialty": "Otolaryngology",
@@ -34188,32 +33303,6 @@
       {
         "topic_id": "glomus_jugulare",
         "name": "Glomus Jugulare",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "tympanosclerosis",
-        "name": "Tympanosclerosis",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "bullous_myringitis",
-        "name": "Bullous Myringitis",
         "specialty": "Otolaryngology",
         "mondo_id": null,
         "mesh_id": null,
@@ -34266,60 +33355,8 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "nasal_septal_hematoma",
-        "name": "Nasal Septal Hematoma",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "nasal_septal_abscess",
         "name": "Nasal Septal Abscess",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "vocal_fold_nodules",
-        "name": "Vocal Fold Nodules",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "vocal_fold_polyps",
-        "name": "Vocal Fold Polyps",
-        "specialty": "Otolaryngology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "laryngeal_contact_granuloma",
-        "name": "Laryngeal Contact Granuloma",
         "specialty": "Otolaryngology",
         "mondo_id": null,
         "mesh_id": null,
@@ -34596,21 +33633,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "autoimmune_lymphoproliferative_syndrome",
-        "name": "Autoimmune Lymphoproliferative Syndrome (ALPS)",
-        "specialty": "Immunology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "ALPS"
-        ],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "ipex_syndrome",
         "name": "IPEX Syndrome",
         "specialty": "Immunology",
@@ -34620,21 +33642,6 @@
         "summary": null,
         "clinical_manifestations": [
           "neonatal diarrhea, eczematous erythroderma, and early diabetes in a boy."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "whim_syndrome",
-        "name": "WHIM Syndrome",
-        "specialty": "Immunology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "widespread warts with myelokathexis on the smear."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -35577,21 +34584,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "central_ossifying_fibroma_of_the_jaws",
-        "name": "Central ossifying fibroma of the jaws",
-        "specialty": "Dentistry",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a boxed-in mixed lucent-opaque jaw mass."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "oral_mucositis",
         "name": "Oral Mucositis",
         "specialty": "Dentistry",
@@ -35875,21 +34867,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "tetracycline_tooth_discoloration",
-        "name": "Tetracycline Tooth Discoloration",
-        "specialty": "Dentistry",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "intrinsic gray-brown bands that fluoresce."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "necrotizing_sialometaplasia",
         "name": "Necrotizing Sialometaplasia",
         "specialty": "Dentistry",
@@ -35914,21 +34891,6 @@
         "summary": null,
         "clinical_manifestations": [
           "a fixed red diamond on the midline posterior tongue."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "nicotinic_stomatitis",
-        "name": "Nicotinic Stomatitis",
-        "specialty": "Dentistry",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a white palate with red puncta at the minor-salivary orifices."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -35965,19 +34927,6 @@
       {
         "topic_id": "amalgam_tattoo",
         "name": "Amalgam Tattoo",
-        "specialty": "Dentistry",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "garre_sclerosing_osteomyelitis",
-        "name": "Garré Sclerosing Osteomyelitis",
         "specialty": "Dentistry",
         "mondo_id": null,
         "mesh_id": null,
@@ -36086,23 +35035,6 @@
         "summary": null,
         "clinical_manifestations": [
           "a pedunculated mass on the maxillary alveolus of a newborn girl."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "acute_suppurative_sialadenitis",
-        "name": "Acute bacterial sialadenitis",
-        "specialty": "Dentistry",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [
-          "Acute Suppurative Sialadenitis"
-        ],
-        "summary": null,
-        "clinical_manifestations": [
-          "unilateral salivary swelling with pus at the duct."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -36671,21 +35603,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "preeclampsia_eclampsia",
-        "name": "Preeclampsia/eclampsia",
-        "specialty": "Obstetrics & Gynecology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "growth restriction, abnormal Doppler, PRES on MRI."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "tubo_ovarian_abscess",
         "name": "Pelvic Inflammatory Disease and Tubo-Ovarian Abscess",
         "specialty": "Obstetrics & Gynecology",
@@ -36749,21 +35666,6 @@
         "summary": null,
         "clinical_manifestations": [
           "≥20 follicles/ovary, ovarian volume >10 mL, “string of pearls.”"
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "ovarian_functional_cysts",
-        "name": "Ovarian functional cysts",
-        "specialty": "Obstetrics & Gynecology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "simple/hemorrhagic cyst, “ring of fire” corpus luteum."
         ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
@@ -36868,21 +35770,6 @@
         "synonyms": [],
         "summary": null,
         "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "trichomoniasis",
-        "name": "Trichomoniasis",
-        "specialty": "Obstetrics & Gynecology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "a strawberry cervix with frothy discharge."
-        ],
         "radiological_manifestations": [],
         "pathology_manifestations": [],
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
@@ -37717,21 +36604,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "acute_bacterial_prostatitis_prostatic_abscess",
-        "name": "Acute bacterial prostatitis/prostatic abscess",
-        "specialty": "Urology",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [
-          "tender prostate, rim-enhancing collection."
-        ],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "testicular_rupture",
         "name": "Testicular rupture",
         "specialty": "Urology",
@@ -38418,19 +37290,6 @@
         "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
       },
       {
-        "topic_id": "fibrocystic_breast_change",
-        "name": "Fibrocystic Breast Change and Breast Cysts",
-        "specialty": "Breast",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
         "topic_id": "fat_necrosis_of_the_breast",
         "name": "Fat Necrosis of the Breast",
         "specialty": "Breast",
@@ -38604,19 +37463,6 @@
       {
         "topic_id": "nipple_adenoma",
         "name": "Nipple Adenoma",
-        "specialty": "Breast",
-        "mondo_id": null,
-        "mesh_id": null,
-        "synonyms": [],
-        "summary": null,
-        "clinical_manifestations": [],
-        "radiological_manifestations": [],
-        "pathology_manifestations": [],
-        "inclusion_rationale": "Added from Topics.docx (2026-10-21)."
-      },
-      {
-        "topic_id": "tuberous_breast_deformity",
-        "name": "Tuberous Breast Deformity",
         "specialty": "Breast",
         "mondo_id": null,
         "mesh_id": null,
