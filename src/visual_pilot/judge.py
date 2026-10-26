@@ -234,9 +234,13 @@ def normalize_subtype(disease_key: str | None, subtype) -> tuple[str | None, str
 # ---------------------------------------------------------------------------
 # Vocabulary + user content
 # ---------------------------------------------------------------------------
-def vocab_for_diseases(conn, disease_keys: list[str]) -> list[dict]:
-    """Approved vocab items relevant to the article's diseases."""
-    rows = conn.execute("SELECT * FROM findings_vocab WHERE approved = 1")
+def approved_vocab_rows(conn) -> list:
+    """Every approved vocab row, read in full so no cursor stays open."""
+    return conn.execute("SELECT * FROM findings_vocab WHERE approved = 1").fetchall()
+
+
+def vocab_for_diseases(rows, disease_keys: list[str]) -> list[dict]:
+    """Approved vocab items (from ``approved_vocab_rows``) relevant to the article's diseases."""
     wanted = set(disease_keys)
     items = []
     for row in rows:
@@ -473,13 +477,18 @@ class _JudgeRun:
         self.reasons: Counter = Counter()
         self.submitted: list[dict] = []  # BatchResult.index -> figure
         self.vocab_cache: dict[tuple, list[dict]] = {}
+        # Read once, before any LLM worker shares this connection: a read
+        # left open while the triage thread commits leaves the connection on
+        # a stale WAL snapshot, and its next write fails at once with
+        # "database is locked" (busy_timeout does not apply).
+        self.vocab_rows = approved_vocab_rows(conn)
 
     def vocab_for(self, fig) -> list[dict]:
         keys = tuple(
             sorted(db.from_json(self.articles[fig["pmcid"]]["primary_disease_keys_json"], []))
         )
         if keys not in self.vocab_cache:
-            self.vocab_cache[keys] = vocab_for_diseases(self.conn, list(keys))
+            self.vocab_cache[keys] = vocab_for_diseases(self.vocab_rows, list(keys))
         return self.vocab_cache[keys]
 
     def _fail(self, fig: dict, error: str) -> None:

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sqlite3
 import threading
 import time
 import urllib.parse
@@ -790,23 +791,38 @@ class LLMClient:
             "response_format": meta["response_format"],
             "provider": self.provider,
         }
+        row = (
+            stage,
+            model,
+            input_hash,
+            db.to_json(request_meta),
+            raw_content,
+            usage.get("input_tokens"),
+            usage.get("output_tokens"),
+            cost,
+        )
         with self._lock:
-            self.conn.execute(
-                "INSERT OR IGNORE INTO llm_calls "
-                "(stage, model, input_hash, request_meta_json, response_json, "
-                " input_tokens, output_tokens, cost_usd) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    stage,
-                    model,
-                    input_hash,
-                    db.to_json(request_meta),
-                    raw_content,
-                    usage.get("input_tokens"),
-                    usage.get("output_tokens"),
-                    cost,
-                ),
-            )
-            self.conn.commit()
+            for attempt in range(2):
+                try:
+                    self._insert_call(row)
+                    return
+                except sqlite3.OperationalError:
+                    # A write on a stale WAL snapshot fails at once and leaves
+                    # the shared connection failing every write until
+                    # rollback; retry once on a fresh snapshot, and never
+                    # hand the caller a stuck connection.
+                    self.conn.rollback()
+                    if attempt:
+                        raise
+
+    def _insert_call(self, row: tuple) -> None:
+        self.conn.execute(
+            "INSERT OR IGNORE INTO llm_calls "
+            "(stage, model, input_hash, request_meta_json, response_json, "
+            " input_tokens, output_tokens, cost_usd) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            row,
+        )
+        self.conn.commit()
 
 
 def _unwrap_json(content: str) -> str:

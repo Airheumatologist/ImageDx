@@ -1,7 +1,10 @@
 """OpenCode request shape and cost accounting for the LLM client."""
 
 import json
+import sqlite3
 from types import SimpleNamespace
+
+import pytest
 
 from src.visual_pilot import llm
 from src.visual_pilot.llm import _openai_httpx
@@ -473,3 +476,34 @@ def test_usage_limit_on_every_account_stops_like_a_spent_budget(monkeypatch):
     with pytest.raises(llm.BudgetExceeded):
         client.call_json("p3", "deepseek-v4.1-flash", "sys", "user", SCHEMA)
     assert len(calls) == 2 and sleeps == []  # primary, then fallback; no backoff
+
+
+def test_record_recovers_a_connection_left_on_a_stale_snapshot(tmp_path):
+    from src.visual_pilot import db
+
+    path = tmp_path / "vp.sqlite"
+    shared = db.init_db(db.connect(path))
+    other = db.connect(path)
+    client = llm.LLMClient(db_conn=shared, provider="opencode")
+    meta = {"attempts": 1, "response_format": "json_object"}
+
+    shared.executemany(
+        "INSERT INTO llm_calls (stage, model, input_hash) VALUES ('p2', 'm', ?)",
+        [(f"seed{i}",) for i in range(3)],
+    )
+    shared.commit()
+    # A read on the shared connection outlives another connection's commit,
+    # so a write on the shared connection fails at once.
+    rows = shared.execute("SELECT input_hash FROM llm_calls")
+    rows.fetchone()
+    other.execute("INSERT INTO llm_calls (stage, model, input_hash) VALUES ('p2', 'm', 'other')")
+    other.commit()
+    with pytest.raises(sqlite3.OperationalError):
+        client._record("h1", "p3", "m", "v1", '{"ok": true}', {}, None, meta)
+    rows.fetchall()
+
+    # Once the read ends, the connection writes again instead of failing
+    # every later write ("database is locked" in judge._fail).
+    client._record("h2", "p3", "m", "v1", '{"ok": true}', {}, None, meta)
+    stored = other.execute("SELECT 1 FROM llm_calls WHERE input_hash = 'h2'").fetchone()
+    assert stored is not None
