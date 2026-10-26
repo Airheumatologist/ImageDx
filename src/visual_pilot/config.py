@@ -64,11 +64,13 @@ def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on OpenCode Go's multimodal longcat-2.5-preview-free
-# (free for now). deepseek-v4.1-flash also works on Go once the workspace's
-# Privacy settings allow Global regions.
+# Every LLM stage runs on OpenCode Go's multimodal muse-spark-1.3-contributor
+# (Responses API, billed against Go's monthly limit). OpenCode retired
+# longcat-2.5-preview-free, and Go serves no free multimodal model.
+# deepseek-v4.1-flash also works on Go once the workspace's Privacy settings
+# allow Global regions.
 # -----------------------------------------------------------------------------
-DEFAULT_MODEL = "longcat-2.5-preview-free"
+DEFAULT_MODEL = "muse-spark-1.3-contributor"
 # Models OpenCode serves only through the Responses API (/responses).
 RESPONSES_API_MODELS = frozenset(
     m.strip() for m in os.getenv(
@@ -86,7 +88,7 @@ def uses_responses_api(model: str) -> bool:
 # (step-5-preview-free cannot, so it relies on the prompt alone).
 JSON_MODE_MODELS = frozenset(
     m.strip() for m in os.getenv(
-        "VP_JSON_MODE_MODELS", "longcat-2.5-preview-free,deepseek-v4.1-flash"
+        "VP_JSON_MODE_MODELS", "deepseek-v4.1-flash"
     ).split(",")
     if m.strip()
 )
@@ -222,7 +224,7 @@ VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 MODEL_PRICES = {
     # OpenCode Go prices; Go usage counts against its monthly dollar limit.
     "muse-spark-1.3-contributor": {"in": 0.10, "cached_in": 0.002, "out": 0.20},
-    # Free on OpenCode for a limited time.
+    # Formerly free on OpenCode (both now retired); kept for old ledger rows.
     "step-5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
     "longcat-2.5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
 }

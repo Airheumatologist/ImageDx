@@ -159,14 +159,14 @@ def test_judge_derives_compound_from_panel_count():
     assert judge._lists_several_panels({}) is False
 
 
-def test_default_model_uses_chat_json_mode():
+def test_default_model_uses_the_responses_api():
     from src.visual_pilot import config
 
-    assert config.DEFAULT_MODEL == "longcat-2.5-preview-free"
+    assert config.DEFAULT_MODEL == "muse-spark-1.3-contributor"
+    assert config.uses_responses_api(config.DEFAULT_MODEL)
+    assert config.model_price(config.DEFAULT_MODEL) == (0.10, 0.002, 0.20)
     assert config.uses_json_mode("deepseek-v4.1-flash")
-    assert not config.uses_responses_api(config.DEFAULT_MODEL)
-    assert config.uses_json_mode(config.DEFAULT_MODEL)
-    assert config.uses_responses_api("muse-spark-1.3-contributor")
+    assert not config.uses_responses_api("deepseek-v4.1-flash")
     assert not config.uses_responses_api("step-5-preview-free")
     assert not config.uses_json_mode("step-5-preview-free")
     assert config.model_price("step-5-preview-free") == (0.0, 0.0, 0.0)
@@ -245,8 +245,8 @@ def test_requests_carry_the_output_token_cap(monkeypatch):
 def test_effort_off_disables_thinking(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
-    client.call_json("p2", "longcat-2.5-preview-free", "sys", "user", SCHEMA, reasoning_effort="off")
-    client.call_json("p2", "longcat-2.5-preview-free", "sys", "user2", SCHEMA, reasoning_effort="low")
+    client.call_json("p2", "glm-5.3-flash", "sys", "user", SCHEMA, reasoning_effort="off")
+    client.call_json("p2", "glm-5.3-flash", "sys", "user2", SCHEMA, reasoning_effort="low")
     assert completions.calls[0]["extra_body"] == {"thinking": {"type": "disabled"}}
     assert completions.calls[1]["extra_body"] == {"reasoning_effort": "low"}
 

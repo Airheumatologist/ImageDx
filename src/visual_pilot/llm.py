@@ -3,8 +3,7 @@
 OpenAI-compatible calls to OpenCode (``VP_LLM_PROVIDER=opencode``) with
 the schema in the system prompt and the JSON reply validated locally.
 Muse Spark models go through the Responses API in JSON mode; the rest use
-chat completions, in JSON mode for ``VP_JSON_MODE_MODELS`` (longcat-2.5-preview-free,
-deepseek-v4.1-flash)
+chat completions, in JSON mode for ``VP_JSON_MODE_MODELS`` (deepseek-v4.1-flash)
 and without one otherwise (step-5-preview-free has none). One
 repair retry on validation failure, an
 ``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
@@ -181,7 +180,7 @@ def _chat_extra_kwargs(model: str, effort: str) -> dict:
     """Provider kwargs for a chat completion: thinking/effort, token cap, JSON mode."""
     extra_kwargs: dict = {}
     if effort == "off":
-        # reasoning_effort only trims thinking on longcat-2.5-preview-free;
+        # reasoning_effort only trims thinking on some chat models;
         # this switches it off.
         extra_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
     elif effort:

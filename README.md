@@ -475,15 +475,16 @@ pip install -r requirements.txt
 cp env.example .env   # fill in OPENCODE_API_KEY (discovery needs no key)
 ```
 
-Every stage runs on the multimodal `longcat-2.5-preview-free` through the
-OpenCode Go gateway (`https://opencode.ai/zen/go/v1`, chat completions, JSON
-mode). It is free for now, so `config.MODEL_PRICES` prices it at zero.
-`deepseek-v4.1-flash` (JSON mode too) works on Go when the workspace's Privacy
+Every stage runs on the multimodal `muse-spark-1.3-contributor` through the
+OpenCode Go gateway (`https://opencode.ai/zen/go/v1`, Responses API, JSON
+mode). Usage counts against Go's monthly limit, and `config.MODEL_PRICES`
+records it at $0.10 in / $0.20 out per 1M tokens. OpenCode retired the free
+`longcat-2.5-preview-free`, and Go serves no free multimodal model (the free
+Zen models answer only inside the OpenCode app). `deepseek-v4.1-flash`
+(chat completions, JSON mode) works on Go when the workspace's Privacy
 settings allow Global regions; it has no entry in `config.MODEL_PRICES`, so
-the ledger records no cost for it and usage counts against Go's monthly
-limit. `muse-spark-1.3-contributor` still works over the Responses API, and
-`step-5-preview-free` over chat completions (no JSON mode there: replies are
-unwrapped and validated locally).
+the ledger records no cost for it. Only chat-completions requests switch to
+`VP_FALLBACK_MODEL` on a 429/402; Responses API requests retry in place.
 
 ## Usage
 
