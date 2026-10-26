@@ -233,10 +233,14 @@ def panel_records(conn, disease_key: str | None = None) -> list[dict]:
     identities = {}
     if "panel_identity_reviews" in tables:
         identities = {row["panel_id"]: dict(row) for row in conn.execute("SELECT * FROM panel_identity_reviews")}
-    figures = {row["figure_id"]: dict(row) for row in conn.execute("SELECT * FROM figures")}
-    articles = {row["pmcid"]: dict(row) for row in conn.execute("SELECT * FROM articles")}
+    # One topic's call reads only that topic's figures and articles.
+    scope, params = "", ()
+    if disease_key is not None:
+        scope, params = " WHERE pmcid IN (SELECT pmcid FROM panels WHERE disease_key=?)", (disease_key,)
+    figures = {row["figure_id"]: dict(row) for row in conn.execute("SELECT * FROM figures" + scope, params)}
+    articles = {row["pmcid"]: dict(row) for row in conn.execute("SELECT * FROM articles" + scope, params)}
     if "article_source_metadata" in tables:
-        for row in conn.execute("SELECT pmcid,metadata_json FROM article_source_metadata"):
+        for row in conn.execute("SELECT pmcid,metadata_json FROM article_source_metadata" + scope, params):
             metadata = db.from_json(row["metadata_json"], {}) or {}
             if row["pmcid"] in articles:
                 articles[row["pmcid"]]["source_metadata"] = metadata
