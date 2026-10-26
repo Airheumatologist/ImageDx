@@ -481,8 +481,7 @@ records it at $0.10 in / $0.20 out per 1M tokens. OpenCode retired the free
 Zen models answer only inside the OpenCode app). `deepseek-v4.1-flash`
 (chat completions, JSON mode) works on Go when the workspace's Privacy
 settings allow Global regions; it has no entry in `config.MODEL_PRICES`, so
-the ledger records no cost for it. Only chat-completions requests switch to
-`VP_FALLBACK_MODEL` on a 429/402; Responses API requests retry in place.
+the ledger records no cost for it.
 
 ## Usage
 
@@ -531,11 +530,11 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 A lower reasoning effort is roughly 10× faster per call but changes
 decisions; compare against earlier decisions before lowering it for triage
 or judging. A set effort is part of the `llm_calls` cache key, so changing
-it re-asks the model. A chat request answered with HTTP 429 or 402 (Go's
+it re-asks the model. A request answered with HTTP 429 or 402 (Go's
 "Endpoint is unavailable") switches once to the fallback when one is set:
 `VP_FALLBACK_MODEL` (empty: the same model) on the `VP_FALLBACK_API_KEY`
 account (empty: `OPENCODE_API_KEY`), so a second OpenCode account can absorb
-one account's rate limits. The reply is cached under the original request's
+one account's rate limits or spent Go usage. The reply is cached under the original request's
 key and recorded with the model that answered. Otherwise HTTP 429s back off
 and retry (`VP_RATE_LIMIT_RETRIES`). Both are counted in the timings report
 (`llm_429`, `llm_402`, `llm_fallback`).

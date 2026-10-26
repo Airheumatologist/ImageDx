@@ -105,7 +105,7 @@ VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", DEFAULT_MODEL)
 VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
-# Where a chat request goes once its first try answers HTTP 429 or 402
+# Where a request goes once its first try answers HTTP 429 or 402
 # (OpenCode's "Endpoint is unavailable"): VP_FALLBACK_MODEL (empty = the same
 # model) on the VP_FALLBACK_API_KEY account (empty = OPENCODE_API_KEY, the
 # same gateway). With both empty there is no switch. A fallback reply is

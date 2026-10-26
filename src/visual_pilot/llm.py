@@ -13,7 +13,7 @@ There is no provider batch API, so ``call_many``/``iter_many`` run requests
 on a thread pool of ``VP_CONCURRENCY`` workers, with a per-client timeout,
 lazy completion-order
 ``iter_many``, process-wide request pacing (``VP_LLM_RPM``), and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
-independent of ``max_retries``. A chat request answered with a 429 or 402
+independent of ``max_retries``. A request answered with a 429 or 402
 switches once to the fallback: ``VP_FALLBACK_MODEL`` (default: the same model)
 on the ``VP_FALLBACK_API_KEY`` account (default: the same account).
 """
@@ -510,18 +510,16 @@ class LLMClient:
             },
             {"role": "user", "content": self._user_parts(user_content, images)},
         ]
-        if config.uses_responses_api(model):
-            resp, _ = self._with_retries(
-                lambda m, _fb: self._send_responses(m, messages, effort), model,
-                can_fallback=False,
-            )
-            return resp, "responses_json", model
-
         def _send(m: str, fallback: bool):
+            # The fallback model may speak the other protocol.
+            if config.uses_responses_api(m):
+                return self._send_responses(m, messages, effort, fallback)
             with _IN_FLIGHT:
                 return self._stream_chat(m, messages, _chat_extra_kwargs(m, effort), fallback)
 
         resp, used = self._with_retries(_send, model, can_fallback=True)
+        if config.uses_responses_api(used):
+            return resp, "responses_json", used
         json_mode = config.uses_json_mode(used)
         return resp, "chat_json" if json_mode else "prompt_json", used
 
@@ -569,7 +567,9 @@ class LLMClient:
         message = SimpleNamespace(content="".join(content))
         return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
-    def _send_responses(self, model: str, messages: list[dict], effort: str):
+    def _send_responses(
+        self, model: str, messages: list[dict], effort: str, fallback: bool = False
+    ):
         """One streamed Responses API call in JSON mode (Muse Spark models).
 
         Returns the chat-completions shape ``_call_with_validation`` reads.
@@ -586,7 +586,7 @@ class LLMClient:
         if config.VP_LLM_MAX_OUTPUT_TOKENS:
             kwargs["max_output_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
         with _IN_FLIGHT:
-            stream = self._openai().responses.create(
+            stream = self._openai(fallback).responses.create(
                 model=model,
                 instructions=system,
                 input=[{"role": "user", "content": parts}],

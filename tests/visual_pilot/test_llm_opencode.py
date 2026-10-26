@@ -415,6 +415,40 @@ def test_fallback_account_retries_the_same_model(monkeypatch):
     assert meta["model"] == "deepseek-v4.1-flash"
 
 
+def test_responses_usage_limit_moves_to_the_fallback_account(monkeypatch):
+    monkeypatch.setattr(
+        llm.config, "llm_credentials", lambda provider: ("k", "https://example.invalid/v1")
+    )
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "fallback-key")
+    client = llm.LLMClient(provider="opencode")
+    response = llm.httpx.Response(429, request=llm.httpx.Request("POST", "https://x.invalid"))
+    spent = llm.openai.RateLimitError(
+        "Error code: 429 - {'error': {'type': 'GoUsageLimitError'}}", response=response, body=None)
+    primary_calls = []
+
+    def limited(**kwargs):
+        primary_calls.append(kwargs["model"])
+        raise spent
+
+    client._client = SimpleNamespace(responses=SimpleNamespace(create=limited))
+    fallback = _Responses()
+    keys = []
+
+    def new_openai(api_key):
+        keys.append(api_key)
+        return SimpleNamespace(responses=fallback)
+
+    monkeypatch.setattr(client, "_new_openai", new_openai)
+    parsed, meta = client.call_json("p3", "muse-spark-1.3-contributor", "sys", "user", SCHEMA)
+    assert parsed == {"ok": True}
+    assert primary_calls == ["muse-spark-1.3-contributor"]
+    assert keys == ["fallback-key"]
+    assert [c["model"] for c in fallback.calls] == ["muse-spark-1.3-contributor"]
+    assert meta["model"] == "muse-spark-1.3-contributor"
+    assert meta["response_format"] == "responses_json"
+
+
 def test_usage_limit_on_every_account_stops_like_a_spent_budget(monkeypatch):
     import pytest
 
