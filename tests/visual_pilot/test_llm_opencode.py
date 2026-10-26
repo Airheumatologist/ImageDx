@@ -311,6 +311,8 @@ class _RateLimitedCompletions(_Completions):
 def test_free_tier_exhausted_backs_off_like_a_rate_limit(monkeypatch):
     sleeps = []
     monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "")
     monkeypatch.setattr(llm.config, "VP_RATE_LIMIT_RETRIES", 5)
     response = llm.httpx.Response(
         502, request=llm.httpx.Request("POST", "https://example.invalid/v1/chat/completions")
@@ -338,6 +340,8 @@ def test_free_tier_exhausted_backs_off_like_a_rate_limit(monkeypatch):
 def test_reply_from_a_substituted_model_is_retried(monkeypatch):
     sleeps = []
     monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "")
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
     served = ["anyrouter/free-pick", "nvidia/nemotron-3.5-super-vl-120b-a12b"]
@@ -356,6 +360,33 @@ def test_reply_from_a_substituted_model_is_retried(monkeypatch):
     assert parsed == {"ok": True}
     assert len(completions.calls) == 2
     assert sleeps == [1.0]
+
+
+def test_substituted_reply_switches_to_the_fallback_model(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "minimax/minimax-m3.1-flash:free")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "")
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+
+    def create(**kwargs):
+        stream = _Completions.create(completions, **kwargs)
+        served = ("reflection/beam-1.0" if kwargs["model"].startswith("nvidia/")
+                  else "minimax/minimax-m3.1-flash")
+        for chunk in stream.chunks:
+            chunk.model = served
+        return stream
+
+    monkeypatch.setattr(completions, "create", create)
+    parsed, meta = client.call_json(
+        "p3", "nvidia/nemotron-3.5-super-vl-120b-a12b:free", "sys", "user", SCHEMA
+    )
+    assert parsed == {"ok": True}
+    assert [c["model"] for c in completions.calls] == [
+        "nvidia/nemotron-3.5-super-vl-120b-a12b:free", "minimax/minimax-m3.1-flash:free",
+    ]
+    assert sleeps == []
 
 
 def test_rate_limit_switches_to_the_fallback_model(monkeypatch):

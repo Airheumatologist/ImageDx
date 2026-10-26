@@ -706,8 +706,8 @@ class LLMClient:
         errors and 5xx consume max_retries with the original backoff;
         AnyRouter's ``free_tier_exhausted`` 502 and a reply from a substituted
         model count as a 429. With
-        ``can_fallback``, the first 429 or 402 (OpenCode's "Endpoint is
-        unavailable") switches the request to the fallback model/account at
+        ``can_fallback``, the first 429, 402 (OpenCode's "Endpoint is
+        unavailable"), ``free_tier_exhausted`` or substituted reply switches the request to the fallback model/account at
         once, without spending either budget; later errors retry there.
         """
         transient_attempt = 0
@@ -719,7 +719,9 @@ class LLMClient:
                 return call(model, on_fallback), model
             except openai.APIStatusError as exc:
                 if (can_fallback and not on_fallback and _has_fallback(model)
-                        and exc.status_code in _FALLBACK_STATUSES):
+                        and (exc.status_code in _FALLBACK_STATUSES
+                             or _FREE_TIER_EXHAUSTED in str(exc)
+                             or _MODEL_SUBSTITUTED in str(exc))):
                     timing.count(f"llm_{exc.status_code}")
                     timing.count("llm_fallback")
                     model = config.VP_FALLBACK_MODEL or model
