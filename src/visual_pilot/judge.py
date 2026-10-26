@@ -659,7 +659,8 @@ def run(args) -> int:
 # ---------------------------------------------------------------------------
 # Whole-figure plate requeue (no LLM calls; deterministic re-evaluation)
 # ---------------------------------------------------------------------------
-def requeue_plates(conn, disease=None, pmcids=None, dry_run=False) -> dict:
+def requeue_plates(conn, disease=None, pmcids=None, dry_run=False,
+                   disease_keys=None) -> dict:
     """Re-evaluate ``vision_rejected`` compound figures under the v5 plate
     policy and requeue publishable single-disease plates.
 
@@ -672,6 +673,7 @@ def requeue_plates(conn, disease=None, pmcids=None, dry_run=False) -> dict:
     allowed_by_disease = curation.approved_findings_by_disease(conn)
     rows = db.rows_with_status(conn, "figures", "vision_rejected", disease=disease)
     wanted = set(pmcids) if pmcids else None
+    wanted_keys = set(disease_keys) if disease_keys else None
     counts: dict = {
         "examined": 0,
         "requeued": 0,
@@ -692,6 +694,12 @@ def requeue_plates(conn, disease=None, pmcids=None, dry_run=False) -> dict:
         article = conn.execute(
             "SELECT * FROM articles WHERE pmcid=?", (row["pmcid"],)
         ).fetchone()
+        if wanted_keys is not None:
+            article_keys = set(
+                db.from_json(article["primary_disease_keys_json"], []) if article else []
+            )
+            if not article_keys & wanted_keys:
+                continue
         license_code = row.get("effective_license") or (
             article["license_code"] if article else None
         )
@@ -819,12 +827,16 @@ def run_requeue_age_vetoes(args) -> int:
 
 def run_requeue_plates(args) -> int:
     conn = db.init_db()
+    keys = None
+    if getattr(args, "topics_under", None) is not None or getattr(args, "diseases", None):
+        keys = diseases.selected_keys(args)
     try:
         result = requeue_plates(
             conn,
             disease=None if args.disease == "all" else args.disease,
             pmcids=getattr(args, "pmcids", None),
             dry_run=bool(args.dry_run),
+            disease_keys=keys,
         )
     finally:
         conn.close()

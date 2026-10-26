@@ -53,7 +53,8 @@ DISEASE_KEY = "_disease"
 OVERVIEW_PER_DISEASE = 60
 # Case reports first: in the first disease pass they published ~9 images
 # per 100 articles, other research ~1 and reviews ~0.5.
-DISEASE_PER_ROUND = 200
+# One sweep of the tail beats depth on one topic; override per run.
+DISEASE_PER_ROUND = config.VP_TOPIC_ARTICLES_PER_ROUND
 DISEASE_SEARCH_DEPTH = 600
 
 
@@ -232,35 +233,71 @@ DISEASE_SCOPES = (
 )
 
 
-def find_disease_articles(disease_key: str, limit: int, skip: set[str]):
+def find_disease_articles(
+    disease_key: str,
+    limit: int,
+    skip: set[str],
+    *,
+    have: int = 0,
+    finding_terms: list[str] | None = None,
+    relaxed_license: bool = False,
+):
     """Any article naming the disease (the ``disease`` pass).
 
     Case reports naming it in the title come first, then case reports naming
     it in the abstract, then any article titled with it, until ``limit``;
-    each query's hits are ranked by ``disease_pass_rank``.
+    each query's hits are ranked by ``disease_pass_rank``. Topics with no
+    image yet also try MeSH and disease-plus-manifestation queries, and
+    ``relaxed_license`` adds a tier without the Europe PMC LICENSE clause
+    (the local JATS/figure gate still decides).
     """
-    terms = overview_disease_terms(diseases.load_diseases()[disease_key])
+    disease = diseases.load_diseases()[disease_key]
+    terms = overview_disease_terms(disease)
     seen = set(skip)
     picked: list[tuple[europepmc.Hit, str]] = []
     attempts = []
-    for scope, cases_only, fields in DISEASE_SCOPES:
-        if len(picked) >= limit:
-            break
-        query = europepmc.build_disease_query(terms, cases_only=cases_only, fields=fields)
-        if not query:
-            continue
+
+    def take(query: str, scope: str, *, license_required: bool = True) -> None:
+        if not query or len(picked) >= limit:
+            return
         total, hits = europepmc.search(query, limit=DISEASE_SEARCH_DEPTH)
         new = []
         for hit in sorted(hits, key=disease_pass_rank):
             if len(picked) >= limit:
                 break
-            if hit.pmcid in seen or not europepmc.eligible(hit):
+            if hit.pmcid in seen or not europepmc.eligible(
+                hit, license_required=license_required
+            ):
                 continue
             seen.add(hit.pmcid)
             new.append(hit.pmcid)
             picked.append((hit, "disease"))
         attempts.append({"mode": "disease", "scope": scope, "query": query, "total": total,
                          "returned": [h.pmcid for h in hits], "new": new})
+
+    for scope, cases_only, fields in DISEASE_SCOPES:
+        take(europepmc.build_disease_query(terms, cases_only=cases_only, fields=fields), scope)
+    # Indexed under MeSH even when the title/abstract never repeats the name.
+    take(europepmc.build_mesh_query(terms), "disease_mesh")
+    if have == 0 and finding_terms:
+        take(
+            europepmc.build_manifestation_query(terms, finding_terms),
+            "disease_manifestation",
+        )
+    if relaxed_license:
+        take(
+            europepmc.build_disease_query(
+                terms, cases_only=True, fields=("TITLE", "ABSTRACT"),
+                license_clause=False,
+            ),
+            "disease_relaxed_license_cases",
+            license_required=False,
+        )
+        take(
+            europepmc.build_disease_query(terms, fields=("TITLE",), license_clause=False),
+            "disease_relaxed_license",
+            license_required=False,
+        )
     return picked, attempts
 
 
@@ -445,8 +482,23 @@ def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
     pmcid = article_row["pmcid"]
     fig_rows = []
     pending = []
+    # Europe PMC sometimes has no license where the article's own JATS does.
+    # Only fill a missing/unknown code: a specific non-commercial code is
+    # never overridden by a JATS string.
+    current_license = str(article_row["license_code"] or "").strip().lower()
+    jats_license = pmc.normalize_license(parsed.article_license_raw)
+    if current_license in {"", "none", "other"} and pmc.license_allows(jats_license) is not None:
+        conn.execute(
+            "UPDATE articles SET license_code=?, license_url=COALESCE(license_url, ?), "
+            "updated_at=datetime('now') WHERE pmcid=?",
+            (jats_license, pmc.license_url_for(jats_license, parsed.article_license_raw), pmcid),
+        )
+        article_row["license_code"] = jats_license
     for fig in parsed.figures:
-        row = parse_stage._figure_row(pmcid, fig, article_row["license_code"], bundle.resolver)
+        row = parse_stage._figure_row(
+            pmcid, fig, article_row["license_code"], bundle.resolver,
+            article_license_raw=parsed.article_license_raw,
+        )
         if row["status"] == "pending" and not names_finding(
             fig.caption, fig.in_text_mentions, match_terms
         ) and not (image_gate is not None and names_patient_image(fig.caption, image_gate)):
@@ -462,6 +514,9 @@ def _store_article(conn, article_row, bundle, parsed, match_terms, stats,
             )
         fig_rows.append(row)
         stats[row["status"]] = stats.get(row["status"], 0) + 1
+        reason = (db.from_json(row.get("triage_json"), {}) or {}).get("reason")
+        if row["status"] == "caption_rejected" and reason:
+            stats[f"drop_{reason}"] = stats.get(f"drop_{reason}", 0) + 1
         if row["status"] == "pending":
             pending.append(row["figure_id"])
     db.set_status(
@@ -487,7 +542,7 @@ def _fetch_all(pool, picked) -> list:
 
 
 def _ingest(conn, outcomes, disease_key: str, finding_key: str, picked, pass_name: str,
-            match_terms: list[str], stats: dict) -> int:
+            match_terms: list[str], stats: dict, image_gate: list[str] | None = None) -> int:
     """Store fetched hits and commit; return the number of figures queued.
 
     Each article commits on its own: a disease-pass job can bring 200
@@ -495,8 +550,7 @@ def _ingest(conn, outcomes, disease_key: str, finding_key: str, picked, pass_nam
     the judge thread's busy_timeout ("database is locked").
     """
     pending = 0
-    gate = (overview_disease_terms(diseases.load_diseases()[disease_key])
-            if pass_name == "disease" else None)
+    gate = image_gate
     for (hit, mode), outcome in zip(picked, outcomes):
         article = _upsert_article(conn, hit, disease_key, finding_key, mode, pass_name)
         if isinstance(outcome, Exception):
@@ -583,6 +637,7 @@ class _DiscoveryPass:
         self.stats: dict = {"pass": pass_name, "pairs": 0, "articles": 0, "fetch_errors": 0,
                             "pmcids": []}
         self.vocab = _vocab_by_disease(conn)
+        self.topic_counts = topic_image_counts(conn)
         self.match_terms: dict[str, list[str]] = {}
         self.known: dict[str, set[str]] = {}
         self.overview = pass_name == "overview"
@@ -631,7 +686,13 @@ class _DiscoveryPass:
         if self.overview:
             return find_overview_articles(disease_key, terms, OVERVIEW_PER_DISEASE, skip)
         if self.by_disease:
-            return find_disease_articles(disease_key, DISEASE_PER_ROUND, skip)
+            have = self.topic_counts.get(disease_key, 0)
+            return find_disease_articles(
+                disease_key, DISEASE_PER_ROUND, skip,
+                have=have,
+                finding_terms=self.terms_for(disease_key) if have == 0 else None,
+                relaxed_license=config.VP_RELAXED_LICENSE_SEARCH,
+            )
         _, picked, attempts = find_articles(disease_key, finding, self.per_pair, skip,
                                             scope=self.scope)
         return picked, attempts
@@ -656,8 +717,14 @@ class _DiscoveryPass:
         outcomes = _fetch_all(self.pool, picked)
         _record_attempts(self.conn, disease_key, key, attempts)
         before = len(self.stats["pmcids"])
+        # Thin topics get the patient-image caption gate in every pass: a
+        # sibling figure of a relevant article is worth a triage/judge call
+        # even when its caption repeats no finding phrasing.
+        gate = None
+        if self.topic_counts.get(disease_key, 0) < config.VP_TOPIC_IMAGE_FLOOR:
+            gate = overview_disease_terms(diseases.load_diseases()[disease_key])
         pending = _ingest(self.conn, outcomes, disease_key, key, picked, self.pass_name,
-                          self.terms_for(disease_key), self.stats)
+                          self.terms_for(disease_key), self.stats, image_gate=gate)
         new = self.stats["pmcids"][before:]
         mine.update(new)
         if finding is not None:
@@ -780,23 +847,33 @@ def _scoped_figures(conn, disease_keys, where: str, params=()):
     ).fetchall()
 
 
-def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
+def requeue_terms(conn, disease_keys, dry_run: bool = False,
+                  all_passes: bool = False,
+                  limit_per_topic: int | None = None) -> int:
     """Return discovery's ``no_finding_term`` drops that now pass the gate.
 
     After ``expand-terms`` adds plain caption terms, figures already parsed
     may match; they go back to ``pending`` for triage without a new search.
-    Figures of disease-pass articles also return when the caption reads as a
-    patient image (``names_patient_image``).
+    Figures whose caption reads as a patient image (``names_patient_image``)
+    also return. By default that fallback applies only to disease-pass
+    articles; ``all_passes`` applies it to every article retrieved for a
+    selected (thin) topic, which rescues sibling figures of case reports and
+    reviews found by the pair passes.
     """
     catalog = diseases.load_diseases()
     terms: dict[str, list[str]] = {}
     moved = []
+    per_topic: dict[str, int] = {}
     rows = _scoped_figures(
         conn, disease_keys,
         "f.status='caption_rejected' AND json_extract(f.triage_json,'$.reason')='no_finding_term'",
     )
     for row in rows:
         keys = db.from_json(row["primary_disease_keys_json"], []) or []
+        if limit_per_topic and any(
+            per_topic.get(key, 0) >= limit_per_topic for key in keys
+        ):
+            continue
         match = []
         for key in keys:
             if key not in terms:
@@ -807,9 +884,11 @@ def requeue_terms(conn, disease_keys, dry_run: bool = False) -> int:
         disease_pass = any(isinstance(e, dict) and e.get("pass") == "disease" for e in evidence)
         names = [t for key in keys if key in catalog for t in overview_disease_terms(catalog[key])]
         if names_finding(row["caption"], mentions, match) or (
-            disease_pass and names_patient_image(row["caption"], names)
+            (all_passes or disease_pass) and names_patient_image(row["caption"], names)
         ):
             moved.append(row["figure_id"])
+            for key in keys:
+                per_topic[key] = per_topic.get(key, 0) + 1
     if not dry_run:
         conn.executemany(
             "UPDATE figures SET status='pending', triage_json=NULL, attempts=0, error=NULL, "
@@ -843,7 +922,11 @@ def run_requeue(args) -> int:
     conn = db.init_db()
     keys = diseases.selected_keys(args)
     try:
-        n = requeue_terms(conn, keys, dry_run=args.dry_run)
+        n = requeue_terms(
+            conn, keys, dry_run=args.dry_run,
+            all_passes=getattr(args, "all_passes", False),
+            limit_per_topic=getattr(args, "per_topic_limit", None),
+        )
         print(f"requeue-terms: {n} figure(s) {'would return' if args.dry_run else 'returned'} "
               "to pending")
         if getattr(args, "retry_errors", False):

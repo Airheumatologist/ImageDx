@@ -53,14 +53,32 @@ def _row_get(row, key):
         return None
 
 
-def _figure_row(pmcid: str, fig: jats.FigureInfo, article_license: str | None, resolver) -> dict:
-    """Build the figures-row payload (status decided here)."""
+def _figure_row(
+    pmcid: str,
+    fig: jats.FigureInfo,
+    article_license: str | None,
+    resolver,
+    article_license_raw: str | None = None,
+) -> dict:
+    """Build the figures-row payload (status decided here).
+
+    A figure-level license always wins. Otherwise the Europe PMC article code
+    is used when it is specific; when it is missing/unknown, the article's own
+    JATS ``<permissions><license>`` fills the gap. A specific non-commercial
+    Europe PMC code is never overridden by a more permissive JATS string.
+    """
     figure_id = f"{pmcid}:{fig.fig_id}"
-    effective_license = (
-        pmc.normalize_license(fig.fig_license_raw)
-        if fig.fig_license_raw
-        else article_license
-    )
+    explicit = pmc.normalize_license(article_license) if article_license else "none"
+    if fig.fig_license_raw:
+        effective_license = pmc.normalize_license(fig.fig_license_raw)
+    else:
+        effective_license = explicit
+        if explicit in {"none", "other"} and article_license_raw:
+            jats_license = pmc.normalize_license(article_license_raw)
+            if pmc.license_allows(jats_license) is not None:
+                effective_license = jats_license
+    if effective_license == "none":
+        effective_license = None
     image_url = image_format = error = None
     if fig.graphic_href:
         ref = resolver(fig.graphic_href)

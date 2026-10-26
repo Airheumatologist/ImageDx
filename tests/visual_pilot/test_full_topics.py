@@ -22,46 +22,36 @@ def _hit(pmcid):
 
 # --- catalog -----------------------------------------------------------------
 
-def test_topics_catalog_keeps_pilot_keys_and_adds_every_topic(monkeypatch):
-    monkeypatch.setenv("VP_CATALOG", "topics")
+def test_catalog_is_the_single_topic_list():
     catalog = diseases.load_diseases()
     topics = diseases.load_topics()
-    assert len(topics) == len({t["topic_id"] for t in topics})
-    for topic in topics:
-        assert diseases.topic_disease_key(topic) in catalog
-    # Pilot topics keep their pilot key and curated subtypes.
+    assert len(topics) == len({t["topic_id"] for t in topics}) == len(catalog)
+    assert list(catalog) == [t["topic_id"] for t in topics]
+    assert all(d["specialty"] for d in catalog.values())
+    # Curated topics keep their short keys and subtypes.
     assert "systemic_lupus_erythematosus" not in catalog
     assert catalog["sle"]["subtypes"] and catalog["sle"]["specialty"] == "Rheumatology"
-    # Pilot diseases outside the index stay in the catalog.
-    assert "ad" in catalog
+    assert catalog["ad"]["specialty"] == "Dermatology"
     assert catalog["vitiligo"]["subtypes"] == []
+    # The vocabulary only names listed topics.
+    assert all(f["disease_keys"][0] in catalog for f in diseases.load_findings_vocab())
 
 
 def test_search_names_extend_topic_title_terms(tmp_path, monkeypatch):
-    monkeypatch.setenv("VP_CATALOG", "topics")
     path = tmp_path / "topic_search_names.json"
     path.write_text(json.dumps({"zenker_diverticulum": ["Zenker's diverticulum", "Zenker Diverticulum"]}))
     monkeypatch.setattr(diseases, "SEARCH_NAMES_PATH", path)
-    catalog = diseases._catalog.__wrapped__("topics")
+    catalog = diseases._catalog.__wrapped__()
     zenker = catalog["zenker_diverticulum"]
     assert zenker["synonyms"].count("Zenker's diverticulum") == 1
     assert "Zenker's diverticulum" in discover.overview_disease_terms(zenker)
     # Names already in the catalog are not repeated.
     monkeypatch.setattr(diseases, "SEARCH_NAMES_PATH", tmp_path / "missing.json")
-    base = diseases._catalog.__wrapped__("topics")["zenker_diverticulum"]
+    base = diseases._catalog.__wrapped__()["zenker_diverticulum"]
     assert len(zenker["synonyms"]) == len(base["synonyms"]) + 1
 
 
-def test_pilot_catalog_is_the_curated_file(monkeypatch):
-    monkeypatch.setenv("VP_CATALOG", "pilot")
-    assert set(diseases.load_diseases()) == {
-        "sle", "dm", "as", "ra", "ssc", "psoriasis", "psa", "sarcoidosis", "gout", "ad",
-    }
-    assert all(f["disease_keys"][0] in diseases.load_diseases() for f in diseases.load_findings_vocab())
-
-
-def test_topic_vocab_rows_validate_against_the_catalog(monkeypatch):
-    monkeypatch.setenv("VP_CATALOG", "topics")
+def test_topic_vocab_rows_validate_against_the_catalog():
     catalog = set(diseases.load_diseases())
     vocab = diseases.load_findings_vocab()
     assert len({f["finding_key"] for f in vocab}) == len(vocab)

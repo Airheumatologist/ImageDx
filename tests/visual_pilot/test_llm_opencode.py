@@ -282,3 +282,160 @@ def test_json_mode_models_send_response_format(monkeypatch):
     _, meta = client.call_json("p2", "step-5-preview-free", "sys", "user", SCHEMA)
     assert "response_format" not in completions.calls[1]
     assert meta["response_format"] == "prompt_json"
+
+
+def _rate_limited():
+    response = llm.httpx.Response(
+        429, request=llm.httpx.Request("POST", "https://example.invalid/v1/chat/completions")
+    )
+    return llm.openai.RateLimitError("rate limited", response=response, body=None)
+
+
+class _RateLimitedCompletions(_Completions):
+    """Answers 429 for every request to ``limited_model``."""
+
+    def __init__(self, usage, limited_model):
+        super().__init__(usage)
+        self.limited_model = limited_model
+
+    def create(self, **kwargs):
+        if kwargs["model"] == self.limited_model:
+            self.calls.append(kwargs)
+            raise _rate_limited()
+        return super().create(**kwargs)
+
+
+def test_rate_limit_switches_to_the_fallback_model(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "deepseek-v4.1-flash")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "")
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, _ = _client(monkeypatch, usage)
+    completions = _RateLimitedCompletions(usage, "glm-5.3-flash")
+    client._client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    recorded = []
+    monkeypatch.setattr(client, "_record", lambda *a: recorded.append(a))
+    parsed, meta = client.call_json(
+        "p3", "glm-5.3-flash", "sys", "user", SCHEMA, reasoning_effort="off"
+    )
+    assert parsed == {"ok": True}
+    assert [c["model"] for c in completions.calls] == [
+        "glm-5.3-flash", "deepseek-v4.1-flash"]
+    assert completions.calls[1]["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert sleeps == []  # the switch is immediate
+    assert meta["model"] == "deepseek-v4.1-flash"
+    assert recorded[0][2] == "deepseek-v4.1-flash"
+
+
+def test_rate_limit_without_fallback_retries_the_same_model(monkeypatch):
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "")
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage, failures=[])
+    calls = []
+    original = completions.create
+
+    def create(**kwargs):
+        calls.append(kwargs["model"])
+        if len(calls) == 1:
+            raise _rate_limited()
+        return original(**kwargs)
+
+    completions.create = create
+    _, meta = client.call_json("p2", "glm-5.3-flash", "sys", "user", SCHEMA)
+    assert calls == ["glm-5.3-flash", "glm-5.3-flash"]
+    assert meta["model"] == "glm-5.3-flash"
+
+
+def test_unavailable_endpoint_switches_to_the_fallback_model(monkeypatch):
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "deepseek-v4.1-flash")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "")
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    calls = []
+    original = completions.create
+
+    def create(**kwargs):
+        calls.append(kwargs["model"])
+        if kwargs["model"] == "glm-5.3-flash":
+            response = llm.httpx.Response(402, request=llm.httpx.Request("POST", "https://x.invalid"))
+            raise llm.openai.APIStatusError(
+                "Upstream request failed: Endpoint is unavailable.", response=response, body=None)
+        return original(**kwargs)
+
+    completions.create = create
+    _, meta = client.call_json("p2", "glm-5.3-flash", "sys", "user", SCHEMA)
+    assert calls == ["glm-5.3-flash", "deepseek-v4.1-flash"]
+    assert meta["model"] == "deepseek-v4.1-flash"
+
+
+def test_fallback_key_sends_the_fallback_model_through_its_own_account(monkeypatch):
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "deepseek-v4.1-flash")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "fallback-key")
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, primary = _client(monkeypatch, usage)
+    primary.create = lambda **kwargs: (_ for _ in ()).throw(_rate_limited())
+    keys = []
+    fallback = _Completions(usage)
+
+    def new_openai(api_key):
+        keys.append(api_key)
+        return SimpleNamespace(chat=SimpleNamespace(completions=fallback))
+
+    monkeypatch.setattr(client, "_new_openai", new_openai)
+    _, meta = client.call_json("p2", "glm-5.3-flash", "sys", "user", SCHEMA)
+    client.call_json("p2", "glm-5.3-flash", "sys", "user2", SCHEMA)
+    assert keys == ["fallback-key"]  # built once, reused
+    assert [c["model"] for c in fallback.calls] == ["deepseek-v4.1-flash"] * 2
+    assert meta["model"] == "deepseek-v4.1-flash"
+
+
+def test_fallback_account_retries_the_same_model(monkeypatch):
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "fallback-key")
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, primary = _client(monkeypatch, usage)
+    primary_models = []
+
+    def limited(**kwargs):
+        primary_models.append(kwargs["model"])
+        raise _rate_limited()
+
+    primary.create = limited
+    fallback = _Completions(usage)
+    monkeypatch.setattr(
+        client, "_new_openai",
+        lambda api_key: SimpleNamespace(chat=SimpleNamespace(completions=fallback)),
+    )
+    _, meta = client.call_json("p2", "deepseek-v4.1-flash", "sys", "user", SCHEMA)
+    assert primary_models == ["deepseek-v4.1-flash"]
+    assert [c["model"] for c in fallback.calls] == ["deepseek-v4.1-flash"]
+    assert meta["model"] == "deepseek-v4.1-flash"
+
+
+def test_usage_limit_on_every_account_stops_like_a_spent_budget(monkeypatch):
+    import pytest
+
+    sleeps = []
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_MODEL", "")
+    monkeypatch.setattr(llm.config, "VP_FALLBACK_API_KEY", "fallback-key")
+    usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
+    client, primary = _client(monkeypatch, usage)
+    response = llm.httpx.Response(429, request=llm.httpx.Request("POST", "https://x.invalid"))
+    limit = llm.openai.RateLimitError(
+        "Error code: 429 - {'error': {'type': 'GoUsageLimitError'}}", response=response, body=None)
+    calls = []
+
+    def limited(**kwargs):
+        calls.append(kwargs["model"])
+        raise limit
+
+    primary.create = limited
+    monkeypatch.setattr(client, "_new_openai", lambda api_key: SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=limited))))
+    with pytest.raises(llm.BudgetExceeded):
+        client.call_json("p3", "deepseek-v4.1-flash", "sys", "user", SCHEMA)
+    assert len(calls) == 2 and sleeps == []  # primary, then fallback; no backoff

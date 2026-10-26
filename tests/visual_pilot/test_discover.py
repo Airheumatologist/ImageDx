@@ -4,8 +4,8 @@ import httpx
 
 from balanced_fixtures import add_disease, add_finding, make_db
 from src.visual_pilot import (
-    db, demographics, discover, diseases, europepmc, jats, pair_reporting, pair_terms, pmc,
-    publication,
+    db, demographics, discover, diseases, europepmc, jats, pair_reporting, pair_terms, parse,
+    pmc, publication,
 )
 
 
@@ -400,12 +400,14 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
 
     # Only the topic under the floor is searched, by name and never by
     # caption: case reports by title, then by abstract, then any article by
-    # title; never the full text.
-    assert len(queries) == 3 and all("systemic lupus" in q and "FIG:" not in q for q in queries)
+    # title; then the MeSH and (for a zero-image topic) manifestation tiers.
+    assert len(queries) == 5 and all("systemic lupus" in q.lower() and "FIG:" not in q for q in queries)
     assert 'PUB_TYPE:"case reports"' in queries[0] and "ABSTRACT:" not in queries[0]
-    assert 'PUB_TYPE:"case reports"' in queries[1] and 'ABSTRACT:"systemic lupus' in queries[1]
+    assert 'PUB_TYPE:"case reports"' in queries[1] and 'ABSTRACT:"Systemic lupus' in queries[1]
     assert "PUB_TYPE" not in queries[2] and "ABSTRACT:" not in queries[2]
-    assert all(q.startswith("(TITLE:") for q in queries)
+    assert queries[3].startswith("(MESH:")
+    assert queries[4].startswith("(TITLE:") and "ABSTRACT:" in queries[4]
+    assert all(q.startswith("(TITLE:") for q in queries[:3])
     status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
     # A caption naming a patient image type or a lesion passes without a
     # finding term; lab work and charts do not.
@@ -481,7 +483,58 @@ def test_requeue_terms_and_errors(tmp_path, monkeypatch):
     assert got["PMC2:f1"] == ("pending", 0) and got["PMC1:f5"][0] == "caption_rejected"
     assert got["PMC2:f2"][0] == "caption_rejected"
     assert got["PMC1:f3"] == ("vision_error", 0) and got["PMC1:f4"] == ("vision_error", 3)
+    # --all-passes extends the image-type gate to non-disease-pass articles.
+    assert discover.requeue_terms(conn, ["sle"], all_passes=True) == 1
+    assert conn.execute(
+        "SELECT status FROM figures WHERE figure_id='PMC1:f5'"
+    ).fetchone()[0] == "pending"
     conn.close()
+
+
+def test_figure_row_uses_jats_license_only_when_epmc_is_missing():
+    fig = jats.FigureInfo(
+        fig_id="f1", label="Figure 1", caption="Clinical photograph of the rash",
+        graphic_href="f1.jpg", permissions_text=None, fig_license_raw=None,
+        third_party=False, third_party_reason=None,
+    )
+    row = parse._figure_row(
+        "PMC1", fig, "none", _Bundle.resolver, article_license_raw="CC BY 4.0",
+    )
+    assert row["effective_license"] == "cc-by" and row["status"] == "pending"
+    # A specific non-commercial Europe PMC code is never upgraded by JATS.
+    row = parse._figure_row(
+        "PMC1", fig, "cc-by-nc", _Bundle.resolver, article_license_raw="CC BY 4.0",
+    )
+    assert row["effective_license"] == "cc-by-nc" and row["status"] == "caption_rejected"
+
+
+def test_parse_article_reads_the_article_level_license():
+    xml = """
+    <article xmlns:xlink="http://www.w3.org/1999/xlink">
+      <front><article-meta>
+        <permissions>
+          <license xlink:href="https://creativecommons.org/licenses/by/4.0/">
+            <license-p>CC BY 4.0</license-p>
+          </license>
+        </permissions>
+      </article-meta></front>
+      <body><fig id="f1"><label>Figure 1</label>
+        <caption><p>Clinical photograph of the rash.</p></caption>
+        <graphic xlink:href="f1.jpg"/></fig></body>
+    </article>
+    """
+    parsed = jats.parse_article(xml)
+    assert parsed.article_license_raw == "https://creativecommons.org/licenses/by/4.0/"
+    assert pmc.normalize_license(parsed.article_license_raw) == "cc-by"
+
+
+def test_mesh_and_relaxed_queries_drop_the_license_clause():
+    mesh = europepmc.build_mesh_query(["Kawasaki disease"])
+    assert mesh.startswith('(MESH:"Kawasaki disease")') and 'LICENSE:"cc by"' in mesh
+    relaxed = europepmc.build_disease_query(
+        ["Kawasaki disease"], fields=("TITLE",), license_clause=False,
+    )
+    assert "OPEN_ACCESS:y" in relaxed and "LICENSE:" not in relaxed
 
 
 def test_pmc_client_keeps_a_connection_per_fetch_worker(monkeypatch):

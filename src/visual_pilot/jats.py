@@ -52,6 +52,9 @@ class ParsedArticle:
     journal_name: str | None
     corresp_country: str | None
     first_aff_country: str | None
+    # Article-level <permissions><license> raw text. Europe PMC's LICENSE
+    # field is sometimes empty or stale; this is the publisher's own statement.
+    article_license_raw: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +244,24 @@ def _fig_permissions(fig) -> tuple[str | None, str | None, str | None]:
     return text, license_raw, holder
 
 
+def _article_license(article_meta) -> str | None:
+    """The article's own license statement, when the JATS carries one."""
+    if article_meta is None:
+        return None
+    for permissions in _descendants(article_meta, "permissions"):
+        for lic in _descendants(permissions, "license"):
+            raw = _href(lic) or lic.get("license-type")
+            license_p = _first_desc(lic, "license-p")
+            if raw is None and license_p is not None:
+                raw = _all_text(license_p)
+            if raw:
+                return raw
+        license_p = _first_desc(permissions, "license-p")
+        if license_p is not None and _all_text(license_p):
+            return _all_text(license_p)
+    return None
+
+
 def _fuzzy_contains(needle: str, haystack: str) -> bool:
     """Case-insensitive substring match in either direction."""
     a, b = needle.strip().lower(), haystack.strip().lower()
@@ -346,6 +367,7 @@ def parse_article(xml_text: str) -> ParsedArticle:
     body = _first_desc(root, "body")
 
     article_holder = _article_copyright_holder(article_meta)
+    article_license = _article_license(article_meta)
     journal = _journal_name(root)
     publisher = _publisher_name(root)
     authors, author_count = _authors(root)
@@ -382,4 +404,5 @@ def parse_article(xml_text: str) -> ParsedArticle:
         journal_name=journal,
         corresp_country=_corresp_country(root, ids),
         first_aff_country=_first_aff_country(root),
+        article_license_raw=article_license,
     )

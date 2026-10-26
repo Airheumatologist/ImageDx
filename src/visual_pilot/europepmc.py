@@ -21,7 +21,8 @@ SEARCH_RETRIES = 8
 # Europe PMC license values that can normalize to an allowed code; the exact
 # gate is re-applied locally with pmc.license_allows.
 _LICENSE_CLAUSE = '(LICENSE:"cc by" OR LICENSE:"cc0" OR LICENSE:"cc by-sa" OR LICENSE:"cc by-nd")'
-_OPEN = f"OPEN_ACCESS:y AND IN_PMC:y AND {_LICENSE_CLAUSE}"
+_OPEN_BASE = "OPEN_ACCESS:y AND IN_PMC:y"
+_OPEN = f"{_OPEN_BASE} AND {_LICENSE_CLAUSE}"
 
 # Narrative reviews and case series. Systematic reviews and meta-analyses
 # illustrate with forest plots and flow diagrams, rarely patients.
@@ -90,7 +91,7 @@ def _disease_clause(disease_terms: list[str], fields=("TITLE", "ABSTRACT")) -> s
 
 
 def build_query(finding_terms: list[str], disease_terms: list[str], mode: str = "phrase",
-                scope: str = "all") -> str:
+                scope: str = "all", license_clause: bool = True) -> str:
     """Caption names the finding; title or abstract names the disease.
 
     ``phrase`` matches each term as an exact caption phrase; ``words`` only
@@ -107,10 +108,12 @@ def build_query(finding_terms: list[str], disease_terms: list[str], mode: str = 
     if scope == "reviews":
         topic = _term_clauses(finding_terms, mode, ("TITLE", "ABSTRACT"))
         query += f" AND ({' OR '.join(topic)}) AND {_OVERVIEW_TYPES}"
-    return f"{query} AND {_OPEN}"
+    return f"{query} AND {_OPEN if license_clause else _OPEN_BASE}"
 
 
-def build_overview_query(disease_terms: list[str], caption_terms: list[str]) -> str:
+def build_overview_query(
+    disease_terms: list[str], caption_terms: list[str], license_clause: bool = True,
+) -> str:
     """Narrative reviews and case series surveying the disease's presentation.
 
     The disease must be in the title ("Psoriatic arthritis: clinical
@@ -122,7 +125,7 @@ def build_overview_query(disease_terms: list[str], caption_terms: list[str]) -> 
     if not dis or not figs:
         return ""
     return (f"({dis}) AND {_OVERVIEW_TITLE} AND ({' OR '.join(figs)}) "
-            f"AND {_OVERVIEW_TYPES} AND {_OPEN}")
+            f"AND {_OVERVIEW_TYPES} AND {_OPEN if license_clause else _OPEN_BASE}")
 
 
 _CASE_TYPES = (
@@ -131,7 +134,8 @@ _CASE_TYPES = (
 
 
 def build_disease_query(disease_terms: list[str], cases_only: bool = False,
-                        fields: tuple[str, ...] = ("TITLE",)) -> str:
+                        fields: tuple[str, ...] = ("TITLE",),
+                        license_clause: bool = True) -> str:
     """Any article naming the disease in ``fields``, without a caption clause.
 
     For topics the caption-phrase passes leave nearly empty: their captions
@@ -145,7 +149,49 @@ def build_disease_query(disease_terms: list[str], cases_only: bool = False,
     if not dis:
         return ""
     cases = f" AND {_CASE_TYPES}" if cases_only else ""
-    return f"({dis}){cases} AND {_OPEN}"
+    return f"({dis}){cases} AND {_OPEN if license_clause else _OPEN_BASE}"
+
+
+def build_mesh_query(disease_terms: list[str], cases_only: bool = False,
+                     license_clause: bool = True) -> str:
+    """Articles indexed under the disease's MeSH term.
+
+    Captures papers that do not repeat the disease name in title/abstract
+    but are indexed to it (common for eponymous and rare topics).
+    """
+    dis = _disease_clause(disease_terms, ("MESH",))
+    if not dis:
+        return ""
+    cases = f" AND {_CASE_TYPES}" if cases_only else ""
+    return f"({dis}){cases} AND {_OPEN if license_clause else _OPEN_BASE}"
+
+
+def build_manifestation_query(
+    disease_terms: list[str],
+    finding_terms: list[str],
+    *,
+    limit: int = 6,
+    license_clause: bool = True,
+) -> str:
+    """Disease plus one of its manifestations in the title/abstract.
+
+    Last-resort recall for topics whose captions never name a finding: an
+    article titled "Rare presentation of <disease>" that also names a
+    configured manifestation is worth fetching even without a caption match.
+    The local caption/patient-image gate and P3 still rule on each figure.
+    """
+    dis = _disease_clause(disease_terms, ("TITLE", "ABSTRACT"))
+    if not dis:
+        return ""
+    clauses = []
+    for term in list(dict.fromkeys(t for t in finding_terms if t.strip()))[:limit]:
+        clauses += [f"TITLE:{_quote(term)}", f"ABSTRACT:{_quote(term)}"]
+    if not clauses:
+        return ""
+    return (
+        f"({dis}) AND ({' OR '.join(clauses)}) AND "
+        f"{_OPEN if license_clause else _OPEN_BASE}"
+    )
 
 
 def _hit(rec: dict) -> Hit | None:
@@ -170,8 +216,11 @@ def _hit(rec: dict) -> Hit | None:
     )
 
 
-def eligible(hit: Hit) -> bool:
-    if pmc.license_allows(hit.license_code) is None:
+def eligible(hit: Hit, *, license_required: bool = True) -> bool:
+    """A usable hit. ``license_required=False`` is for the relaxed tier: the
+    Europe PMC license field is not trusted there and every figure is gated
+    against the JATS/figure license locally before it can become a panel."""
+    if license_required and pmc.license_allows(hit.license_code) is None:
         return False
     return not any(t.strip().lower() in _EXCLUDED_PUB_TYPES for t in hit.pub_types)
 

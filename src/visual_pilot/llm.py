@@ -13,7 +13,9 @@ There is no provider batch API, so ``call_many``/``iter_many`` run requests
 on a thread pool of ``VP_CONCURRENCY`` workers, with a per-client timeout,
 lazy completion-order
 ``iter_many``, process-wide request pacing (``VP_LLM_RPM``), and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
-independent of ``max_retries``.
+independent of ``max_retries``. A chat request answered with a 429 or 402
+switches once to the fallback: ``VP_FALLBACK_MODEL`` (default: the same model)
+on the ``VP_FALLBACK_API_KEY`` account (default: the same account).
 """
 
 from __future__ import annotations
@@ -115,6 +117,18 @@ class _RequestPacer:
 
 # Shared by every LLMClient: the provider's rate limit is per account.
 _PACER = _RequestPacer(config.VP_LLM_RPM)
+
+# HTTP statuses that move a request to the fallback model/account: 429 rate
+# limits and 402, which OpenCode returns as "Endpoint is unavailable".
+_FALLBACK_STATUSES = frozenset({402, 429})
+# Error type OpenCode Go returns (as a 429) once an account's usage limit is spent.
+_USAGE_LIMIT = "GoUsageLimitError"
+
+
+def _has_fallback(model: str) -> bool:
+    """Whether a request for ``model`` has somewhere else to go."""
+    other_model = config.VP_FALLBACK_MODEL and config.VP_FALLBACK_MODEL != model
+    return bool(config.VP_FALLBACK_API_KEY or other_model)
 
 # Error classes worth a retry (rate limits, network blips, server 5xx).
 _TRANSIENT_ERRORS = (
@@ -220,6 +234,9 @@ class LLMClient:
         )
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
+        # The fallback account's client when VP_FALLBACK_API_KEY is set;
+        # otherwise fallback requests share ``_client``.
+        self._fallback_client: openai.OpenAI | None = None
         self._lock = threading.Lock()
         # Worker threads write llm_calls through the caller's connection under
         # this lock; callers streaming iter_many must hold it for their own
@@ -292,10 +309,12 @@ class LLMClient:
         self._check_budget()
 
         with timing.inflight("llm"):
-            parsed, raw_content, usage, attempts, mode = self._call_with_validation(
+            parsed, raw_content, usage, attempts, mode, model = self._call_with_validation(
                 model, system, user_content, schema, images, effort, fill_missing
             )
         timing.record("llm_latency", time.monotonic() - started, stage=stage, source="live")
+        # ``model`` is now the one that answered (VP_FALLBACK_MODEL after a
+        # 429/402); the reply stays cached under the requested model's key.
         cost = self._cost(model, usage)
         with self._lock:
             self.spent_usd += cost or 0.0
@@ -374,8 +393,12 @@ class LLMClient:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
-    def _openai(self) -> openai.OpenAI:
+    def _openai(self, fallback: bool = False) -> openai.OpenAI:
         with self._client_init_lock:
+            if fallback and config.VP_FALLBACK_API_KEY:
+                if self._fallback_client is None:
+                    self._fallback_client = self._new_openai(config.VP_FALLBACK_API_KEY)
+                return self._fallback_client
             return self._initialize_openai()
 
     def _initialize_openai(self) -> openai.OpenAI:
@@ -384,25 +407,28 @@ class LLMClient:
                 raise LLMError(
                     f"no API key configured for provider {self.provider!r}"
                 )
-            # max_retries=0: transient retries are handled here so that
-            # budget/cache semantics stay under our control. The OpenCode Go
-            # gateway rejects requests without x-opencode-session and asks
-            # clients to name themselves in User-Agent.
-            self._client = openai.OpenAI(
-                api_key=self.api_key, base_url=self.base_url,
-                timeout=self.timeout_seconds, max_retries=0,
-                default_headers={
-                    "User-Agent": USER_AGENT,
-                    "x-opencode-session": f"visual-pilot-{uuid.uuid4().hex}",
-                },
-                http_client=openai.DefaultHttpxClient(
-                    transport=_DeadlineTransport(
-                        config.VP_LLM_MAX_REQUEST_SECONDS,
-                        proxy=_env_proxy(self.base_url),
-                    ),
-                ),
-            )
+            self._client = self._new_openai(self.api_key)
         return self._client
+
+    def _new_openai(self, api_key: str) -> openai.OpenAI:
+        # max_retries=0: transient retries are handled here so that
+        # budget/cache semantics stay under our control. The OpenCode Go
+        # gateway rejects requests without x-opencode-session and asks
+        # clients to name themselves in User-Agent.
+        return openai.OpenAI(
+            api_key=api_key, base_url=self.base_url,
+            timeout=self.timeout_seconds, max_retries=0,
+            default_headers={
+                "User-Agent": USER_AGENT,
+                "x-opencode-session": f"visual-pilot-{uuid.uuid4().hex}",
+            },
+            http_client=openai.DefaultHttpxClient(
+                transport=_DeadlineTransport(
+                    config.VP_LLM_MAX_REQUEST_SECONDS,
+                    proxy=_env_proxy(self.base_url),
+                ),
+            ),
+        )
 
     def _input_hash(
         self,
@@ -469,7 +495,10 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
     ):
-        """Single chat completion asking for JSON (JSON mode where routable)."""
+        """Single chat completion asking for JSON (JSON mode where routable).
+
+        Returns (response, response mode, model that answered).
+        """
         messages = [
             {
                 "role": "system",
@@ -482,19 +511,23 @@ class LLMClient:
             {"role": "user", "content": self._user_parts(user_content, images)},
         ]
         if config.uses_responses_api(model):
-            return self._with_retries(
-                lambda: self._send_responses(model, messages, effort)
-            ), "responses_json"
-        extra_kwargs = _chat_extra_kwargs(model, effort)
+            resp, _ = self._with_retries(
+                lambda m, _fb: self._send_responses(m, messages, effort), model,
+                can_fallback=False,
+            )
+            return resp, "responses_json", model
 
-        def _send():
+        def _send(m: str, fallback: bool):
             with _IN_FLIGHT:
-                return self._stream_chat(model, messages, extra_kwargs)
+                return self._stream_chat(m, messages, _chat_extra_kwargs(m, effort), fallback)
 
-        json_mode = "response_format" in extra_kwargs
-        return self._with_retries(_send), "chat_json" if json_mode else "prompt_json"
+        resp, used = self._with_retries(_send, model, can_fallback=True)
+        json_mode = config.uses_json_mode(used)
+        return resp, "chat_json" if json_mode else "prompt_json", used
 
-    def _stream_chat(self, model: str, messages: list[dict], extra_kwargs: dict):
+    def _stream_chat(
+        self, model: str, messages: list[dict], extra_kwargs: dict, fallback: bool = False
+    ):
         """One streamed chat completion, returned in the non-streamed shape.
 
         Streamed so a slow generation never sits on an idle socket.
@@ -502,7 +535,7 @@ class LLMClient:
         so only JSON-mode models get response_format; _normalize unwraps
         fenced replies either way.
         """
-        stream = self._openai().chat.completions.create(
+        stream = self._openai(fallback).chat.completions.create(
             model=model,
             messages=messages,
             stream=True,
@@ -604,7 +637,7 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
         fill_missing: dict | None = None,
-    ) -> tuple[Any, str, dict, int, str]:
+    ) -> tuple[Any, str, dict, int, str, str]:
         usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
         attempts = 0
         last_error = "no response"
@@ -615,7 +648,7 @@ class LLMClient:
                     f"{user_content}\n\nThe previous response failed validation: "
                     f"{last_error}\nReturn corrected JSON only."
                 )
-            resp, mode = self._send_once(model, system, request_text, schema, images, effort)
+            resp, mode, used = self._send_once(model, system, request_text, schema, images, effort)
             attempts += 1
             u = getattr(resp, "usage", None)
             if u is not None:
@@ -626,7 +659,7 @@ class LLMClient:
             content = _normalize(raw, schema, fill_missing or {})
             parsed, last_error = self._parse_validate(content, schema)
             if last_error is None:
-                return parsed, content, usage, attempts, mode
+                return parsed, content, usage, attempts, mode, used
         raise SchemaValidationError(
             f"response failed schema validation: {last_error}; "
             f"raw reply began {raw[:300]!r}"
@@ -645,33 +678,57 @@ class LLMClient:
             return parsed, f"schema violation at /{path}: {exc.message}"
         return parsed, None
 
-    def _with_retries(self, call):
-        # C4: two independent retry budgets. HTTP 429s consume
-        # VP_RATE_LIMIT_RETRIES and honor Retry-After; timeouts, connection
-        # errors and 5xx consume max_retries with the original backoff.
+    def _with_retries(self, call, model: str, can_fallback: bool):
+        """``call(model, fallback)`` with retries; returns (response, model that answered).
+
+        C4: two independent retry budgets. HTTP 429s consume
+        VP_RATE_LIMIT_RETRIES and honor Retry-After; timeouts, connection
+        errors and 5xx consume max_retries with the original backoff. With
+        ``can_fallback``, the first 429 or 402 (OpenCode's "Endpoint is
+        unavailable") switches the request to the fallback model/account at
+        once, without spending either budget; later errors retry there.
+        """
         transient_attempt = 0
         rate_limit_attempt = 0
+        on_fallback = False
         while True:
             _PACER.wait()  # every attempt is one provider request
             try:
-                return call()
+                return call(model, on_fallback), model
+            except openai.APIStatusError as exc:
+                if (can_fallback and not on_fallback and _has_fallback(model)
+                        and exc.status_code in _FALLBACK_STATUSES):
+                    timing.count(f"llm_{exc.status_code}")
+                    timing.count("llm_fallback")
+                    model = config.VP_FALLBACK_MODEL or model
+                    on_fallback = True
+                    continue
+                if _USAGE_LIMIT in str(exc):
+                    # The account's weekly/monthly cap: retrying cannot help,
+                    # so stop like an exhausted budget (status left unchanged).
+                    timing.count("llm_usage_limit")
+                    raise BudgetExceeded(f"provider usage limit reached: {exc}") from exc
+                if not isinstance(exc, _TRANSIENT_ERRORS):
+                    raise
+                error = exc
             except _TRANSIENT_ERRORS as exc:
-                # W0/C7: count transient failures (429s/timeouts) — observation only.
-                if isinstance(exc, openai.RateLimitError):
-                    timing.count("llm_429")
-                    if rate_limit_attempt >= config.VP_RATE_LIMIT_RETRIES:
-                        raise
-                    time.sleep(self._retry_delay_429(exc, rate_limit_attempt))
-                    rate_limit_attempt += 1
+                error = exc
+            # W0/C7: count transient failures (429s/timeouts) — observation only.
+            if isinstance(error, openai.RateLimitError):
+                timing.count("llm_429")
+                if rate_limit_attempt >= config.VP_RATE_LIMIT_RETRIES:
+                    raise error
+                time.sleep(self._retry_delay_429(error, rate_limit_attempt))
+                rate_limit_attempt += 1
+            else:
+                if isinstance(error, openai.APITimeoutError):
+                    timing.count("llm_timeout")
                 else:
-                    if isinstance(exc, openai.APITimeoutError):
-                        timing.count("llm_timeout")
-                    else:
-                        timing.count("llm_transient")
-                    if transient_attempt >= self.max_retries:
-                        raise
-                    time.sleep(min(8.0, 2.0**transient_attempt))
-                    transient_attempt += 1
+                    timing.count("llm_transient")
+                if transient_attempt >= self.max_retries:
+                    raise error
+                time.sleep(min(8.0, 2.0**transient_attempt))
+                transient_attempt += 1
 
     @staticmethod
     def _retry_delay_429(exc: openai.RateLimitError, attempt: int) -> float:

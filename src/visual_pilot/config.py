@@ -105,6 +105,13 @@ VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", DEFAULT_MODEL)
 VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
+# Where a chat request goes once its first try answers HTTP 429 or 402
+# (OpenCode's "Endpoint is unavailable"): VP_FALLBACK_MODEL (empty = the same
+# model) on the VP_FALLBACK_API_KEY account (empty = OPENCODE_API_KEY, the
+# same gateway). With both empty there is no switch. A fallback reply is
+# cached under the original request's key.
+VP_FALLBACK_MODEL = os.getenv("VP_FALLBACK_MODEL", "").strip()
+VP_FALLBACK_API_KEY = os.getenv("VP_FALLBACK_API_KEY", "").strip()
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 32))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
@@ -153,6 +160,21 @@ VP_UNLABELED_FILL_TARGET = _coverage_int("VP_UNLABELED_FILL_TARGET", 20)
 # taken round-robin (each pair's best first), then combined plates, then the
 # unlabeled fill. Pair coverage credit is unaffected. 0 disables the cap.
 VP_TOPIC_IMAGE_CAP = _coverage_int("VP_TOPIC_IMAGE_CAP", 0)
+# Articles fetched per thin topic per disease-pass round. A full sweep of the
+# tail matters more than depth on one topic, so this stays small by default;
+# later rounds deepen the topics still under target.
+VP_TOPIC_ARTICLES_PER_ROUND = max(
+    1, _coverage_int("VP_TOPIC_ARTICLES_PER_ROUND", 50)
+)
+# Whole-figure collages whose panels carry no approved finding are normally
+# dropped ("unlabeled single-disease plate"). For thin topics they are useful
+# unlabeled fill: set to 1 to publish them as whole figures, uncropped, with
+# no pair credit.
+VP_ALLOW_UNLABELED_PLATES = _env_int("VP_ALLOW_UNLABELED_PLATES", 0) == 1
+# Second-tier disease search without the Europe PMC LICENSE clause, for thin
+# topics whose strict search is exhausted. The local JATS/figure license gate
+# still decides, so non-commercial articles are fetched but never published.
+VP_RELAXED_LICENSE_SEARCH = _env_int("VP_RELAXED_LICENSE_SEARCH", 0) == 1
 
 
 def validate_coverage_settings() -> tuple[int, int, int]:
@@ -211,6 +233,10 @@ VP_JUDGE_TIMEOUT_SECONDS = max(1, _env_int("VP_JUDGE_TIMEOUT_SECONDS", 120))
 VP_RATE_LIMIT_RETRIES = max(0, _env_int("VP_RATE_LIMIT_RETRIES", 4))
 # In-memory cap for the judge->store original-bytes handoff (W6/W7).
 VP_ORIGINALS_CACHE_MB = max(0, _env_int("VP_ORIGINALS_CACHE_MB", 512))
+# Seconds a SQLite write waits for another connection's write lock before
+# "database is locked". Parallel run-all processes (e.g. one per topic group)
+# share the database, and a batch write can hold the lock for a while.
+VP_SQLITE_BUSY_TIMEOUT_SECONDS = max(1, _env_int("VP_SQLITE_BUSY_TIMEOUT_SECONDS", 300))
 # W0 timing instrumentation: 1 records timings and writes reports/timings_*.json.
 VP_TIMINGS = _env_int("VP_TIMINGS", 1)
 # W0 parity harness: 1 makes an llm_calls cache miss raise LLMError instead of

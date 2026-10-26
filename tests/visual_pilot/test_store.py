@@ -6,7 +6,15 @@ from types import SimpleNamespace
 from PIL import Image
 
 from balanced_fixtures import MALAR_CAPTION, add_article, add_disease, add_figure, make_db
-from src.visual_pilot import db, store
+from src.visual_pilot import config, curation, db, store
+
+
+def test_unlabeled_single_disease_plate_policy_is_flag_gated(monkeypatch):
+    monkeypatch.setattr(config, "VP_ALLOW_UNLABELED_PLATES", False)
+    assert curation._plate_verdict("single_disease", "unlabeled")[0] is False
+    monkeypatch.setattr(config, "VP_ALLOW_UNLABELED_PLATES", True)
+    assert curation._plate_verdict("single_disease", "unlabeled")[0] is True
+    assert curation._plate_verdict("multi_disease", "unlabeled")[0] is False
 
 
 def _png(size=(1600, 1200)) -> bytes:

@@ -145,7 +145,7 @@ def _usable_terms(raw, disease_words: set[str], taken: set[str]) -> list[str]:
 
 def post_validate(topic: dict, parsed: dict, meta: dict | None = None) -> list[dict]:
     """Vocabulary rows for one topic; findings without usable caption terms drop."""
-    disease_key = diseases.topic_disease_key(topic)
+    disease_key = topic["topic_id"]
     disease_words = _disease_words(topic)
     rows: list[dict] = []
     seen_keys: set[str] = set()
@@ -222,12 +222,12 @@ def run(args) -> int:
     wanted = set(getattr(args, "topics", None) or [])
     todo = [
         t for t in topics
-        if diseases.topic_disease_key(t) not in curated
-        and (t["topic_id"] in wanted if wanted else (args.force or diseases.topic_disease_key(t) not in have))
+        if t["topic_id"] not in curated
+        and (t["topic_id"] in wanted if wanted else (args.force or t["topic_id"] not in have))
     ]
     if args.limit:
         todo = todo[: args.limit]
-    order = [diseases.topic_disease_key(t) for t in topics]
+    order = [t["topic_id"] for t in topics]
     print(f"build-vocab: {len(todo)} topic(s) to build, {len(have)} already built, "
           f"{len(curated)} curated")
     if args.dry_run or not todo:
@@ -235,7 +235,7 @@ def run(args) -> int:
 
     conn = db.init_db()
     client = llm.LLMClient(db_conn=conn, budget_usd=args.budget_usd, max_retries=2)
-    rebuilt = {diseases.topic_disease_key(t) for t in todo}
+    rebuilt = {t["topic_id"] for t in todo}
     kept = [r for r in existing if r["disease_keys"][0] not in rebuilt]
     built: list[dict] = []
     empty, errors = [], []
@@ -373,7 +373,7 @@ def run_expand(args) -> int:
     wanted = set(getattr(args, "diseases", None) or [])
     if getattr(args, "disease", "all") != "all":
         wanted.add(args.disease)
-    topics = {diseases.topic_disease_key(t): t for t in diseases.load_topics()}
+    topics = {t["topic_id"]: t for t in diseases.load_topics()}
     rows = _read_existing()
     by_disease: dict[str, list[dict]] = {}
     for row in rows:

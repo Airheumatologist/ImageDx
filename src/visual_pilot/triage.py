@@ -113,7 +113,7 @@ class _RunContext:
 
     @property
     def disease_terms(self) -> dict[str, list]:
-        """``diseases.json`` name+synonyms term lists, keyed by disease key."""
+        """Catalog name+synonyms term lists, keyed by disease key."""
         if self._disease_terms is None:
             self._disease_terms = {
                 key: [

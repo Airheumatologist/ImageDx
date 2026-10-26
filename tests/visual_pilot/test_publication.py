@@ -224,7 +224,8 @@ def test_hla_b27_uveitis_without_as_attribution_earns_no_credit(tmp_path):
     conn.commit()
     record = _record(conn, "p_as")
     assert record["eligible"] is False
-    assert "disease association not stated in figure caption" in record["reasons"]
+    # HLA-B27-associated acute anterior uveitis is its own catalog topic.
+    assert "caption identifies another disease" in record["reasons"]
 
     from src.visual_pilot import gallery
 

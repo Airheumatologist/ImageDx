@@ -545,6 +545,14 @@ def build_parser() -> argparse.ArgumentParser:
         "expand-terms, requeue-terms)",
     )
     shared.add_argument(
+        "--topics-under",
+        type=int,
+        default=None,
+        metavar="N",
+        help="restrict to topics whose current default library shows fewer "
+        "than N distinct images (read from the DB); combine with --disease/--diseases",
+    )
+    shared.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -661,6 +669,15 @@ def build_parser() -> argparse.ArgumentParser:
     subs["requeue-terms"].add_argument(
         "--retry-errors", action="store_true",
         help="also reset retryable vision_error figures (not provider content refusals)",
+    )
+    subs["requeue-terms"].add_argument(
+        "--all-passes", action="store_true",
+        help="apply the patient-image caption gate to figures of every pass, "
+        "not only disease-pass articles (for thin topics)",
+    )
+    subs["requeue-terms"].add_argument(
+        "--per-topic-limit", type=int, default=None, metavar="N",
+        help="return at most N figures per topic (bounds the triage/judge wave)",
     )
     subs["build-vocab"].add_argument(
         "--topics", nargs="*", default=None,

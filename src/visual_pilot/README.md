@@ -1,13 +1,11 @@
-# Visual Findings Library pilot
+# Visual Findings Library pipeline
 
-Self-contained pilot for a VisualDx-style image library covering **SLE**,
-**dermatomyositis**, **ankylosing spondylitis**, **rheumatoid arthritis**,
-**systemic sclerosis**, **psoriasis**, **psoriatic arthritis**, **sarcoidosis**,
-**gout**, and **atopic dermatitis**, built only from PMC open-access articles
-(reviews, case series, original research and case reports) with
-commercial-use licenses. The disease index and approved visual findings are in
-`data/diseases.json` and `data/findings_vocab.json`. The repo-root README
-describes every stage.
+Pipeline for a VisualDx-style image library built only from PMC open-access
+articles (reviews, case series, original research and case reports) with
+commercial-use licenses. The disease list is the repo's
+`data/main_database_topics.json`; approved visual findings are in
+`data/findings_vocab.json` and `data/topic_findings_vocab.json`. The
+repo-root README describes every stage.
 
 ## Usage
 

@@ -1,19 +1,14 @@
 """Stage 1 seed data: the disease catalog and findings vocabulary.
 
-Two catalogs exist, selected by ``VP_CATALOG``:
+The catalog is the single disease list, ``data/main_database_topics.json``:
+every topic under its specialty, keyed by ``topic_id``. Every topic has
+published images; a topic left with none is deleted from the list.
 
-- ``topics`` (default): every topic in ``data/main_database_topics.json``
-  (its ``specialties`` index). Topics flagged with a ``pilot_key`` keep that
-  key and the curated pilot entry from ``diseases.json`` (subtypes, search
-  synonyms), and pilot diseases missing from the index stay in the catalog,
-  so existing library rows keep their disease.
-- ``pilot``: only the curated pilot diseases in ``diseases.json``.
+The vocabulary is the curated ``findings_vocab.json`` plus
+``topic_findings_vocab.json`` written by ``build-vocab`` for every topic
+without curated findings.
 
-The vocabulary is the curated ``findings_vocab.json`` plus, in ``topics``
-mode, ``topic_findings_vocab.json`` written by ``build-vocab`` for every
-topic without curated findings.
-
-Seed files live in ``src/visual_pilot/data/``. ``seed()`` is idempotent: it
+Vocabulary seed files live in ``src/visual_pilot/data/``. ``seed()`` is idempotent: it
 upserts descriptive fields but never resets ``approved``, ``proposed_by_llm``
 or ``proposal_count`` on ``findings_vocab`` rows (LLM-proposed findings must
 survive re-seeding).
@@ -22,7 +17,6 @@ survive re-seeding).
 from __future__ import annotations
 
 import json
-import os
 import re
 import sqlite3
 import unicodedata
@@ -38,7 +32,6 @@ TOPIC_VOCAB_PATH = DATA_DIR / "topic_findings_vocab.json"
 # Extra title-search names per catalog key ("Zenker's diverticulum" for
 # "Zenker Diverticulum (Pharyngoesophageal Pouch)"), appended to synonyms.
 SEARCH_NAMES_PATH = DATA_DIR / "topic_search_names.json"
-CATALOGS = ("topics", "pilot")
 
 # findings_vocab.category enum.
 FINDING_CATEGORIES = frozenset(
@@ -77,25 +70,8 @@ def is_acronym(term: str) -> bool:
     return bool(_ACRONYM.fullmatch(str(term).strip()))
 
 
-def catalog_mode() -> str:
-    mode = os.getenv("VP_CATALOG", "topics").strip().lower()
-    if mode not in CATALOGS:
-        raise ValueError(f"VP_CATALOG must be one of {list(CATALOGS)}")
-    return mode
-
-
-def _load_pilot() -> dict[str, dict]:
-    data = json.loads((DATA_DIR / "diseases.json").read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or not data:
-        raise ValueError("diseases.json must contain a non-empty disease object")
-    for key, disease in data.items():
-        if not isinstance(key, str) or not key or not isinstance(disease, dict):
-            raise ValueError("diseases.json entries must map non-empty keys to objects")
-    return data
-
-
 def load_topics(path: Path | None = None) -> list[dict]:
-    """Every topic of the main database index, in specialty order."""
+    """Every topic of the disease list, in specialty order."""
     data = json.loads((path or TOPICS_PATH).read_text(encoding="utf-8"))
     topics, seen = [], set()
     for specialty_topics in (data.get("specialties") or {}).values():
@@ -108,11 +84,6 @@ def load_topics(path: Path | None = None) -> list[dict]:
     if not topics:
         raise ValueError(f"{path or TOPICS_PATH} lists no topics")
     return topics
-
-
-def topic_disease_key(topic: dict) -> str:
-    """Catalog key of a topic: its pilot key when it has one, else its id."""
-    return topic.get("pilot_key") or topic["topic_id"]
 
 
 def fold_accents(value: str) -> str:
@@ -155,77 +126,78 @@ def _with_search_names(disease: dict, names: list[str]) -> dict:
     return {**disease, "synonyms": [*(disease.get("synonyms") or []), *extra]}
 
 
-def _topics_catalog() -> dict[str, dict]:
-    pilot = _load_pilot()
+@lru_cache(maxsize=None)
+def _catalog() -> dict[str, dict]:
     search_names = _search_names()
     catalog: dict[str, dict] = {}
     for topic in load_topics():
-        key = topic_disease_key(topic)
-        context = {
-            "topic_id": topic["topic_id"],
-            "specialty": topic.get("specialty"),
-            "subspecialty": topic.get("subspecialty"),
-        }
-        if key in pilot:
-            catalog[key] = {**pilot[key], **context}
-            continue
+        key = topic["topic_id"]
         name = str(topic.get("name") or key).strip()
         synonyms = [*name_variants(name), *(topic.get("synonyms") or [])]
-        catalog[key] = {
+        catalog[key] = _with_search_names({
             "name": name,
+            "specialty": topic.get("specialty"),
+            "summary": topic.get("summary"),
             "mondo_id": topic.get("mondo_id"),
             "mesh_id": topic.get("mesh_id"),
             "synonyms": [
                 s for s in dict.fromkeys(str(s).strip() for s in synonyms)
                 if s and s.casefold() != name.casefold()
             ],
-            "subtypes": [],
-            **context,
-        }
-    for key, disease in pilot.items():
-        catalog.setdefault(key, disease)
-    return {key: _with_search_names(disease, search_names.get(key, []))
-            for key, disease in catalog.items()}
-
-
-@lru_cache(maxsize=None)
-def _catalog(mode: str) -> dict[str, dict]:
-    return _load_pilot() if mode == "pilot" else _topics_catalog()
+            "subtypes": topic.get("subtypes") or [],
+        }, search_names.get(key, []))
+    return catalog
 
 
 def load_diseases() -> dict[str, dict]:
-    """The configured catalog, parsed once per process. Treat as read-only."""
-    return _catalog(catalog_mode())
+    """The disease list, parsed once per process. Treat as read-only."""
+    return _catalog()
 
 
 def disease_keys_from_catalog() -> tuple[str, ...]:
-    """Return the configured catalog keys in stable order."""
+    """Return the catalog keys in stable order."""
     return tuple(load_diseases())
 
 
 def selected_keys(args) -> list[str]:
-    """Catalog keys a command targets: ``--diseases`` list, else ``--disease``."""
+    """Catalog keys a command targets: ``--diseases`` list, else ``--disease``.
+
+    ``--topics-under N`` narrows the selection to topics whose current
+    default library shows fewer than N distinct images, read from the DB.
+    """
     many = getattr(args, "diseases", None)
     if many:
         unknown = sorted(set(many) - set(load_diseases()))
         if unknown:
             raise SystemExit(f"unknown disease key(s): {', '.join(unknown)}")
-        return list(dict.fromkeys(many))
-    disease = getattr(args, "disease", "all")
-    return list(disease_keys_from_catalog()) if disease == "all" else [disease]
+        keys = list(dict.fromkeys(many))
+    else:
+        disease = getattr(args, "disease", "all")
+        keys = list(disease_keys_from_catalog()) if disease == "all" else [disease]
+    under = getattr(args, "topics_under", None)
+    if under is not None:
+        from . import db, pair_reporting
+
+        conn = db.connect()
+        try:
+            counts = pair_reporting.topic_library_counts(conn)
+        finally:
+            conn.close()
+        keys = [key for key in keys if counts.get(key, 0) < int(under)]
+    return keys
 
 
 # Kept as a module-level compatibility surface for stage code; each process
-# loads the authoritative configured catalog once at import time.
+# loads the catalog once at import time.
 DISEASE_KEYS = disease_keys_from_catalog()
 
 
 @lru_cache(maxsize=None)
-def _vocab(mode: str) -> tuple[dict, ...]:
+def _vocab() -> tuple[dict, ...]:
     items = json.loads((DATA_DIR / "findings_vocab.json").read_text(encoding="utf-8"))
-    if mode == "topics" and TOPIC_VOCAB_PATH.exists():
+    if TOPIC_VOCAB_PATH.exists():
         known = {item["finding_key"] for item in items}
-        catalog = _catalog(mode)
+        catalog = _catalog()
         for item in json.loads(TOPIC_VOCAB_PATH.read_text(encoding="utf-8")):
             if item["finding_key"] in known:
                 continue
@@ -238,21 +210,21 @@ def _vocab(mode: str) -> tuple[dict, ...]:
 
 def load_findings_vocab() -> list[dict]:
     """Curated pilot vocabulary plus the generated topic vocabulary."""
-    return [dict(item) for item in _vocab(catalog_mode())]
+    return [dict(item) for item in _vocab()]
 
 
 @lru_cache(maxsize=None)
-def _caption_terms(mode: str) -> dict[str, tuple[str, ...]]:
+def _caption_terms() -> dict[str, tuple[str, ...]]:
     return {
         item["finding_key"]: tuple(item["caption_terms"])
-        for item in _vocab(mode)
+        for item in _vocab()
         if item.get("caption_terms")
     }
 
 
 def vocab_caption_terms(finding_key: str) -> list[str]:
     """Caption phrasings stored on a vocabulary row (generated topic vocab)."""
-    return list(_caption_terms(catalog_mode()).get(finding_key, ()))
+    return list(_caption_terms().get(finding_key, ()))
 
 
 def disease_keys(conn: sqlite3.Connection) -> set[str]:

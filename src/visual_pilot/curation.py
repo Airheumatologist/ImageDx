@@ -15,7 +15,7 @@ import re
 from collections import Counter
 from functools import lru_cache
 
-from . import diseases
+from . import config, diseases
 
 POLICY_VERSION = "clinical-panels.v7-age-optional"
 
@@ -288,7 +288,7 @@ def _plate_rationale(labels: list[str], panels: list) -> str:
 def _plate_verdict(plate_class: str, plate_kind: str) -> tuple[bool, str | None]:
     if plate_class != "single_disease":
         return False, f"multi-panel plate: {plate_class}"
-    if plate_kind == "unlabeled":
+    if plate_kind == "unlabeled" and not config.VP_ALLOW_UNLABELED_PLATES:
         return False, "unlabeled single-disease plate"
     return True, None
 
@@ -414,7 +414,7 @@ def _compound_reason(panel: dict, figure: dict) -> str | None:
     plate_kind = _get(panel, "plate_kind")
     if plate_kind is None or _get(panel, "crop_mode") != "whole_figure":
         return "multi-panel collage; skip whole source"
-    if plate_kind == "unlabeled":
+    if plate_kind == "unlabeled" and not config.VP_ALLOW_UNLABELED_PLATES:
         return "unlabeled single-disease plate"
     structure = plate_structure(vision)
     plate_class = structure["plate_class"] if structure else "not_compound"
@@ -501,6 +501,17 @@ def _evidence_reason(
     evidence_text = " ".join(evidence)
     if _NEGATIVE.search(" ".join((caption, panel_text, evidence_text))):
         return "normal or control image"
+    # An unlabeled single-disease plate is published as whole-figure fill when
+    # the policy allows it: it has no approved finding by construction, so the
+    # finding checks below do not apply. It still cannot be a control or
+    # veterinary image, and publication later marks it unlabeled (no credit).
+    if (
+        _get(panel, "plate_kind") == "unlabeled"
+        and config.VP_ALLOW_UNLABELED_PLATES
+    ):
+        if _VETERINARY.search(panel_text + " " + evidence_text):
+            return "veterinary image"
+        return None
     if not evidence:
         return "no specific clinical manifestation identified"
     if allowed_findings is not None and _lacks_allowed_finding(panel, allowed_findings):

@@ -222,9 +222,11 @@ def panel_eligibility(
 def panel_records(conn, disease_key: str | None = None) -> list[dict]:
     """Return eligible and failed rows together for non-publication diagnostics."""
     vocab = [dict(row) for row in conn.execute("SELECT * FROM findings_vocab WHERE approved=1")]
-    terms = finding_terms(vocab)
-    categories = {row["finding_key"]: row["category"] for row in vocab}
     approved = curation.approved_findings_by_disease(conn)
+    # Terms are looked up only for a panel's own approved findings.
+    wanted = approved.get(disease_key, set()) if disease_key is not None else None
+    terms = finding_terms([r for r in vocab if wanted is None or r["finding_key"] in wanted])
+    categories = {row["finding_key"]: row["category"] for row in vocab}
     exclusions = {
         row["panel_id"]: row["image_sha256"]
         for row in conn.execute("SELECT panel_id,image_sha256 FROM panel_curation WHERE decision='exclude'")
@@ -233,14 +235,24 @@ def panel_records(conn, disease_key: str | None = None) -> list[dict]:
     identities = {}
     if "panel_identity_reviews" in tables:
         identities = {row["panel_id"]: dict(row) for row in conn.execute("SELECT * FROM panel_identity_reviews")}
-    # One topic's call reads only that topic's figures and articles.
-    scope, params = "", ()
+    # One topic's call loads only its panels' figures and articles; discovery
+    # plans topic by topic, and the whole library takes ~20 s to load.
+    scope = ""
+    params: tuple = ()
     if disease_key is not None:
-        scope, params = " WHERE pmcid IN (SELECT pmcid FROM panels WHERE disease_key=?)", (disease_key,)
-    figures = {row["figure_id"]: dict(row) for row in conn.execute("SELECT * FROM figures" + scope, params)}
-    articles = {row["pmcid"]: dict(row) for row in conn.execute("SELECT * FROM articles" + scope, params)}
+        scope, params = " WHERE {col} IN (SELECT {col} FROM panels WHERE disease_key=?)", (disease_key,)
+    figures = {
+        row["figure_id"]: dict(row)
+        for row in conn.execute("SELECT * FROM figures" + scope.format(col="figure_id"), params)
+    }
+    articles = {
+        row["pmcid"]: dict(row)
+        for row in conn.execute("SELECT * FROM articles" + scope.format(col="pmcid"), params)
+    }
     if "article_source_metadata" in tables:
-        for row in conn.execute("SELECT pmcid,metadata_json FROM article_source_metadata" + scope, params):
+        for row in conn.execute(
+            "SELECT pmcid,metadata_json FROM article_source_metadata" + scope.format(col="pmcid"), params
+        ):
             metadata = db.from_json(row["metadata_json"], {}) or {}
             if row["pmcid"] in articles:
                 articles[row["pmcid"]]["source_metadata"] = metadata

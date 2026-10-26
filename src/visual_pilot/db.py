@@ -280,6 +280,8 @@ CREATE INDEX IF NOT EXISTS idx_figures_status ON figures(status);
 CREATE INDEX IF NOT EXISTS idx_panels_figure ON panels(figure_id);
 CREATE INDEX IF NOT EXISTS idx_panels_disease ON panels(disease_key);
 CREATE INDEX IF NOT EXISTS idx_panels_sha256 ON panels(sha256);
+CREATE INDEX IF NOT EXISTS idx_disease_findings_pmcid_source
+    ON disease_findings(pmcid, source);
 CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pending
     ON manifestation_candidates(disease_key, finding_key, status, best_rank);
 CREATE INDEX IF NOT EXISTS idx_manifestation_candidates_pmcid
@@ -318,12 +320,13 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     # check_same_thread=False lets LLMClient.call_many share one connection
     # across its worker threads; callers must serialize writes (llm.py does
     # this with a lock).
-    # Parallel run-all workers share the database; a 30 s wait was not always
-    # enough for another worker's write to commit.
-    conn = sqlite3.connect(path, timeout=120, check_same_thread=False)
+    # Writers wait up to VP_SQLITE_BUSY_TIMEOUT_SECONDS for the write lock;
+    # parallel run-all processes share one database file.
+    timeout = config.VP_SQLITE_BUSY_TIMEOUT_SECONDS
+    conn = sqlite3.connect(path, timeout=timeout, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=120000")
+    conn.execute(f"PRAGMA busy_timeout={int(timeout * 1000)}")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
