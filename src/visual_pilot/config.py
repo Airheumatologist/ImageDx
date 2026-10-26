@@ -46,11 +46,16 @@ OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
 # OpenCode Go gateway (OpenAI-compatible chat completions). The Zen endpoint
 # (https://opencode.ai/zen/v1) refuses free-tier models outside the OpenCode app.
 OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/go/v1")
+# AnyRouter gateway (OpenAI-compatible). Models ending in ":free" stay on the
+# free route (no credits; 2400 requests/minute per key).
+ANYROUTER_API_KEY = os.getenv("ANYROUTER_API_KEY")
+ANYROUTER_BASE_URL = os.getenv("ANYROUTER_BASE_URL", "https://anyrouter.dev/api/v1")
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 
 # Credentials for each supported VP_LLM_PROVIDER value.
 _LLM_PROVIDER_CREDENTIALS = {
     "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
+    "anyrouter": lambda: (ANYROUTER_API_KEY, ANYROUTER_BASE_URL),
 }
 LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
 
@@ -88,7 +93,9 @@ def uses_responses_api(model: str) -> bool:
 # (step-5-preview-free cannot, so it relies on the prompt alone).
 JSON_MODE_MODELS = frozenset(
     m.strip() for m in os.getenv(
-        "VP_JSON_MODE_MODELS", "deepseek-v4.1-flash"
+        "VP_JSON_MODE_MODELS",
+        "deepseek-v4.1-flash,minimax/minimax-m3.1-flash:free,"
+        "nvidia/nemotron-3.5-super-vl-120b-a12b:free",
     ).split(",")
     if m.strip()
 )
@@ -250,6 +257,9 @@ VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 MODEL_PRICES = {
     # OpenCode Go prices; Go usage counts against its monthly dollar limit.
     "muse-spark-1.3-contributor": {"in": 0.10, "cached_in": 0.002, "out": 0.20},
+    # Free on AnyRouter.
+    "minimax/minimax-m3.1-flash:free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
+    "nvidia/nemotron-3.5-super-vl-120b-a12b:free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
     # Formerly free on OpenCode (both now retired); kept for old ledger rows.
     "step-5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
     "longcat-2.5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},

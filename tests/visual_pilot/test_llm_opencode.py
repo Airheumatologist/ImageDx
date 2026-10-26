@@ -308,6 +308,56 @@ class _RateLimitedCompletions(_Completions):
         return super().create(**kwargs)
 
 
+def test_free_tier_exhausted_backs_off_like_a_rate_limit(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    monkeypatch.setattr(llm.config, "VP_RATE_LIMIT_RETRIES", 5)
+    response = llm.httpx.Response(
+        502, request=llm.httpx.Request("POST", "https://example.invalid/v1/chat/completions")
+    )
+    exhausted = llm.openai.InternalServerError(
+        "Error code: 502 - {'error': {'code': 'free_tier_exhausted'}}",
+        response=response, body=None,
+    )
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    calls = []
+
+    def create(**kwargs):
+        calls.append(kwargs)
+        if len(calls) <= 4:  # more than max_retries=3 transient retries allow
+            raise exhausted
+        return _Completions.create(completions, **kwargs)
+
+    monkeypatch.setattr(completions, "create", create)
+    parsed, _ = client.call_json("p3", "minimax/minimax-m3.1-flash:free", "sys", "user", SCHEMA)
+    assert parsed == {"ok": True}
+    assert sleeps == [1.0, 2.0, 4.0, 8.0]
+
+
+def test_reply_from_a_substituted_model_is_retried(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
+    client, completions = _client(monkeypatch, usage)
+    served = ["anyrouter/free-pick", "nvidia/nemotron-3.5-super-vl-120b-a12b"]
+
+    def create(**kwargs):
+        stream = _Completions.create(completions, **kwargs)
+        model = served.pop(0)
+        for chunk in stream.chunks:
+            chunk.model = model
+        return stream
+
+    monkeypatch.setattr(completions, "create", create)
+    parsed, _ = client.call_json(
+        "p3", "nvidia/nemotron-3.5-super-vl-120b-a12b:free", "sys", "user", SCHEMA
+    )
+    assert parsed == {"ok": True}
+    assert len(completions.calls) == 2
+    assert sleeps == [1.0]
+
+
 def test_rate_limit_switches_to_the_fallback_model(monkeypatch):
     sleeps = []
     monkeypatch.setattr(llm.time, "sleep", sleeps.append)

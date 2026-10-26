@@ -124,6 +124,17 @@ _PACER = _RequestPacer(config.VP_LLM_RPM)
 _FALLBACK_STATUSES = frozenset({402, 429})
 # Error type OpenCode Go returns (as a 429) once an account's usage limit is spent.
 _USAGE_LIMIT = "GoUsageLimitError"
+# Error code AnyRouter returns (as a 502) while every free upstream for a
+# model is rate-limited; it clears within minutes, so it backs off like a 429.
+_FREE_TIER_EXHAUSTED = "free_tier_exhausted"
+# Raised when a reply streams from a model other than the one requested
+# (AnyRouter answers a rate-limited ":free" model through anyrouter/free).
+_MODEL_SUBSTITUTED = "model_substituted"
+
+
+def _served_by_other_model(requested: str, served: str | None) -> bool:
+    """Whether ``served`` is a different model, ignoring a ``:variant`` suffix."""
+    return bool(served) and served.split(":")[0] != requested.split(":")[0]
 
 
 def _has_fallback(model: str) -> bool:
@@ -546,6 +557,14 @@ class LLMClient:
         got_choice = False
         try:
             for chunk in stream:
+                served = getattr(chunk, "model", None)
+                if _served_by_other_model(model, served):
+                    response = httpx.Response(502, request=httpx.Request(
+                        "POST", self.base_url.rstrip('/') + '/chat/completions'))
+                    raise openai.InternalServerError(
+                        f"{_MODEL_SUBSTITUTED}: {model} answered by {served}",
+                        response=response, body=None,
+                    )
                 if getattr(chunk, "usage", None):
                     usage = chunk.usage
                 if chunk.choices:
@@ -684,7 +703,9 @@ class LLMClient:
 
         C4: two independent retry budgets. HTTP 429s consume
         VP_RATE_LIMIT_RETRIES and honor Retry-After; timeouts, connection
-        errors and 5xx consume max_retries with the original backoff. With
+        errors and 5xx consume max_retries with the original backoff;
+        AnyRouter's ``free_tier_exhausted`` 502 and a reply from a substituted
+        model count as a 429. With
         ``can_fallback``, the first 429 or 402 (OpenCode's "Endpoint is
         unavailable") switches the request to the fallback model/account at
         once, without spending either budget; later errors retry there.
@@ -715,7 +736,9 @@ class LLMClient:
             except _TRANSIENT_ERRORS as exc:
                 error = exc
             # W0/C7: count transient failures (429s/timeouts) — observation only.
-            if isinstance(error, openai.RateLimitError):
+            if (isinstance(error, openai.RateLimitError)
+                    or _FREE_TIER_EXHAUSTED in str(error)
+                    or _MODEL_SUBSTITUTED in str(error)):
                 timing.count("llm_429")
                 if rate_limit_attempt >= config.VP_RATE_LIMIT_RETRIES:
                     raise error
