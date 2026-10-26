@@ -159,7 +159,9 @@ def build_mesh_query(disease_terms: list[str], cases_only: bool = False,
     Captures papers that do not repeat the disease name in title/abstract
     but are indexed to it (common for eponymous and rare topics).
     """
-    dis = _disease_clause(disease_terms, ("MESH",))
+    # Each term needs its own parentheses: Europe PMC answers a bare
+    # ``MESH:"a" OR MESH:"b"`` with the hits for "b" alone.
+    dis = " OR ".join(f"(MESH:{_quote(t)})" for t in disease_terms if t.strip())
     if not dis:
         return ""
     cases = f" AND {_CASE_TYPES}" if cases_only else ""

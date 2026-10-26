@@ -405,7 +405,7 @@ def test_disease_pass_searches_thin_topics_and_gates_on_citing_text(tmp_path, mo
     assert 'PUB_TYPE:"case reports"' in queries[0] and "ABSTRACT:" not in queries[0]
     assert 'PUB_TYPE:"case reports"' in queries[1] and 'ABSTRACT:"Systemic lupus' in queries[1]
     assert "PUB_TYPE" not in queries[2] and "ABSTRACT:" not in queries[2]
-    assert queries[3].startswith("(MESH:")
+    assert queries[3].startswith("((MESH:")
     assert queries[4].startswith("(TITLE:") and "ABSTRACT:" in queries[4]
     assert all(q.startswith("(TITLE:") for q in queries[:3])
     status = dict(conn.execute("SELECT figure_id, status FROM figures").fetchall())
@@ -530,7 +530,7 @@ def test_parse_article_reads_the_article_level_license():
 
 def test_mesh_and_relaxed_queries_drop_the_license_clause():
     mesh = europepmc.build_mesh_query(["Kawasaki disease"])
-    assert mesh.startswith('(MESH:"Kawasaki disease")') and 'LICENSE:"cc by"' in mesh
+    assert mesh.startswith('((MESH:"Kawasaki disease"))') and 'LICENSE:"cc by"' in mesh
     relaxed = europepmc.build_disease_query(
         ["Kawasaki disease"], fields=("TITLE",), license_clause=False,
     )
@@ -548,3 +548,9 @@ def test_pmc_client_keeps_a_connection_per_fetch_worker(monkeypatch):
         assert pool._max_connections == 128
     finally:
         pmc.set_http_client(None)
+
+
+def test_mesh_query_parenthesizes_each_term():
+    # Europe PMC returns only the last term's hits for MESH:"a" OR MESH:"b".
+    mesh = europepmc.build_mesh_query(["Seborrheic Dermatitis", "dandruff"])
+    assert mesh.startswith('((MESH:"Seborrheic Dermatitis") OR (MESH:"dandruff"))')
