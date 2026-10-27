@@ -425,7 +425,7 @@ turborag/
 |-- README.md
 |-- env.example                  # provider key + VP_* settings
 |-- requirements.txt
-|-- docs/                        # coverage plans, curation review
+|-- docs/                        # curation review
 |-- data/main_database_topics.json  # the single disease list (the catalog)
 |-- src/
 |   `-- visual_pilot/            # the pipeline package
@@ -506,8 +506,7 @@ python3 -m src.visual_pilot.cli serve --port 8765    # browse the library
 `discover --pmcids ...` skips search and fetches exactly those articles,
 attributing each to the diseases its title or abstract names (or to the one
 `--disease` given when it names none); `run-all --pmcids ...` then takes
-them through triage, judge, store and describe. The 20-article pilot set
-lives in `src/visual_pilot/data/parity_pmcids.json`.
+them through triage, judge, store and describe.
 
 ### Throughput settings
 
