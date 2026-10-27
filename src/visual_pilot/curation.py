@@ -60,15 +60,23 @@ _BAD_PANEL = re.compile(
 )
 
 
+# A disease name's words may be separated by any punctuation in the text
+# ("pharyngitis, and cervical adenitis", "(PFAPA) syndrome", "Swyer James"),
+# and a possessive "'s" may come and go ("Zenker diverticulum").
+_TERM_WORD = re.compile(r"[^\W_]+")
+_POSSESSIVE = re.compile(r"['’]s\b")
+_TERM_GAP = r"(?:['’]s)?[\W_]+"
+
+
 def _term_pattern(term: str) -> re.Pattern | None:
     """Compile a configured disease name/synonym with phrase-aware boundaries."""
     value = " ".join(str(term or "").strip().split())
     if len(value) < 3 or value.casefold() in _AMBIGUOUS_ACRONYMS:
         return None
-    words = re.split(r"[\s-]+", value)
-    body = r"[\s-]+".join(re.escape(word) for word in words if word)
-    if not body:
+    words = _TERM_WORD.findall(_POSSESSIVE.sub("", value))
+    if not words:
         return None
+    body = _TERM_GAP.join(re.escape(word) for word in words)
     if diseases.is_acronym(value):
         # Topic synonyms such as "ALL", "UC" or "PV" are words in lower case.
         return re.compile(r"(?<![A-Za-z0-9])" + body + r"(?![A-Za-z0-9])")

@@ -459,5 +459,87 @@
     "brachial plexus birth injury",
     "obstetric brachial plexus injury",
     "Klumpke palsy"
+  ],
+  "pfapa_syndrome": [
+    "periodic fever, aphthous stomatitis, pharyngitis",
+    "PFAPA"
+  ],
+  "hla_b27_associated_acute_anterior_uveitis": [
+    "human leukocyte antigen B27-associated uveitis",
+    "HLA-B27-positive acute anterior uveitis",
+    "HLA-B27-associated uveitis"
+  ],
+  "sting_associated_vasculopathy_with_onset_in_infancy": [
+    "stimulator of interferon genes-associated vasculopathy"
+  ],
+  "ipex_syndrome": [
+    "immune dysregulation, polyendocrinopathy, enteropathy",
+    "immunodysregulation polyendocrinopathy enteropathy",
+    "IPEX"
+  ],
+  "rohhad_syndrome": [
+    "rapid-onset obesity with hypothalamic dysfunction",
+    "ROHHAD"
+  ],
+  "aids_cholangiopathy": [
+    "acquired immunodeficiency syndrome cholangiopathy",
+    "HIV cholangiopathy",
+    "HIV-associated cholangiopathy"
+  ],
+  "hyper_igm_syndrome": [
+    "hyper-immunoglobulin M syndrome",
+    "hyperimmunoglobulin M syndrome",
+    "CD40 ligand deficiency"
+  ],
+  "dock8_deficiency": [
+    "dedicator of cytokinesis 8 deficiency",
+    "DOCK8 immunodeficiency"
+  ],
+  "focal_cortical_dysplasia_type_ii": [
+    "focal cortical dysplasia type 2",
+    "Taylor-type focal cortical dysplasia",
+    "type II focal cortical dysplasia"
+  ],
+  "vacterl_association": [
+    "VATER association",
+    "VACTERL"
+  ],
+  "gata2_deficiency": [
+    "monocytopenia and mycobacterial infection syndrome",
+    "Emberger syndrome",
+    "GATA2 haploinsufficiency"
+  ],
+  "phace_syndrome": [
+    "posterior fossa malformations, hemangiomas, arterial anomalies",
+    "posterior fossa brain malformations, hemangiomas"
+  ],
+  "iga_pemphigus": [
+    "immunoglobulin A pemphigus",
+    "intercellular IgA dermatosis",
+    "intraepidermal neutrophilic IgA dermatosis"
+  ],
+  "gm1_gangliosidosis": [
+    "generalized gangliosidosis",
+    "GM1-gangliosidosis"
+  ],
+  "iga_nephropathy": [
+    "immunoglobulin A nephropathy",
+    "Berger disease"
+  ],
+  "ohvira_syndrome": [
+    "obstructed hemivagina and ipsilateral renal",
+    "Herlyn-Werner-Wunderlich syndrome"
+  ],
+  "anti_nmda_receptor_encephalitis": [
+    "anti-N-methyl-D-aspartate receptor encephalitis",
+    "N-methyl-D-aspartate receptor encephalitis"
+  ],
+  "pik3ca_related_overgrowth_spectrum": [
+    "congenital lipomatous overgrowth",
+    "fibroadipose hyperplasia"
+  ],
+  "swyer_james_macleod_syndrome": [
+    "Swyer-James syndrome",
+    "Macleod syndrome"
   ]
 }
