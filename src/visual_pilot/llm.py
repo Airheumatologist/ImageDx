@@ -1,21 +1,16 @@
 """LLM provider layer for the visual pilot.
 
-OpenAI-compatible calls to OpenCode (``VP_LLM_PROVIDER=opencode``) with
-the schema in the system prompt and the JSON reply validated locally.
-Muse Spark models go through the Responses API in JSON mode; the rest use
-chat completions, in JSON mode for ``VP_JSON_MODE_MODELS`` (deepseek-v4.1-flash)
-and without one otherwise (step-5-preview-free has none). One
-repair retry on validation failure, an
-``llm_calls``-backed response cache + cost ledger, a budget guard, dry-run
-mode, and concurrent batching.
+Streamed OpenRouter chat completions in JSON mode, with the schema in the
+system prompt and the JSON reply validated locally. One repair retry on
+validation failure, an ``llm_calls``-backed response cache + cost ledger, a
+budget guard, dry-run mode, and concurrent batching.
 
 There is no provider batch API, so ``call_many``/``iter_many`` run requests
 on a thread pool of ``VP_CONCURRENCY`` workers, with a per-client timeout,
 lazy completion-order
 ``iter_many``, process-wide request pacing (``VP_LLM_RPM``), and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
-independent of ``max_retries``. A request answered with a 429 or 402
-switches once to the fallback: ``VP_FALLBACK_MODEL`` (default: the same model)
-on the ``VP_FALLBACK_API_KEY`` account (default: the same account).
+independent of ``max_retries``. A 402 (OpenRouter credits spent) stops the
+run like an exhausted budget.
 """
 
 from __future__ import annotations
@@ -27,7 +22,6 @@ import threading
 import time
 import urllib.parse
 import urllib.request
-import uuid
 from collections.abc import Iterable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
@@ -48,7 +42,10 @@ except ImportError:  # pragma: no cover - older openai uses httpx itself
 from . import config, db, timing
 
 
+PROVIDER = "openrouter"
 USER_AGENT = "image-dx-visual-pilot/1.0"
+# OpenRouter's app attribution header.
+APP_TITLE = "image-dx-visual-pilot"
 
 
 class LLMError(Exception):
@@ -119,28 +116,9 @@ class _RequestPacer:
 # Shared by every LLMClient: the provider's rate limit is per account.
 _PACER = _RequestPacer(config.VP_LLM_RPM)
 
-# HTTP statuses that move a request to the fallback model/account: 429 rate
-# limits and 402, which OpenCode returns as "Endpoint is unavailable".
-_FALLBACK_STATUSES = frozenset({402, 429})
-# Error type OpenCode Go returns (as a 429) once an account's usage limit is spent.
-_USAGE_LIMIT = "GoUsageLimitError"
-# Error code AnyRouter returns (as a 502) while every free upstream for a
-# model is rate-limited; it clears within minutes, so it backs off like a 429.
-_FREE_TIER_EXHAUSTED = "free_tier_exhausted"
-# Raised when a reply streams from a model other than the one requested
-# (AnyRouter answers a rate-limited ":free" model through anyrouter/free).
-_MODEL_SUBSTITUTED = "model_substituted"
-
-
-def _served_by_other_model(requested: str, served: str | None) -> bool:
-    """Whether ``served`` is a different model, ignoring a ``:variant`` suffix."""
-    return bool(served) and served.split(":")[0] != requested.split(":")[0]
-
-
-def _has_fallback(model: str) -> bool:
-    """Whether a request for ``model`` has somewhere else to go."""
-    other_model = config.VP_FALLBACK_MODEL and config.VP_FALLBACK_MODEL != model
-    return bool(config.VP_FALLBACK_API_KEY or other_model)
+# OpenRouter answers 402 once the account's credits are spent; retrying
+# cannot help.
+_NO_CREDITS = 402
 
 # Error classes worth a retry (rate limits, network blips, server 5xx).
 _TRANSIENT_ERRORS = (
@@ -202,19 +180,15 @@ class _DeadlineTransport(_openai_httpx.HTTPTransport):
         return response
 
 
-def _chat_extra_kwargs(model: str, effort: str) -> dict:
-    """Provider kwargs for a chat completion: thinking/effort, token cap, JSON mode."""
-    extra_kwargs: dict = {}
+def _chat_extra_kwargs(effort: str) -> dict:
+    """Request kwargs beyond the messages: JSON mode, reasoning, token cap."""
+    extra_kwargs: dict = {"response_format": {"type": "json_object"}}
     if effort == "off":
-        # reasoning_effort only trims thinking on some chat models;
-        # this switches it off.
-        extra_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+        extra_kwargs["extra_body"] = {"reasoning": {"enabled": False}}
     elif effort:
-        extra_kwargs["extra_body"] = {"reasoning_effort": effort}
+        extra_kwargs["extra_body"] = {"reasoning": {"effort": effort}}
     if config.VP_LLM_MAX_OUTPUT_TOKENS:
         extra_kwargs["max_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
-    if config.uses_json_mode(model):
-        extra_kwargs["response_format"] = {"type": "json_object"}
     return extra_kwargs
 
 
@@ -223,7 +197,6 @@ class LLMClient:
 
     def __init__(
         self,
-        provider: str | None = None,
         db_conn=None,
         budget_usd: float | None = None,
         dry_run: bool = False,
@@ -231,8 +204,8 @@ class LLMClient:
         concurrency: int | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
-        self.provider = (provider or config.VP_LLM_PROVIDER).strip().lower()
-        self.api_key, self.base_url = config.llm_credentials(self.provider)
+        self.api_key = config.OPENROUTER_API_KEY
+        self.base_url = config.OPENROUTER_BASE_URL
         self.conn = db_conn
         self.budget_usd = budget_usd
         self.dry_run = dry_run
@@ -246,9 +219,6 @@ class LLMClient:
         )
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
-        # The fallback account's client when VP_FALLBACK_API_KEY is set;
-        # otherwise fallback requests share ``_client``.
-        self._fallback_client: openai.OpenAI | None = None
         self._lock = threading.Lock()
         # Worker threads write llm_calls through the caller's connection under
         # this lock; callers streaming iter_many must hold it for their own
@@ -321,12 +291,10 @@ class LLMClient:
         self._check_budget()
 
         with timing.inflight("llm"):
-            parsed, raw_content, usage, attempts, mode, model = self._call_with_validation(
+            parsed, raw_content, usage, attempts = self._call_with_validation(
                 model, system, user_content, schema, images, effort, fill_missing
             )
         timing.record("llm_latency", time.monotonic() - started, stage=stage, source="live")
-        # ``model`` is now the one that answered (VP_FALLBACK_MODEL after a
-        # 429/402); the reply stays cached under the requested model's key.
         cost = self._cost(model, usage)
         with self._lock:
             self.spent_usd += cost or 0.0
@@ -336,8 +304,8 @@ class LLMClient:
             "input_hash": input_hash,
             "stage": stage,
             "model": model,
-            "provider": self.provider,
-            "response_format": mode,
+            "provider": PROVIDER,
+            "response_format": "json_object",
             "cost_usd": cost,
             "input_tokens": usage.get("input_tokens"),
             "output_tokens": usage.get("output_tokens"),
@@ -405,35 +373,21 @@ class LLMClient:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
-    def _openai(self, fallback: bool = False) -> openai.OpenAI:
+    def _openai(self) -> openai.OpenAI:
         with self._client_init_lock:
-            if fallback and config.VP_FALLBACK_API_KEY:
-                if self._fallback_client is None:
-                    self._fallback_client = self._new_openai(config.VP_FALLBACK_API_KEY)
-                return self._fallback_client
-            return self._initialize_openai()
-
-    def _initialize_openai(self) -> openai.OpenAI:
-        if self._client is None:
-            if not self.api_key:
-                raise LLMError(
-                    f"no API key configured for provider {self.provider!r}"
-                )
-            self._client = self._new_openai(self.api_key)
-        return self._client
+            if self._client is None:
+                if not self.api_key:
+                    raise LLMError("OPENROUTER_API_KEY is not set")
+                self._client = self._new_openai(self.api_key)
+            return self._client
 
     def _new_openai(self, api_key: str) -> openai.OpenAI:
         # max_retries=0: transient retries are handled here so that
-        # budget/cache semantics stay under our control. The OpenCode Go
-        # gateway rejects requests without x-opencode-session and asks
-        # clients to name themselves in User-Agent.
+        # budget/cache semantics stay under our control.
         return openai.OpenAI(
             api_key=api_key, base_url=self.base_url,
             timeout=self.timeout_seconds, max_retries=0,
-            default_headers={
-                "User-Agent": USER_AGENT,
-                "x-opencode-session": f"visual-pilot-{uuid.uuid4().hex}",
-            },
+            default_headers={"User-Agent": USER_AGENT, "X-Title": APP_TITLE},
             http_client=openai.DefaultHttpxClient(
                 transport=_DeadlineTransport(
                     config.VP_LLM_MAX_REQUEST_SECONDS,
@@ -507,10 +461,7 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
     ):
-        """Single chat completion asking for JSON (JSON mode where routable).
-
-        Returns (response, response mode, model that answered).
-        """
+        """Single streamed chat completion in JSON mode."""
         messages = [
             {
                 "role": "system",
@@ -522,30 +473,20 @@ class LLMClient:
             },
             {"role": "user", "content": self._user_parts(user_content, images)},
         ]
-        def _send(m: str, fallback: bool):
-            # The fallback model may speak the other protocol.
-            if config.uses_responses_api(m):
-                return self._send_responses(m, messages, effort, fallback)
+
+        def _send():
             with _IN_FLIGHT:
-                return self._stream_chat(m, messages, _chat_extra_kwargs(m, effort), fallback)
+                return self._stream_chat(model, messages, _chat_extra_kwargs(effort))
 
-        resp, used = self._with_retries(_send, model, can_fallback=True)
-        if config.uses_responses_api(used):
-            return resp, "responses_json", used
-        json_mode = config.uses_json_mode(used)
-        return resp, "chat_json" if json_mode else "prompt_json", used
+        return self._with_retries(_send)
 
-    def _stream_chat(
-        self, model: str, messages: list[dict], extra_kwargs: dict, fallback: bool = False
-    ):
+    def _stream_chat(self, model: str, messages: list[dict], extra_kwargs: dict):
         """One streamed chat completion, returned in the non-streamed shape.
 
         Streamed so a slow generation never sits on an idle socket.
-        OpenCode cannot route json_object requests for step-5-preview-free,
-        so only JSON-mode models get response_format; _normalize unwraps
-        fenced replies either way.
+        _normalize unwraps fenced replies in case JSON mode is ignored.
         """
-        stream = self._openai(fallback).chat.completions.create(
+        stream = self._openai().chat.completions.create(
             model=model,
             messages=messages,
             stream=True,
@@ -557,13 +498,13 @@ class LLMClient:
         got_choice = False
         try:
             for chunk in stream:
-                served = getattr(chunk, "model", None)
-                if _served_by_other_model(model, served):
-                    response = httpx.Response(502, request=httpx.Request(
-                        "POST", self.base_url.rstrip('/') + '/chat/completions'))
+                error = getattr(chunk, "error", None)
+                if error:
+                    # OpenRouter reports an upstream failure after the 200 as
+                    # a chunk carrying ``error``; retry it like a 5xx.
                     raise openai.InternalServerError(
-                        f"{_MODEL_SUBSTITUTED}: {model} answered by {served}",
-                        response=response, body=None,
+                        f"provider error mid-stream: {error}",
+                        response=self._error_response(), body=None,
                     )
                 if getattr(chunk, "usage", None):
                     usage = chunk.usage
@@ -579,74 +520,17 @@ class LLMClient:
         finally:
             stream.close()
         if not got_choice:
-            response = httpx.Response(502, request=httpx.Request(
-                "POST", self.base_url.rstrip('/') + '/chat/completions'))
             raise openai.InternalServerError(
-                "provider error: empty choices returned", response=response, body=None
+                "provider error: empty choices returned",
+                response=self._error_response(), body=None,
             )
         message = SimpleNamespace(content="".join(content))
         return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
-    def _send_responses(
-        self, model: str, messages: list[dict], effort: str, fallback: bool = False
-    ):
-        """One streamed Responses API call in JSON mode (Muse Spark models).
-
-        Returns the chat-completions shape ``_call_with_validation`` reads.
-        """
-        system, user = messages[0]["content"], messages[1]["content"]
-        if isinstance(user, str):
-            user = [{"type": "text", "text": user}]
-        parts = [
-            {"type": "input_text", "text": p["text"]} if p["type"] == "text"
-            else {"type": "input_image", "image_url": p["image_url"]["url"]}
-            for p in user
-        ]
-        kwargs = {"reasoning": {"effort": effort}} if effort and effort != "off" else {}
-        if config.VP_LLM_MAX_OUTPUT_TOKENS:
-            kwargs["max_output_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
-        with _IN_FLIGHT:
-            stream = self._openai(fallback).responses.create(
-                model=model,
-                instructions=system,
-                input=[{"role": "user", "content": parts}],
-                text={"format": {"type": "json_object"}},
-                stream=True,
-                **kwargs,
-            )
-            content: list[str] = []
-            final = None
-            try:
-                for event in stream:
-                    if event.type == "response.output_text.delta":
-                        content.append(event.delta)
-                    elif event.type in ("response.completed", "response.incomplete"):
-                        final = event.response
-                    elif event.type in ("response.failed", "error"):
-                        response = httpx.Response(502, request=httpx.Request(
-                            "POST", self.base_url.rstrip("/") + "/responses"))
-                        raise openai.InternalServerError(
-                            f"provider error: {event.type}", response=response, body=None
-                        )
-            except _openai_httpx.TimeoutException as exc:
-                raise openai.APITimeoutError(request=stream.response.request) from exc
-            except _openai_httpx.TransportError as exc:
-                raise openai.APIConnectionError(
-                    message=f"stream interrupted: {exc}", request=stream.response.request
-                ) from exc
-            finally:
-                stream.close()
-        u = getattr(final, "usage", None)
-        usage = None
-        if u is not None:
-            details = getattr(u, "input_tokens_details", None)
-            usage = SimpleNamespace(
-                prompt_tokens=u.input_tokens,
-                completion_tokens=u.output_tokens,
-                cached_tokens=getattr(details, "cached_tokens", 0) or 0,
-            )
-        message = SimpleNamespace(content="".join(content))
-        return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
+    def _error_response(self) -> httpx.Response:
+        """A 502 response object for errors raised from a 200 stream."""
+        return httpx.Response(502, request=httpx.Request(
+            "POST", self.base_url.rstrip("/") + "/chat/completions"))
 
     def _call_with_validation(
         self,
@@ -657,7 +541,7 @@ class LLMClient:
         images: list[ImageInput],
         effort: str = "",
         fill_missing: dict | None = None,
-    ) -> tuple[Any, str, dict, int, str, str]:
+    ) -> tuple[Any, str, dict, int]:
         usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
         attempts = 0
         last_error = "no response"
@@ -668,18 +552,21 @@ class LLMClient:
                     f"{user_content}\n\nThe previous response failed validation: "
                     f"{last_error}\nReturn corrected JSON only."
                 )
-            resp, mode, used = self._send_once(model, system, request_text, schema, images, effort)
+            resp = self._send_once(model, system, request_text, schema, images, effort)
             attempts += 1
             u = getattr(resp, "usage", None)
             if u is not None:
                 usage["input_tokens"] += getattr(u, "prompt_tokens", 0) or 0
                 usage["cached_input_tokens"] += _cached_tokens(u)
                 usage["output_tokens"] += getattr(u, "completion_tokens", 0) or 0
+                reported = getattr(u, "cost", None)
+                if reported is not None:
+                    usage["cost_usd"] = usage.get("cost_usd", 0.0) + float(reported)
             raw = resp.choices[0].message.content or ""
             content = _normalize(raw, schema, fill_missing or {})
             parsed, last_error = self._parse_validate(content, schema)
             if last_error is None:
-                return parsed, content, usage, attempts, mode, used
+                return parsed, content, usage, attempts
         raise SchemaValidationError(
             f"response failed schema validation: {last_error}; "
             f"raw reply began {raw[:300]!r}"
@@ -698,49 +585,31 @@ class LLMClient:
             return parsed, f"schema violation at /{path}: {exc.message}"
         return parsed, None
 
-    def _with_retries(self, call, model: str, can_fallback: bool):
-        """``call(model, fallback)`` with retries; returns (response, model that answered).
+    def _with_retries(self, call):
+        """``call()`` with retries.
 
         C4: two independent retry budgets. HTTP 429s consume
         VP_RATE_LIMIT_RETRIES and honor Retry-After; timeouts, connection
-        errors and 5xx consume max_retries with the original backoff;
-        AnyRouter's ``free_tier_exhausted`` 502 and a reply from a substituted
-        model count as a 429. With
-        ``can_fallback``, the first 429, 402 (OpenCode's "Endpoint is
-        unavailable"), ``free_tier_exhausted`` or substituted reply switches the request to the fallback model/account at
-        once, without spending either budget; later errors retry there.
+        errors and 5xx consume max_retries with the original backoff. A 402
+        (credits spent) raises BudgetExceeded at once.
         """
         transient_attempt = 0
         rate_limit_attempt = 0
-        on_fallback = False
         while True:
             _PACER.wait()  # every attempt is one provider request
             try:
-                return call(model, on_fallback), model
+                return call()
             except openai.APIStatusError as exc:
-                if (can_fallback and not on_fallback and _has_fallback(model)
-                        and (exc.status_code in _FALLBACK_STATUSES
-                             or _FREE_TIER_EXHAUSTED in str(exc)
-                             or _MODEL_SUBSTITUTED in str(exc))):
-                    timing.count(f"llm_{exc.status_code}")
-                    timing.count("llm_fallback")
-                    model = config.VP_FALLBACK_MODEL or model
-                    on_fallback = True
-                    continue
-                if _USAGE_LIMIT in str(exc):
-                    # The account's weekly/monthly cap: retrying cannot help,
-                    # so stop like an exhausted budget (status left unchanged).
-                    timing.count("llm_usage_limit")
-                    raise BudgetExceeded(f"provider usage limit reached: {exc}") from exc
+                if exc.status_code == _NO_CREDITS:
+                    timing.count("llm_402")
+                    raise BudgetExceeded(f"OpenRouter credits exhausted: {exc}") from exc
                 if not isinstance(exc, _TRANSIENT_ERRORS):
                     raise
                 error = exc
             except _TRANSIENT_ERRORS as exc:
                 error = exc
             # W0/C7: count transient failures (429s/timeouts) — observation only.
-            if (isinstance(error, openai.RateLimitError)
-                    or _FREE_TIER_EXHAUSTED in str(error)
-                    or _MODEL_SUBSTITUTED in str(error)):
+            if isinstance(error, openai.RateLimitError):
                 timing.count("llm_429")
                 if rate_limit_attempt >= config.VP_RATE_LIMIT_RETRIES:
                     raise error
@@ -785,6 +654,8 @@ class LLMClient:
         return min(30.0, max(0.0, delay))
 
     def _cost(self, model: str, usage: dict) -> float | None:
+        if usage.get("cost_usd") is not None:
+            return usage["cost_usd"]  # OpenRouter's billed amount
         price = config.model_price(model)
         if price is None:
             return None
@@ -814,7 +685,7 @@ class LLMClient:
             "prompt_version": prompt_version,
             "attempts": meta["attempts"],
             "response_format": meta["response_format"],
-            "provider": self.provider,
+            "provider": PROVIDER,
         }
         row = (
             stage,
@@ -900,7 +771,7 @@ def _normalize(content: str, schema: dict, defaults: dict) -> str:
 def _cached_tokens(usage) -> int:
     """Prompt tokens served from the provider cache.
 
-    OpenCode reports the OpenAI-style ``prompt_tokens_details.cached_tokens``;
+    OpenRouter reports the OpenAI-style ``prompt_tokens_details.cached_tokens``;
     a flat ``usage.cached_tokens`` is accepted too.
     """
     cached = getattr(usage, "cached_tokens", None)
