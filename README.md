@@ -6,9 +6,10 @@ articles (reviews, case series, original research and case reports) with
 commercial-use licenses.
 
 Disease scope: the single disease list, `data/main_database_topics.json`
-(1,110 topics across 20 specialties, the same list and specialties the site
-shows). Every topic in it has published images; a topic with none is deleted
-from the list. Ten topics (**SLE**, **dermatomyositis**, **ankylosing
+(2,136 topics across 20 specialties). This includes 493 reviewed additions
+awaiting image curation; master-catalog membership does not imply published
+images. See [the new-topic run instructions](docs/new-topics-2026-10-28.md)
+for the additions-only manifest and launcher. Ten topics (**SLE**, **dermatomyositis**, **ankylosing
 spondylitis**, **rheumatoid arthritis**, **systemic sclerosis**,
 **psoriasis**, **psoriatic arthritis**, **sarcoidosis**, **gout**, **atopic
 dermatitis**) carry short keys (`sle`, `dm`, …), subtypes and hand-curated
@@ -21,7 +22,7 @@ by `build-vocab` (see [Disease catalog](#disease-catalog)).
                         Visual Findings Library pipeline
                         ================================
 
-  DISCOVERY                           LLM STAGES (OpenRouter)
+  DISCOVERY                           LLM STAGES (OpenCode + OpenRouter)
   +---------------------------+       P2 caption triage      (text, batched)
   | Europe PMC REST search    |       P3 figure judgment     (vision)
   |  FIG: caption field,      |       P5 display captions    (text)
@@ -451,7 +452,7 @@ turborag/
 |       |-- publication.py       # publication eligibility rules
 |       |-- source_quality.py    # article tiers (review-first ranking)
 |       |-- curation_audit.py    # reversible publication audit
-|       |-- llm.py               # OpenRouter client: budget, cache, retries
+|       |-- llm.py               # LLM clients: budget, cache, retries
 |       |-- prompts.py           # P2-P5 systems + JSON schemas
 |       |-- data/                # findings_vocab.json,
 |       |                        # topic_findings_vocab.json (generated)
@@ -470,14 +471,49 @@ Python 3.10+ is required (the macOS system `python3` is 3.9):
 ```bash
 uv venv --python 3.12 venv && source venv/bin/activate
 pip install -r requirements.txt
-cp env.example .env   # fill in OPENROUTER_API_KEY (discovery needs no key)
+cp env.example .env   # fill in OpenCode + OpenRouter keys
 ```
 
-Every stage runs on the multimodal `qwen/qwen3.7-flash` through OpenRouter
-(`https://openrouter.ai/api/v1`, streamed chat completions in JSON mode). The
-ledger records the cost OpenRouter reports for each request; when a reply
-carries none, `config.MODEL_PRICES` prices it at OpenRouter's under-32k-token
-list price ($0.03 in / $0.006 cached / $0.13 out per 1M tokens).
+Text stages use `opencode-go/iceman-contributor-free` through OpenCode Go:
+caption triage (P2), text extraction (P4), display descriptions (P5), findings
+vocabulary (P6), and mimic audit (P8). The image judge (P3) uses
+`z-ai/glm-5.3-flash` through OpenRouter, restricted to **OpenInference only**.
+Provider fallback is disabled; an unavailable OpenInference route returns an
+error without trying Relace or another server.
+
+Set `OPENCODE_GO_API_KEY` (the existing `OPENCODE_API_KEY` is also accepted)
+and `OPENROUTER_API_KEY` in `.env`. Iceman uses schema instructions in the
+prompt because its API rejects `response_format`; replies are validated
+locally with one repair retry. GLM uses JSON mode. Both clients stream and
+share the existing budget, cache and retry controls. OpenRouter's actual
+provider, response ID and reported cost are recorded in the ledger. Its
+allowlist is part of the cache identity, preventing reuse of old unrestricted
+OpenRouter results.
+
+Re-run the live smoke checks without writing to the production database:
+
+```bash
+python -m src.visual_pilot.smoke_providers --clinical
+# vision checks alone:
+python -m src.visual_pilot.smoke_providers --clinical --vision-only
+```
+
+These check every text prompt schema, image recognition, rejection of a
+diagram and acceptance of a published CC-BY clinical photograph. See
+[`docs/provider-evaluation-2026-10-27.md`](docs/provider-evaluation-2026-10-27.md)
+for results and limits. The current model overlay is in
+[`env.iceman.example`](env.iceman.example).
+
+Before caption triage or vision analysis, the pipeline checks the existing
+`site/data/<topic>/panels.json` files. A figure already shown under every
+topic attributed to its article is marked `already_published`, with the
+matched identities retained in `triage_json`. Figure IDs and image URLs are
+checked before fetching; exact RGB pixel hashes are checked before the
+vision call. A match under only some of an article's topics does not skip
+the figure. `VP_PUBLISHED_SITE_DIR` selects another site directory when
+needed. This prevents the working database from re-analyzing images already
+live in the separately exported site. Export-time deduplication remains in
+place as a final check.
 
 ## Usage
 
@@ -511,22 +547,21 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 
 | Setting | Default | Effect |
 |---|---|---|
-| `VP_JUDGE_CONCURRENCY` | 32 | vision calls in flight |
-| `VP_CONCURRENCY` | 32 | triage/describe/extract calls in flight |
+| `VP_JUDGE_CONCURRENCY` | 64 | vision calls in flight |
+| `VP_CONCURRENCY` | 64 | triage/describe/extract calls in flight |
 | `VP_TRIAGE_BATCH` | 20 | figures per triage call |
-| `VP_*_REASONING_EFFORT` | `low` in `env.example` (empty = model default; `off` disables thinking) | per stage: `TRIAGE`, `JUDGE`, `DESCRIBE`, `EXTRACT`, `VOCAB` |
+| `VP_*_REASONING_EFFORT` | empty for Iceman, `low` for GLM in `env.example` | per stage: `TRIAGE`, `JUDGE`, `DESCRIBE`, `EXTRACT`, `VOCAB` |
 | `VP_SEARCH_CONCURRENCY` / `VP_EPMC_RPS` | 8 / 8 | Europe PMC searches in flight / per second |
 | `VP_FETCH_CONCURRENCY` / `VP_S3_RPS` | 64 / 150 | article and image fetches in flight / per second |
 | `--batch-size` | 150 | articles per judge batch |
-| `VP_LLM_MAX_IN_FLIGHT` | 64 | all LLM calls in flight across stages |
+| `VP_LLM_MAX_IN_FLIGHT` | 128 | all LLM calls in flight across stages |
 | `VP_LLM_RPM` | 0 (unpaced) | LLM requests per minute across stages, spaced evenly; set to a provider's per-minute limit |
 | `VP_LLM_MAX_OUTPUT_TOKENS` | 16384 | output-token cap per request, reasoning included (0 = provider default) |
 
-A lower reasoning effort is roughly 10× faster per call but changes
-decisions; compare against earlier decisions before lowering it for triage
-or judging. A set effort is part of the `llm_calls` cache key, so changing
-it re-asks the model. HTTP 429s back off and retry
-(`VP_RATE_LIMIT_RETRIES`); an HTTP 402 (OpenRouter credits spent) stops the
+Iceman uses its default reasoning; GLM accepts `low`, `medium`, `high` or
+`off`. A set value is part of the `llm_calls` cache key, so changing it
+re-asks the model. HTTP 429s back off and retry
+(`VP_RATE_LIMIT_RETRIES`); an HTTP 402 (provider credits/quota spent) stops the
 run like an exhausted `--budget-usd`. Both are counted in the timings report
 (`llm_429`, `llm_402`).
 

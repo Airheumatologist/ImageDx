@@ -15,9 +15,11 @@ import re
 from collections import Counter
 from functools import lru_cache
 
-from . import config, diseases
+from . import config, diseases, source_quality
 
-POLICY_VERSION = "clinical-panels.v7-age-optional"
+POLICY_VERSION = "clinical-panels.v8-kindred-case"
+# Written by store with the fetched pixels; a requeue without them cannot re-check it.
+CROP_TOO_SMALL_REASON = "panel crop too small for a useful image"
 
 # Reason the retired v6 age gate recorded; ``judge.requeue_age_vetoes`` lifts it.
 # Age is now display/sorting metadata only: stated ages sort images into adult
@@ -39,7 +41,13 @@ _FIGURE_CHART = re.compile(
     r"\b(?:classification chart|classification table|histopathology classification|graph of|table of|chart of)\b", re.I
 )
 _VETERINARY = re.compile(
-    r"\b(?:veterinary|canine|feline|in dogs?|in cats?|dogs? with (?:lupus|dermatomyositis)|cats? with (?:lupus|dermatomyositis)|dog model|mouse model|murine model)\b",
+    r"\b(?:veterinary|canine|feline|in dogs?|in cats?|dogs? with (?:lupus|dermatomyositis)|cats? with (?:lupus|dermatomyositis)|dog model|mouse model|murine model"
+    # The animal is the patient: "a mixed breed dog with", "six dogs with";
+    # not a dog bite, cat scratch fever, cat-eye syndrome or monkey bars.
+    r"|(?:a|an|one|the|\d+|two|three|four|five|six|seven|eight|nine|ten|several) (?:\w+[- ]){0,3}"
+    r"(?:dog|horse|pig|piglet|goat|sheep|rabbit|ferret|hamster|monkey|macaque|(?-i:cat))s? "
+    r"(?:with|presenting|diagnosed|showing|that|who|which|affected|suffering)"
+    r"|mixed[- ]breed|purebred)\b",
     re.I,
 )
 # These abbreviations have common meanings outside the disease itself. The
@@ -79,6 +87,14 @@ def _term_pattern(term: str) -> re.Pattern | None:
     body = _TERM_GAP.join(re.escape(word) for word in words)
     if diseases.is_acronym(value):
         # Topic synonyms such as "ALL", "UC" or "PV" are words in lower case.
+        return re.compile(r"(?<![A-Za-z0-9])" + body + r"(?![A-Za-z0-9])")
+    if any(diseases.is_acronym(word) for word in words):
+        # An acronym inside a name keeps its capitals: "CHILD syndrome" is
+        # not "battered child syndrome", "KID syndrome" is not a kid.
+        body = _TERM_GAP.join(
+            re.escape(word) if diseases.is_acronym(word) else "(?i:" + re.escape(word) + ")"
+            for word in words
+        )
         return re.compile(r"(?<![A-Za-z0-9])" + body + r"(?![A-Za-z0-9])")
     return re.compile(r"(?<![a-z0-9])" + body + r"(?![a-z0-9])", re.I)
 
@@ -144,6 +160,163 @@ _NONPILOT_MATCHERS = tuple(
 
 def _has_nonpilot_disease(text: str) -> bool:
     return any(pattern.search(text or "") for pattern in _NONPILOT_MATCHERS)
+
+
+# A look-alike named after a disease is not that disease: "Wells syndrome"
+# (eosinophilic cellulitis) is the classic cellulitis mimic.
+_NOT_KINDRED = frozenset({("eosinophilic_cellulitis", "erysipelas_cellulitis")})
+
+
+@lru_cache(maxsize=1)
+def _kindred_terms() -> list[tuple[str, str, re.Pattern]]:
+    """(key, term, pattern) for every topic's name and one-word synonyms.
+
+    Multi-word synonyms ("generalized lipodystrophy" for the congenital form,
+    "male Turner syndrome" for Noonan) and acronyms ("MFS", "PWS") name a
+    different disease too often to establish kinship.
+    """
+    rows = []
+    for key, item in diseases.load_diseases().items():
+        name = " ".join(diseases._PARENTHETICAL.sub(" ", str(item.get("name") or "")).split())
+        terms = [name] + [str(s) for s in item.get("synonyms") or [] if len(str(s).split()) == 1]
+        for term in terms:
+            if diseases.is_acronym(term):
+                continue
+            pattern = _term_pattern(term)
+            if pattern is not None:
+                rows.append((key, term, pattern))
+    return rows
+
+
+def _parent_keys(name: str) -> set[str]:
+    """Topics whose name ends the target's name after a space: "rickets" in
+    "Hereditary vitamin D-resistant rickets", "anaplastic large cell lymphoma"
+    in the ALK-positive form. A hyphenated compound ("Meier-Gorlin") is a
+    different name.
+    """
+    text = name.rstrip(" .")
+    found = set()
+    for key, term, pattern in _kindred_terms():
+        match = None
+        for match in pattern.finditer(text):
+            pass
+        if match is None or match.end() != len(text) or match.start() == 0:
+            continue
+        if text[match.start() - 1] == " ":
+            found.add(key)
+    return found
+
+
+def _finding_keys(target: str) -> set[str]:
+    """Topics that are, by name, one of the target's own approved findings
+    ("alopecia totalis" under HVDRR). Comparators ("smallpox-like scars") and
+    compounds ("non-Langerhans cell histiocytosis") do not equal a name.
+    """
+    labels = set()
+    for row in diseases.load_findings_vocab():
+        if target in (row.get("disease_keys") or []):
+            labels.add(" ".join(str(row.get("label") or "").split()).casefold())
+            labels.update(" ".join(str(s).split()).casefold() for s in row.get("synonyms") or [])
+    labels.discard("")
+    return {key for key, term, _ in _kindred_terms() if term.casefold() in labels}
+
+
+@lru_cache(maxsize=None)
+def _kindred_keys(target: str) -> frozenset[str]:
+    """Catalog topics a caption may name while showing ``target``: its parent
+    disease and its own manifestations that are topics too."""
+    item = diseases.load_diseases().get(target) or {}
+    name = " ".join(diseases._PARENTHETICAL.sub(" ", str(item.get("name") or "")).split())
+    found = _parent_keys(name) | _finding_keys(target)
+    return frozenset(k for k in found if k != target and (target, k) not in _NOT_KINDRED)
+
+
+def _article_abstract(article: dict) -> str:
+    metadata = _get(article, "source_metadata")
+    if isinstance(metadata, str):
+        metadata = _json_value(metadata, {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    abstract = _get(article, "abstract") or metadata.get("abstract")
+    return _text(abstract)
+
+
+_CASE_REPORT_TYPES = frozenset({"case reports", "case report", "case-report", "case-reports"})
+_CASE_REPORT_TITLE = re.compile(r"\bcase report\b|\ba case\b|\bcase of\b|\ba (?:\w+[- ])?patient\b", re.I)
+_MIMIC_STORY = re.compile(r"\bmimick?|\bmasquerad|\bmisdiagnos|\bmistaken\b|\bmisleading\b", re.I)
+# Several patients, a review built on cases, or a mimic story is not one case.
+_NOT_ONE_CASE = re.compile(
+    r"\bcase[- ]?(?:series|based|control|stud)|\bcases\b|\bcohort\b|\breview\b|\bseries\b"
+    r"|" + _MIMIC_STORY.pattern, re.I,
+)
+# The sentence naming the disease must be about the patient ("We report a
+# girl with ...", "biopsy confirmed ...") rather than background ("X is a rare
+# disorder", "encompasses both X and Y", "such as X") or a differential
+# ("X was ruled out", "can be due to X", "resemblance to X").
+_CASE_SENTENCE = re.compile(
+    r"\b(?:we|authors?|here)\b.{0,20}\b(?:report|present|describe)|\bcase (?:of|report)\b"
+    r"|\b\d+[- ]?(?:year|month|week|day)s?[- ]old\b|\bpatient\b|\bpresented\b|\bdiagnos"
+    r"|\bconfirmed\b|\bproband\b|\b(?:girl|boy|woman|man|infant|child|neonate|newborn)\b", re.I,
+)
+_NEGATED = re.compile(
+    r"\brule[ds]? out\b|\bexclud|\bdifferential\b|\bsuspect|\bmimic|\bmasquerad|\bmisdiagnos"
+    r"|\binitially\b|\brather than\b|\bnot\b|\bno\b|\bnegative\b|\bversus\b|\bvs\.?\b"
+    r"|\bdistinguish|\bunlikely\b|\bpresumed\b|\bquestion|\bwithout\b|\babsence\b"
+    r"|\bresembl|\bsuch as\b|\bencompass|\bincluding\b|\bvariant\b|\bcan be\b|\bmay be\b"
+    r"|\bpotential|\bpossibl|\bcharacterized by\b|\bgroup of\b|\bis (?:a|an)\b|\bare (?:a|an)\b"
+    r"|\bcommon\b|\bconsidered\b|\bor\b", re.I,
+)
+# Several patients make the abstract's disease names unattributable to a figure.
+_SEVERAL_PATIENTS = re.compile(
+    r"\b(?:two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:\w+\s+){0,2}"
+    r"(?:patients|cases|families|siblings|probands|subjects|individuals|entities|disorders|syndromes)\b", re.I,
+)
+_SENTENCE_END = re.compile(r"(?<=[.!?;])\s+")
+
+
+def _publication_types(article: dict) -> list[str]:
+    types = _json_value(_get(article, "publication_types_json"), []) or []
+    metadata = _get(article, "source_metadata")
+    if isinstance(metadata, dict):
+        more = metadata.get("publication_types") or []
+        types = list(types) + ([more] if isinstance(more, str) else list(more))
+    return [str(t) for t in (types if isinstance(types, list) else [types])]
+
+
+def _is_case_report(article: dict) -> bool:
+    """A single-patient case report by publication type or title."""
+    title = _text(_get(article, "title"))
+    if _NOT_ONE_CASE.search(title):
+        return False
+    types = {t.strip().casefold() for t in _publication_types(article)}
+    return bool(types & _CASE_REPORT_TYPES) or bool(_CASE_REPORT_TITLE.search(title))
+
+
+def _affirmed_in_text(target: str, text: str) -> bool:
+    """One patient's abstract names the target in a sentence about the case."""
+    text = re.sub(r"<[^>]+>", " ", text or "")
+    if _SEVERAL_PATIENTS.search(text):
+        return False
+    patterns = _disease_matchers().get(target) or ()
+    for sentence in _SENTENCE_END.split(text):
+        if (
+            any(p.search(sentence) for p in patterns)
+            and _CASE_SENTENCE.search(sentence)
+            and not _NEGATED.search(sentence)
+        ):
+            return True
+    return False
+
+
+def _title_names_as_subject(target: str, title: str) -> bool:
+    """The title names the target, and in a mimic story names it first:
+    "Broncholithiasis mimicking metallic projectiles" shows broncholithiasis,
+    "EBV masquerading as tonsillitis" does not show tonsillitis."""
+    starts = [m.start() for p in _disease_matchers().get(target) or () if (m := p.search(title))]
+    if not starts:
+        return False
+    mimic = _MIMIC_STORY.search(title)
+    return mimic is None or min(starts) < mimic.start()
 
 
 def _json_value(value, default):
@@ -441,14 +614,30 @@ def _attribution_reason(panel: dict, caption: str, article: dict) -> str | None:
     caption_diseases = _diseases_in_text(caption)
     if target in caption_diseases:
         return None
-    if caption_diseases - {target} or _has_nonpilot_disease(caption):
+    # The target's parent disease or one of its own manifestations is not
+    # another disease ("Alopecia and rickets in the proband" under HVDRR).
+    others = caption_diseases - {target} - _kindred_keys(target)
+    if others or _has_nonpilot_disease(caption):
         return "caption identifies another disease"
     # Disease-focused titles can establish scope for terse captions such
     # as "Malar rash". General review topics alone cannot attribute a
     # common finding like effusion or vasculitis to the target disease.
-    if target not in _diseases_in_text(_text(_get(article, "title"))):
-        return "disease association not stated in figure caption"
-    return None
+    title = _text(_get(article, "title"))
+    if _title_names_as_subject(target, title):
+        return None
+    # A case report pictures its one patient: when its abstract names the
+    # disease, its patient images are of that case even if the title does
+    # not repeat the name ("Vitamin D-resistant rickets and cinacalcet").
+    # Reviews stay title-gated; the P8 mimic audit still reads the title and
+    # abstract of every stored panel for look-alike diagnoses.
+    if (
+        _is_case_report(article)
+        and not (_diseases_in_text(title) - {target} - _kindred_keys(target))
+        and not _has_nonpilot_disease(title)
+        and _affirmed_in_text(target, _article_abstract(article))
+    ):
+        return None
+    return "disease association not stated in figure caption"
 
 
 def _missing_bounds_reason(panel: dict, figure: dict) -> str | None:
@@ -478,7 +667,7 @@ def _crop_size_reason(panel: dict, figure: dict, bbox, image_size) -> str | None
     too_small = width * height < 0.12 or width < 0.25 or height < 0.25
     if not too_small and image_size:
         too_small = min(int(width * image_size[0]), int(height * image_size[1])) < 160
-    return "panel crop too small for a useful image" if too_small else None
+    return CROP_TOO_SMALL_REASON if too_small else None
 
 
 def _bounds_reason(panel: dict, figure: dict, image_size) -> str | None:

@@ -1,0 +1,2064 @@
+[
+  {
+    "index": 1,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Silicone Breast Implant Rupture",
+    "topic_id": "silicone_breast_implant_rupture",
+    "fields": {
+      "Synonyms": "Intracapsular silicone rupture, extracapsular silicone rupture, linguine sign, snowstorm sign",
+      "Clinical": "A change in breast shape, palpable silicone nodules, or axillary adenopathy. Many ruptures are silent and are found on imaging.",
+      "Radiologic": "MRI shows the linguine sign of a collapsed shell floating in silicone, the keyhole (teardrop or noose) sign, the subcapsular line, and the salad-oil sign. Ultrasound shows the stepladder sign when the rupture is intracapsular and the snowstorm sign when silicone is extracapsular. Mammography shows dense silicone beyond the implant shell in extracapsular rupture.",
+      "Pathology": "Foreign-body granulomas around empty silicone vacuoles.",
+      "Inclusion": "The linguine and snowstorm signs are disease-specific imaging findings, and the specialty has no parent implant topic to hold them."
+    }
+  },
+  {
+    "index": 2,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Pseudoangiomatous Stromal Hyperplasia",
+    "topic_id": "pseudoangiomatous_stromal_hyperplasia",
+    "fields": {
+      "Synonyms": "PASH, nodular PASH, tumefactive pseudoangiomatous stromal hyperplasia",
+      "Clinical": "A firm, mobile mass in a woman of reproductive age. Some masses enlarge quickly and stretch the skin. It also occurs in men, often with gynecomastia.",
+      "Radiologic": "Mammography shows a circumscribed or partly circumscribed oval mass, sometimes as a developing asymmetry. Ultrasound shows an oval, parallel, hypoechoic mass that resembles a fibroadenoma.",
+      "Pathology": "Slit-like spaces in dense collagen, lined by myofibroblasts. The cells are CD34-positive and negative for vascular markers.",
+      "Inclusion": "A named mass-forming lesion. Histology separates it from fibroadenoma, phyllodes tumor, and angiosarcoma."
+    }
+  },
+  {
+    "index": 3,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Lactating Adenoma",
+    "topic_id": "lactating_adenoma",
+    "fields": {
+      "Synonyms": "Lactating adenoma of the breast, pregnancy adenoma",
+      "Clinical": "A soft, mobile mass that appears during pregnancy or lactation. Infarction makes it painful.",
+      "Radiologic": "Ultrasound shows a circumscribed oval mass, hypoechoic or mildly hyperechoic, often with posterior acoustic enhancement. Infarction makes the mass complex and cystic.",
+      "Pathology": "Closely packed secretory lobules with vacuolated cytoplasm and little stroma.",
+      "Inclusion": "A WHO adenoma of pregnancy and lactation, separate from fibroadenoma, galactocele, and phyllodes tumor."
+    }
+  },
+  {
+    "index": 4,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Granular Cell Tumor of the Breast",
+    "topic_id": "granular_cell_tumor_of_the_breast",
+    "fields": {
+      "Synonyms": "Granular cell myoblastoma of the breast, Abrikossoff tumor",
+      "Clinical": "A firm, painless, often superficial mass. Skin dimpling or nipple retraction is common. The upper inner breast is a typical site.",
+      "Radiologic": "Mammography shows an irregular or spiculated mass, usually without calcifications. Ultrasound shows a hypoechoic shadowing mass.",
+      "Pathology": "Nests of polygonal cells with granular cytoplasm. The cells are S100-positive and cytokeratin-negative. The granules are PAS-positive and diastase-resistant.",
+      "Inclusion": "A carcinoma mimic on inspection and mammography, recognized by granular-cell histology."
+    }
+  },
+  {
+    "index": 5,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Papillary Carcinoma of the Breast",
+    "topic_id": "papillary_carcinoma_of_the_breast",
+    "fields": {
+      "Synonyms": "Encapsulated papillary carcinoma, intracystic papillary carcinoma, solid papillary carcinoma, invasive papillary carcinoma",
+      "Clinical": "An older woman with a round retroareolar mass, often with unilateral bloody nipple discharge.",
+      "Radiologic": "A round or oval circumscribed complex cystic and solid mass, commonly with a mural nodule and duct extension.",
+      "Pathology": "Fibrovascular cores lined by epithelium. Encapsulated papillary carcinoma, and many solid papillary carcinomas, are staged as in situ disease unless conventional invasion is present. Solid papillary carcinoma often shows neuroendocrine differentiation and extracellular mucin.",
+      "Inclusion": "One complex-cystic imaging pattern covers encapsulated, solid, and invasive papillary carcinoma, and the lesion is distinct from intraductal papilloma."
+    }
+  },
+  {
+    "index": 6,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Tuberculous Mastitis",
+    "topic_id": "tuberculous_mastitis",
+    "fields": {
+      "Synonyms": "Breast tuberculosis, mammary tuberculosis, cold abscess of the breast",
+      "Clinical": "A painless mass with multiple discharging sinuses, skin puckering, and axillary nodes. The abscess is often cool.",
+      "Radiologic": "Ultrasound shows skin thickening, heterogeneous collections, and fistulous tracts to the skin. Axillary nodes may be necrotic.",
+      "Pathology": "Caseating granulomas. Acid-fast bacilli or a nucleic-acid test support the diagnosis.",
+      "Inclusion": "A sinus-forming breast infection with its own photographs, in the same way renal tuberculosis is its own topic."
+    }
+  },
+  {
+    "index": 7,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Juvenile Papillomatosis",
+    "topic_id": "juvenile_papillomatosis",
+    "fields": {
+      "Synonyms": "Swiss cheese disease of the breast, juvenile papillomatosis of the breast",
+      "Clinical": "A localized firm mass in an adolescent or young woman, sometimes with nipple discharge.",
+      "Radiologic": "Ultrasound shows an ill-defined mass of clustered cysts of many sizes, the Swiss-cheese pattern.",
+      "Pathology": "Cysts, papillomas, usual ductal hyperplasia, apocrine metaplasia, and sclerosis. Atypia or carcinoma is present in a minority of cases.",
+      "Inclusion": "A named disease of young patients with a repeatable ultrasound pattern, separate from solitary intraductal papilloma and giant juvenile fibroadenoma."
+    }
+  },
+  {
+    "index": 8,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Sclerosing Adenosis",
+    "topic_id": "sclerosing_adenosis",
+    "fields": {
+      "Synonyms": "Nodular adenosis, adenosis tumor",
+      "Clinical": "Usually found on screening. The nodular form is a palpable mass.",
+      "Radiologic": "Grouped punctate, amorphous, or pleomorphic calcifications, an architectural distortion, or an oval mass.",
+      "Pathology": "Lobulocentric compressed glands in dense stroma, with a preserved myoepithelial layer on p63 or calponin.",
+      "Inclusion": "A WHO adenosis that mimics carcinoma on mammography, and it is separate from radial scar."
+    }
+  },
+  {
+    "index": 9,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Radiation-Associated Angiosarcoma of the Breast",
+    "topic_id": "radiation_associated_breast_angiosarcoma",
+    "fields": {
+      "Synonyms": "Secondary breast angiosarcoma, postradiation angiosarcoma, radiation-induced angiosarcoma of the breast",
+      "Clinical": "Violaceous macules, bruises, plaques, nodules, or ulceration in a breast irradiated years earlier. The skin of the radiation field is involved.",
+      "Radiologic": "Mammography and MRI show skin thickening and an irregular enhancing cutaneous and subcutaneous mass.",
+      "Pathology": "Anastomosing vascular channels with endothelial atypia, positive for CD31 and ERG, with MYC amplification.",
+      "Inclusion": "A cutaneous disease of the irradiated breast. Primary breast angiosarcoma is already listed and arises in the parenchyma of younger women."
+    }
+  },
+  {
+    "index": 10,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Tuberous Breast Deformity",
+    "topic_id": "tuberous_breast_deformity",
+    "fields": {
+      "Synonyms": "Tuberous breast, constricted breast deformity, tubular breast deformity, herniated areolar complex, Snoopy-nose deformity",
+      "Clinical": "A constricted breast base, a high inframammary fold, an enlarged areola, and herniation of glandular tissue into the areola. The breasts are often asymmetric. The lateral photograph shows the Snoopy-nose contour.",
+      "Radiologic": "No disease-specific imaging. The clinical photograph is the diagnosis.",
+      "Pathology": "The diagnosis is clinical. Histology is not distinctive.",
+      "Inclusion": "A congenital deformity diagnosed on inspection. Poland syndrome is already in the library and includes absence of the pectoralis."
+    }
+  },
+  {
+    "index": 11,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Neonatal Mastitis",
+    "topic_id": "neonatal_mastitis",
+    "fields": {
+      "Synonyms": "Neonatal breast infection, neonatal breast abscess",
+      "Clinical": "Unilateral redness, swelling, warmth, and tenderness of the breast bud in the first weeks of life. Fluctuance means an abscess. Staphylococcus aureus is the usual organism. Bilateral painless enlargement from maternal hormones is physiologic breast tissue.",
+      "Radiologic": "Ultrasound shows a fluid collection when an abscess is present.",
+      "Pathology": "Neutrophils and Gram-positive cocci in the aspirate.",
+      "Inclusion": "Photographs of a unilateral inflamed breast bud in a newborn. The patient and the pictures differ from lactational mastitis."
+    }
+  },
+  {
+    "index": 12,
+    "section": "Breast specialty",
+    "tier": "First",
+    "name": "Metastases to the Breast",
+    "topic_id": "metastases_to_the_breast",
+    "fields": {
+      "Synonyms": "Secondary malignancy of the breast, metastatic carcinoma to the breast, metastatic melanoma to the breast",
+      "Clinical": "Rapidly appearing, firm, mobile, often superficial masses in a person with melanoma, lung carcinoma, ovarian carcinoma, renal cell carcinoma, or a carcinoid tumor.",
+      "Radiologic": "Multiple bilateral round circumscribed masses. Spiculation and calcification are usually absent. Ovarian metastases can contain psammomatous calcifications.",
+      "Pathology": "Tumor that matches the extramammary primary, without an in situ ductal or lobular component.",
+      "Inclusion": "One imaging pattern used to teach secondary deposits, separate from primary breast carcinoma and from primary breast lymphoma."
+    }
+  },
+  {
+    "index": 13,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Adenoid Cystic Carcinoma of the Breast",
+    "topic_id": "adenoid_cystic_carcinoma_of_the_breast",
+    "fields": {
+      "Synonyms": "Breast adenoid cystic carcinoma, adenoid cystic carcinoma",
+      "Clinical": "A slow central or periareolar mass. Pain can reflect perineural invasion. The prognosis is favorable.",
+      "Radiologic": "A circumscribed or irregular mass, sometimes with calcifications.",
+      "Pathology": "Cribriform, tubular, and solid patterns with cylinders of basement-membrane material. Epithelial cells are CD117-positive. A MYB rearrangement is common. The carcinoma is usually triple-negative.",
+      "Inclusion": "A salivary-gland-type breast carcinoma recognized on histology. Salivary adenoid cystic carcinoma is already a separate otolaryngology topic."
+    }
+  },
+  {
+    "index": 14,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Secretory Carcinoma of the Breast",
+    "topic_id": "secretory_carcinoma_of_the_breast",
+    "fields": {
+      "Synonyms": "Secretory breast carcinoma, juvenile breast carcinoma",
+      "Clinical": "A mobile circumscribed mass in a child, adolescent, or young adult.",
+      "Radiologic": "An oval circumscribed hypoechoic mass on ultrasound.",
+      "Pathology": "Microcystic, solid, and tubular growth with abundant intracellular and extracellular secretion. The tumor carries an ETV6::NTRK3 fusion and is often triple-negative.",
+      "Inclusion": "The breast carcinoma of children and young adults, recognized by secretory histology."
+    }
+  },
+  {
+    "index": 15,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Invasive Micropapillary Carcinoma",
+    "topic_id": "invasive_micropapillary_carcinoma",
+    "fields": {
+      "Synonyms": "Invasive micropapillary carcinoma of the breast",
+      "Clinical": "A palpable mass. Axillary nodes are involved early, and the skin can be edematous.",
+      "Radiologic": "A high-density spiculated or irregular mass, with abnormal axillary nodes.",
+      "Pathology": "Morule-like clusters inside clear spaces. EMA and MUC1 stain the outer surface of the clusters. Lymphovascular invasion is extensive.",
+      "Inclusion": "A special histologic type whose outside-in staining pattern explains the early nodal metastases."
+    }
+  },
+  {
+    "index": 16,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Mammary Myofibroblastoma",
+    "topic_id": "mammary_myofibroblastoma",
+    "fields": {
+      "Synonyms": "Myofibroblastoma of the breast",
+      "Clinical": "A slow, mobile, painless mass in a man or a postmenopausal woman.",
+      "Radiologic": "An oval circumscribed dense mass without calcifications. Ultrasound shows a circumscribed hypoechoic mass.",
+      "Pathology": "Bland spindle cells with hyalinized collagen and fat. The cells express CD34 and desmin, and RB1 is lost.",
+      "Inclusion": "A circumscribed stromal tumor of male and female breasts, recognized by its immunoprofile."
+    }
+  },
+  {
+    "index": 17,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Atypical Ductal Hyperplasia",
+    "topic_id": "atypical_ductal_hyperplasia",
+    "fields": {
+      "Synonyms": "ADH",
+      "Clinical": "Almost always nonpalpable. It is found on biopsy of calcifications or as an incidental finding in a core needle specimen.",
+      "Radiologic": "Grouped amorphous, pleomorphic, or fine linear calcifications.",
+      "Pathology": "A monotonous low-grade epithelial proliferation with rigid arches or cribriform spaces, limited in extent. A 2 mm threshold is the usual separator from low-grade ductal carcinoma in situ.",
+      "Inclusion": "The high-risk lesion that connects mammographic calcifications to an excision decision. Histology is how it is recognized."
+    }
+  },
+  {
+    "index": 18,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Microglandular Adenosis",
+    "topic_id": "microglandular_adenosis",
+    "fields": {
+      "Synonyms": "Microglandular adenosis of the breast",
+      "Clinical": "A mass, or a screening abnormality with no palpable finding.",
+      "Radiologic": "A mass, an asymmetry, or calcifications. The margins are often irregular.",
+      "Pathology": "Small round glands infiltrate stroma and fat. They have a single epithelial layer, no myoepithelium, and eosinophilic PAS-positive secretion. The epithelium is S100-positive and estrogen-receptor-negative.",
+      "Inclusion": "A lesion that mimics tubular carcinoma because the glands lack a myoepithelial layer."
+    }
+  },
+  {
+    "index": 19,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Adenomyoepithelioma",
+    "topic_id": "adenomyoepithelioma",
+    "fields": {
+      "Synonyms": "Adenomyoepithelioma of the breast, malignant adenomyoepithelioma",
+      "Clinical": "A circumscribed central mass in an older woman, sometimes with nipple discharge.",
+      "Radiologic": "An oval circumscribed solid or complex cystic mass.",
+      "Pathology": "A biphasic proliferation of glands and prominent myoepithelium. The myoepithelial cells may be clear, spindled, or plasmacytoid. Either component can become malignant.",
+      "Inclusion": "A named biphasic breast tumor with a circumscribed imaging appearance."
+    }
+  },
+  {
+    "index": 20,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Atypical Vascular Lesion of the Irradiated Breast",
+    "topic_id": "atypical_vascular_lesion_of_the_breast",
+    "fields": {
+      "Synonyms": "Atypical vascular lesion, postradiation atypical vascular lesion",
+      "Clinical": "Small pink, brown, or erythematous papules or vesicles in previously irradiated breast skin.",
+      "Radiologic": "Imaging does not make the diagnosis. The photograph and the skin biopsy are the record.",
+      "Pathology": "Dilated thin-walled lymphatic-like or capillary channels in the dermis, lined by bland endothelium. MYC amplification is absent.",
+      "Inclusion": "The skin-papule lesion that has to be separated from radiation-associated angiosarcoma."
+    }
+  },
+  {
+    "index": 21,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Mucocele-Like Lesion",
+    "topic_id": "mucocele_like_lesion",
+    "fields": {
+      "Synonyms": "Mucocele-like lesion of the breast, mucocele-like tumor",
+      "Clinical": "A mass, or no clinical finding when the lesion is detected as calcifications.",
+      "Radiologic": "Grouped coarse or pleomorphic calcifications, or a complex cystic mass.",
+      "Pathology": "Ruptured mucin-filled cysts with mucin in the stroma. The lining may be flat or atypical, and ductal carcinoma in situ or mucinous carcinoma may lie next to the mucin. Epithelial cells floating in the mucin have to be sought.",
+      "Inclusion": "A calcifying cystic lesion whose histology sits beside atypical hyperplasia and mucinous carcinoma."
+    }
+  },
+  {
+    "index": 22,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Hyperkeratosis of the Nipple and Areola",
+    "topic_id": "hyperkeratosis_of_the_nipple_and_areola",
+    "fields": {
+      "Synonyms": "Nevoid hyperkeratosis of the nipple and areola",
+      "Clinical": "Verrucous brown thickening of the nipple and areola, on one side or both. It can appear in pregnancy or with ichthyosis.",
+      "Radiologic": "No disease-specific imaging.",
+      "Pathology": "Orthokeratotic hyperkeratosis, acanthosis, and papillomatosis, without Paget cells.",
+      "Inclusion": "A clinical-photograph diagnosis of the nipple. Paget disease of the nipple is already in Dermatology."
+    }
+  },
+  {
+    "index": 23,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Syringomatous Tumor of the Nipple",
+    "topic_id": "syringomatous_tumor_of_the_nipple",
+    "fields": {
+      "Synonyms": "Syringomatous adenoma of the nipple, infiltrating syringomatous adenoma of the nipple",
+      "Clinical": "A firm subareolar mass with nipple retraction, inversion, or enlargement. It infiltrates locally. Metastasis is not the course of this tumor.",
+      "Radiologic": "An irregular subareolar mass, sometimes spiculated.",
+      "Pathology": "Comma-shaped and tadpole ducts in fibrous stroma infiltrate the smooth muscle of the nipple and form squamous cysts. Two cell layers are present. Perineural invasion can occur in this benign tumor.",
+      "Inclusion": "An infiltrative nipple tumor, separate from nipple adenoma, which is already listed."
+    }
+  },
+  {
+    "index": 24,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Premature Thelarche",
+    "topic_id": "premature_thelarche",
+    "fields": {
+      "Synonyms": "Isolated premature thelarche, premature breast development",
+      "Clinical": "Breast budding, usually Tanner stage 2 or 3, in a girl younger than 8 years, without pubic hair, a growth spurt, or advanced bone age. One or both breasts may be involved.",
+      "Radiologic": "Ultrasound shows a glandular breast bud. Pelvic ultrasound is used when other signs of puberty are in question.",
+      "Pathology": "The diagnosis is clinical. Histology is not distinctive.",
+      "Inclusion": "A pediatric diagnosis made on inspection. The photograph shows isolated breast development."
+    }
+  },
+  {
+    "index": 25,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Congenital Amastia and Amazia",
+    "topic_id": "congenital_amastia_amazia",
+    "fields": {
+      "Synonyms": "Amastia, amazia, congenital absence of the breast",
+      "Clinical": "The breast mound is absent from birth, or the absence becomes obvious at puberty when the opposite breast develops. Amastia has no nipple-areola complex. Amazia has a nipple and no gland. The pectoralis muscle is present.",
+      "Radiologic": "No disease-specific imaging. The photograph is the diagnosis.",
+      "Pathology": "The diagnosis is clinical. Histology is not distinctive.",
+      "Inclusion": "A congenital absence phenotype. Poland syndrome is already in the library and includes absence of the pectoralis."
+    }
+  },
+  {
+    "index": 26,
+    "section": "Breast specialty",
+    "tier": "Next",
+    "name": "Breast Implant Capsular Contracture",
+    "topic_id": "breast_implant_capsular_contracture",
+    "fields": {
+      "Synonyms": "Capsular contracture, Baker grade III contracture, Baker grade IV contracture",
+      "Clinical": "A firm, high, spherical, distorted breast after augmentation or reconstruction. Baker grade III is visibly distorted. Baker grade IV is hard and painful.",
+      "Radiologic": "A spherical implant with a thickened or calcified capsule. These signs are less specific than the signs of implant rupture.",
+      "Pathology": "A dense collagenous capsule with chronic inflammation and synovial-like metaplasia.",
+      "Inclusion": "A photographic complication of breast implants. The changed contour is the finding."
+    }
+  },
+  {
+    "index": 27,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Ventricular Septal Defect",
+    "topic_id": "ventricular_septal_defect",
+    "fields": {
+      "Synonyms": "VSD, perimembranous ventricular septal defect, membranous ventricular septal defect, muscular ventricular septal defect, outlet ventricular septal defect",
+      "Clinical": "A holosystolic murmur at the left sternal border. A large defect presents in infancy with poor feeding, tachypnea, and failure to thrive. A small muscular defect may close during childhood.",
+      "Radiologic": "Color Doppler shows a left-to-right jet across the interventricular septum. A perimembranous defect sits below the aortic valve. A left ventriculogram opacifies the right ventricle. A large shunt enlarges the left atrium and left ventricle and increases pulmonary vascular markings on the chest radiograph.",
+      "Pathology": "A hole in the ventricular septum. The perimembranous form borders the fibrous continuity of the aortic and tricuspid valves. The muscular form has a muscular rim on all sides. The outlet form lies in the infundibular septum.",
+      "Inclusion": "The most common congenital heart defect, with a disease-specific color-Doppler jet. It is separate from the inlet defect of complete atrioventricular septal defect, which is already listed."
+    }
+  },
+  {
+    "index": 28,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Atrial Septal Defect",
+    "topic_id": "atrial_septal_defect",
+    "fields": {
+      "Synonyms": "Secundum atrial septal defect, ostium secundum ASD, ASD",
+      "Clinical": "Fixed splitting of the second heart sound and a pulmonary flow murmur. Many children have no symptoms. Adults present with atrial arrhythmia, dyspnea, or right-heart enlargement.",
+      "Radiologic": "Echocardiography shows dropout of the septum at the fossa ovalis and a left-to-right color jet. The right atrium and right ventricle enlarge. The chest radiograph shows pulmonary plethora and a prominent central pulmonary artery.",
+      "Pathology": "A deficiency of the flap valve of the fossa ovalis. The atrioventricular septum and the junctions of the venae cavae are intact.",
+      "Inclusion": "The common atrial shunt. Complete atrioventricular septal defect is already listed and is a different lesion. A sinus venosus defect is a separate topic."
+    }
+  },
+  {
+    "index": 29,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Patent Ductus Arteriosus",
+    "topic_id": "patent_ductus_arteriosus",
+    "fields": {
+      "Synonyms": "PDA, persistent ductus arteriosus, patent arterial duct",
+      "Clinical": "A continuous machinery murmur under the left clavicle. A large duct in a premature infant causes bounding pulses, a wide pulse pressure, and pulmonary overcirculation. A small duct may be silent.",
+      "Radiologic": "The ductal view shows a color jet from the descending aorta into the left pulmonary artery. Aortography fills the pulmonary arteries through the duct. A large duct enlarges the left heart and increases pulmonary markings.",
+      "Pathology": "A persistent arterial channel between the proximal left pulmonary artery and the descending aorta, just beyond the left subclavian artery. Failed closure leaves a patent lumen where ductal intimal cushions should have sealed the vessel.",
+      "Inclusion": "A named arterial shunt with a ductal-view jet. It is separate from aortopulmonary window, which is already listed and has no ductal tissue."
+    }
+  },
+  {
+    "index": 30,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Valvar Pulmonary Stenosis",
+    "topic_id": "valvar_pulmonary_stenosis",
+    "fields": {
+      "Synonyms": "Pulmonary valve stenosis, valvular pulmonic stenosis, domed pulmonary valve",
+      "Clinical": "A systolic ejection murmur at the upper left sternal border and a click that varies with respiration. Severe stenosis in a neonate causes cyanosis when the foramen ovale shunts right to left.",
+      "Radiologic": "Echocardiography shows a doming pulmonary valve, a turbulent jet, and poststenotic dilation of the main pulmonary artery. The right ventricle is hypertrophied. The chest radiograph shows a dilated main pulmonary artery segment.",
+      "Pathology": "Fused commissures produce a domed valve. A dysplastic valve has thick myxomatous leaflets and a narrow annulus, the form seen with Noonan syndrome.",
+      "Inclusion": "A core valve lesion with a doming valve and poststenotic dilation. Noonan syndrome is already in Pediatrics and is the syndrome, not the isolated valve."
+    }
+  },
+  {
+    "index": 31,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Calcific Aortic Stenosis",
+    "topic_id": "calcific_aortic_stenosis",
+    "fields": {
+      "Synonyms": "Degenerative aortic stenosis, senile calcific aortic stenosis, calcific aortic valve stenosis",
+      "Clinical": "A harsh crescendo-decrescendo murmur at the right upper sternal border, radiating to the carotids, with a slow-rising carotid pulse and a sustained apex. Older adults present with angina, syncope, or dyspnea.",
+      "Radiologic": "Echocardiography shows a calcified trileaflet valve with restricted opening and a high transvalvular velocity. CT shows heavy calcium in the leaflets. The left ventricle is concentrically hypertrophied.",
+      "Pathology": "Nodular calcium begins in the fibrosa at the base of each cusp. The commissures are not fused. That pattern separates calcific stenosis from rheumatic stenosis.",
+      "Inclusion": "The common aortic valve disease of older adults. Rheumatic heart disease and bicuspid aortic valve with aortopathy are already listed and show a different valve and a different picture."
+    }
+  },
+  {
+    "index": 32,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Degenerative Mitral Valve Disease",
+    "topic_id": "degenerative_mitral_valve_disease",
+    "fields": {
+      "Synonyms": "Mitral valve prolapse, Barlow disease, fibroelastic deficiency, flail mitral leaflet, myxomatous mitral valve",
+      "Clinical": "A mid-systolic click and a late systolic murmur at the apex. A flail leaflet causes a holosystolic murmur. Severe regurgitation displaces the apex and causes dyspnea.",
+      "Radiologic": "Echocardiography shows leaflets billowing above the annular plane, or a flail scallop with an eccentric regurgitant jet. The posterior leaflet is the usual flail site. Three-dimensional echocardiography shows which scallop prolapses.",
+      "Pathology": "Barlow disease has redundant myxomatous leaflets, elongated chords, and a dilated annulus. Fibroelastic deficiency has thin leaflets and a ruptured thin chord. The gross specimen shows the flail segment.",
+      "Inclusion": "One primary mitral disease covers Barlow billowing and fibroelastic flail. Rheumatic mitral disease is already listed and produces a fish-mouth orifice rather than a flail leaflet."
+    }
+  },
+  {
+    "index": 33,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Takotsubo Cardiomyopathy",
+    "topic_id": "takotsubo_cardiomyopathy",
+    "fields": {
+      "Synonyms": "Stress cardiomyopathy, apical ballooning syndrome, broken-heart syndrome, Takotsubo syndrome",
+      "Clinical": "Acute chest pain, dyspnea, and ECG changes that mimic myocardial infarction, often after an emotional or physical trigger. The coronary arteries have no culprit occlusion.",
+      "Radiologic": "The left ventriculogram and the apical four-chamber view show apical ballooning with basal hyperkinesis. Midventricular and reverse forms spare or invert that pattern. Cardiac MRI shows edema and little or no late gadolinium enhancement.",
+      "Pathology": "Contraction-band necrosis and a light interstitial infiltrate, without coronary occlusion. Biopsy is not required when the ventriculogram and the coronary arteries are typical.",
+      "Inclusion": "A named cardiomyopathy with a pathognomonic apical balloon. It is separate from acute coronary occlusion and from apical hypertrophic cardiomyopathy."
+    }
+  },
+  {
+    "index": 34,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Apical Hypertrophic Cardiomyopathy",
+    "topic_id": "apical_hypertrophic_cardiomyopathy",
+    "fields": {
+      "Synonyms": "Yamaguchi syndrome, apical HCM, apical variant hypertrophic cardiomyopathy",
+      "Clinical": "Giant negative T waves in the precordial leads, chest pain, or palpitation. Many patients have no left ventricular outflow murmur, because the basal septum is not the thick segment.",
+      "Radiologic": "The left ventriculogram shows a spade-shaped cavity in diastole. Echocardiography and cardiac MRI show hypertrophy confined to the apex, often 15 mm or thicker, with a small apical cavity. Late gadolinium enhancement may sit in the apex, and an apical aneurysm can form.",
+      "Pathology": "Myocyte disarray and fibrosis are concentrated in the apex. The basal septum is not the thick muscle of obstructive hypertrophic cardiomyopathy.",
+      "Inclusion": "A hypertrophic phenotype with a spade-shaped cavity. Hypertrophic obstructive cardiomyopathy is already listed and is the basal septal disease with systolic anterior motion."
+    }
+  },
+  {
+    "index": 35,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Left Ventricular Noncompaction",
+    "topic_id": "left_ventricular_noncompaction",
+    "fields": {
+      "Synonyms": "Left ventricular hypertrabeculation, noncompaction cardiomyopathy, spongy myocardium",
+      "Clinical": "Heart failure, arrhythmia, or thromboembolism. The finding may be isolated or may accompany a neuromuscular or congenital disease. Thrombus can form in the recesses.",
+      "Radiologic": "Echocardiography and cardiac MRI show a two-layered myocardium, with a thin compact layer and a thick trabecular layer. Deep recesses fill on color Doppler. On echocardiography the noncompacted layer is at least twice the compact layer at end-systole. The apex and the lateral wall are the usual sites.",
+      "Pathology": "The endocardial surface is a mesh of trabeculae with deep recesses lined by endothelium. The compact epicardial layer is thin.",
+      "Inclusion": "A cardiomyopathy defined by the two-layered spongy myocardium. Prominent trabeculae in an athlete do not meet the ratio or the clinical picture."
+    }
+  },
+  {
+    "index": 36,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Papillary Fibroelastoma",
+    "topic_id": "papillary_fibroelastoma",
+    "fields": {
+      "Synonyms": "Cardiac papillary fibroelastoma, fibroelastic papilloma",
+      "Clinical": "Stroke, a transient ischemic attack, or coronary embolism from a left-sided mass. Many tumors are found on an echocardiogram done for another reason. A murmur appears only when the valve is obstructed.",
+      "Radiologic": "Echocardiography shows a small mobile mass on the aortic side of the aortic valve or the atrial side of the mitral valve, with a shimmering fringe and a short stalk. The mass moves independently of the leaflet.",
+      "Pathology": "Placed in saline, the gross specimen looks like a sea anemone. Fronds of avascular collagen and elastin, covered by a single layer of endothelium, surround a central core.",
+      "Inclusion": "The common valve tumor. Cardiac myxoma is already listed and arises from the atrial septum, not from a valve leaflet."
+    }
+  },
+  {
+    "index": 37,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Spontaneous Coronary Artery Dissection",
+    "topic_id": "spontaneous_coronary_artery_dissection",
+    "fields": {
+      "Synonyms": "SCAD, spontaneous coronary dissection",
+      "Clinical": "Acute coronary syndrome in a younger woman, often around pregnancy or with fibromuscular dysplasia. There is no atherosclerotic culprit. Chest pain, ECG changes, and a troponin rise are the presentation.",
+      "Radiologic": "Angiography shows a radiolucent flap, a long smooth narrowing, or an abrupt occlusion. Intravascular imaging and coronary CT angiography show an intramural hematoma compressing the true lumen. Arterial tortuosity outside the heart is common.",
+      "Pathology": "A hematoma in the outer third of the media, with or without an intimal tear. Atherosclerotic plaque is absent at the site.",
+      "Inclusion": "A nonatherosclerotic coronary disease with its own angiographic types. Acute aortic dissection is already listed and is a disease of the aorta."
+    }
+  },
+  {
+    "index": 38,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Anomalous Aortic Origin of a Coronary Artery",
+    "topic_id": "anomalous_aortic_origin_of_a_coronary_artery",
+    "fields": {
+      "Synonyms": "AAOCA, anomalous origin of the right coronary artery from the opposite sinus, anomalous origin of the left coronary artery from the opposite sinus, interarterial coronary artery",
+      "Clinical": "Exertional chest pain, syncope, or sudden cardiac arrest in a young person. Many anomalies are found on a CT done for another reason. The interarterial course is the form that matters.",
+      "Radiologic": "Coronary CT angiography shows the artery arising from the opposite sinus and running between the aorta and the pulmonary artery. The ostium is slit-like, and the proximal vessel may travel inside the aortic wall.",
+      "Pathology": "The ectopic ostium is slit-like. The proximal artery travels in the aortic media before it leaves the wall. The origin is from the aorta, not from the pulmonary artery.",
+      "Inclusion": "A coronary origin anomaly with a CT course and a slit-like ostium. Anomalous left coronary artery from the pulmonary artery is already listed and is a different origin."
+    }
+  },
+  {
+    "index": 39,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Sinus of Valsalva Aneurysm",
+    "topic_id": "sinus_of_valsalva_aneurysm",
+    "fields": {
+      "Synonyms": "Aneurysm of the sinus of Valsalva, ruptured sinus of Valsalva, windsock aneurysm",
+      "Clinical": "A continuous murmur with sudden dyspnea or chest pain when the aneurysm ruptures. The right sinus usually ruptures into the right heart. An unruptured aneurysm can compress a coronary artery or the conduction system.",
+      "Radiologic": "Echocardiography shows a windsock from a sinus of Valsalva into the right atrium or right ventricle, with a high-velocity color jet after rupture. CT angiography and aortography show the same outpouching above the aortic annulus.",
+      "Pathology": "The media is deficient where the aortic media meets the valve annulus. The windsock is a thin fibrous sac. The aneurysm does not begin above the sinotubular junction.",
+      "Inclusion": "A windsock with a named chamber of rupture. Thoracic aortic aneurysm is already listed and does not arise from a sinus of Valsalva."
+    }
+  },
+  {
+    "index": 40,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Coronary Artery Fistula",
+    "topic_id": "coronary_artery_fistula",
+    "fields": {
+      "Synonyms": "Coronary cameral fistula, coronary arteriovenous fistula",
+      "Clinical": "A continuous murmur. A large fistula causes coronary steal, angina, or heart failure. Many small fistulas are found on echocardiography or CT.",
+      "Radiologic": "Color Doppler shows a diastolic or continuous jet from a dilated coronary artery into a cardiac chamber or the pulmonary artery. CT angiography and catheter angiography trace the tortuous artery to the drainage site. The right heart and the pulmonary artery are the usual exits.",
+      "Pathology": "A persistent communication between a coronary artery and a cardiac chamber or a low-pressure vessel. The proximal artery is dilated by the runoff.",
+      "Inclusion": "A coronary runoff lesion. Anomalous left coronary artery from the pulmonary artery is already listed and is an origin anomaly, not a fistula from a normal aortic origin."
+    }
+  },
+  {
+    "index": 41,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Congenitally Corrected Transposition of the Great Arteries",
+    "topic_id": "congenitally_corrected_transposition",
+    "fields": {
+      "Synonyms": "L-TGA, ccTGA, congenitally corrected TGA, ventricular inversion, atrioventricular and ventriculoarterial discordance",
+      "Clinical": "A murmur from a ventricular septal defect, pulmonary stenosis, or regurgitation of the systemic tricuspid valve. Heart block develops over time. The morphologic right ventricle supports the body circulation and can fail in adult life.",
+      "Radiologic": "Echocardiography and cardiac MRI show atrioventricular discordance and ventriculoarterial discordance. The aorta lies anterior and to the left of the pulmonary artery. The systemic ventricle has a moderator band, and the systemic atrioventricular valve is often Ebstein-like.",
+      "Pathology": "The morphologic right ventricle connects to the aorta, and the morphologic left ventricle connects to the pulmonary artery. Each atrioventricular valve follows its ventricle.",
+      "Inclusion": "Discordant connections with a left-sided anterior aorta. D-transposition of the great arteries is already listed and has concordant atrioventricular connections."
+    }
+  },
+  {
+    "index": 42,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Fibromuscular Dysplasia",
+    "topic_id": "fibromuscular_dysplasia",
+    "fields": {
+      "Synonyms": "FMD, medial fibroplasia, string-of-beads artery disease",
+      "Clinical": "Renovascular hypertension, a cervical bruit, pulsatile tinnitus, or a spontaneous arterial dissection. Women are most often affected. Spontaneous coronary artery dissection is a frequent partner.",
+      "Radiologic": "Angiography, CT angiography, or MR angiography shows the string of beads of multifocal medial fibroplasia, or a long smooth focal stenosis. The renal, extracranial carotid, and vertebral arteries are the usual sites. The beads are larger than the normal lumen.",
+      "Pathology": "Medial fibroplasia shows ridges of fibrous media alternating with thinned media. Atherosclerotic plaque and vasculitis are absent.",
+      "Inclusion": "A nonatherosclerotic arterial disease with a string-of-beads angiogram. Atherosclerotic renal artery stenosis is already in Nephrology and is an ostial plaque."
+    }
+  },
+  {
+    "index": 43,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Aortic Intramural Hematoma",
+    "topic_id": "aortic_intramural_hematoma",
+    "fields": {
+      "Synonyms": "IMH, intramural hematoma of the aorta",
+      "Clinical": "Sudden tearing chest or back pain, the same presentation as aortic dissection. Pulses may differ between the arms. There is no intimal flap and no flow in a false lumen.",
+      "Radiologic": "Noncontrast CT shows a crescent of high attenuation in the aortic wall. Contrast CT shows smooth wall thickening of 5 mm or more, with no flap and no entry tear. The hematoma may involve the ascending aorta or the descending aorta.",
+      "Pathology": "Blood in the media from ruptured vasa vasorum, without an intimal tear that connects to the lumen. The media can show the same cystic medial degeneration seen in dissection.",
+      "Inclusion": "An acute aortic syndrome defined by a crescentic hematoma and no flap. Acute aortic dissection is already listed and requires an intimal flap."
+    }
+  },
+  {
+    "index": 44,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Penetrating Atherosclerotic Ulcer",
+    "topic_id": "penetrating_atherosclerotic_ulcer",
+    "fields": {
+      "Synonyms": "PAU, penetrating aortic ulcer",
+      "Clinical": "Acute chest or back pain in an older adult with severe atherosclerosis. The ulcer can deepen into a hematoma, a pseudoaneurysm, or a rupture.",
+      "Radiologic": "CT angiography shows a focal contrast outpouching through an ulcerated plaque, past the aortic intima, with overhanging edges. A surrounding intramural hematoma is common. The descending aorta is the usual site.",
+      "Pathology": "An atherosclerotic ulcer that has crossed the internal elastic lamina into the media. Adjacent plaque is extensive. The lesion is not a sinus of Valsalva windsock and not a fusiform aneurysm.",
+      "Inclusion": "A focal ulcer through aortic plaque. Acute aortic dissection and thoracic aortic aneurysm are already listed and have different CT shapes."
+    }
+  },
+  {
+    "index": 45,
+    "section": "Cardiology specialty",
+    "tier": "First",
+    "name": "Sinus Venosus Atrial Septal Defect and Partial Anomalous Pulmonary Venous Return",
+    "topic_id": "sinus_venosus_atrial_septal_defect",
+    "fields": {
+      "Synonyms": "Sinus venosus ASD, superior sinus venosus defect, partial anomalous pulmonary venous return, PAPVR, PAPVC",
+      "Clinical": "The same right-heart volume load as a secundum atrial septal defect: fixed splitting, a pulmonary flow murmur, and later atrial arrhythmia. The superior form is the common one.",
+      "Radiologic": "A superior sinus venosus defect overrides the superior vena cava, and the right upper pulmonary vein drains to the superior vena cava or the cavoatrial junction. Transesophageal echocardiography, CT, and cardiac MRI show the vein and the defect. The fossa ovalis itself is intact. The inferior form overrides the inferior vena cava.",
+      "Pathology": "The wall between the superior vena cava and the right upper pulmonary vein is deficient, so that vein drains to the right atrium. The septum secundum is present.",
+      "Inclusion": "One lesion covers the sinus venosus defect and the anomalous right pulmonary vein that defines it. Secundum atrial septal defect is a separate topic. Scimitar syndrome is already in Pulmonology and is the infradiaphragmatic form."
+    }
+  },
+  {
+    "index": 46,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Pulmonary Atresia with Ventricular Septal Defect",
+    "topic_id": "pulmonary_atresia_with_ventricular_septal_defect",
+    "fields": {
+      "Synonyms": "PA/VSD, tetralogy of Fallot with pulmonary atresia, major aortopulmonary collateral arteries, MAPCAs",
+      "Clinical": "Cyanosis from birth. The depth of cyanosis depends on the duct and on collateral arteries. A continuous murmur over the back means collateral flow to the lungs.",
+      "Radiologic": "Echocardiography shows an atretic pulmonary outflow and a large ventricular septal defect with an overriding aorta. CT angiography and catheter angiography map confluent or nonconfluent pulmonary arteries and the major aortopulmonary collateral arteries.",
+      "Pathology": "No lumen connects the right ventricle to the pulmonary arteries. Lung segments are supplied by a duct, by small native pulmonary arteries, or by collateral arteries from the descending aorta.",
+      "Inclusion": "A cyanotic lesion defined by collateral arteries on CT. Pulmonary atresia with an intact ventricular septum is already listed and has a hypoplastic right ventricle without these collaterals. Tetralogy of Fallot is already listed and has forward flow across a pulmonary valve."
+    }
+  },
+  {
+    "index": 47,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Interrupted Aortic Arch",
+    "topic_id": "interrupted_aortic_arch",
+    "fields": {
+      "Synonyms": "IAA, interrupted aortic arch type A, interrupted aortic arch type B",
+      "Clinical": "A neonate who collapses as the duct closes, with weak femoral pulses, differential cyanosis, and shock. Type B, the common form, travels with 22q11 deletion and a subaortic ventricular septal defect.",
+      "Radiologic": "CT angiography and a three-dimensional reconstruction show a complete gap in the aortic arch. Type A is distal to the left subclavian artery. Type B is between the left carotid artery and the left subclavian artery. The descending aorta fills from the duct.",
+      "Pathology": "The aortic arch is discontinuous. A fibrous cord may mark the gap, or no remnant is present. The descending aorta continues from the duct.",
+      "Inclusion": "A complete arch gap. Coarctation of the aorta is already listed and is a narrowing, not an interruption."
+    }
+  },
+  {
+    "index": 48,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Double Outlet Right Ventricle",
+    "topic_id": "double_outlet_right_ventricle",
+    "fields": {
+      "Synonyms": "DORV, Taussig-Bing anomaly, double outlet right ventricle with subaortic VSD, double outlet right ventricle with subpulmonary VSD",
+      "Clinical": "Cyanosis or heart failure, depending on the ventricular septal defect and on pulmonary stenosis. The Taussig-Bing form behaves like transposition, with cyanosis and heart failure.",
+      "Radiologic": "Echocardiography and cardiac MRI show both great arteries arising wholly or predominantly from the right ventricle. The ventricular septal defect is subaortic, subpulmonary, doubly committed, or remote. In the Taussig-Bing form the pulmonary artery overrides a subpulmonary defect and the arteries run in parallel.",
+      "Pathology": "Each great arterial valve is supported entirely or mostly by the right ventricle. A bilateral conus may separate both valves from the atrioventricular valves.",
+      "Inclusion": "Both great arteries committed to the right ventricle. D-transposition and tetralogy of Fallot are already listed and have different commitments of the great arteries."
+    }
+  },
+  {
+    "index": 49,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Heterotaxy Syndrome",
+    "topic_id": "heterotaxy_syndrome",
+    "fields": {
+      "Synonyms": "Right atrial isomerism, left atrial isomerism, asplenia syndrome, polysplenia syndrome, Ivemark syndrome",
+      "Clinical": "Right isomerism presents with cyanosis from anomalous pulmonary veins and pulmonary stenosis. Howell-Jolly bodies on the blood film point to an absent spleen. Left isomerism presents with heart block, an interrupted inferior vena cava, and biliary disease. The stomach and the heart are often on opposite sides.",
+      "Radiologic": "The chest radiograph and CT show bronchial sidedness: bilateral eparterial bronchi in right isomerism and bilateral hyparterial bronchi in left isomerism. Echocardiography and cardiac MRI show the atrial appendages, an atrioventricular septal defect, anomalous pulmonary veins, and the course of the inferior vena cava. Abdominal CT shows an absent spleen or multiple spleens.",
+      "Pathology": "Both atrial appendages have right morphology, or both have left morphology. The spleen is absent or multiple. Pulmonary venous connections are abnormal in right isomerism.",
+      "Inclusion": "A situs disorder defined by atrial isomerism and the bronchial pattern. Kartagener syndrome is already in Pulmonology and is mirror-image situs with ciliary disease, not isomerism."
+    }
+  },
+  {
+    "index": 50,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Discrete Subaortic Stenosis",
+    "topic_id": "discrete_subaortic_stenosis",
+    "fields": {
+      "Synonyms": "Subaortic membrane, discrete subaortic membrane, fibromuscular subaortic stenosis",
+      "Clinical": "A systolic ejection murmur at the left sternal border without a click. Aortic regurgitation appears as the jet from the membrane damages the aortic valve. The obstruction can progress through childhood.",
+      "Radiologic": "Echocardiography shows a fibrous or fibromuscular ridge in the left ventricular outflow tract, a high-velocity jet, and often aortic regurgitation. The aortic valve opens and is not domed.",
+      "Pathology": "A fibrous shelf or a fibromuscular tunnel on the septal surface of the outflow tract, a short distance below the aortic valve. The shelf can extend onto the anterior mitral leaflet.",
+      "Inclusion": "An outflow ridge below a valve that opens. Hypertrophic obstructive cardiomyopathy is already listed and is muscle, not a discrete membrane. Congenital valvar aortic stenosis is a separate topic."
+    }
+  },
+  {
+    "index": 51,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Shone Complex",
+    "topic_id": "shone_complex",
+    "fields": {
+      "Synonyms": "Shone syndrome, Shone anomaly, multilevel left-heart obstruction",
+      "Clinical": "Serial left-sided lesions in a child: a supravalvar mitral ring, a parachute mitral valve, subaortic stenosis, and coarctation. The presentation is pulmonary edema, pulmonary hypertension, and weak femoral pulses.",
+      "Radiologic": "Echocardiography shows a single papillary muscle with a parachute mitral valve, a membrane above the mitral valve, a subaortic ridge, and coarctation. Cardiac MRI and CT angiography show the arch and each level of obstruction.",
+      "Pathology": "All mitral chordae insert into one papillary muscle. A ridge of tissue sits above the mitral annulus. Further obstructions sit in the subaortic region and at the aortic isthmus.",
+      "Inclusion": "The multilevel left-heart syndrome. Isolated discrete subaortic stenosis and isolated coarctation are separate topics. Shone complex is the combination."
+    }
+  },
+  {
+    "index": 52,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Cor Triatriatum",
+    "topic_id": "cor_triatriatum",
+    "fields": {
+      "Synonyms": "Cor triatriatum sinister, divided left atrium, triatrial heart",
+      "Clinical": "Pulmonary venous hypertension in infancy or childhood, with dyspnea, repeated respiratory infections, and signs that mimic mitral stenosis. The size of the opening in the membrane sets the severity.",
+      "Radiologic": "Echocardiography shows a membrane across the left atrium between the pulmonary veins and the left atrial appendage. Color Doppler shows a high-velocity jet through an opening in the membrane. The left atrial appendage lies below the membrane.",
+      "Pathology": "A fibromuscular diaphragm divides the left atrium into a proximal chamber that receives the pulmonary veins and a distal true left atrium that contains the appendage and the mitral valve.",
+      "Inclusion": "A left atrial membrane above the appendage. The supravalvar mitral ring of Shone complex sits below the appendage, and that difference is the teaching point."
+    }
+  },
+  {
+    "index": 53,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Right Aortic Arch with Aberrant Left Subclavian Artery",
+    "topic_id": "right_aortic_arch_aberrant_left_subclavian",
+    "fields": {
+      "Synonyms": "Right aortic arch with aberrant left subclavian artery, Kommerell diverticulum, vascular ring from a right aortic arch",
+      "Clinical": "Stridor, wheeze, or dysphagia from a vascular ring. Many arches are found on a chest radiograph or a CT done for another reason. A diverticulum of Kommerell can dissect or become aneurysmal in adult life.",
+      "Radiologic": "The chest radiograph shows a right aortic knob. A barium swallow shows a posterior indentation of the esophagus. CT angiography shows a right arch, an aberrant left subclavian artery arising from a Kommerell diverticulum, and a left ligamentum that closes the ring.",
+      "Pathology": "The left subclavian artery is the last arch branch and runs behind the esophagus. The diverticulum is the remnant of the left dorsal aortic root.",
+      "Inclusion": "The common vascular ring that is not a double arch. Double aortic arch is already listed and has two patent arches."
+    }
+  },
+  {
+    "index": 54,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Pulmonary Artery Sling",
+    "topic_id": "pulmonary_artery_sling",
+    "fields": {
+      "Synonyms": "Pulmonary sling, anomalous left pulmonary artery from the right pulmonary artery",
+      "Clinical": "Stridor and respiratory distress in infancy. Airway symptoms dominate the picture. A complete tracheal ring is often present, so the trachea is long and narrow.",
+      "Radiologic": "CT angiography and bronchoscopy show the left pulmonary artery arising from the right pulmonary artery and passing between the trachea and the esophagus. A barium swallow shows an anterior indentation of the esophagus. The trachea may have complete cartilage rings.",
+      "Pathology": "The left pulmonary artery originates from the right pulmonary artery and compresses the distal trachea. Tracheal cartilage forms a complete ring rather than a posterior membrane.",
+      "Inclusion": "An airway sling with an anterior esophageal impression. A right aortic arch ring indents the esophagus from behind."
+    }
+  },
+  {
+    "index": 55,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Double-Chambered Right Ventricle",
+    "topic_id": "double_chambered_right_ventricle",
+    "fields": {
+      "Synonyms": "DCRV, divided right ventricle, anomalous muscle bundle of the right ventricle",
+      "Clinical": "A systolic murmur that is easy to mistake for a ventricular septal defect. A ventricular septal defect is often associated and may already have closed. Exertional dyspnea appears as the obstruction progresses.",
+      "Radiologic": "Echocardiography and cardiac MRI show a muscle bundle dividing the right ventricle into a high-pressure inlet and a low-pressure outlet, with a turbulent jet aimed at the outflow. The pulmonary valve is normal. Angiography shows the filling defect of the bundle.",
+      "Pathology": "Hypertrophied septoparietal bands form a shelf across the right ventricular cavity, proximal to the pulmonary valve.",
+      "Inclusion": "An intraventricular muscle shelf with a normal pulmonary valve. Valvar pulmonary stenosis is a separate topic and domes the valve."
+    }
+  },
+  {
+    "index": 56,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Absent Pulmonary Valve Syndrome",
+    "topic_id": "absent_pulmonary_valve_syndrome",
+    "fields": {
+      "Synonyms": "Tetralogy of Fallot with absent pulmonary valve, absent pulmonary valve with ventricular septal defect",
+      "Clinical": "Respiratory distress in a neonate from airway compression, a to-and-fro murmur, and cyanosis. The duct is usually absent. Massively enlarged pulmonary arteries compress the bronchi.",
+      "Radiologic": "Echocardiography shows a rudimentary pulmonary valve with severe stenosis and free regurgitation, a ventricular septal defect, and aneurysmal pulmonary arteries. CT shows those arteries compressing the bronchi.",
+      "Pathology": "The pulmonary valve is a rim of nubbins rather than leaflets. The pulmonary arteries are aneurysmal. The ventricular septal defect and the overriding aorta are those of tetralogy.",
+      "Inclusion": "A tetralogy variant whose picture is the aneurysmal pulmonary arteries and the compressed airway. Tetralogy of Fallot is already listed and has a formed pulmonary valve."
+    }
+  },
+  {
+    "index": 57,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Congenital Valvar Aortic Stenosis",
+    "topic_id": "congenital_valvar_aortic_stenosis",
+    "fields": {
+      "Synonyms": "Critical aortic stenosis, neonatal aortic stenosis, unicuspid aortic valve, congenital aortic valve stenosis",
+      "Clinical": "A neonate in shock as the duct closes, with weak pulses, pulmonary edema, and a murmur that may be soft when cardiac output is low. An older child has an ejection click and an ejection murmur.",
+      "Radiologic": "Echocardiography shows a domed unicuspid or bicuspid valve, a high transvalvular velocity, a thick left ventricle, and, in the critical form, right-to-left flow through the duct. The ascending aorta may be small. The leaflets are not the heavily calcified trileaflet valve of later life.",
+      "Pathology": "A unicuspid valve has one commissure. Endocardial fibroelastosis lines the left ventricle when the stenosis was severe before birth.",
+      "Inclusion": "The neonatal and childhood stenotic aortic valve. Calcific aortic stenosis is a separate topic of older adults. Bicuspid aortic valve with ascending aortopathy is already listed and is the dilated aorta, not this critical valve."
+    }
+  },
+  {
+    "index": 58,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Blunt Traumatic Aortic Injury",
+    "topic_id": "blunt_traumatic_aortic_injury",
+    "fields": {
+      "Synonyms": "Traumatic aortic transection, blunt aortic injury, traumatic aortic pseudoaneurysm",
+      "Clinical": "A high-speed deceleration injury with chest pain, a widened mediastinum, and often other injuries. Many patients have no specific finding on chest examination. Hypotension means rupture into the chest.",
+      "Radiologic": "CT angiography shows an intimal flap, a pseudoaneurysm, or an abnormal contour at the aortic isthmus, just beyond the left subclavian artery. A minimal injury is a small intimal tear. A mediastinal hematoma surrounds the aorta.",
+      "Pathology": "A tear through intima and media at the ligamentum arteriosum, where the aorta is fixed. The adventitia may contain the rupture as a pseudoaneurysm.",
+      "Inclusion": "A trauma lesion at the ligamentum arteriosum. Acute aortic dissection is already listed and is a spontaneous medial cleavage, not a deceleration tear."
+    }
+  },
+  {
+    "index": 59,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Mycotic Aortic Aneurysm",
+    "topic_id": "mycotic_aortic_aneurysm",
+    "fields": {
+      "Synonyms": "Infected aortic aneurysm, infectious aortitis with aneurysm, bacterial aortic aneurysm",
+      "Clinical": "Fever, back or abdominal pain, and bacteremia, often from Salmonella or Staphylococcus. The course is days to weeks. Contained rupture causes shock.",
+      "Radiologic": "CT angiography shows a saccular, eccentric, rapidly enlarging aneurysm with periaortic stranding, fluid, or gas. The sac sits in an otherwise undilated aorta. The abdominal aorta and the descending thoracic aorta are the usual sites.",
+      "Pathology": "Neutrophils and necrosis run through the media, and organisms are present in the wall. The histology of a degenerative atherosclerotic aneurysm lacks this acute infection.",
+      "Inclusion": "An infected saccular aneurysm with stranding or gas. Abdominal and thoracic aortic aneurysms are already listed and are degenerative, not infected."
+    }
+  },
+  {
+    "index": 60,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Middle Aortic Syndrome",
+    "topic_id": "middle_aortic_syndrome",
+    "fields": {
+      "Synonyms": "Mid-aortic syndrome, midaortic dysplastic syndrome, abdominal coarctation",
+      "Clinical": "Severe hypertension in a child or adolescent, a continuous abdominal bruit, weak femoral pulses, and leg claudication. Arm pulses can be normal when the thoracic arch is spared.",
+      "Radiologic": "CT or MR angiography shows a long narrowing of the mid thoracic or abdominal aorta, often with stenosis of the renal and visceral arteries. Collateral arteries enlarge around the stenosis. The arch isthmus is not the site.",
+      "Pathology": "The narrowing may be congenital, from fibromuscular dysplasia, or from Takayasu arteritis. Biopsy is not always obtained. The imaging pattern is the record of the syndrome.",
+      "Inclusion": "A midaortic narrowing with renal-artery stenosis. Coarctation of the aorta is already listed and sits at the isthmus. Takayasu arteritis is already in Rheumatology."
+    }
+  },
+  {
+    "index": 61,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Popliteal Artery Entrapment Syndrome",
+    "topic_id": "popliteal_artery_entrapment_syndrome",
+    "fields": {
+      "Synonyms": "PAES, popliteal entrapment",
+      "Clinical": "Claudication in a young athlete. Calf pain comes on with walking and eases with rest. Pulses can disappear with passive dorsiflexion or active plantar flexion. Atherosclerotic risk is absent.",
+      "Radiologic": "Angiography or ultrasound with the foot stressed shows narrowing or occlusion of the popliteal artery. MRI shows an abnormal medial head of the gastrocnemius compressing the artery, or an artery that runs medial to that head. A poststenotic aneurysm can develop.",
+      "Pathology": "The artery is compressed by an anomalous muscle or by a medial course around the gastrocnemius. Repeated trauma fibroses the wall. Atherosclerotic plaque is absent at the start.",
+      "Inclusion": "Anatomic compression of the popliteal artery in a young person. Peripheral artery disease is already listed and is atherosclerosis of older adults."
+    }
+  },
+  {
+    "index": 62,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Cystic Adventitial Disease",
+    "topic_id": "cystic_adventitial_disease",
+    "fields": {
+      "Synonyms": "Adventitial cystic disease, cystic adventitial disease of the popliteal artery",
+      "Clinical": "Sudden claudication in a middle-aged adult with little atherosclerosis. The popliteal artery is the usual site. A foot pulse may vanish when the knee is flexed.",
+      "Radiologic": "Angiography shows a smooth eccentric narrowing, the scimitar sign. Ultrasound and MRI show a mucin-filled cyst in the adventitia compressing the lumen. The cyst does not enhance as a solid mass.",
+      "Pathology": "A mucin-filled cyst in the adventitia, lined by flattened cells and filled with gelatinous material. The intima is intact.",
+      "Inclusion": "A mucin cyst with a scimitar narrowing. Popliteal artery entrapment is a separate topic and is muscle compression, not a cyst."
+    }
+  },
+  {
+    "index": 63,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Hypothenar Hammer Syndrome",
+    "topic_id": "hypothenar_hammer_syndrome",
+    "fields": {
+      "Synonyms": "Ulnar artery hammer syndrome, hypothenar ulnar artery aneurysm",
+      "Clinical": "Digital ischemia in a person who uses the heel of the hand as a hammer. The fingers show pallor, cyanosis, or painful pulp ulcers, usually on the ulnar digits. A hypothenar mass may be pulsatile.",
+      "Radiologic": "Angiography shows an ulnar-artery aneurysm or occlusion where the artery crosses the hook of the hamate, with corkscrew collaterals and emboli in the digital arteries. The radial artery is patent.",
+      "Pathology": "The ulnar artery is crushed against the hamate. The wall shows thrombosis, aneurysm, and distal emboli. This is repetitive trauma, not a vasculitis.",
+      "Inclusion": "An occupational ulnar-artery injury with photographs of the fingers and an aneurysm at the hook of the hamate. Thromboangiitis obliterans is already in Rheumatology and is a smoking-related vasculitis."
+    }
+  },
+  {
+    "index": 64,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Nutcracker Syndrome",
+    "topic_id": "nutcracker_syndrome",
+    "fields": {
+      "Synonyms": "Left renal vein entrapment, nutcracker phenomenon with symptoms",
+      "Clinical": "Left flank pain and hematuria, often with a left varicocele or with pelvic congestion. The pain can worsen when the person stands.",
+      "Radiologic": "CT, MR, or ultrasound shows compression of the left renal vein between the aorta and the superior mesenteric artery, a beak at the compression, a pressure gradient, and collateral veins that include the gonadal vein. A posterior nutcracker compresses a retroaortic vein between the aorta and the spine.",
+      "Pathology": "The diagnosis is anatomic and clinical. Histology of the vein is not required.",
+      "Inclusion": "A named venous compression with hematuria and a beak sign. May-Thurner syndrome is already listed and compresses the left common iliac vein, not the renal vein."
+    }
+  },
+  {
+    "index": 65,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Superior Vena Cava Syndrome",
+    "topic_id": "superior_vena_cava_syndrome",
+    "fields": {
+      "Synonyms": "SVC syndrome, superior vena cava obstruction",
+      "Clinical": "Facial and neck swelling, facial plethora, distended neck veins, and dilated veins on the chest wall. The swelling increases when the person lies flat or bends forward. Dyspnea and headache are common. Lung cancer and lymphoma are the usual malignant causes. Catheter thrombus and mediastinal fibrosis are the usual benign causes.",
+      "Radiologic": "Contrast CT shows narrowing or occlusion of the superior vena cava, collateral flow through the azygos vein and the chest wall, and the mass or thrombus that causes the block. Venography shows the same occlusion and the collateral route.",
+      "Pathology": "The cause is tumor, thrombus, or fibrosis around the cava. The syndrome itself is the obstruction and the collateral pattern, recorded on the photograph and the CT.",
+      "Inclusion": "A photographic and CT diagnosis of caval obstruction. The cancers that cause it stay in their own topics."
+    }
+  },
+  {
+    "index": 66,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Arterial Thoracic Outlet Syndrome",
+    "topic_id": "arterial_thoracic_outlet_syndrome",
+    "fields": {
+      "Synonyms": "Arterial TOS, cervical rib with subclavian aneurysm",
+      "Clinical": "Arm claudication, a cold hand, and digital emboli in a young adult. A pulsatile mass may sit above the clavicle, and a cervical rib may be felt. Work with the arms overhead brings on the symptoms.",
+      "Radiologic": "The chest radiograph shows a cervical rib or an abnormal first rib. CT angiography or catheter angiography shows compression of the subclavian artery, often with a poststenotic aneurysm and emboli downstream. Compression increases when the arm is raised.",
+      "Pathology": "A cervical rib, a fibrous band, or the anterior scalene compresses the artery. Mural thrombus in the aneurysm embolizes to the hand.",
+      "Inclusion": "The arterial form of thoracic outlet compression. Paget-Schroetter syndrome is already listed and is effort thrombosis of the vein, not an arterial aneurysm."
+    }
+  },
+  {
+    "index": 67,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Giant Cell Myocarditis",
+    "topic_id": "giant_cell_myocarditis",
+    "fields": {
+      "Synonyms": "Idiopathic giant cell myocarditis",
+      "Clinical": "Rapidly progressive heart failure, ventricular arrhythmia, or heart block in a previously well adult. The course is days to weeks. Cardiogenic shock is common.",
+      "Radiologic": "Cardiac MRI shows myocardial edema and widespread late gadolinium enhancement outside a coronary territory. Echocardiography shows a thick, poorly contracting ventricle and often thrombus. Imaging does not separate this disease from lymphocytic myocarditis. The biopsy does.",
+      "Pathology": "Serpiginous myocyte necrosis with multinucleated giant cells, lymphocytes, and eosinophils. Granulomas are absent, which separates the disease from cardiac sarcoidosis. Stains for organisms are negative.",
+      "Inclusion": "A histologic myocarditis defined by giant cells at the edge of myocyte necrosis. Sarcoidosis is already in Pulmonology and forms granulomas. Acute lymphocytic myocarditis is a separate topic and has no giant cells."
+    }
+  },
+  {
+    "index": 68,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Acute Lymphocytic Myocarditis",
+    "topic_id": "acute_lymphocytic_myocarditis",
+    "fields": {
+      "Synonyms": "Acute viral myocarditis, lymphocytic myocarditis",
+      "Clinical": "A viral prodrome followed by chest pain, a troponin rise, and ECG changes, or by heart failure and arrhythmia. The coronary arteries have no culprit occlusion. Most patients recover. A minority progress to a dilated cardiomyopathy.",
+      "Radiologic": "Cardiac MRI shows subepicardial or mid-wall late gadolinium enhancement, often in the lateral wall, with T2 edema in the same region. The pattern does not follow a coronary territory. Echocardiography may be normal or may show a dilated, weak ventricle.",
+      "Pathology": "Endomyocardial biopsy shows a lymphocyte infiltrate with myocyte necrosis. Giant cells and granulomas are absent. A virus in the tissue supports the diagnosis and is not required for the histologic label.",
+      "Inclusion": "The common acute myocarditis, recognized by subepicardial enhancement and lymphocytic histology. Giant cell myocarditis is a separate topic. Cardiac findings of sarcoidosis and of Chagas disease stay with those diseases."
+    }
+  },
+  {
+    "index": 69,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Multisystem Inflammatory Syndrome in Children",
+    "topic_id": "multisystem_inflammatory_syndrome_in_children",
+    "fields": {
+      "Synonyms": "MIS-C, pediatric inflammatory multisystem syndrome, PIMS-TS",
+      "Clinical": "Fever, rash, nonexudative conjunctivitis, red cracked lips, and abdominal pain in a child, weeks after SARS-CoV-2. Shock and poor ventricular function are common. Coronary arteries may dilate.",
+      "Radiologic": "Echocardiography shows reduced ventricular function, a pericardial effusion, and coronary dilation or aneurysm. Function often recovers. Abdominal imaging may show ileitis or ascites.",
+      "Pathology": "The diagnosis is clinical, supported by marked inflammation and by the echocardiogram. Myocardial biopsy is rarely done. The skin and the mucosa resemble Kawasaki disease. Shock and ventricular dysfunction mark this syndrome.",
+      "Inclusion": "A postinfectious inflammatory syndrome with photographs and coronary changes. Kawasaki disease is already listed and is the coronary vasculitis of younger children without this shock-predominant course."
+    }
+  },
+  {
+    "index": 70,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Nonbacterial Thrombotic Endocarditis",
+    "topic_id": "nonbacterial_thrombotic_endocarditis",
+    "fields": {
+      "Synonyms": "NBTE, marantic endocarditis",
+      "Clinical": "Stroke, limb embolism, or coronary embolism in a person with adenocarcinoma or another thrombotic disease. Fever and a destructive valve murmur are absent. Blood cultures are negative.",
+      "Radiologic": "Echocardiography shows small irregular vegetations on the atrial side of the mitral valve or the ventricular side of the aortic valve. The vegetations are broad-based. The leaflet is not destroyed, and there is no abscess.",
+      "Pathology": "Sterile platelet-fibrin thrombi sit on the line of valve closure, with little inflammation and no organisms. The underlying valve may be normal.",
+      "Inclusion": "Sterile vegetations of cancer and thrombotic disease. Infective endocarditis is already in Infectious Diseases and destroys the leaflet. Vegetations of systemic lupus erythematosus stay with that disease."
+    }
+  },
+  {
+    "index": 71,
+    "section": "Cardiology specialty",
+    "tier": "Next",
+    "name": "Generalized Arterial Calcification of Infancy",
+    "topic_id": "generalized_arterial_calcification_of_infancy",
+    "fields": {
+      "Synonyms": "GACI, idiopathic infantile arterial calcification, ENPP1-related arterial calcification",
+      "Clinical": "A neonate or young infant with hypertension, heart failure, respiratory distress, and pulses that are hard to feel. Calcium may be felt around joints. Myocardial ischemia is the usual cause of death when the disease is untreated.",
+      "Radiologic": "Radiographs and CT show calcification of the aorta, the coronary arteries, and other large and medium arteries. Periarticular calcification is common. Echocardiography shows bright coronary arteries, poor ventricular function, and systemic hypertension.",
+      "Pathology": "Calcium is deposited along the internal elastic lamina, and fibrous intimal thickening narrows the lumen. The coronary arteries are the critical site.",
+      "Inclusion": "An infantile disease with radiographs of calcified arteries. Calcific aortic stenosis is a separate topic of older adults and calcifies the valve, not the infant arterial tree."
+    }
+  },
+  {
+    "index": 72,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Hepatic Hemangioma",
+    "topic_id": "hepatic_hemangioma",
+    "fields": {
+      "Synonyms": "Cavernous hemangioma of the liver, hepatic cavernous hemangioma, liver hemangioma",
+      "Clinical": "Usually silent. A large lesion can cause right-upper-quadrant fullness. Rupture is rare.",
+      "Radiologic": "Contrast CT and MRI show discontinuous peripheral nodular enhancement that fills toward the center. The lesion is bright on T2-weighted MRI. Ultrasound shows a well-defined hyperechoic mass.",
+      "Pathology": "Blood-filled vascular spaces lined by flat endothelium, with fibrous septa.",
+      "Inclusion": "The common benign liver mass, recognized by centripetal fill-in. Focal nodular hyperplasia and hepatocellular adenoma are separate topics. Infantile hepatic hemangioma is a different disease of infants."
+    }
+  },
+  {
+    "index": 73,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Focal Nodular Hyperplasia",
+    "topic_id": "focal_nodular_hyperplasia",
+    "fields": {
+      "Synonyms": "FNH, focal nodular hyperplasia of the liver",
+      "Clinical": "Almost always an incidental liver mass in a young adult. It does not bleed, and it does not become carcinoma.",
+      "Radiologic": "Arterial-phase CT or MRI shows a homogeneous hyperenhancing mass. A central scar enhances on delayed images and is bright on T2-weighted MRI. The scar may contain a feeding artery.",
+      "Pathology": "A central scar with abnormal vessels and ductular reaction, surrounded by nodules of hepatocytes. The reticulin network is intact.",
+      "Inclusion": "A benign mass defined by the central scar. Hepatic hemangioma and hepatocellular adenoma are separate topics."
+    }
+  },
+  {
+    "index": 74,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Hepatocellular Adenoma",
+    "topic_id": "hepatocellular_adenoma",
+    "fields": {
+      "Synonyms": "Hepatic adenoma, liver cell adenoma, HNF1A-inactivated adenoma, inflammatory hepatocellular adenoma",
+      "Clinical": "A liver mass in a young woman, often associated with oral contraceptives or anabolic steroids. Rupture causes sudden abdominal pain and hemoperitoneum. Some adenomas become hepatocellular carcinoma.",
+      "Radiologic": "MRI separates the subtypes. An HNF1A-inactivated adenoma drops signal on opposed-phase images because it contains fat. An inflammatory adenoma shows strong arterial enhancement and an atoll sign. Hemorrhage is bright or dark depending on its age.",
+      "Pathology": "Sheets of hepatocytes without portal tracts. Immunohistochemistry separates the HNF1A, inflammatory, and beta-catenin subtypes. Reticulin is lost where carcinoma has developed.",
+      "Inclusion": "A benign hepatocellular tumor that bleeds and can become carcinoma. Focal nodular hyperplasia keeps its scar. Hepatocellular carcinoma is already listed."
+    }
+  },
+  {
+    "index": 75,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Gallbladder Adenomyomatosis",
+    "topic_id": "gallbladder_adenomyomatosis",
+    "fields": {
+      "Synonyms": "Adenomyomatous hyperplasia of the gallbladder, gallbladder diverticulosis",
+      "Clinical": "Usually found on ultrasound done for pain. It does not form a mass or cause jaundice by itself.",
+      "Radiologic": "Ultrasound shows comet-tail artifact from cholesterol crystals in Rokitansky-Aschoff sinuses. Fundal thickening makes an hourglass gallbladder. MRI shows the pearl-necklace sign of fluid-filled intramural diverticula.",
+      "Pathology": "Mucosal epithelium herniates into a thickened muscular wall, forming Rokitansky-Aschoff sinuses.",
+      "Inclusion": "A benign gallbladder condition with a disease-specific ultrasound artifact. Gallbladder carcinoma is already listed and invades beyond the wall."
+    }
+  },
+  {
+    "index": 76,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Porcelain Gallbladder",
+    "topic_id": "porcelain_gallbladder",
+    "fields": {
+      "Synonyms": "Calcified gallbladder, calcifying cholecystitis",
+      "Clinical": "Usually silent. It is found on a radiograph or CT done for another reason. Chronic gallstones are common.",
+      "Radiologic": "A radiograph or CT shows calcification in the gallbladder wall. The calcification may be continuous or interrupted.",
+      "Pathology": "Calcium in the muscular wall, with fibrosis and a chronically inflamed mucosa.",
+      "Inclusion": "The calcified gallbladder wall is a disease-specific imaging finding. Gallstones and acute cholecystitis are already listed and do not calcify the wall in this pattern."
+    }
+  },
+  {
+    "index": 77,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Emphysematous Cholecystitis",
+    "topic_id": "emphysematous_cholecystitis",
+    "fields": {
+      "Synonyms": "Gas gangrene of the gallbladder, acute gaseous cholecystitis",
+      "Clinical": "Right-upper-quadrant pain, fever, and sepsis, often in a man with diabetes. The illness is more toxic than ordinary cholecystitis.",
+      "Radiologic": "Radiography or CT shows gas in the gallbladder wall or lumen, and sometimes in the pericholecystic tissue. Stones may be absent.",
+      "Pathology": "Necrosis of the gallbladder wall with gas-forming bacteria. Clostridium and other enteric organisms are typical.",
+      "Inclusion": "Gas in the gallbladder wall is a disease-specific emergency. Ordinary acute cholecystitis is already listed and has no intramural gas."
+    }
+  },
+  {
+    "index": 78,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Pancreatic Serous Cystadenoma",
+    "topic_id": "pancreatic_serous_cystadenoma",
+    "fields": {
+      "Synonyms": "Serous cystic neoplasm of the pancreas, microcystic adenoma, oligocystic serous cystadenoma",
+      "Clinical": "An older woman with a pancreatic mass found on imaging. Symptoms appear only when the mass is large.",
+      "Radiologic": "CT shows a honeycomb of small cysts with a calcified central scar. MRI shows the same sponge pattern. The lesion does not communicate with the pancreatic duct.",
+      "Pathology": "Cuboidal glycogen-rich cells line the cysts. The fluid is clear and serous. Ovarian-type stroma is absent.",
+      "Inclusion": "A benign cystic pancreatic tumor. Intraductal papillary mucinous neoplasm is already listed and communicates with the duct. Mucinous cystic neoplasm is a separate topic."
+    }
+  },
+  {
+    "index": 79,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Pancreatic Mucinous Cystic Neoplasm",
+    "topic_id": "pancreatic_mucinous_cystic_neoplasm",
+    "fields": {
+      "Synonyms": "Mucinous cystadenoma of the pancreas, mucinous cystadenocarcinoma, MCN",
+      "Clinical": "A middle-aged woman with a body or tail mass. A large cyst causes pain or a palpable mass.",
+      "Radiologic": "CT or MRI shows a thick-walled unilocular or septated cyst in the pancreatic body or tail. It does not connect to the pancreatic duct. Eggshell calcification may be present.",
+      "Pathology": "Columnar mucinous epithelium with ovarian-type stroma. Dysplasia ranges from low grade to invasive carcinoma.",
+      "Inclusion": "A mucin-producing cyst of the distal pancreas. Serous cystadenoma has a honeycomb scar. Intraductal papillary mucinous neoplasm is already listed and arises in the duct."
+    }
+  },
+  {
+    "index": 80,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Solid Pseudopapillary Neoplasm",
+    "topic_id": "solid_pseudopapillary_neoplasm",
+    "fields": {
+      "Synonyms": "Solid pseudopapillary tumor, Frantz tumor, solid and papillary epithelial neoplasm",
+      "Clinical": "A young woman with a large, slowly growing pancreatic mass and abdominal pain.",
+      "Radiologic": "CT shows a large encapsulated mass with solid areas and hemorrhage. A fluid-debris level is common. The capsule enhances.",
+      "Pathology": "Pseudopapillae of uniform cells around blood vessels, with hemorrhage and cholesterol clefts. Nuclear beta-catenin is positive.",
+      "Inclusion": "A pancreatic tumor of young women with a hemorrhagic encapsulated mass. Pancreatic ductal adenocarcinoma is already listed. The cystic neoplasms are separate topics."
+    }
+  },
+  {
+    "index": 81,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Ampullary Adenocarcinoma",
+    "topic_id": "ampullary_adenocarcinoma",
+    "fields": {
+      "Synonyms": "Ampulla of Vater carcinoma, carcinoma of the ampulla, ampullary carcinoma",
+      "Clinical": "Painless jaundice, pale stools, and dark urine. Occult blood in the stool is common because the tumor bleeds into the duodenum.",
+      "Radiologic": "Endoscopy shows an ulcerated, polypoid, or bulging ampulla. CT or MRCP shows a double-duct sign, with a dilated bile duct and pancreatic duct ending at the ampulla.",
+      "Pathology": "An intestinal-type or pancreatobiliary-type adenocarcinoma at the ampulla. The intestinal type resembles colorectal carcinoma.",
+      "Inclusion": "A tumor seen on endoscopy at the ampulla. Pancreatic ductal adenocarcinoma and cholangiocarcinoma are already listed and do not arise in the ampulla."
+    }
+  },
+  {
+    "index": 82,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Epiploic Appendagitis",
+    "topic_id": "epiploic_appendagitis",
+    "fields": {
+      "Synonyms": "Primary epiploic appendagitis, appendagitis epiploica, acute epiploic appendagitis",
+      "Clinical": "Localized abdominal pain, often in the left or right lower quadrant. Fever and leukocytosis are mild or absent.",
+      "Radiologic": "CT shows an oval fat-density nodule next to the colon, with a hyperdense rim and a central dot. The colon wall is not thick.",
+      "Pathology": "Ischemic fat necrosis of an epiploic appendage, with inflammation and a thrombosed vessel.",
+      "Inclusion": "A self-limited cause of acute abdominal pain with a disease-specific CT sign. Acute diverticulitis and acute appendicitis are already listed."
+    }
+  },
+  {
+    "index": 83,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Omental Infarction",
+    "topic_id": "omental_infarction",
+    "fields": {
+      "Synonyms": "Primary omental infarction, segmental omental infarction, omental torsion",
+      "Clinical": "Right-sided abdominal pain that mimics appendicitis or cholecystitis. The patient is less ill than the pain suggests.",
+      "Radiologic": "CT shows a cake of heterogeneous fat between the abdominal wall and the colon, usually to the right of the midline. It is larger than an epiploic appendage and has no central dot.",
+      "Pathology": "Fat necrosis and hemorrhage in the greater omentum.",
+      "Inclusion": "An acute fat infarction with its own CT appearance. Epiploic appendagitis is a separate, smaller lesion on the colon."
+    }
+  },
+  {
+    "index": 84,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Gallstone Ileus and Bouveret Syndrome",
+    "topic_id": "gallstone_ileus",
+    "fields": {
+      "Synonyms": "Gallstone ileus, Rigler triad, Bouveret syndrome, gastric outlet obstruction from a gallstone",
+      "Clinical": "An older woman with episodic bowel obstruction. Bouveret syndrome presents as vomiting from a stone lodged in the duodenum.",
+      "Radiologic": "The Rigler triad is small-bowel obstruction, gas in the biliary tree, and an ectopic calcified stone. The stone is often in the terminal ileum. In Bouveret syndrome the stone sits in the duodenum and is seen on CT or endoscopy.",
+      "Pathology": "A cholecystoduodenal fistula. The obstructing stone is a gallstone that has eroded into the bowel.",
+      "Inclusion": "A mechanical obstruction syndrome with a disease-specific triad. Gallstones and acute cholecystitis are already listed and do not show an ectopic obstructing stone."
+    }
+  },
+  {
+    "index": 85,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Gastric Volvulus",
+    "topic_id": "gastric_volvulus",
+    "fields": {
+      "Synonyms": "Organoaxial gastric volvulus, mesenteroaxial gastric volvulus, upside-down stomach",
+      "Clinical": "Borchardt triad: sudden epigastric pain, retching without vomit, and inability to pass a nasogastric tube. Chronic cases cause intermittent pain after meals.",
+      "Radiologic": "A radiograph or contrast study shows the upside-down stomach. Organoaxial volvulus twists along the long axis and often accompanies a paraesophageal hernia. Mesenteroaxial volvulus twists across the short axis, and the antrum lies above the gastroesophageal junction.",
+      "Pathology": "The stomach is twisted. Strangulation produces ischemic necrosis of the wall.",
+      "Inclusion": "An acute gastric twist with obstruction. Hiatal and paraesophageal hernia is already listed. Volvulus is the twist itself."
+    }
+  },
+  {
+    "index": 86,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Superior Mesenteric Artery Syndrome",
+    "topic_id": "superior_mesenteric_artery_syndrome",
+    "fields": {
+      "Synonyms": "SMA syndrome, Wilkie syndrome, cast syndrome, arteriomesenteric duodenal compression",
+      "Clinical": "Vomiting and epigastric pain after marked weight loss, spinal surgery, or a body cast. Lying prone or on the left side eases the pain.",
+      "Radiologic": "CT or a barium study shows a dilated duodenum that stops where the superior mesenteric artery crosses the aorta. The aortomesenteric angle and the distance between the vessels are reduced.",
+      "Pathology": "The diagnosis is anatomic and clinical. There is no intrinsic duodenal mass.",
+      "Inclusion": "Extrinsic duodenal obstruction by the superior mesenteric artery. Small-bowel obstruction and intestinal malrotation are already listed and have a different transition point."
+    }
+  },
+  {
+    "index": 87,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Stercoral Colitis",
+    "topic_id": "stercoral_colitis",
+    "fields": {
+      "Synonyms": "Stercoral ulcer, fecaloma colitis, stercoral perforation",
+      "Clinical": "An older or bed-bound person with severe constipation and left-sided pain. Sepsis means the colon has perforated.",
+      "Radiologic": "CT shows a large fecaloma, usually in the sigmoid, pressing on a thickened colon wall. Perforation shows extraluminal gas or an abscess next to the fecal mass.",
+      "Pathology": "Pressure necrosis and a sharp-edged ulcer under the fecaloma. Perforation is on the antimesenteric side.",
+      "Inclusion": "Pressure injury from a fecaloma. Ischemic colitis and pseudomembranous colitis are already listed and do not contain a fecaloma."
+    }
+  },
+  {
+    "index": 88,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Schatzki Ring",
+    "topic_id": "schatzki_ring",
+    "fields": {
+      "Synonyms": "Lower esophageal ring, B ring, Schatzki mucosal ring",
+      "Clinical": "Intermittent solid-food dysphagia. A food bolus may lodge at the ring.",
+      "Radiologic": "A barium esophagram shows a thin, symmetric shelf at the squamocolumnar junction. A barium tablet stops at the ring when the lumen is narrow.",
+      "Pathology": "A mucosal fold covered by squamous epithelium above and columnar epithelium below. Inflammation is scant.",
+      "Inclusion": "A fixed mucosal ring with a disease-specific barium appearance. Esophageal achalasia, eosinophilic esophagitis, and peptic stricture are already listed."
+    }
+  },
+  {
+    "index": 89,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Herpes Simplex Esophagitis",
+    "topic_id": "herpes_simplex_esophagitis",
+    "fields": {
+      "Synonyms": "HSV esophagitis, herpes esophagitis",
+      "Clinical": "Sudden odynophagia and chest pain, usually in an immunocompromised person. The mouth may be spared.",
+      "Radiologic": "Endoscopy shows small vesicles and volcano-shaped ulcers in the mid-esophagus. The mucosa between the ulcers looks normal.",
+      "Pathology": "Biopsy from the ulcer edge shows multinucleated epithelial cells with molded ground-glass nuclei. Immunohistochemistry confirms herpes simplex virus.",
+      "Inclusion": "A viral esophagitis with small discrete ulcers. Esophageal candidiasis is already listed and shows plaques. Cytomegalovirus makes larger, shallower ulcers."
+    }
+  },
+  {
+    "index": 90,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Pill-Induced Esophagitis",
+    "topic_id": "pill_induced_esophagitis",
+    "fields": {
+      "Synonyms": "Drug-induced esophagitis, pill esophagitis, doxycycline esophagitis, bisphosphonate esophagitis",
+      "Clinical": "Sudden odynophagia hours after a pill taken with little water, often at bedtime. Doxycycline, potassium chloride, bisphosphonates, and NSAIDs are typical.",
+      "Radiologic": "Endoscopy shows one or a few discrete ulcers in the mid-esophagus, where the aorta or the left main bronchus indents the lumen.",
+      "Pathology": "Nonspecific ulceration and inflammation. Viral inclusions and fungal plaques are absent.",
+      "Inclusion": "Injury from a retained pill. Caustic ingestion is already listed and burns a long segment. Herpes and candidiasis have different endoscopic patterns."
+    }
+  },
+  {
+    "index": 91,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Gastric MALT Lymphoma",
+    "topic_id": "gastric_malt_lymphoma",
+    "fields": {
+      "Synonyms": "Extranodal marginal zone lymphoma of mucosa-associated lymphoid tissue, gastric marginal zone lymphoma, gastric MALT",
+      "Clinical": "Dyspepsia, pain, or bleeding. Many patients have Helicobacter pylori infection. A mass is often absent.",
+      "Radiologic": "Endoscopy shows enlarged folds, erosions, or a shallow ulcer, often in the antrum or body. Endoscopic ultrasound shows thickening of the mucosa and submucosa.",
+      "Pathology": "Lymphoepithelial lesions and a monotypic B-cell infiltrate of marginal-zone cells. The cells mark with CD20 and lack CD5, CD10, and cyclin D1.",
+      "Inclusion": "A gastric lymphoma driven by Helicobacter pylori. Gastric adenocarcinoma is already listed. Mantle cell lymphoma, including lymphomatous polyposis, is already listed in Hematology."
+    }
+  },
+  {
+    "index": 92,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Autoimmune Hepatitis",
+    "topic_id": "autoimmune_hepatitis",
+    "fields": {
+      "Synonyms": "AIH, lupoid hepatitis, autoimmune chronic active hepatitis",
+      "Clinical": "Jaundice, fatigue, and a large liver, often in a young woman, or an acute hepatitis that does not resolve. Aminotransferases are high. Other autoimmune diseases are common.",
+      "Radiologic": "Imaging shows hepatomegaly or, later, cirrhosis. There is no disease-specific scan. The biopsy is the teaching image.",
+      "Pathology": "Interface hepatitis, a plasma-cell infiltrate, and hepatic rosettes. The bile ducts are not the main target.",
+      "Inclusion": "A chronic hepatitis recognized on biopsy. Primary biliary cholangitis and primary sclerosing cholangitis are already listed and target the bile ducts."
+    }
+  },
+  {
+    "index": 93,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Sclerosing Mesenteritis",
+    "topic_id": "sclerosing_mesenteritis",
+    "fields": {
+      "Synonyms": "Mesenteric panniculitis, retractile mesenteritis, mesenteric lipodystrophy, misty mesentery",
+      "Clinical": "Abdominal pain, a mass, or an incidental finding. Obstruction occurs when fibrosis retracts the bowel.",
+      "Radiologic": "CT shows a misty fat mass at the root of the small-bowel mesentery. A fat-ring sign spares the fat around vessels. A pseudocapsule may surround the mass. Calcification is common.",
+      "Pathology": "Fat necrosis, chronic inflammation, and fibrosis in the mesentery.",
+      "Inclusion": "A mesenteric fibroinflammatory mass with the fat-ring sign. IgG4-related disease is already listed and has a sausage pancreas and a periaortic mantle. Sclerosing encapsulating peritonitis is a separate topic."
+    }
+  },
+  {
+    "index": 94,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Appendiceal Mucocele and Low-Grade Appendiceal Mucinous Neoplasm",
+    "topic_id": "appendiceal_mucocele_lamn",
+    "fields": {
+      "Synonyms": "Appendiceal mucocele, low-grade appendiceal mucinous neoplasm, LAMN, mucinous appendiceal neoplasm",
+      "Clinical": "Right-lower-quadrant pain or a mass. Many are found on CT done for another reason. Rupture spills mucin into the peritoneum.",
+      "Radiologic": "CT or ultrasound shows a tubular, fluid-filled appendix with curvilinear wall calcification. The lumen is wider than an inflamed appendix, and the surrounding fat is quiet.",
+      "Pathology": "A dilated appendix filled with mucin. LAMN has low-grade mucinous epithelium pushing into the wall. Mucin outside the appendix means dissemination.",
+      "Inclusion": "The intact mucin-filled appendix. Pseudomyxoma peritonei is already listed and is the disseminated form after rupture."
+    }
+  },
+  {
+    "index": 95,
+    "section": "Gastroenterology specialty",
+    "tier": "First",
+    "name": "Giardiasis",
+    "topic_id": "giardiasis",
+    "fields": {
+      "Synonyms": "Giardia duodenalis infection, Giardia lamblia infection, Giardia intestinalis infection",
+      "Clinical": "Foul watery diarrhea, bloating, and weight loss after untreated water. The illness can last for weeks.",
+      "Radiologic": "Endoscopy is often normal. The duodenal mucosa may look scalloped when the infection is heavy. The teaching images are the biopsy and the stool microscopy.",
+      "Pathology": "Pear-shaped trophozoites lie on the duodenal surface. Stool shows trophozoites or oval cysts. The villi may be blunted.",
+      "Inclusion": "A luminal protozoan recognized on the biopsy surface and in the stool. Celiac disease is already listed and has no organisms."
+    }
+  },
+  {
+    "index": 96,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Annular Pancreas",
+    "topic_id": "annular_pancreas",
+    "fields": {
+      "Synonyms": "Pancreatic annulus, annular pancreas of the duodenum",
+      "Clinical": "A neonate with bilious vomiting, or an adult with pancreatitis, pain, or duodenal obstruction.",
+      "Radiologic": "CT or MRCP shows pancreatic tissue encircling the second portion of the duodenum. The duct may pass around the duodenum. A newborn may also have a double bubble.",
+      "Pathology": "A ring of pancreatic tissue around the duodenum, from failure of the ventral bud to rotate.",
+      "Inclusion": "A congenital pancreatic ring seen on CT. Duodenal atresia is already in Pediatrics and owns the double-bubble radiograph. This topic is the pancreatic ring, including the adult presentation."
+    }
+  },
+  {
+    "index": 97,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Jejunoileal Atresia",
+    "topic_id": "jejunoileal_atresia",
+    "fields": {
+      "Synonyms": "Jejunal atresia, ileal atresia, apple-peel atresia, intestinal atresia",
+      "Clinical": "A newborn with bilious vomiting and progressive abdominal distension. Meconium is absent or scant.",
+      "Radiologic": "A radiograph shows several dilated loops and air-fluid levels. A contrast enema shows a microcolon. The apple-peel form is a spiral of distal bowel around a single vessel.",
+      "Pathology": "A blind end of jejunum or ileum. The forms run from a web, to blind ends joined by a cord, to a mesenteric gap, to the apple-peel deformity.",
+      "Inclusion": "Distal intestinal atresia. Duodenal atresia is already listed and shows a double bubble with a gasless distal abdomen."
+    }
+  },
+  {
+    "index": 98,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Paraduodenal and Transmesenteric Internal Hernia",
+    "topic_id": "internal_hernia",
+    "fields": {
+      "Synonyms": "Paraduodenal hernia, left paraduodenal hernia, transmesenteric hernia, Petersen hernia",
+      "Clinical": "Intermittent obstruction, or an acute closed-loop obstruction with pain and vomiting. A transmesenteric hernia is a risk after Roux-en-Y surgery.",
+      "Radiologic": "CT shows clustered small-bowel loops in an abnormal place, with crowding and twisting of the mesenteric vessels. A left paraduodenal hernia sits at the fossa of Landzert, behind the inferior mesenteric vein. A transmesenteric hernia has no confining sac.",
+      "Pathology": "Bowel has passed through a mesenteric opening or a paraduodenal fossa. Strangulated loops are ischemic.",
+      "Inclusion": "An internal hernia. Inguinal, femoral, ventral, and paraesophageal hernias are already listed and leave through the abdominal wall or the diaphragm."
+    }
+  },
+  {
+    "index": 99,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Sclerosing Encapsulating Peritonitis",
+    "topic_id": "sclerosing_encapsulating_peritonitis",
+    "fields": {
+      "Synonyms": "Abdominal cocoon, encapsulating peritoneal sclerosis, sclerosing peritonitis",
+      "Clinical": "Recurrent obstruction, a mass, and weight loss. Long peritoneal dialysis is a classic setting. Some cases are idiopathic.",
+      "Radiologic": "CT shows small bowel gathered in the center and wrapped in a fibrous membrane. The membrane enhances. Loculated fluid may sit between the loops.",
+      "Pathology": "A thick collagenous membrane around the bowel, with chronic inflammation. The bowel wall itself may be normal.",
+      "Inclusion": "A fibrous cocoon around the bowel. Sclerosing mesenteritis is a separate topic and involves the mesenteric fat rather than a peritoneal membrane."
+    }
+  },
+  {
+    "index": 100,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Median Arcuate Ligament Syndrome",
+    "topic_id": "median_arcuate_ligament_syndrome",
+    "fields": {
+      "Synonyms": "MALS, Dunbar syndrome, celiac artery compression syndrome",
+      "Clinical": "Pain after meals, weight loss, and sometimes an epigastric bruit in a young adult. The pain is chronic rather than an acute abdominal emergency.",
+      "Radiologic": "Sagittal CT angiography shows a hooked narrowing of the celiac origin. The narrowing is worse on expiration and improves on inspiration. The artery may dilate just beyond the hook.",
+      "Pathology": "The median arcuate ligament compresses the celiac artery. Fibrosis around the celiac ganglion may be present. There is no vasculitis.",
+      "Inclusion": "Extrinsic compression of the celiac artery. Chronic mesenteric ischemia is a separate topic and occludes the mesenteric arteries from atherosclerosis."
+    }
+  },
+  {
+    "index": 101,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Chronic Mesenteric Ischemia",
+    "topic_id": "chronic_mesenteric_ischemia",
+    "fields": {
+      "Synonyms": "Intestinal angina, chronic mesenteric arterial insufficiency",
+      "Clinical": "Pain 30 to 60 minutes after meals, fear of eating, and weight loss in an older person with atherosclerotic disease.",
+      "Radiologic": "CT or catheter angiography shows high-grade stenosis or occlusion of at least two of the celiac, superior mesenteric, and inferior mesenteric arteries. Enlarged collaterals, including the arc of Riolan and the marginal artery, bridge the occlusions.",
+      "Pathology": "Atherosclerotic narrowing at the origins of the mesenteric arteries. The bowel is intact between attacks.",
+      "Inclusion": "Chronic arterial insufficiency of the gut. Acute mesenteric ischemia is already listed and infarcts the bowel. Median arcuate ligament syndrome is a separate topic."
+    }
+  },
+  {
+    "index": 102,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Portal Vein Thrombosis and Pylephlebitis",
+    "topic_id": "portal_vein_thrombosis_pylephlebitis",
+    "fields": {
+      "Synonyms": "Portal vein thrombosis, pylephlebitis, septic thrombophlebitis of the portal vein, acute portomesenteric venous thrombosis",
+      "Clinical": "Abdominal pain. Pylephlebitis adds fever and a source such as appendicitis or diverticulitis. Chronic thrombosis presents with variceal bleeding when the liver is not cirrhotic.",
+      "Radiologic": "CT or Doppler ultrasound shows a filling defect in the portal vein. Pylephlebitis adds liver abscesses and, sometimes, gas in the portal vein. Cavernous transformation is the chronic form.",
+      "Pathology": "Thrombus in the portal vein. In pylephlebitis the thrombus contains neutrophils and bacteria.",
+      "Inclusion": "Thrombosis of the portal vein. Budd-Chiari syndrome is already listed and blocks the hepatic veins. Cirrhotic portal hypertension is already listed."
+    }
+  },
+  {
+    "index": 103,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Hepatic Sinusoidal Obstruction Syndrome",
+    "topic_id": "hepatic_sinusoidal_obstruction_syndrome",
+    "fields": {
+      "Synonyms": "Sinusoidal obstruction syndrome, hepatic veno-occlusive disease, SOS, VOD",
+      "Clinical": "Tender hepatomegaly, fluid weight gain, and jaundice in the weeks after hematopoietic-cell transplantation or after chemotherapy that injures sinusoids.",
+      "Radiologic": "Doppler ultrasound shows ascites, hepatomegaly, and slowed or reversed portal flow. The hepatic veins stay open. Contrast CT shows patchy liver enhancement.",
+      "Pathology": "Sinusoidal endothelial injury, sinusoidal congestion, and occlusion of central venules by fibrosis. The large hepatic veins are open.",
+      "Inclusion": "Sinusoidal and central-venule injury after transplantation or chemotherapy. Budd-Chiari syndrome is already listed and thromboses the hepatic veins. Pulmonary veno-occlusive disease is a different disease."
+    }
+  },
+  {
+    "index": 104,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Congestive Hepatopathy and Fontan-Associated Liver Disease",
+    "topic_id": "congestive_hepatopathy",
+    "fields": {
+      "Synonyms": "Nutmeg liver, cardiac cirrhosis, passive hepatic congestion, Fontan-associated liver disease, FALD",
+      "Clinical": "A person with right-heart failure or a Fontan circulation who develops hepatomegaly, ascites, or liver nodules years later.",
+      "Radiologic": "Delayed CT or MRI shows reticular enhancement of the liver periphery. The hepatic veins and the inferior vena cava are dilated. Fontan livers also form hypervascular nodules.",
+      "Pathology": "The cut surface is the nutmeg liver, with dark congested centers and pale periportal zones. Fibrosis bridges central veins. Cirrhosis comes late.",
+      "Inclusion": "Hepatic venous congestion. Budd-Chiari syndrome is already listed and is thrombotic outflow block. Decompensated cirrhosis from other causes is already listed."
+    }
+  },
+  {
+    "index": 105,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Groove Pancreatitis",
+    "topic_id": "groove_pancreatitis",
+    "fields": {
+      "Synonyms": "Paraduodenal pancreatitis, cystic dystrophy of the duodenum, pancreaticoduodenal groove pancreatitis",
+      "Clinical": "A middle-aged man who drinks alcohol, with pain, vomiting, and weight loss from duodenal narrowing.",
+      "Radiologic": "CT or MRI shows sheet-like tissue in the groove between the pancreatic head and the duodenum. The duodenal wall is thick and contains cysts. The bile duct may be smoothly narrowed.",
+      "Pathology": "Scarring and cysts in the duodenal wall and the pancreatic groove. Ectopic pancreatic tissue is often present. The rest of the pancreas may show ordinary chronic pancreatitis.",
+      "Inclusion": "A scar in the pancreaticoduodenal groove. Pancreatic ductal adenocarcinoma is already listed and is an infiltrative mass. Type 1 autoimmune pancreatitis is already inside IgG4-related disease."
+    }
+  },
+  {
+    "index": 106,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Peritoneal Mesothelioma",
+    "topic_id": "peritoneal_mesothelioma",
+    "fields": {
+      "Synonyms": "Malignant peritoneal mesothelioma, diffuse malignant peritoneal mesothelioma",
+      "Clinical": "Abdominal pain, distension from ascites, and weight loss. Asbestos exposure is common and is not required.",
+      "Radiologic": "CT shows ascites, omental and peritoneal masses, and mesenteric thickening. There is no ovarian or gastrointestinal primary. Calcified pleural plaques may be present.",
+      "Pathology": "Epithelioid, sarcomatoid, or biphasic mesothelioma. Calretinin, WT1, and cytokeratin 5/6 support the diagnosis. Loss of BAP1 supports it further.",
+      "Inclusion": "A primary peritoneal malignancy. Malignant pleural mesothelioma is already in Pulmonology. Pseudomyxoma peritonei is already listed and is mucinous."
+    }
+  },
+  {
+    "index": 107,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Cryptosporidiosis",
+    "topic_id": "cryptosporidiosis",
+    "fields": {
+      "Synonyms": "Cryptosporidium infection, Cryptosporidium parvum enteritis, Cryptosporidium hominis enteritis",
+      "Clinical": "Watery diarrhea. In an immunocompetent person it lasts days to weeks. In AIDS or after transplantation it is prolonged and severe.",
+      "Radiologic": "Imaging is nonspecific. The teaching images are the stool stain and the duodenal biopsy.",
+      "Pathology": "Acid-fast oocysts in the stool. On biopsy, round organisms sit on the surface of the small-bowel epithelium, and the villi are blunted.",
+      "Inclusion": "An acid-fast protozoan of the small-bowel surface. Giardiasis is a separate topic and shows pear-shaped trophozoites that are not acid-fast."
+    }
+  },
+  {
+    "index": 108,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Esophageal Coin Ingestion",
+    "topic_id": "esophageal_coin_ingestion",
+    "fields": {
+      "Synonyms": "Coin in the esophagus, ingested coin, esophageal foreign body from a coin",
+      "Clinical": "A toddler who drools, refuses food, or coughs after being seen with a coin. Many children have no symptoms.",
+      "Radiologic": "A frontal radiograph shows the coin as a round disc in the esophagus. On the lateral view the coin is seen on edge. A button battery instead shows a double ring or halo.",
+      "Pathology": "A retained coin presses on the mucosa. There is no caustic burn. Histology is not used to make the diagnosis.",
+      "Inclusion": "The common blunt esophageal foreign body. Button-battery ingestion is already listed and has the double-ring sign and a caustic burn."
+    }
+  },
+  {
+    "index": 109,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Multiple Magnet Ingestion",
+    "topic_id": "multiple_magnet_ingestion",
+    "fields": {
+      "Synonyms": "Ingested magnets, neodymium magnet ingestion, magnet foreign body of the bowel",
+      "Clinical": "A child who has swallowed more than one magnet. Pain and vomiting mean the magnets have pinched bowel between them.",
+      "Radiologic": "A radiograph shows two or more radiopaque disks stuck together, or a gap where bowel wall lies between them. Serial films show that the pair does not move.",
+      "Pathology": "Pressure necrosis and a fistula or perforation where the magnets have attracted across two loops.",
+      "Inclusion": "A small-bowel injury from magnets. Button-battery ingestion and esophageal coin ingestion are separate topics."
+    }
+  },
+  {
+    "index": 110,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Hepatic Epithelioid Hemangioendothelioma",
+    "topic_id": "hepatic_epithelioid_hemangioendothelioma",
+    "fields": {
+      "Synonyms": "Hepatic EHE, epithelioid hemangioendothelioma of the liver",
+      "Clinical": "A young adult with right-upper-quadrant pain or an incidental multifocal liver tumor. The course is often slow.",
+      "Radiologic": "CT or MRI shows multiple target lesions that coalesce under the capsule. The capsule retracts over the lesions. Enhancement is peripheral.",
+      "Pathology": "Epithelioid and dendritic cells in a myxoid or fibrous stroma, with intracytoplasmic vacuoles that mimic glands. The cells express vascular markers.",
+      "Inclusion": "A multifocal vascular liver tumor with capsular retraction. Hepatic hemangioma is a separate topic and fills in from the periphery. Cholangiocarcinoma is already listed."
+    }
+  },
+  {
+    "index": 111,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Isolated Polycystic Liver Disease",
+    "topic_id": "polycystic_liver_disease",
+    "fields": {
+      "Synonyms": "Autosomal dominant polycystic liver disease, PCLD, isolated polycystic liver",
+      "Clinical": "Abdominal distension and early satiety from a liver replaced by cysts. Kidney function is normal. Some patients need fenestration or transplantation.",
+      "Radiologic": "CT or MRI shows innumerable cysts throughout the liver. The kidneys do not contain the cysts of autosomal dominant polycystic kidney disease.",
+      "Pathology": "The cysts are lined by biliary epithelium and do not communicate with the ducts.",
+      "Inclusion": "A polycystic liver without polycystic kidneys. Autosomal dominant polycystic kidney disease is already in Nephrology and often includes liver cysts as part of that disease."
+    }
+  },
+  {
+    "index": 112,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Xanthogranulomatous Cholecystitis",
+    "topic_id": "xanthogranulomatous_cholecystitis",
+    "fields": {
+      "Synonyms": "Xanthogranulomatous cholecystitis, fibroxanthogranulomatous cholecystitis",
+      "Clinical": "A long bout of right-upper-quadrant pain, fever, and a mass that feels like gallbladder carcinoma.",
+      "Radiologic": "CT shows marked gallbladder-wall thickening, intramural hypoattenuating nodules, and stones. The nodules may extend into the liver.",
+      "Pathology": "Foamy macrophages, giant cells, and bile pigment in the wall. Malignant epithelium is absent.",
+      "Inclusion": "A carcinoma mimic of the gallbladder. Gallbladder carcinoma is already listed. Xanthogranulomatous pyelonephritis is a different disease in the kidney."
+    }
+  },
+  {
+    "index": 113,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Secondary Sclerosing Cholangitis of Critical Illness",
+    "topic_id": "secondary_sclerosing_cholangitis",
+    "fields": {
+      "Synonyms": "Sclerosing cholangitis in critically ill patients, SSC-CIP, ischemic cholangiopathy, secondary sclerosing cholangitis",
+      "Clinical": "Cholestasis that appears during a long intensive-care stay, often after shock, burns, or severe trauma. Jaundice rises as the patient otherwise recovers.",
+      "Radiologic": "Cholangiography shows casts filling the intrahepatic ducts, multifocal strictures, and ducts that no longer fill. The extrahepatic duct is relatively spared at first.",
+      "Pathology": "Biliary casts and injury of the biliary epithelium. The onionskin periductal fibrosis of primary sclerosing cholangitis is absent early.",
+      "Inclusion": "Ischemic injury of the bile ducts in critical illness. Primary sclerosing cholangitis and AIDS cholangiopathy are already listed."
+    }
+  },
+  {
+    "index": 114,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Biliary Mucinous Cystic Neoplasm",
+    "topic_id": "biliary_mucinous_cystic_neoplasm",
+    "fields": {
+      "Synonyms": "Hepatobiliary mucinous cystic neoplasm, biliary cystadenoma, mucinous cystic neoplasm of the liver",
+      "Clinical": "A middle-aged woman with a large liver cyst, pain, or a palpable mass.",
+      "Radiologic": "CT or MRI shows a multiloculated cyst in the liver, with septa and sometimes mural nodules. It does not connect to the bile ducts.",
+      "Pathology": "Mucinous epithelium and ovarian-type stroma, the same pair that defines pancreatic mucinous cystic neoplasm.",
+      "Inclusion": "A mucinous cyst of the liver. Isolated polycystic liver disease is a separate topic. Cystic echinococcosis is already in Infectious Diseases."
+    }
+  },
+  {
+    "index": 115,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Dubin-Johnson Syndrome",
+    "topic_id": "dubin_johnson_syndrome",
+    "fields": {
+      "Synonyms": "Dubin-Johnson syndrome, chronic idiopathic jaundice, ABCC2 deficiency",
+      "Clinical": "Mild conjugated hyperbilirubinemia and intermittent jaundice that starts in adolescence. Pruritus and liver failure are absent.",
+      "Radiologic": "The liver is not scarred on imaging. Cholescintigraphy shows delayed or absent excretion into the bile.",
+      "Pathology": "The liver is grossly black or dark green. Coarse brown pigment sits in centrilobular hepatocytes.",
+      "Inclusion": "Conjugated hyperbilirubinemia with a black liver. The gross pigment is how the syndrome is recognized."
+    }
+  },
+  {
+    "index": 116,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Undifferentiated Embryonal Sarcoma of the Liver",
+    "topic_id": "undifferentiated_embryonal_sarcoma",
+    "fields": {
+      "Synonyms": "Undifferentiated embryonal sarcoma, embryonal sarcoma of the liver, malignant mesenchymoma of the liver",
+      "Clinical": "A school-age child with a rapidly enlarging liver mass, pain, and fever.",
+      "Radiologic": "CT shows a large cystic-appearing mass with solid nodules. Ultrasound shows that the lesion is predominantly solid. The discrepancy between the two studies is characteristic.",
+      "Pathology": "Spindle and stellate cells in a myxoid stroma, with PAS-positive diastase-resistant globules. Epithelial differentiation is absent.",
+      "Inclusion": "A cystic-looking pediatric liver sarcoma. Hepatoblastoma is already in Pediatrics. Mesenchymal hamartoma is a separate benign cystic mass of infants."
+    }
+  },
+  {
+    "index": 117,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Mesenchymal Hamartoma of the Liver",
+    "topic_id": "mesenchymal_hamartoma_of_the_liver",
+    "fields": {
+      "Synonyms": "Mesenchymal hamartoma, hepatic mesenchymal hamartoma",
+      "Clinical": "An infant with a large, painless abdominal mass. Fluid can make the mass grow quickly.",
+      "Radiologic": "Ultrasound and CT show a multicystic liver mass with thin septa. Solid stromal areas are present. Calcification is uncommon.",
+      "Pathology": "Disorganized bile ducts, vessels, and loose mesenchyme around cysts. The cysts contain serous or gelatinous fluid.",
+      "Inclusion": "A benign cystic liver mass of infants. Undifferentiated embryonal sarcoma is the malignant mass of older children. Cystic echinococcosis is already listed."
+    }
+  },
+  {
+    "index": 118,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Spigelian and Obturator Hernia",
+    "topic_id": "spigelian_obturator_hernia",
+    "fields": {
+      "Synonyms": "Spigelian hernia, lateral ventral hernia, obturator hernia, hernia through the obturator canal",
+      "Clinical": "A Spigelian hernia is a tender mass along the semilunar line, often below the umbilicus. An obturator hernia presents in a thin older woman with obstruction and pain down the medial thigh, the Howship-Romberg sign.",
+      "Radiologic": "CT shows bowel leaving through a defect at the semilunar line, or bowel between the pectineus and obturator externus muscles. The obturator hernia compresses the obturator nerve.",
+      "Pathology": "A peritoneal sac through the Spigelian fascia or the obturator canal. Strangulated bowel is ischemic.",
+      "Inclusion": "Two uncommon hernias with disease-specific CT sites. Inguinal, femoral, and ventral hernias are already listed."
+    }
+  },
+  {
+    "index": 119,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Esophageal Intramural Pseudodiverticulosis",
+    "topic_id": "esophageal_intramural_pseudodiverticulosis",
+    "fields": {
+      "Synonyms": "Esophageal intramural pseudodiverticulosis, intramural esophageal diverticulosis",
+      "Clinical": "Intermittent dysphagia in an older adult. A stricture is often present. Candida may be found and does not explain the outpouchings.",
+      "Radiologic": "A barium esophagram shows many tiny flask-shaped outpouchings in the esophageal wall. A stricture, often in the upper or mid-esophagus, may accompany them.",
+      "Pathology": "Dilated excretory ducts of the submucosal esophageal glands. The flasks are not true diverticula through the muscle.",
+      "Inclusion": "A barium pattern of intramural flasks. Esophageal candidiasis is already listed and shows mucosal plaques. Zenker diverticulum is already listed and is a pharyngeal pouch."
+    }
+  },
+  {
+    "index": 120,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Emphysematous Gastritis",
+    "topic_id": "emphysematous_gastritis",
+    "fields": {
+      "Synonyms": "Gastric wall emphysema from infection, infectious gastritis with intramural gas",
+      "Clinical": "A toxic patient with severe abdominal pain and vomiting. The vomit may contain blood or sloughed mucosa. Diabetes and corrosive ingestion are settings.",
+      "Radiologic": "CT shows gas within a thick stomach wall. Portal venous gas may be present. The patient is ill, which separates this from benign gastric emphysema.",
+      "Pathology": "Necrosis of the stomach wall with gas-forming bacteria. The mucosa sloughs.",
+      "Inclusion": "Infectious gas in the stomach wall. Emphysematous cholecystitis is a separate topic and involves the gallbladder."
+    }
+  },
+  {
+    "index": 121,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Cholesterolosis of the Gallbladder",
+    "topic_id": "gallbladder_cholesterolosis",
+    "fields": {
+      "Synonyms": "Strawberry gallbladder, cholesterolosis, cholesterol polyposis of the gallbladder",
+      "Clinical": "Usually found in a gallbladder removed for stones. There are no specific symptoms.",
+      "Radiologic": "Ultrasound may show cholesterol polyps as small nonshadowing spots fixed to the wall. The gross specimen is the teaching image.",
+      "Pathology": "The mucosa is red with yellow flecks of lipid, the strawberry gallbladder. Foamy macrophages fill the lamina propria.",
+      "Inclusion": "A gross pathology diagnosis of the gallbladder mucosa. Gallstones and gallbladder carcinoma are already listed."
+    }
+  },
+  {
+    "index": 122,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Intestinal Duplication Cyst",
+    "topic_id": "intestinal_duplication_cyst",
+    "fields": {
+      "Synonyms": "Enteric duplication cyst, ileal duplication, gastrointestinal duplication",
+      "Clinical": "A child with a mass, obstruction, or bleeding. Gastric mucosa inside the cyst can ulcerate the adjacent bowel.",
+      "Radiologic": "Ultrasound shows a cyst with the gut signature: an inner hyperechoic mucosa and an outer hypoechoic muscle layer. The cyst wall may peristalse.",
+      "Pathology": "A cyst that shares a wall or a blood supply with the bowel. The lining is gastrointestinal epithelium, and a smooth-muscle layer is present.",
+      "Inclusion": "A congenital cyst with the gut-signature wall. Meckel diverticulum is already listed and is an outpouching of the ileum, not a closed cyst."
+    }
+  },
+  {
+    "index": 123,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Hookworm Infection",
+    "topic_id": "hookworm_infection",
+    "fields": {
+      "Synonyms": "Ancylostoma duodenale infection, Necator americanus infection, intestinal hookworm",
+      "Clinical": "Iron-deficiency anemia, fatigue, and abdominal discomfort after exposure to contaminated soil. A heavy infection causes edema from protein loss.",
+      "Radiologic": "Endoscopy shows small worms attached to the duodenal or jejunal mucosa, with blood at the attachment sites.",
+      "Pathology": "The stool contains thin-shelled hookworm eggs. The adult worm attaches by a buccal capsule.",
+      "Inclusion": "A blood-feeding worm seen on endoscopy. Ascariasis and strongyloidiasis are already in Infectious Diseases and look different. Cutaneous larva migrans is the skin track of animal hookworm and is a different disease."
+    }
+  },
+  {
+    "index": 124,
+    "section": "Gastroenterology specialty",
+    "tier": "Next",
+    "name": "Yersinia Enterocolitica Ileitis",
+    "topic_id": "yersinia_enterocolitica_ileitis",
+    "fields": {
+      "Synonyms": "Yersinia ileitis, Yersinia enterocolitis, Yersinia mesenteric adenitis",
+      "Clinical": "Hemorrhagic bullae, necrosis, and scars exactly at mosquito-bite sites",
+      "Radiologic": "Ultrasound or CT shows thickening of the terminal ileum and enlarged mesenteric nodes. The appendix may be normal.",
+      "Pathology": "Lymphoid hyperplasia and ulceration of the terminal ileum. Stool culture or PCR identifies Yersinia enterocolitica. The chronic fissuring ulcers of Crohn disease are absent.",
+      "Inclusion": "An infectious terminal ileitis. Crohn disease and acute appendicitis are already listed. Plague is Yersinia pestis and is a different disease."
+    }
+  },
+  {
+    "index": 125,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Upper-tract urothelial carcinoma",
+    "topic_id": "upper_tract_urothelial_carcinoma",
+    "fields": {}
+  },
+  {
+    "index": 126,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Renal trauma",
+    "topic_id": "renal_trauma",
+    "fields": {}
+  },
+  {
+    "index": 127,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Bladder rupture",
+    "topic_id": "bladder_rupture",
+    "fields": {}
+  },
+  {
+    "index": 128,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Traumatic urethral injury",
+    "topic_id": "urethral_trauma",
+    "fields": {}
+  },
+  {
+    "index": 129,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Bladder calculus",
+    "topic_id": "bladder_calculus",
+    "fields": {}
+  },
+  {
+    "index": 130,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Ureterocele",
+    "topic_id": "ureterocele",
+    "fields": {}
+  },
+  {
+    "index": 131,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Ectopic ureter",
+    "topic_id": "ectopic_ureter",
+    "fields": {}
+  },
+  {
+    "index": 132,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Anterior urethral valves",
+    "topic_id": "anterior_urethral_valves",
+    "fields": {}
+  },
+  {
+    "index": 133,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Testicular epidermoid cyst",
+    "topic_id": "testicular_epidermoid_cyst",
+    "fields": {}
+  },
+  {
+    "index": 134,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Prostatic abscess",
+    "topic_id": "prostatic_abscess",
+    "fields": {}
+  },
+  {
+    "index": 135,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Zinner syndrome",
+    "topic_id": "zinner_syndrome",
+    "fields": {}
+  },
+  {
+    "index": 136,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Concealed (buried) penis",
+    "topic_id": "concealed_penis",
+    "fields": {}
+  },
+  {
+    "index": 137,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Penile hair-tourniquet syndrome",
+    "topic_id": "penile_hair_tourniquet",
+    "fields": {}
+  },
+  {
+    "index": 138,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Acute idiopathic scrotal edema",
+    "topic_id": "acute_idiopathic_scrotal_edema",
+    "fields": {}
+  },
+  {
+    "index": 139,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Retrocaval ureter",
+    "topic_id": "retrocaval_ureter",
+    "fields": {}
+  },
+  {
+    "index": 140,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Encrusted cystitis and pyelitis",
+    "topic_id": "encrusted_cystitis",
+    "fields": {}
+  },
+  {
+    "index": 141,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Ketamine cystitis",
+    "topic_id": "ketamine_cystitis",
+    "fields": {}
+  },
+  {
+    "index": 142,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Cowper syringocele",
+    "topic_id": "cowper_syringocele",
+    "fields": {}
+  },
+  {
+    "index": 143,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Congenital bladder diverticulum (Hutch)",
+    "topic_id": "congenital_bladder_diverticulum",
+    "fields": {}
+  },
+  {
+    "index": 144,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Megacystis-megaureter syndrome",
+    "topic_id": "megacystis_megaureter_syndrome",
+    "fields": {}
+  },
+  {
+    "index": 145,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Persistent M\u00fcllerian duct syndrome",
+    "topic_id": "persistent_mullerian_duct_syndrome",
+    "fields": {}
+  },
+  {
+    "index": 146,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Penile Mondor disease",
+    "topic_id": "penile_mondor_disease",
+    "fields": {}
+  },
+  {
+    "index": 147,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Nonvenereal sclerosing lymphangitis",
+    "topic_id": "penile_sclerosing_lymphangitis",
+    "fields": {}
+  },
+  {
+    "index": 148,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Sclerosing lipogranuloma (penile paraffinoma)",
+    "topic_id": "penile_paraffinoma",
+    "fields": {}
+  },
+  {
+    "index": 149,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Median raphe cyst",
+    "topic_id": "median_raphe_cyst",
+    "fields": {}
+  },
+  {
+    "index": 150,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Leydig cell tumor",
+    "topic_id": "leydig_cell_tumor",
+    "fields": {}
+  },
+  {
+    "index": 151,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Segmental testicular infarction",
+    "topic_id": "segmental_testicular_infarction",
+    "fields": {}
+  },
+  {
+    "index": 152,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Webbed penis",
+    "topic_id": "webbed_penis",
+    "fields": {}
+  },
+  {
+    "index": 153,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Penoscrotal transposition",
+    "topic_id": "penoscrotal_transposition",
+    "fields": {}
+  },
+  {
+    "index": 154,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Congenital penile curvature",
+    "topic_id": "congenital_penile_curvature",
+    "fields": {}
+  },
+  {
+    "index": 155,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Neonatal paraurethral (Skene) cyst",
+    "topic_id": "paraurethral_cyst",
+    "fields": {}
+  },
+  {
+    "index": 156,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Congenital megalourethra",
+    "topic_id": "congenital_megalourethra",
+    "fields": {}
+  },
+  {
+    "index": 157,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Urethral duplication",
+    "topic_id": "urethral_duplication",
+    "fields": {}
+  },
+  {
+    "index": 158,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Pelvic lipomatosis",
+    "topic_id": "pelvic_lipomatosis",
+    "fields": {}
+  },
+  {
+    "index": 159,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Pyeloureteritis cystica",
+    "topic_id": "pyeloureteritis_cystica",
+    "fields": {}
+  },
+  {
+    "index": 160,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Urachal cyst",
+    "topic_id": "urachal_cyst",
+    "fields": {}
+  },
+  {
+    "index": 161,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Congenital renal arteriovenous malformation",
+    "topic_id": "congenital_renal_arteriovenous_malformation",
+    "fields": {}
+  },
+  {
+    "index": 162,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Idiopathic scrotal fat necrosis",
+    "topic_id": "idiopathic_scrotal_fat_necrosis",
+    "fields": {}
+  },
+  {
+    "index": 163,
+    "section": "Urology specialty",
+    "tier": "Next",
+    "name": "Fibrous pseudotumor of the tunica vaginalis",
+    "topic_id": "fibrous_pseudotumor_of_tunica",
+    "fields": {}
+  },
+  {
+    "index": 164,
+    "section": "Pulmonology specialty",
+    "tier": "Next",
+    "name": "Webs, bands, mosaic perfusion, and a mismatched ventilation-perfusion scan. Acute pulmonary embolism is already listed.",
+    "topic_id": "chronic_thromboembolic_pulmonary_hypertension",
+    "fields": {
+      "Synonyms": "CTEPH, chronic thromboembolic disease",
+      "Clinical": "Dyspnea and signs of right-heart failure months or years after pulmonary emboli. Some patients have no known acute embolus. A loud pulmonary component of the second heart sound and edema are late findings.",
+      "Radiologic": "The ventilation-perfusion scan shows mismatched segmental defects. CT and pulmonary angiography show webs, bands, pouch defects, and abrupt cutoffs. The right ventricle is hypertrophied. The surgical specimen is a cast of organized thrombus.",
+      "Pathology": "Organized thrombus is incorporated into the pulmonary artery wall, with recanalized channels and fibrous webs. At thromboendarterectomy the material peels away as a recognizable cast.",
+      "Inclusion": "A treatable pulmonary hypertension with webs and a surgical cast. Acute pulmonary embolism is already in Pulmonology and is the fresh clot, not the organized web."
+    }
+  }
+]

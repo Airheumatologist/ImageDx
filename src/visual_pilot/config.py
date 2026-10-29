@@ -1,6 +1,6 @@
 """Configuration for the Visual Findings Library pilot.
 
-OpenRouter provider settings are read from the environment;
+OpenCode Go and OpenRouter settings are read from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
 are read here with their defaults.
 
@@ -39,28 +39,40 @@ def _env_float(name: str, default: float) -> float:
 
 
 # -----------------------------------------------------------------------------
-# Provider settings: OpenRouter runs all LLM stages (P2-P6) through its
-# OpenAI-compatible chat completions endpoint.
+# Provider settings: OpenCode Go for text; OpenRouter GLM for vision.
+# Xiaomi settings remain available for explicitly selected legacy models.
 # Article discovery uses the public Europe PMC REST API (no key).
 # -----------------------------------------------------------------------------
+MIMO_API_KEY = os.getenv("MIMO_API_KEY")
+MIMO_BASE_URL = os.getenv("MIMO_BASE_URL", "https://token-plan-sgp.xiaomimimo.com/v1")
+# Select OpenCode per stage with opencode-go/<model-id>.
+OPENCODE_GO_API_KEY = os.getenv("OPENCODE_GO_API_KEY") or os.getenv("OPENCODE_API_KEY")
+OPENCODE_GO_BASE_URL = os.getenv(
+    "OPENCODE_GO_BASE_URL", "https://opencode.ai/inference/go/openai/v1"
+)
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+# Hard allowlist requested for this pipeline. Never fall back outside it.
+OPENROUTER_PROVIDERS = ("open-inference",)
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on qwen/qwen3.7-flash: multimodal (text + image), so it
-# also serves the P3 vision judge, with JSON mode and reasoning effort.
+# Iceman handles text stages (including describe and mimic audit). Only
+# the P3 judge sends image bytes, through OpenRouter's OpenInference route.
 # -----------------------------------------------------------------------------
-DEFAULT_MODEL = "qwen/qwen3.7-flash"
+DEFAULT_MODEL = "opencode-go/iceman-contributor-free"
+DEFAULT_VISION_MODEL = "z-ai/glm-5.3-flash"
 VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", DEFAULT_MODEL)
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", DEFAULT_MODEL)
-VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", DEFAULT_MODEL)
+VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", DEFAULT_VISION_MODEL)
 VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
-VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 32))
+# Existing exported site is a separate source of known published images.
+VP_PUBLISHED_SITE_DIR = Path(os.getenv("VP_PUBLISHED_SITE_DIR", str(REPO_ROOT / "site")))
+VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 64))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
 # Wall-clock cap on one LLM request. The timeouts above are per read, which
 # provider keep-alive bytes reset forever on a stalled request.
@@ -68,10 +80,9 @@ VP_LLM_MAX_REQUEST_SECONDS = max(1, _env_int("VP_LLM_MAX_REQUEST_SECONDS", 600))
 # Figures per P2 caption-triage batch. Smaller batches finish sooner (each
 # figure adds reasoning output) and spread across the VP_CONCURRENCY slots.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 20))
-# Per-stage reasoning effort (off/low/medium/high), sent as OpenRouter's
-# ``reasoning`` request field; off disables thinking. Unset
-# falls back to LLM_REASONING_EFFORT; empty means the model default. A set
-# effort is part of the llm_calls cache key.
+# Per-stage reasoning: Iceman uses its default reasoning; OpenRouter accepts
+# low/medium/high or off. Legacy Xiaomi treats off as disabled and any other
+# set value as enabled. Set values are part of the llm_calls cache key.
 VP_TRIAGE_REASONING_EFFORT = os.getenv("VP_TRIAGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
 VP_JUDGE_REASONING_EFFORT = os.getenv("VP_JUDGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
 VP_DESCRIBE_REASONING_EFFORT = os.getenv("VP_DESCRIBE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
@@ -162,11 +173,11 @@ VP_EPMC_RPS = max(0.1, _env_float("VP_EPMC_RPS", 8.0))
 # Europe PMC outages (each failed search is retried once at the pass end).
 VP_SEARCH_RETRY_COOLDOWN = max(0, _env_int("VP_SEARCH_RETRY_COOLDOWN", 60))
 # Max in-flight P3 vision-judge calls (W6).
-VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 32))
+VP_JUDGE_CONCURRENCY = max(1, _env_int("VP_JUDGE_CONCURRENCY", 64))
 # Process-wide cap on in-flight LLM requests across every client and stage
 # (run-all overlaps triage with judge/describe). 429s back off and retry
 # (VP_RATE_LIMIT_RETRIES); lower this if the timings report shows many.
-VP_LLM_MAX_IN_FLIGHT = max(1, _env_int("VP_LLM_MAX_IN_FLIGHT", 64))
+VP_LLM_MAX_IN_FLIGHT = max(1, _env_int("VP_LLM_MAX_IN_FLIGHT", 128))
 # Output-token cap per LLM request (reasoning included; 0 = provider default).
 # Valid replies stay under ~8k; the cap turns a rare runaway generation into a
 # quick repair retry instead of minutes of output.
@@ -194,10 +205,16 @@ VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 # "cached_in" a cache hit (defaults to "in"), "out" is output. Override or
 # extend at runtime with
 # VP_MODEL_PRICES_JSON='{"model": {"in": x, "cached_in": y, "out": z}}'.
-# Used only when a reply carries no ``usage.cost`` (OpenRouter reports one).
+# Used only when a reply carries no ``usage.cost``. The Token Plan is a
+# prepaid quota, so these calls are not billed per token.
 MODEL_PRICES = {
-    # OpenRouter list price for prompts under 32k tokens (higher tiers above).
-    "qwen/qwen3.7-flash": {"in": 0.03, "cached_in": 0.006, "out": 0.13},
+    # Conservative fallback for the allowed routes; reported usage.cost wins.
+    "z-ai/glm-5.3-flash": {"in": 0.0363, "cached_in": 0.033, "out": 0.133},
+    "openrouter/z-ai/glm-5.3-flash": {"in": 0.0363, "cached_in": 0.033, "out": 0.133},
+    "opencode-go/iceman-contributor-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
+    "mimo-v2.6-flash": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
+    # Same model, OpenRouter id kept so an old env value still prices at zero.
+    "xiaomi/mimo-v2.6-flash": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
 }
 
 

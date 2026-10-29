@@ -19,6 +19,7 @@ from . import config, curation, db, diseases
 
 def audit(conn, disease: str | None = None) -> dict:
     articles = {r['pmcid']: dict(r) for r in conn.execute('SELECT * FROM articles')}
+    db.attach_source_metadata(conn, articles)
     figures = {r['figure_id']: dict(r) for r in conn.execute('SELECT * FROM figures')}
     allowed: dict[str, set[str]] = {}
     for finding in conn.execute('SELECT finding_key, disease_keys_json FROM findings_vocab WHERE approved=1'):

@@ -1,0 +1,1289 @@
+[
+  {
+    "uid": "D1050",
+    "section": "Immunology",
+    "proposed_id": "autoimmune_lymphoproliferative_syndrome_alps",
+    "canonical_name": "Autoimmune lymphoproliferative syndrome (ALPS)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Generalized cervical/axillary lymphadenopathy with splenomegaly on examination or ultrasound/CT.",
+    "rationale": "Distinct immune dysregulation syndrome with conspicuous lymphoproliferation, though imaging is not syndrome-specific.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1052",
+    "section": "Immunology",
+    "proposed_id": "adenosine_deaminase_deficiency_ada_scid",
+    "canonical_name": "Adenosine deaminase deficiency (ADA-SCID)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Chest radiograph may show absent thymic shadow; characteristic costochondral flaring/cupping (“scorbutic”/rachitic-like) is supportive but not universal.",
+    "rationale": "Distinctive ADA deficiency can have skeletal manifestations; avoid claiming the radiograph alone separates all SCID forms.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1483/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1054",
+    "section": "Immunology",
+    "proposed_id": "foxn1_deficiency_nude_scid",
+    "canonical_name": "FOXN1 deficiency (nude SCID)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Congenital alopecia with eyebrow/lash loss and nail dystrophy on clinical photographs; absent thymic shadow on infant radiograph.",
+    "rationale": "Characteristic visible ectodermal phenotype distinguishes FOXN1 deficiency among SCID causes.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1056",
+    "section": "Immunology",
+    "proposed_id": "mhc_class_i_deficiency_tap1_tap2",
+    "canonical_name": "MHC class I deficiency (TAP1/TAP2)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Chronic necrotizing skin ulcers and nasal cartilage destruction; bronchiectasis may be seen on chest CT.",
+    "rationale": "Distinct visible granulomatous phenotype of MHC-I deficiency (bare lymphocyte syndrome type I).",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1058",
+    "section": "Immunology",
+    "proposed_id": "whim_syndrome",
+    "canonical_name": "WHIM syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Extensive recalcitrant cutaneous warts; bone marrow smear shows hypermature neutrophils with nuclear hypersegmentation/filamentous chromatin.",
+    "rationale": "The combination is highly teachable, but marrow morphology is needed to anchor myelokathexis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1060",
+    "section": "Immunology",
+    "proposed_id": "card9_deficiency",
+    "canonical_name": "CARD9 deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Deep dermatophytosis with plaques/nodules or draining abscesses; MRI can show Candida brain abscess.",
+    "rationale": "Distinct fungal susceptibility with dermatologic and radiologic images.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1062",
+    "section": "Immunology",
+    "proposed_id": "severe_congenital_neutropenia_kostmann",
+    "canonical_name": "Severe congenital neutropenia (Kostmann)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Oral ulcers/periodontitis and marrow promyelocyte maturation arrest.",
+    "rationale": "Recognizable clinical photo and confirmatory marrow image; separate congenital neutropenia entity.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1064",
+    "section": "Immunology",
+    "proposed_id": "isolated_congenital_asplenia",
+    "canonical_name": "Isolated congenital asplenia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Howell–Jolly bodies on peripheral smear; ultrasound/CT confirms absent spleen with situs solitus.",
+    "rationale": "Distinct morphologic blood-film and anatomic imaging anchor for congenital absence of spleen.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1066",
+    "section": "Immunology",
+    "proposed_id": "il_10_and_il_10_receptor_deficiency",
+    "canonical_name": "IL-10 and IL-10-receptor deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infantile perianal fistulas/abscesses and deep colonic ulcers on endoscopy.",
+    "rationale": "Visually distinctive early-onset enterocolitis/skin disease linked to IL-10 pathway defects.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1068",
+    "section": "Immunology",
+    "proposed_id": "chronic_inducible_urticaria",
+    "canonical_name": "Chronic inducible urticaria",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Provocation images: linear wheal after stroking, wheal after cold/heat/pressure/light/water exposure, or pinpoint post-exercise wheals.",
+    "rationale": "Broaden the existing urticaria topic to include chronic inducible subtypes, trigger-specific wheals, and standardized provocation tests; keep those as subsections within the existing disease page.",
+    "existing_parent_ids": [
+      "urticaria"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC13466004/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1070",
+    "section": "Immunology",
+    "proposed_id": "plcg2_associated_disease_plaid_aplaid",
+    "canonical_name": "PLCG2-associated disease (PLAID / APLAID)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Evaporative-cold induced wheals; APLAID may show neonatal acral ulceration and granulomatous skin plaques.",
+    "rationale": "Visible and trigger-linked manifestations support a distinct inherited immune dysregulation topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/medgen/1658474"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1072",
+    "section": "Immunology",
+    "proposed_id": "spondyloenchondrodysplasia_with_immune_dysregulation_spencd",
+    "canonical_name": "Spondyloenchondrodysplasia with immune dysregulation (SPENCD)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Spine radiographs show platyspondyly/metaphyseal lesions; brain CT can show basal-ganglia calcification.",
+    "rationale": "Distinct skeletal-neurologic imaging syndrome and immune phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1074",
+    "section": "Immunology",
+    "proposed_id": "trichohepatoenteric_syndrome",
+    "canonical_name": "Trichohepatoenteric syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Brittle woolly hair with trichorrhexis nodosa on light microscopy, plus characteristic facial appearance.",
+    "rationale": "A strong clinical phenotype provides a visual anchor for this syndromic immunodeficiency.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1076",
+    "section": "Immunology",
+    "proposed_id": "vici_syndrome",
+    "canonical_name": "Vici syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Brain MRI shows corpus-callosum agenesis, colpocephaly, and pontine/cerebellar hypoplasia; hypopigmentation/cataracts clinically.",
+    "rationale": "Distinct syndromic neuroimaging plus visible phenotype supports a separate topic.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1081",
+    "section": "Nephrology",
+    "proposed_id": "emphysematous_pyelonephritis",
+    "canonical_name": "Emphysematous pyelonephritis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows gas in renal parenchyma/collecting system with possible perinephric extension.",
+    "rationale": "Life-threatening infection with a distinctive imaging emergency, separate from xanthogranulomatous pyelonephritis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10996964/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1084",
+    "section": "Nephrology",
+    "proposed_id": "renovascular_fibromuscular_dysplasia",
+    "canonical_name": "Renovascular fibromuscular dysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA or catheter angiogram shows multifocal mid/distal renal-artery beading.",
+    "rationale": "Distinct nonatherosclerotic renovascular disease versus ostial plaque stenosis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11731842/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1087",
+    "section": "Nephrology",
+    "proposed_id": "horseshoe_kidney",
+    "canonical_name": "Horseshoe kidney",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT/urography shows fused lower poles via midline isthmus, low position, and anteriorly rotated renal pelves.",
+    "rationale": "Common congenital fusion anomaly with recognizable cross-sectional anatomy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12028883/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1090",
+    "section": "Nephrology",
+    "proposed_id": "crossed_fused_renal_ectopia",
+    "canonical_name": "Crossed fused renal ectopia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Both renal moieties lie on one side; trace the crossed ureter to its normal contralateral bladder insertion on CT/urography.",
+    "rationale": "Distinct congenital positional anomaly; ureter tracking resolves a mass/missing-kidney mimic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12028883/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1093",
+    "section": "Nephrology",
+    "proposed_id": "renal_papillary_necrosis",
+    "canonical_name": "Renal papillary necrosis",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "CT urography in excretory phase shows contrast-filled papillary clefts (ball-on-tee/golf-ball-on-tee), ring signs, or sloughed papilla.",
+    "rationale": "Renal papillary necrosis is not a new standalone atlas topic under the existing catalog policy; expand the renal manifestations in the existing sickle-cell disease topic with a dedicated imaging sign only if the site supports focused manifestations.",
+    "existing_parent_ids": [
+      "sickle_cell_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8882435/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1096",
+    "section": "Nephrology",
+    "proposed_id": "acute_cortical_necrosis",
+    "canonical_name": "Acute cortical necrosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Contrast CT shows bilateral cortical hypoenhancement with preserved medullary enhancement (reverse-rim sign); chronic cortical calcification may follow.",
+    "rationale": "Distinct diffuse ischemic injury from renal infarction; correct anchor is reverse-rim, not cortical-rim sign.",
+    "existing_parent_ids": [
+      "renal_infarction"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6032469/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1099",
+    "section": "Nephrology",
+    "proposed_id": "page_kidney",
+    "canonical_name": "Page kidney",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Subcapsular hematoma compresses/flattenes renal parenchyma on CT or ultrasound, with new secondary hypertension.",
+    "rationale": "Imageable post-traumatic/iatrogenic compressive nephropathy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK482486/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1102",
+    "section": "Nephrology",
+    "proposed_id": "nutcracker_syndrome",
+    "canonical_name": "Nutcracker syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Doppler/CTA shows aortomesenteric compression of left renal vein with hilar/gonadal collaterals.",
+    "rationale": "Distinct symptomatic venous-compression syndrome; a close cross-specialty analogue but a separate vascular territory.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8569268/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1105",
+    "section": "Nephrology",
+    "proposed_id": "acquired_cystic_kidney_disease",
+    "canonical_name": "Acquired cystic kidney disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multiple bilateral renal cysts in small echogenic kidneys on ultrasound/CT in advanced CKD or dialysis.",
+    "rationale": "Acquired dialysis-associated cyst disease distinct from inherited enlarged-kidney ADPKD.",
+    "existing_parent_ids": [
+      "autosomal_dominant_polycystic_kidney_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6394734/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1108",
+    "section": "Nephrology",
+    "proposed_id": "hiv_associated_nephropathy",
+    "canonical_name": "HIV-associated nephropathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bilateral enlarged echogenic kidneys on ultrasound in advanced untreated HIV; microcystic tubular changes are biopsy based.",
+    "rationale": "Distinct HIV-associated renal phenotype, but nonspecific sonography limits image specificity.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4271038/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1111",
+    "section": "Nephrology",
+    "proposed_id": "renal_osteodystrophy_ckd_mineral_and_bone_disorder",
+    "canonical_name": "Renal osteodystrophy (CKD mineral and bone disorder)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Hand films may show subperiosteal phalangeal resorption; spine may show rugger-jersey endplates, with vascular/soft-tissue calcification.",
+    "rationale": "Clinically useful constellation of CKD bone/mineral disease, not a single pathognomonic sign.",
+    "existing_parent_ids": [
+      "primary_hyperparathyroidism_osteitis_fibrosa_cystica",
+      "tumoral_calcinosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10971621/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1114",
+    "section": "Nephrology",
+    "proposed_id": "encapsulating_peritoneal_sclerosis",
+    "canonical_name": "Encapsulating peritoneal sclerosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows tethered, clustered small bowel, peritoneal thickening/calcification, and obstruction (“abdominal cocoon”).",
+    "rationale": "This duplicates the separately proposed GI encapsulating peritoneal sclerosis topic. Keep as ADD here for central deduplication; the eventual one disease page should include long-term peritoneal dialysis as a cause/context.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5691857/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1117",
+    "section": "Nephrology",
+    "proposed_id": "hemodialysis_vascular_access_complications",
+    "canonical_name": "Hemodialysis vascular access complications",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Potential image set spans aneurysmal fistula, steal ischemia, central-vein stenosis, and access duplex findings.",
+    "rationale": "Umbrella title combines distinct complications and fails single-disease topic grain; defer or split into independently scoped vascular-access syndromes.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10772307/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1120",
+    "section": "Nephrology",
+    "proposed_id": "lithium_nephropathy",
+    "canonical_name": "Lithium nephropathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows innumerable tiny bilateral cortical and medullary T2-bright microcysts in chronic lithium exposure.",
+    "rationale": "Distinctive drug-associated imaging phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1123",
+    "section": "Nephrology",
+    "proposed_id": "distal_type_1_renal_tubular_acidosis",
+    "canonical_name": "Distal (type 1) renal tubular acidosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Medullary nephrocalcinosis on US/CT; pediatric rickets films may show metaphyseal cupping/fraying.",
+    "rationale": "A visual complication pattern can complement acid-base diagnosis; avoid conflation with medullary sponge kidney.",
+    "existing_parent_ids": [
+      "medullary_sponge_kidney"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1126",
+    "section": "Nephrology",
+    "proposed_id": "rhabdomyolysis_associated_acute_kidney_injury",
+    "canonical_name": "Rhabdomyolysis-associated acute kidney injury",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Clinical images of swollen muscle/dark urine and possible MRI muscle edema; urine dipstick blood without RBCs is not itself a visual disease anchor.",
+    "rationale": "Muscle edema is nonspecific and the defining diagnosis is laboratory based; current image anchor is weak for a standalone atlas page.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1129",
+    "section": "Nephrology",
+    "proposed_id": "acute_pyelonephritis_including_lobar_nephronia",
+    "canonical_name": "Acute pyelonephritis, including lobar nephronia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Contrast CT may show wedge-shaped hypoenhancement or a striated nephrogram; lobar nephronia appears mass-like.",
+    "rationale": "Acute pyelonephritis has a well-developed imaging pattern and is not an existing index topic; include lobar nephronia as a focal variant within the same page.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7824127/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1131",
+    "section": "Nephrology",
+    "proposed_id": "renal_and_perinephric_abscess",
+    "canonical_name": "Renal and perinephric abscess",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Round or wedge-shaped low-attenuation renal/perinephric collection with enhancing rim on contrast CT.",
+    "rationale": "Distinct suppurative focus with a clear drainage-relevant imaging finding.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC13010637/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1133",
+    "section": "Nephrology",
+    "proposed_id": "pyonephrosis",
+    "canonical_name": "Pyonephrosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Obstructed collecting system with mobile echogenic debris/fluid-debris level on ultrasound, with hydronephrosis.",
+    "rationale": "Urgent infected obstruction with characteristic sonographic debris and need for drainage.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7824127/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1135",
+    "section": "Nephrology",
+    "proposed_id": "reflux_nephropathy",
+    "canonical_name": "Reflux nephropathy",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "DMSA shows polar cortical scars; CT/urography shows clubbed calyces beneath scars.",
+    "rationale": "Existing vesicoureteral reflux topic covers the causal disease; represent reflux nephropathy as a manifestation/complication under that page.",
+    "existing_parent_ids": [
+      "vesicoureteral_reflux"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1137",
+    "section": "Nephrology",
+    "proposed_id": "nephronophthisis",
+    "canonical_name": "Nephronophthisis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small/normal echogenic kidneys with corticomedullary-junction cysts on ultrasound.",
+    "rationale": "Prototype inherited tubulointerstitial nephropathy with an imageable, if nonspecific, pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6394734/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1139",
+    "section": "Nephrology",
+    "proposed_id": "hnf1b_related_kidney_disease_rcad",
+    "canonical_name": "HNF1B-related kidney disease (RCAD)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Renal ultrasound shows cysts/dysplasia; abdominal imaging may show hypoplastic or absent pancreatic body/tail.",
+    "rationale": "Multisystem pattern is recognizable and distinct from isolated cystic kidney disease.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6394734/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1141",
+    "section": "Nephrology",
+    "proposed_id": "bartter_syndrome",
+    "canonical_name": "Bartter syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bilateral medullary nephrocalcinosis in a neonate with antenatal polyhydramnios.",
+    "rationale": "Nephrocalcinosis offers an image anchor for an otherwise biochemical tubulopathy; share imaging with differential, not as a unique sign.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1143",
+    "section": "Nephrology",
+    "proposed_id": "enteric_hyperoxaluria",
+    "canonical_name": "Enteric hyperoxaluria",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Renal calculi or medullary nephrocalcinosis on CT/US after malabsorption or bowel surgery.",
+    "rationale": "Distinct acquired hyperoxaluria context from primary hyperoxaluria; the stones alone are nonspecific.",
+    "existing_parent_ids": [
+      "primary_hyperoxaluria_type_1"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1145",
+    "section": "Nephrology",
+    "proposed_id": "renal_lymphoma",
+    "canonical_name": "Renal lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multiple bilateral homogeneous hypoenhancing renal masses, diffuse enlargement, or perirenal rind on CT/MRI.",
+    "rationale": "Distinct infiltrative renal malignancy pattern versus a typical solitary hypervascular RCC.",
+    "existing_parent_ids": [
+      "renal_cell_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1147",
+    "section": "Nephrology",
+    "proposed_id": "renal_medullary_carcinoma",
+    "canonical_name": "Renal medullary carcinoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infiltrative hypoenhancing central/medullary renal mass in a young patient, often with sickle cell trait and nodal disease.",
+    "rationale": "Distinct aggressive medullary tumor with high-value clinical context and imaging pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC13506601/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1149",
+    "section": "Nephrology",
+    "proposed_id": "mid_aortic_syndrome",
+    "canonical_name": "Mid-aortic syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA shows long smooth narrowing of abdominal aorta, often with renal-artery ostial stenoses.",
+    "rationale": "Distinct abdominal aortic/renal artery narrowing pattern. This duplicates a proposal from another specialty and is left ADD for central cross-specialty deduplication.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11731842/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1151",
+    "section": "Nephrology",
+    "proposed_id": "juxtaglomerular_cell_tumor_reninoma",
+    "canonical_name": "Juxtaglomerular cell tumor (reninoma)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small cortical renal mass on CT/MRI in a patient with severe renin-mediated hypertension and hypokalemia.",
+    "rationale": "Distinct but radiologically nonspecific; a single image alone cannot identify reninoma.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273813/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1153",
+    "section": "Nephrology",
+    "proposed_id": "dent_disease",
+    "canonical_name": "Dent disease",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Nephrocalcinosis/rickets can occur but are nonspecific; diagnosis relies on low-molecular-weight proteinuria and genetics.",
+    "rationale": "No disease-specific clinical/radiologic finding is offered, and existing primary hyperoxaluria/renal mineral topics cover the imaging phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6394734/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1532",
+    "section": "Otolaryngology",
+    "proposed_id": "congenital_cholesteatoma",
+    "canonical_name": "Congenital cholesteatoma",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "White pearly mass medial to an intact tympanic membrane; non-echo-planar diffusion restriction on MRI.",
+    "rationale": "Congenital cholesteatoma is a congenital form/site subtype of the existing cholesteatoma topic. Add a clearly labeled congenital subsection to avoid a duplicate page while retaining the pearl-like mass behind an intact tympanic membrane and diffusion-restriction findings.",
+    "existing_parent_ids": [
+      "cholesteatoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11306902/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1534",
+    "section": "Otolaryngology",
+    "proposed_id": "chronic_suppurative_otitis_media",
+    "canonical_name": "Chronic suppurative otitis media",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Central tympanic-membrane perforation with mucopurulent drainage and inflamed middle-ear mucosa on otoscopy.",
+    "rationale": "Chronic suppurative otitis media is already represented in the existing tympanic_membrane_perforation topic by chronic drainage. Expand that page with the central perforation, purulent otorrhea, and chronic infection findings.",
+    "existing_parent_ids": [
+      "tympanic_membrane_perforation"
+    ],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK554592/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1536",
+    "section": "Otolaryngology",
+    "proposed_id": "tympanosclerosis",
+    "canonical_name": "Tympanosclerosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Discrete chalk-white plaques in the tympanic membrane, often with reduced membrane mobility.",
+    "rationale": "A recognizable otoscopic finding separate from acute effusion or perforation.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1538",
+    "section": "Otolaryngology",
+    "proposed_id": "keratosis_obturans",
+    "canonical_name": "Keratosis obturans",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Dense keratin plug filling an expanded external canal, with severe otalgia and conductive hearing loss.",
+    "rationale": "Distinctive canal lesion, visually separate from focal canal cholesteatoma.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1540",
+    "section": "Otolaryngology",
+    "proposed_id": "external_auditory_canal_cholesteatoma",
+    "canonical_name": "External auditory canal cholesteatoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Focal canal-floor soft-tissue erosion with sequestrated bone on temporal-bone CT; keratin debris on otoscopy.",
+    "rationale": "Distinct from middle-ear cholesteatoma; the destructive canal location is the image anchor.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11306902/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1542",
+    "section": "Otolaryngology",
+    "proposed_id": "external_auditory_canal_osteoma",
+    "canonical_name": "External auditory canal osteoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Single dense pedunculated bony projection from the external auditory canal on otoscopy/CT.",
+    "rationale": "Separate from usually multiple broad-based cold-water exostoses.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11306902/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1544",
+    "section": "Otolaryngology",
+    "proposed_id": "preauricular_sinus",
+    "canonical_name": "Preauricular sinus",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small pit immediately anterior to the ascending helix; expressible discharge when infected.",
+    "rationale": "Classic external clinical appearance with congenital tract distinction.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK562176/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1546",
+    "section": "Otolaryngology",
+    "proposed_id": "superior_semicircular_canal_dehiscence",
+    "canonical_name": "Superior semicircular canal dehiscence",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Thin-section temporal-bone CT with canal-plane Pöschl and orthogonal Stenvers reformats showing absent bony roof.",
+    "rationale": "High-value third-window disorder with a distinct diagnostic CT plane; avoid CT-alone diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9249274/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1548",
+    "section": "Otolaryngology",
+    "proposed_id": "enlarged_vestibular_aqueduct",
+    "canonical_name": "Enlarged vestibular aqueduct",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Enlarged vestibular aqueduct on high-resolution temporal-bone CT, measured at midpoint; commonly bilateral.",
+    "rationale": "Distinct congenital inner-ear imaging abnormality; not equivalent to Pendred syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7963676/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1550",
+    "section": "Otolaryngology",
+    "proposed_id": "cholesterol_granuloma_of_the_petrous_apex",
+    "canonical_name": "Cholesterol granuloma of the petrous apex",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Petrous-apex lesion with high signal on both T1- and T2-weighted MRI and smooth expansion.",
+    "rationale": "Distinctive MRI signal pattern separates it from petrous-apex effusion and cholesteatoma.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11306902/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1552",
+    "section": "Otolaryngology",
+    "proposed_id": "petrous_apicitis_gradenigo_syndrome",
+    "canonical_name": "Petrous apicitis (Gradenigo syndrome)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Petrous-apex opacification/erosion on temporal-bone CT with adjacent apical inflammation; diplopia from CN VI palsy.",
+    "rationale": "Clinically important skull-base infection with an anatomic imaging correlate.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11306902/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1555",
+    "section": "Otolaryngology",
+    "proposed_id": "nasal_foreign_body_including_a_button_battery",
+    "canonical_name": "Nasal foreign body, including a button battery",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Unilateral nasal discharge with visible foreign body; button battery may produce septal ulceration/perforation.",
+    "rationale": "Common pediatric emergency and distinct from esophageal foreign body.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8223456/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1557",
+    "section": "Otolaryngology",
+    "proposed_id": "nasal_septal_hematoma",
+    "canonical_name": "Nasal septal hematoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Boggy, fluctuant bilateral septal swelling obstructing both nasal passages after trauma.",
+    "rationale": "A time-sensitive finding recognized by direct examination; distinct from septal abscess.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3324218/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1559",
+    "section": "Otolaryngology",
+    "proposed_id": "sinonasal_osteoma",
+    "canonical_name": "Sinonasal osteoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Well-defined ivory-density lesion attached to a frontal or ethmoid sinus wall on CT.",
+    "rationale": "Typical benign sinonasal bone tumor with a crisp CT anchor.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3362868/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1561",
+    "section": "Otolaryngology",
+    "proposed_id": "sinonasal_fungal_ball",
+    "canonical_name": "Sinonasal fungal ball",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Single opacified sinus containing central hyperattenuating/calcific material with reactive wall sclerosis on CT.",
+    "rationale": "Characteristic noninvasive fungal-ball pattern, distinct from allergic fungal disease and invasive fungal infection.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4926542/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1563",
+    "section": "Otolaryngology",
+    "proposed_id": "chronic_invasive_fungal_rhinosinusitis",
+    "canonical_name": "Chronic invasive fungal rhinosinusitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral infiltrative sinonasal soft tissue with bone destruction and extrasinus extension on CT/MRI.",
+    "rationale": "Distinct chronic invasive form, but overlap with acute invasive fungal disease warrants precise scope.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3729552/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1565",
+    "section": "Otolaryngology",
+    "proposed_id": "odontogenic_sinusitis",
+    "canonical_name": "Odontogenic sinusitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral maxillary sinus opacification contiguous with a diseased maxillary tooth or dental implant on CT.",
+    "rationale": "A useful imaging-defined source of unilateral sinus disease; separate from primary rhinosinusitis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1567",
+    "section": "Otolaryngology",
+    "proposed_id": "nasolabial_nasoalveolar_cyst",
+    "canonical_name": "Nasolabial (nasoalveolar) cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Smooth cystic swelling at the nasal ala/vestibule, typically below the piriform aperture on CT/MRI.",
+    "rationale": "Distinct extraosseous cyst with visible nasal-facial contour change.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1569",
+    "section": "Otolaryngology",
+    "proposed_id": "basal_intranasal_meningoencephalocele",
+    "canonical_name": "Basal (intranasal) meningoencephalocele",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Intranasal mass continuous with intracranial contents through a skull-base defect; CSF signal on MRI.",
+    "rationale": "Basal intranasal meningoencephalocele is an anatomic subtype of the existing encephalocele topic. Add the intranasal/skull-base presentation and CSF-signal MRI findings as a focused site section.",
+    "existing_parent_ids": [
+      "encephalocele"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12502930/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1571",
+    "section": "Otolaryngology",
+    "proposed_id": "congenital_dacryocystocele",
+    "canonical_name": "Congenital dacryocystocele",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Newborn with bluish medial-canthal swelling and contiguous intranasal cyst at the inferior meatus on endoscopy/imaging.",
+    "rationale": "Congenital dacryocystocele is covered by the existing dacryocystitis and nasolacrimal duct obstruction topic, which already includes lacrimal sac mucocele/NLDO. Add the newborn medial-canthal mass and intranasal cyst as a congenital subsection.",
+    "existing_parent_ids": [
+      "dacryocystitis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12502930/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1573",
+    "section": "Otolaryngology",
+    "proposed_id": "cocaine_induced_midline_destructive_lesion",
+    "canonical_name": "Cocaine-induced midline destructive lesion",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Midline septal, turbinate, and palatal ulceration with cartilage/bone destruction; palate perforation in advanced disease.",
+    "rationale": "Distinct destructive clinical pattern; retain as separate exposure-related mimic of GPA and malignancy.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1575",
+    "section": "Otolaryngology",
+    "proposed_id": "sinonasal_squamous_cell_carcinoma",
+    "canonical_name": "Sinonasal squamous cell carcinoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Irregular enhancing sinonasal mass with focal bone destruction and orbital/skull-base extension on CT/MRI.",
+    "rationale": "Common sinonasal primary malignancy not covered by listed pharyngeal/laryngeal carcinoma entities.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3362868/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1578",
+    "section": "Otolaryngology",
+    "proposed_id": "vocal_fold_nodules",
+    "canonical_name": "Vocal fold nodules",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bilateral symmetric callus-like lesions at the junction of anterior and middle thirds of true vocal folds on laryngoscopy.",
+    "rationale": "Classic symmetric phonotrauma lesion distinguishable from a unilateral polyp.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10283348/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1580",
+    "section": "Otolaryngology",
+    "proposed_id": "vocal_fold_polyp",
+    "canonical_name": "Vocal fold polyp",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral focal pedunculated or sessile lesion on the free edge of a true vocal fold.",
+    "rationale": "Distinct focal lesion from bilateral nodules or diffuse Reinke edema.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10908683/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1582",
+    "section": "Otolaryngology",
+    "proposed_id": "reinke_edema",
+    "canonical_name": "Reinke edema",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bilateral diffuse gelatinous/polypoid swelling of the true vocal folds on laryngoscopy.",
+    "rationale": "Distinct diffuse bilateral lesion with characteristic endoscopic appearance.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10283348/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1584",
+    "section": "Otolaryngology",
+    "proposed_id": "vocal_process_granuloma",
+    "canonical_name": "Vocal process granuloma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Posterior vocal-process granuloma at the arytenoid vocal process on laryngoscopy.",
+    "rationale": "Site-specific lesion separate from membranous-fold polyp or cyst.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1586",
+    "section": "Otolaryngology",
+    "proposed_id": "vocal_fold_cyst",
+    "canonical_name": "Vocal fold cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Smooth subepithelial vocal-fold cyst causing focal bulge and impaired mucosal wave on stroboscopy.",
+    "rationale": "Distinct subepithelial lesion with imageable endoscopic/stroboscopic finding.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1588",
+    "section": "Otolaryngology",
+    "proposed_id": "idiopathic_subglottic_stenosis",
+    "canonical_name": "Idiopathic subglottic stenosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Short circumferential fibrotic narrowing immediately below the glottis on endoscopy/CT.",
+    "rationale": "High-value fixed airway lesion; separate from vasculitic stenosis within GPA.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7963676/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1590",
+    "section": "Otolaryngology",
+    "proposed_id": "congenital_laryngeal_web",
+    "canonical_name": "Congenital laryngeal web",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Thin anterior glottic web visible at laryngoscopy, sometimes with a small anterior notch.",
+    "rationale": "Distinct congenital airway morphology with direct endoscopic teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1592",
+    "section": "Otolaryngology",
+    "proposed_id": "laryngeal_cleft",
+    "canonical_name": "Laryngeal cleft",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Posterior interarytenoid cleft on direct laryngoscopy/bronchoscopy; aspiration on swallow study.",
+    "rationale": "Distinct congenital aspiration/airway lesion with procedural and imaging correlate.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1594",
+    "section": "Otolaryngology",
+    "proposed_id": "vallecular_cyst",
+    "canonical_name": "Vallecular cyst",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Smooth cyst arising in vallecula, displacing epiglottis posteriorly on flexible laryngoscopy.",
+    "rationale": "Recognizable congenital supraglottic lesion with potential neonatal airway compromise.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1596",
+    "section": "Otolaryngology",
+    "proposed_id": "airway_foreign_body",
+    "canonical_name": "Airway foreign body",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Unilateral expiratory air trapping/hyperinflation on chest film; foreign body seen on bronchoscopy.",
+    "rationale": "Classic pediatric airway foreign-body pattern and clinically urgent.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1598",
+    "section": "Otolaryngology",
+    "proposed_id": "tracheomalacia",
+    "canonical_name": "Tracheomalacia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Dynamic expiratory collapse of the tracheal lumen on bronchoscopy or dynamic CT.",
+    "rationale": "Distinct dynamic airway disorder rather than fixed stenosis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1601",
+    "section": "Otolaryngology",
+    "proposed_id": "carotid_body_tumor",
+    "canonical_name": "Carotid body tumor",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Hypervascular carotid bifurcation mass splaying ICA and ECA (lyre sign) on CTA/MRA.",
+    "rationale": "Distinct paraganglioma site and signature vascular displacement pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10447654/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1603",
+    "section": "Otolaryngology",
+    "proposed_id": "first_branchial_cleft_anomaly",
+    "canonical_name": "First branchial cleft anomaly",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Periauricular pit/cyst or draining sinus with tract through/parotid region toward external auditory canal.",
+    "rationale": "Distinct first-arch anomaly from the listed second-arch lateral-neck cyst.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6848690/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1605",
+    "section": "Otolaryngology",
+    "proposed_id": "pyriform_sinus_fistula_third_or_fourth_branchial_anomaly",
+    "canonical_name": "Pyriform sinus fistula (third or fourth branchial anomaly)",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Left pyriform sinus tract to thyroid/perithyroid region with inflammatory change or recurrent suppurative thyroiditis.",
+    "rationale": "The existing branchial cleft cyst and sinus topic already includes pyriform-sinus third/fourth-arch tracts. Expand it with left-sided tract anatomy and recurrent suppurative thyroiditis.",
+    "existing_parent_ids": [
+      "branchial_cleft_cyst"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6848690/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1607",
+    "section": "Otolaryngology",
+    "proposed_id": "parapharyngeal_abscess",
+    "canonical_name": "Parapharyngeal abscess",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Rim-enhancing collection in parapharyngeal space on contrast CT, with airway displacement.",
+    "rationale": "Distinct deep-neck-space infection; retain separate from peritonsillar and retropharyngeal abscess.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6848690/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1609",
+    "section": "Otolaryngology",
+    "proposed_id": "acute_bacterial_sialadenitis",
+    "canonical_name": "Acute bacterial sialadenitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral tender swollen salivary gland with purulent drainage at duct orifice.",
+    "rationale": "Direct clinical image plus ductal purulence distinguishes bacterial infection from stones/mumps.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1613",
+    "section": "Otolaryngology",
+    "proposed_id": "nasal_bone_fracture",
+    "canonical_name": "Nasal bone fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Displaced or comminuted nasal-bone fracture on facial CT, with bridge deviation/swelling clinically.",
+    "rationale": "Common facial fracture with recognizable external deformity; many isolated cases are clinical diagnoses.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3324218/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1614",
+    "section": "Otolaryngology",
+    "proposed_id": "zygomaticomaxillary_complex_fracture",
+    "canonical_name": "Zygomaticomaxillary complex fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows zygomatic arch depression, widened lateral orbit, and disruption of zygomaticomaxillary/orbital rims.",
+    "rationale": "Common midface fracture complex with teachable CT pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1615",
+    "section": "Otolaryngology",
+    "proposed_id": "orbital_blowout_fracture",
+    "canonical_name": "Orbital blowout fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Orbital floor defect with herniated orbital fat/inferior rectus and maxillary hemosinus on coronal CT.",
+    "rationale": "High-value trauma pattern with entrapment relevance.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1616",
+    "section": "Otolaryngology",
+    "proposed_id": "le_fort_fractures_types_i_iii_as_one_topic",
+    "canonical_name": "Le Fort fractures (types I–III as one topic)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows Le Fort fracture line crossing the maxilla/pterygoid plates; classify I, II, or III by separation level.",
+    "rationale": "Essential midface trauma classification with clear CT anatomy.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1617",
+    "section": "Otolaryngology",
+    "proposed_id": "mandibular_fracture",
+    "canonical_name": "Mandibular fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Mandibular cortical discontinuity on panoramic radiograph/CT; assess symphysis, body, angle, and condyle.",
+    "rationale": "Common facial fracture with clinically relevant site pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1618",
+    "section": "Otolaryngology",
+    "proposed_id": "temporal_bone_fracture_otic_capsule_sparing_versus_violating",
+    "canonical_name": "Temporal bone fracture (otic-capsule sparing versus violating)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "High-resolution temporal-bone CT shows fracture line and whether it crosses otic capsule; associated hemotympanum/CSF leak.",
+    "rationale": "Distinct fracture classification predicts important inner-ear and facial-nerve injury.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1619",
+    "section": "Otolaryngology",
+    "proposed_id": "laryngeal_fracture",
+    "canonical_name": "Laryngeal fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT cartilage discontinuity or laryngeal framework displacement with laryngoscopic mucosal injury/airway edema.",
+    "rationale": "Potentially life-threatening airway trauma with complementary radiologic and endoscopic findings.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  }
+]

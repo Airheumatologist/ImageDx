@@ -1,0 +1,1271 @@
+[
+  {
+    "uid": "D1457",
+    "proposed_id": "germinal_matrixintraventricular_hemorrhage",
+    "canonical_name": "Germinal Matrix–Intraventricular Hemorrhage",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Cranial ultrasound shows echogenic clot at the caudothalamic groove with grade-dependent ventricular filling, dilation, or periventricular hemorrhagic infarction.",
+    "rationale": "High-frequency neonatal ultrasound diagnosis with a grading scheme and serial visual evolution; not a parent already in the catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10183255/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1459",
+    "proposed_id": "periventricular_leukomalacia",
+    "canonical_name": "Periventricular Leukomalacia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Cranial ultrasound/MRI shows periventricular echogenicity evolving to bilateral posterior periventricular cysts or white-matter volume loss.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10183255/",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7098890/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1461",
+    "proposed_id": "kernicterus",
+    "canonical_name": "Kernicterus",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows symmetric T1 hyperintensity of globus pallidus/subthalamic nuclei; chronic disease may show T2 signal and movement disorder.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6468386/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1463",
+    "proposed_id": "subgaleal_hemorrhage",
+    "canonical_name": "Subgaleal Hemorrhage",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Diffuse boggy scalp collection crosses sutures and midline, with subaponeurotic fluid on ultrasound; unlike suture-confined cephalohematoma.",
+    "rationale": "A high-stakes neonatal scalp finding with strong clinical and ultrasound distinction from existing cephalohematoma.",
+    "existing_parent_ids": [
+      "cephalohematoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5825313/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1465",
+    "proposed_id": "physical_child_abuse_skeletal_and_intracranial_imaging",
+    "canonical_name": "Physical Child Abuse: Skeletal and Intracranial Imaging",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Skeletal survey demonstrates classic metaphyseal corner/bucket-handle injury or multiple posterior rib fractures; CT/MRI can show abusive head trauma.",
+    "rationale": "A core recognition topic with high-specificity radiographic injury patterns and clear clinical importance.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11914366/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1468",
+    "proposed_id": "airway_foreign_body_aspiration",
+    "canonical_name": "Airway Foreign-Body Aspiration",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Expiratory/decubitus chest radiograph shows persistent unilateral hyperlucency/air trapping and sometimes contralateral mediastinal shift despite a radiolucent object.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11638315/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1470",
+    "proposed_id": "jejunoileal_atresia",
+    "canonical_name": "Jejunoileal Atresia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Neonatal radiograph shows dilated small-bowel loops with little or no distal gas and contrast enema reveals unused microcolon; apple-peel variant has a spiral distal bowel around a single vascular pedicle.",
+    "rationale": "Distinct neonatal obstruction pattern, including the visually memorable apple-peel vascular anatomy; duodenal atresia is a different level and already listed.",
+    "existing_parent_ids": [
+      "duodenal_atresia"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8976780/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1472",
+    "proposed_id": "meconium_plug_syndrome",
+    "canonical_name": "Meconium Plug Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Contrast enema shows a normal-caliber colon with long filling defect from meconium; plug may evacuate during the study.",
+    "rationale": "Separate imaging diagnosis from existing meconium ileus and Hirschsprung disease, with a recognizable contrast-enema target.",
+    "existing_parent_ids": [
+      "meconium_ileus",
+      "hirschsprung_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10132872/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1472",
+    "proposed_id": "neonatal_small_left_colon_syndrome",
+    "canonical_name": "Neonatal Small Left Colon Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Contrast enema shows a small descending/sigmoid colon with abrupt caliber transition at the splenic flexure and a normal-caliber rectum.",
+    "rationale": "A distinct functional neonatal obstruction pattern with a useful contrast-enema sign.",
+    "existing_parent_ids": [
+      "meconium_ileus",
+      "hirschsprung_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4600822/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1474",
+    "proposed_id": "enteric_duplication_cyst",
+    "canonical_name": "Enteric Duplication Cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ultrasound shows a cyst contiguous with bowel and a layered gut-signature wall (echogenic mucosa over hypoechoic muscle), sometimes a Y sign.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6269332/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1476",
+    "proposed_id": "heterotaxy_syndrome_situs_ambiguus",
+    "canonical_name": "Heterotaxy Syndrome (Situs Ambiguus)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Cross-sectional imaging reveals abnormal organ laterality, interrupted IVC with azygos continuation or anomalous venous return, splenic anomalies, and complex congenital heart anatomy.",
+    "rationale": "A clinically important multisystem laterality pattern with highly teachable cross-sectional anatomy; comparator Kartagener syndrome is a different disorder.",
+    "existing_parent_ids": [
+      "kartagener_syndrome"
+    ],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1479",
+    "proposed_id": "erythema_toxicum_neonatorum",
+    "canonical_name": "Erythema Toxicum Neonatorum",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Well newborn has blanching erythematous macules/papules with central papules or pustules, mainly trunk and proximal limbs, sparing palms and soles.",
+    "rationale": "Common one-look benign newborn eruption with practical clinical photo differential; distinct from transient neonatal pustular melanosis.",
+    "existing_parent_ids": [
+      "transient_neonatal_pustular_melanosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4372928/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1481",
+    "proposed_id": "hair_thread_tourniquet_syndrome",
+    "canonical_name": "Hair-Thread Tourniquet Syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "A circumferential hair/thread groove with distal swelling and erythema or ischemia of a toe, finger, or penis; the constrictor may be hidden beneath edema.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3478744/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1484",
+    "proposed_id": "pallister_killian_syndrome",
+    "canonical_name": "Pallister-Killian Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Coarse facial gestalt, temporal alopecia, pigmentary mosaicism, and hypotonia; mosaic tetrasomy 12p may be missed in blood.",
+    "rationale": "Distinct face/skin pattern supports visual clinical recognition; mosaicism explains variable phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11408116/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1486",
+    "proposed_id": "pitt_hopkins_syndrome",
+    "canonical_name": "Pitt-Hopkins Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Wide mouth with full lips, deep-set eyes, broad nasal bridge, and characteristic intermittent hyperventilation/apnea in a child with severe developmental delay.",
+    "rationale": "Distinct facial and episodic breathing phenotype extends the dysmorphology differential alongside separately listed Angelman and Mowat-Wilson syndromes.",
+    "existing_parent_ids": [
+      "angelman_syndrome",
+      "mowat_wilson_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11120268/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1488",
+    "proposed_id": "muenke_syndrome",
+    "canonical_name": "Muenke Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Coronal craniosynostosis with variable hypertelorism, brachydactyly/carpal-tarsal fusion, and hearing loss; CT demonstrates the fused coronal suture.",
+    "rationale": "A common molecularly defined syndromic craniosynostosis with a recognizable clinical and CT phenotype; other listed craniosynostosis syndromes are distinct.",
+    "existing_parent_ids": [
+      "nonsyndromic_craniosynostosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6422147/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1490",
+    "proposed_id": "roberts_syndrome",
+    "canonical_name": "Roberts Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Severe symmetric tetraphocomelia or limb reduction with cleft lip/palate, microcephaly, and characteristic facial dysmorphism.",
+    "rationale": "Distinct limb-reduction and craniofacial pattern; the thalidomide phenotype is an etiologic phenocopy rather than the same disease.",
+    "existing_parent_ids": [
+      "thalidomide_embryopathy"
+    ],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1492",
+    "proposed_id": "miller_syndrome",
+    "canonical_name": "Miller Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Postaxial limb-ray deficiency with malar hypoplasia, micrognathia, and cup-shaped ears.",
+    "rationale": "Distinct postaxial acrofacial pattern; contrasts with the already listed preaxial Nager syndrome.",
+    "existing_parent_ids": [
+      "nager_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3870197/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1494",
+    "proposed_id": "fryns_syndrome",
+    "canonical_name": "Fryns Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Coarse facial appearance, distal nail hypoplasia, and diaphragmatic hernia on prenatal or neonatal imaging.",
+    "rationale": "Syndromic pattern adds recognizable dysmorphology and nail clues to an existing diaphragmatic hernia topic.",
+    "existing_parent_ids": [
+      "congenital_diaphragmatic_hernia"
+    ],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1496",
+    "proposed_id": "fetal_valproate_syndrome",
+    "canonical_name": "Fetal Valproate Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prenatal valproate exposure may produce characteristic facial features, metopic ridge, radial-ray defects, and neural-tube defects.",
+    "rationale": "Etiology-specific teratogenic pattern with visible craniofacial and limb findings; distinct exposure from fetal hydantoin/warfarin syndromes.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6642533/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1498",
+    "proposed_id": "warfarin_embryopathy",
+    "canonical_name": "Warfarin Embryopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Nasal hypoplasia with stippled epiphyses/vertebrae on skeletal radiographs after first-trimester exposure.",
+    "rationale": "Distinct radiographic and facial teratogenic pattern; different exposure mechanism from other embryopathies.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5893982/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1500",
+    "proposed_id": "currarino_syndrome",
+    "canonical_name": "Currarino Syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Lateral sacral radiograph shows hemisacrum/sickle-shaped sacrum; MRI/US depicts presacral mass with anorectal malformation.",
+    "rationale": "Classic triad and recognizable sacral sign distinguish this syndrome from broader caudal regression/sacral agenesis.",
+    "existing_parent_ids": [
+      "caudal_regression_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC1288336/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1502",
+    "proposed_id": "l1_syndrome_x_linked_hydrocephalus",
+    "canonical_name": "L1 Syndrome (X-Linked Hydrocephalus)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prenatal/neonatal imaging shows aqueductal stenosis with hydrocephalus; examination shows adducted thumbs.",
+    "rationale": "Recognizable neurologic and limb combination with a specific neuroimaging anchor.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1484/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1504",
+    "proposed_id": "child_syndrome",
+    "canonical_name": "CHILD Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Strictly unilateral, sharply demarcated ichthyosiform inflammatory nevus follows Blaschko lines with ipsilateral limb hypoplasia/reduction.",
+    "rationale": "High-value one-look lateralized skin and limb pattern with disease-specific distribution.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1507",
+    "proposed_id": "atypical_teratoid_rhabdoid_tumor",
+    "canonical_name": "Atypical Teratoid/Rhabdoid Tumor",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Large heterogeneous infant CNS mass with possible hemorrhage, cysts, restricted diffusion, and hydrocephalus; posterior-fossa lesions can mimic medulloblastoma.",
+    "rationale": "Aggressive infant CNS tumor with useful imaging distinctions in a high-stakes medulloblastoma differential.",
+    "existing_parent_ids": [
+      "medulloblastoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6656328/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1509",
+    "proposed_id": "pleuropulmonary_blastoma",
+    "canonical_name": "Pleuropulmonary Blastoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "In a young child, CT shows a multiseptated cystic or mixed cystic-solid lung mass, sometimes with pneumothorax, in a DICER1 context.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10316522/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1511",
+    "proposed_id": "congenital_infantile_fibrosarcoma",
+    "canonical_name": "Congenital Infantile Fibrosarcoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "A rapidly growing infant soft-tissue mass is often heterogeneous and avidly enhancing on MRI, with hemorrhage or necrosis; imaging overlaps vascular tumors and needs pathology correlation.",
+    "rationale": "Age-specific soft-tissue tumor with a distinctive rapidly growing visible mass and imaging pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10899809/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1513",
+    "proposed_id": "neuroendocrine_cell_hyperplasia_of_infancy",
+    "canonical_name": "Neuroendocrine Cell Hyperplasia of Infancy",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "HRCT shows geographic ground-glass opacity centered in right middle lobe and lingula with central/paramediastinal distribution and mosaic air trapping.",
+    "rationale": "A characteristic pediatric chest CT pattern can suggest diagnosis without biopsy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3785715/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1515",
+    "proposed_id": "alveolar_capillary_dysplasia_with_misalignment_of_pulmonary_veins",
+    "canonical_name": "Alveolar Capillary Dysplasia with Misalignment of Pulmonary Veins",
+    "action": "EXCLUDE",
+    "priority": "P2",
+    "visual_anchor": "Newborn has refractory pulmonary hypertension; chest imaging is nonspecific and confirmation depends on lung biopsy showing reduced alveolar capillaries and misaligned veins.",
+    "rationale": "The proposed anchor is the lung-biopsy pattern; clinical presentation and radiology are nonspecific, so this is pathology-led rather than a distinctive clinical/radiologic topic.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "nicolaides_baraitser_syndrome",
+    "canonical_name": "Nicolaides-Baraitser Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Sparse scalp hair, prominent interphalangeal joints, broad fingertips, triangular face, and thick lower lip.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://medlineplus.gov/genetics/condition/nicolaides-baraitser-syndrome/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "wiedemann_steiner_syndrome",
+    "canonical_name": "Wiedemann-Steiner Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Thick flared eyebrows, long eyelashes, downslanting narrow palpebral fissures, and hypertrichosis cubiti (“hairy elbows”).",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK580718/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "atr_x_syndrome",
+    "canonical_name": "ATR-X Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Characteristic hypotonic facies with upturned nose, tented upper lip, widely spaced teeth, and genital anomalies; HbH inclusions can support diagnosis.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "cohen_syndrome",
+    "canonical_name": "Cohen Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Thick hair and eyebrows, downslanting palpebral fissures, open-mouth appearance, joint hypermobility, and later retinal dystrophy.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11120268/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "feingold_syndrome",
+    "canonical_name": "Feingold Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Microcephaly, short palpebral fissures, brachymesophalangy with clinodactyly, toe syndactyly, and gastrointestinal atresia.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK7050/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "branchio_oculo_facial_syndrome",
+    "canonical_name": "Branchio-Oculo-Facial Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Branchial skin defects, ocular coloboma/microphthalmia, and cleft lip or prominent philtral pillars with a broad nasal tip.",
+    "rationale": "Distinctive branchial skin, ocular, and cleft-lip phenotype; GeneReviews provides a clinically useful image-based pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK55063/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "beare_stevenson_cutis_gyrata_syndrome",
+    "canonical_name": "Beare-Stevenson Cutis Gyrata Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Cutis gyrata with acanthosis nigricans, craniosynostosis, prominent umbilical stump, and characteristic facial appearance.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "marshall_smith_syndrome",
+    "canonical_name": "Marshall-Smith Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Progeroid facies with prominent eyes, upturned nose, broad forehead, accelerated skeletal maturation, and respiratory/airway problems.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC1016575/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "wiedemann_rautenstrauch_syndrome",
+    "canonical_name": "Wiedemann-Rautenstrauch Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Progeroid “old-man” face, sparse hair, triangular face, prominent scalp veins, and relative lipoatrophy in a neonate.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://medlineplus.gov/genetics/condition/wiedemann-rautenstrauch-syndrome/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "meier_gorlin_syndrome",
+    "canonical_name": "Meier-Gorlin Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Microtia, patellar hypoplasia/absence, and severe pre- and postnatal growth restriction.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "microcephalic_osteodysplastic_primordial_dwarfism_type_ii",
+    "canonical_name": "Microcephalic Osteodysplastic Primordial Dwarfism Type II",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Severe microcephaly and primordial dwarfism with characteristic skeletal changes including hypoplastic iliac wings and abnormal metaphyses.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "schinzel_giedion_syndrome",
+    "canonical_name": "Schinzel-Giedion Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Midface retrusion, proptosis, depressed nasal bridge, genital/renal anomalies, and a distinctive skull/vertebral radiographic pattern.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "femoral_hypoplasiaunusual_facies_syndrome",
+    "canonical_name": "Femoral Hypoplasia–Unusual Facies Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bilateral or asymmetric femoral hypoplasia with upslanting palpebral fissures, short nose, long philtrum, and cleft palate.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "pallister_hall_syndrome",
+    "canonical_name": "Pallister-Hall Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Postaxial polydactyly with hypothalamic hamartoma on MRI and possible bifid epiglottis or imperforate anus.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1465/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "greig_cephalopolysyndactyly_syndrome",
+    "canonical_name": "Greig Cephalopolysyndactyly Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Macrocephaly, hypertelorism, preaxial polydactyly, and cutaneous syndactyly.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1446/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "donnai_barrow_syndrome",
+    "canonical_name": "Donnai-Barrow Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Characteristic facial appearance with high myopia/retinal detachment, sensorineural hearing loss, and diaphragmatic/omphalocele defects.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1878/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "matthew_wood_syndrome_pdac",
+    "canonical_name": "Matthew-Wood Syndrome (PDAC)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Anophthalmia or severe microphthalmia with diaphragmatic hernia, pulmonary hypoplasia, and cardiac/urogenital anomalies.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "perlman_syndrome",
+    "canonical_name": "Perlman Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Fetal/neonatal overgrowth with visceromegaly, renal abnormalities/nephroblastomatosis, and characteristic facial appearance.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10872759/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "hennekam_syndrome",
+    "canonical_name": "Hennekam Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lymphedema with characteristic coarse facial appearance, intestinal lymphangiectasia, and possible lymphatic malformations on imaging.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "lumbar_syndrome",
+    "canonical_name": "LUMBAR Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Segmental lower-body infantile hemangioma with underlying lumbosacral, urogenital, anorectal, or renal anomalies on MRI/US.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "fetal_hydantoin_syndrome",
+    "canonical_name": "Fetal Hydantoin Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prenatal phenytoin exposure with nail/digital hypoplasia, midface hypoplasia, cleft lip/palate, and growth restriction.",
+    "rationale": "Recognizable teratogen-related facial/limb pattern distinct from the already listed thalidomide phenocopy.",
+    "existing_parent_ids": [
+      "thalidomide_embryopathy"
+    ],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "isotretinoin_embryopathy",
+    "canonical_name": "Isotretinoin Embryopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Craniofacial dysmorphism with microtia/ear canal anomalies, conotruncal cardiac defects, and thymic/CNS abnormalities after exposure.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1519",
+    "proposed_id": "brachytelephalangic_chondrodysplasia_punctata",
+    "canonical_name": "Brachytelephalangic Chondrodysplasia Punctata",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Short distal phalanges with punctate epiphyseal calcifications and midface/nasal hypoplasia on radiographs.",
+    "rationale": "A named syndrome with a recognizable clinical gestalt or specific radiologic feature makes a useful visual teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10247581/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "desbuquois_dysplasia",
+    "canonical_name": "Desbuquois Dysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Short limbs and joint laxity with “Swedish key” proximal femoral appearance and vertebral coronal clefts on radiographs.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8008460/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "atelosteogenesis",
+    "canonical_name": "Atelosteogenesis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Severe micromelia, hitchhiker thumbs, clubfeet, and characteristic vertebral/pelvic abnormalities on skeletal survey.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "boomerang_dysplasia",
+    "canonical_name": "Boomerang Dysplasia",
+    "action": "EXCLUDE",
+    "priority": "P2",
+    "visual_anchor": "Severe limb shortening with absent or severely malformed long bones and boomerang-shaped skeletal elements on radiographs.",
+    "rationale": "The 2023 skeletal dysplasia nosology places boomerang dysplasia within FLNB-related atelosteogenesis type 1. Do not create a separate page; cover the distinctive phenotype as a subtype/visual subsection if the proposed Atelosteogenesis page is added.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "opsismodysplasia",
+    "canonical_name": "Opsismodysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Severe short-limb dwarfism with delayed ossification, small irregular epiphyses, and platyspondyly on skeletal survey.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11793891/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "stuve_wiedemann_syndrome",
+    "canonical_name": "Stüve-Wiedemann Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bowed long bones with cortical thickening at the concavity, metaphyseal abnormalities, and recurrent fractures.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4862397/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "frontometaphyseal_dysplasia",
+    "canonical_name": "Frontometaphyseal Dysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prominent supraorbital ridges and craniofacial hyperostosis with metaphyseal flaring, long-bone bowing, and digital contractures.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "melnick_needles_syndrome",
+    "canonical_name": "Melnick-Needles Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Distinctive facial appearance with slender bowed long bones, cortical irregularity, and rib/spine/pelvic abnormalities.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "3m_syndrome",
+    "canonical_name": "3M Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Severe prenatal/postnatal growth restriction with slender long bones, tall vertebral bodies, and characteristic vertebral endplate changes.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "grebe_acromesomelic_dysplasia",
+    "canonical_name": "Grebe Acromesomelic Dysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Marked acromesomelic limb shortening with severe hand/foot abnormalities and characteristic short, broad tubular bones.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10972656/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1521",
+    "proposed_id": "myhre_syndrome",
+    "canonical_name": "Myhre Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Short stature with thickened skin, brachydactyly, joint stiffness, and radiographic broad short tubular bones/vertebral changes.",
+    "rationale": "Distinct skeletal dysplasia with a characteristic radiographic or physical pattern suitable for a focused teaching entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10081954/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1523",
+    "proposed_id": "alpha_mannosidosis",
+    "canonical_name": "Alpha-Mannosidosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Coarse facies, hearing loss, hepatosplenomegaly, and dysostosis multiplex on skeletal radiographs.",
+    "rationale": "Rare metabolic disease with a distinctive clinical or imaging pattern useful for visual diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1396/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1523",
+    "proposed_id": "fucosidosis",
+    "canonical_name": "Fucosidosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Progressive coarse facial features and skeletal dysostosis with possible angiokeratomas and white-matter changes.",
+    "rationale": "Rare metabolic disease with a distinctive clinical or imaging pattern useful for visual diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1523",
+    "proposed_id": "multiple_sulfatase_deficiency",
+    "canonical_name": "Multiple Sulfatase Deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Coarse features, ichthyosis, skeletal dysplasia/dysostosis multiplex, and neurologic decline.",
+    "rationale": "Rare metabolic disease with a distinctive clinical or imaging pattern useful for visual diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1523",
+    "proposed_id": "galactosialidosis",
+    "canonical_name": "Galactosialidosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Coarse facies, cherry-red spots, skeletal dysplasia, and vacuolated cells in infantile disease.",
+    "rationale": "Rare metabolic disease with a distinctive clinical or imaging pattern useful for visual diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1523",
+    "proposed_id": "molybdenum_cofactor_deficiency",
+    "canonical_name": "Molybdenum Cofactor Deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Neonatal seizures with MRI diffusion restriction and evolving cystic encephalomalacia involving cortex and subcortical white matter.",
+    "rationale": "Distinctive neonatal neuroimaging pattern and course; isolated sulfite oxidase deficiency is a separate existing comparator but can share the imaging differential.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11755387/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "hydranencephaly",
+    "canonical_name": "Hydranencephaly",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "MRI shows near-complete replacement of cerebral hemispheres by CSF with preserved brainstem and variable falx; distinguish from severe hydrocephalus.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "perinatal_arterial_ischemic_stroke",
+    "canonical_name": "Perinatal Arterial Ischemic Stroke",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Neonatal diffusion MRI shows restricted diffusion in a unilateral arterial territory, commonly left MCA, with evolving encephalomalacia.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "surfactant_protein_b_deficiency",
+    "canonical_name": "Surfactant Protein B Deficiency",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Term neonate with severe respiratory distress and diffuse ground-glass/airspace opacities; imaging is nonspecific.",
+    "rationale": "Imaging appearances overlap substantially across genetic surfactant disorders; defer separate pages and group gene-specific causes under one pediatric diffuse lung disease entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "abca3_related_surfactant_dysfunction",
+    "canonical_name": "ABCA3-Related Surfactant Dysfunction",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Diffuse neonatal/infant lung disease with ground-glass opacity and septal thickening on CT; imaging overlaps other surfactant disorders.",
+    "rationale": "Imaging appearances overlap substantially across genetic surfactant disorders; defer separate pages and group gene-specific causes under one pediatric diffuse lung disease entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "surfactant_protein_c_dysfunction",
+    "canonical_name": "Surfactant Protein C Dysfunction",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Childhood interstitial lung disease with variable ground-glass opacity, septal thickening, and cystic change; CT overlaps other genetic surfactant disorders.",
+    "rationale": "Imaging appearances overlap substantially across genetic surfactant disorders; defer separate pages and group gene-specific causes under one pediatric diffuse lung disease entry.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "congenital_high_airway_obstruction_syndrome_chaos",
+    "canonical_name": "Congenital High Airway Obstruction Syndrome (CHAOS)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Prenatal ultrasound/MRI shows enlarged echogenic lungs, dilated distal airways, flattened/inverted diaphragm, and fetal hydrops from laryngeal/tracheal obstruction.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "posterior_fossa_ependymoma",
+    "canonical_name": "Posterior Fossa Ependymoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows a fourth-ventricular/posterior-fossa mass with variable extension through foramina and obstructive hydrocephalus.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "choroid_plexus_tumors",
+    "canonical_name": "Choroid Plexus Tumors (Papilloma and Carcinoma)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Intraventricular tumors are usually lobulated and avidly enhancing; papillomas are frond-like and may cause hydrocephalus, while carcinomas are invasive/heterogeneous and may show necrosis, hemorrhage, or dissemination.",
+    "rationale": "Use one tumor-family page with clearly separated benign papilloma and malignant carcinoma sections. The two are histologically and clinically distinct, but a shared anatomic site supports side-by-side imaging teaching without treating carcinoma as a papilloma synonym.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11031501/",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3578480/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "choroid_plexus_carcinoma",
+    "canonical_name": "Choroid Plexus Carcinoma",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "MRI shows a large heterogeneous, invasive, avidly enhancing intraventricular mass with necrosis/hemorrhage and possible dissemination.",
+    "rationale": "Fold into the proposed Choroid Plexus Tumors page as a separately labeled malignant entity, with its own invasive/heterogeneous imaging pattern and outcome distinction; it is not a synonym of papilloma.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "mesenchymal_hamartoma_of_the_liver",
+    "canonical_name": "Mesenchymal Hamartoma of the Liver",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ultrasound/CT/MRI shows a large multiloculated cystic or mixed solid-cystic hepatic mass in an infant, often with septa and myxoid stroma.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "pediatric_cystic_nephroma",
+    "canonical_name": "Pediatric Cystic Nephroma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Renal ultrasound/CT/MRI shows a well-circumscribed multiloculated cystic renal mass with enhancing septa and no solid nodules.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6394734/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "rhabdoid_tumor_of_the_kidney",
+    "canonical_name": "Rhabdoid Tumor of the Kidney",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infant renal mass is large and heterogeneous with necrosis/hemorrhage, often with calcifications and synchronous atypical teratoid/rhabdoid tumor.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "lipoblastoma",
+    "canonical_name": "Lipoblastoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infant/toddler has a rapidly enlarging soft-tissue mass; MRI shows lobulated fat-containing lesion with septa and variable nonfatty components.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "melanotic_neuroectodermal_tumor_of_infancy",
+    "canonical_name": "Melanotic Neuroectodermal Tumor of Infancy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Rapidly enlarging infant anterior maxillary mass with an expansile lytic lesion and variable spiculated/sunburst bone change on radiographs or CT.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3526662/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1525",
+    "proposed_id": "neonatal_adrenal_hemorrhage",
+    "canonical_name": "Neonatal Adrenal Hemorrhage",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ultrasound shows an avascular suprarenal mass that liquefies and shrinks on serial imaging; chronic lesions may calcify.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8553189/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1527",
+    "proposed_id": "umbilical_granuloma",
+    "canonical_name": "Umbilical Granuloma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small moist beefy-red tissue at the umbilical stump after cord separation, distinguishable from a patent urachus or omphalomesenteric duct.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7608581/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1527",
+    "proposed_id": "neonatal_mastitis",
+    "canonical_name": "Neonatal Mastitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral erythema and swelling of the neonatal breast, sometimes with fluctuance or purulent discharge; ultrasound can identify abscess.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3762045/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D1527",
+    "proposed_id": "infantile_acropustulosis",
+    "canonical_name": "Infantile Acropustulosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Recurrent intensely pruritic crops of sterile vesiculopustules favoring palms and soles, often starting in early infancy.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4372928/"
+    ],
+    "section": "Pediatrics",
+    "evidence_status": "selected_source"
+  },
+  {
+    "uid": "D1527",
+    "proposed_id": "asymmetric_periflexural_exanthem_of_childhood",
+    "canonical_name": "Asymmetric Periflexural Exanthem of Childhood",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral/periflexural papular erythematous eruption begins near an axilla or groin and spreads centrifugally, often becoming bilateral but asymmetric.",
+    "rationale": "Distinct pediatric presentation with a recognizable clinical or imaging pattern and no equivalent topic in the live catalog.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "section": "Pediatrics",
+    "evidence_status": "not_verified"
+  }
+]

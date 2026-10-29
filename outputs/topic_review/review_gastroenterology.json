@@ -1,0 +1,768 @@
+[
+  {
+    "index": 72,
+    "proposed_id": "hepatic_hemangioma",
+    "canonical_name": "Hepatic Hemangioma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Peripheral discontinuous nodular enhancement with progressive centripetal fill-in; markedly T2-bright liver lesion.",
+    "rationale": "Common benign liver mass with a highly recognizable imaging pattern; distinct from FNH and adenoma.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11229941/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 73,
+    "proposed_id": "focal_nodular_hyperplasia",
+    "canonical_name": "Focal Nodular Hyperplasia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Homogeneous arterial hyperenhancement with a central T2-bright scar and delayed scar enhancement.",
+    "rationale": "Distinctive benign liver lesion and useful imaging differential from adenoma and hemangioma.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11229941/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 74,
+    "proposed_id": "hepatocellular_adenoma",
+    "canonical_name": "Hepatocellular Adenoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Arterially enhancing liver mass; subtype clues include opposed-phase signal drop (HNF1A) or inflammatory atoll sign.",
+    "rationale": "Distinct tumor with clinically important hemorrhage/malignant potential and useful MRI subtype patterns.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7047931/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 75,
+    "proposed_id": "gallbladder_adenomyomatosis",
+    "canonical_name": "Gallbladder Adenomyomatosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Gallbladder wall thickening with intramural Rokitansky–Aschoff sinuses producing ultrasound comet-tail artifact or MRI pearl-necklace sign.",
+    "rationale": "Strong modality-specific pattern and gallbladder carcinoma mimic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7791251/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 76,
+    "proposed_id": "porcelain_gallbladder",
+    "canonical_name": "Porcelain Gallbladder",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Curvilinear or patchy calcification conforming to the gallbladder wall on CT.",
+    "rationale": "Use a porcelain-gallbladder subsection in the existing gallstones/cholecystitis topic: it is an imaging phenotype in the same organ disease page, and wall calcification is its visual anchor.",
+    "existing_parent_ids": [
+      "gallstones_cholecystitis"
+    ],
+    "source_urls": [
+      "https://geiselmed.dartmouth.edu/radiology/wp-content/uploads/sites/47/2019/04/ACR-part-IV.pdf"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 77,
+    "proposed_id": "emphysematous_cholecystitis",
+    "canonical_name": "Emphysematous Cholecystitis",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Gas outlining or within the gallbladder wall, sometimes extending into the lumen or pericholecystic tissues on CT.",
+    "rationale": "Use an emphysematous-cholecystitis subsection in the existing gallstones/cholecystitis topic. Intramural gas is a distinct emergency pattern, but it remains a cholecystitis subtype within the same gallbladder disease page.",
+    "existing_parent_ids": [
+      "gallstones_cholecystitis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12640149/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 78,
+    "proposed_id": "pancreatic_serous_cystadenoma",
+    "canonical_name": "Pancreatic Serous Cystadenoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Microcystic honeycomb pancreatic mass with central scar or sunburst calcification and no duct communication.",
+    "rationale": "Classic appearance distinct from IPMN and mucinous cystic neoplasm.",
+    "existing_parent_ids": [
+      "intraductal_papillary_mucinous_neoplasm"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6103340/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 79,
+    "proposed_id": "pancreatic_mucinous_cystic_neoplasm",
+    "canonical_name": "Pancreatic Mucinous Cystic Neoplasm",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Body/tail multilocular cystic pancreatic mass in a woman, with septa or peripheral calcification and no duct communication.",
+    "rationale": "Distinct cystic neoplasm with malignant potential and useful contrast to serous neoplasm/IPMN.",
+    "existing_parent_ids": [
+      "intraductal_papillary_mucinous_neoplasm"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6103340/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 80,
+    "proposed_id": "solid_pseudopapillary_neoplasm",
+    "canonical_name": "Solid Pseudopapillary Neoplasm",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Well-circumscribed encapsulated pancreatic mass with hemorrhagic/cystic center and peripheral solid tissue.",
+    "rationale": "Characteristic young-patient tumor pattern, distinct from ductal adenocarcinoma and other cysts.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6103340/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 81,
+    "proposed_id": "ampullary_adenocarcinoma",
+    "canonical_name": "Ampullary Adenocarcinoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Endoscopic ulcerated or polypoid ampulla; CT/MRCP may show bile and pancreatic duct dilation ending at the ampulla.",
+    "rationale": "Distinct anatomic primary with direct endoscopic teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6103340/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 82,
+    "proposed_id": "epiploic_appendagitis",
+    "canonical_name": "Epiploic Appendagitis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Small ovoid fat-attenuation lesion abutting colon with hyperattenuating rim and possible central dot on CT.",
+    "rationale": "Classic CT diagnosis that prevents confusion with diverticulitis/appendicitis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6386757/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 83,
+    "proposed_id": "omental_infarction",
+    "canonical_name": "Omental Infarction",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Larger heterogeneous inflamed fat-density lesion within omentum, usually not directly abutting colon, without central dot.",
+    "rationale": "Visually distinguishable benign acute-abdomen mimic; retain as distinct from epiploic appendagitis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6386757/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 84,
+    "proposed_id": "gallstone_ileus",
+    "canonical_name": "Gallstone Ileus (including Bouveret Syndrome)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Rigler pattern: ectopic gallstone, pneumobilia, and bowel obstruction; duodenal impaction in Bouveret syndrome.",
+    "rationale": "High-yield emergency imaging pattern; Bouveret is a proximal presentation within the same disease spectrum.",
+    "existing_parent_ids": [
+      "gallstones_cholecystitis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7196161/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 85,
+    "proposed_id": "gastric_volvulus",
+    "canonical_name": "Gastric Volvulus",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Abnormally rotated or upside-down stomach on radiograph/CT; mesenteroaxial form places antrum above gastroesophageal junction.",
+    "rationale": "Distinct acute obstruction with characteristic anatomy; not redundant with paraesophageal hernia.",
+    "existing_parent_ids": [
+      "paraesophageal_hernia"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 86,
+    "proposed_id": "superior_mesenteric_artery_syndrome",
+    "canonical_name": "Superior Mesenteric Artery Syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT sagittal narrowing of third duodenum between aorta and SMA with proximal gastric/duodenal dilation and reduced aortomesenteric angle/distance.",
+    "rationale": "Anatomic cause of obstruction with a distinctive cross-sectional pattern.",
+    "existing_parent_ids": [
+      "small_bowel_obstruction"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 87,
+    "proposed_id": "stercoral_colitis",
+    "canonical_name": "Stercoral Colitis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Fecaloma with colonic dilation and wall thickening plus pericolonic fat stranding, often rectosigmoid, on CT.",
+    "rationale": "Important pressure-necrosis emergency with distinct imaging anchor.",
+    "existing_parent_ids": [
+      "ischemic_colitis"
+    ],
+    "source_urls": [
+      "https://pubs.rsna.org/doi/full/10.1148/rg.240085"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 88,
+    "proposed_id": "schatzki_ring",
+    "canonical_name": "Schatzki Ring",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Thin circumferential mucosal ring at the distal esophagus, best seen as a short shelf-like narrowing on barium esophagram.",
+    "rationale": "Classic structural cause of intermittent solid-food dysphagia; separate from peptic stricture.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC13204681/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 89,
+    "proposed_id": "herpes_simplex_esophagitis",
+    "canonical_name": "Herpes Simplex Esophagitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multiple small, sharply demarcated punched-out esophageal ulcers on endoscopy, often distal; biopsy from ulcer edge.",
+    "rationale": "Recognizable viral endoscopic pattern distinct from Candida plaques and CMV linear ulcers.",
+    "existing_parent_ids": [
+      "herpes_simplex"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10243751/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 90,
+    "proposed_id": "pill_induced_esophagitis",
+    "canonical_name": "Pill-Induced Esophagitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Discrete opposing mid-esophageal ulcers at a pill-stasis site, often with focal mucosal injury on endoscopy.",
+    "rationale": "Common iatrogenic mucosal injury with imageable focal endoscopic findings; distinct from caustic injury.",
+    "existing_parent_ids": [
+      "caustic_ingestion_injury"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6103340/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 91,
+    "proposed_id": "gastric_malt_lymphoma",
+    "canonical_name": "Gastric MALT Lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Gastric folds/nodularity, shallow ulcers, or mass-like mucosal lesions on endoscopy; appearances can be patchy and nonspecific.",
+    "rationale": "Distinct gastric lymphoma entity and useful visual differential from adenocarcinoma, despite variable endoscopic pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 92,
+    "proposed_id": "autoimmune_hepatitis",
+    "canonical_name": "Autoimmune Hepatitis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Liver biopsy may show interface hepatitis with lymphoplasmacytic portal infiltrates and hepatocyte rosettes.",
+    "rationale": "The strongest image is histology/stool microscopy, and endoscopic mucosal changes are nonspecific; defer from this clinical/radiologic atlas scope.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 93,
+    "proposed_id": "sclerosing_mesenteritis",
+    "canonical_name": "Sclerosing Mesenteritis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Root-of-mesentery misty fat or mass that encases mesenteric vessels while preserving a fat-ring halo; possible pseudocapsule on CT.",
+    "rationale": "Distinct radiologic pattern and separate from encapsulating peritonitis.",
+    "existing_parent_ids": [
+      "igg4_related_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10244954/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 94,
+    "proposed_id": "appendiceal_mucocele_lamn",
+    "canonical_name": "Appendiceal Mucocele",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Fluid-filled, dilated tubular appendix with mural calcification or layered “onion-skin” appearance on ultrasound.",
+    "rationale": "Use canonical topic “Appendiceal Mucocele”; mucocele is a descriptive gross/imaging term, while LAMN is a specific histologic neoplasm. Strong imaging anchor and not the same as disseminated pseudomyxoma.",
+    "existing_parent_ids": [
+      "acute_appendicitis",
+      "pseudomyxoma_peritonei"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3582328/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 95,
+    "proposed_id": "giardiasis",
+    "canonical_name": "Giardiasis",
+    "action": "DEFER",
+    "priority": "P1",
+    "visual_anchor": "Duodenal biopsy showing pear-shaped trophozoites adherent to mucosal surface; stool antigen/organism detection supports diagnosis.",
+    "rationale": "The strongest image is histology/stool microscopy, and endoscopic mucosal changes are nonspecific; defer from this clinical/radiologic atlas scope.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 96,
+    "proposed_id": "annular_pancreas",
+    "canonical_name": "Annular Pancreas",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Pancreatic tissue encircling the second duodenum with proximal gastric/duodenal dilation on CT or upper GI contrast study.",
+    "rationale": "Distinct congenital cause of duodenal obstruction, including adult presentations.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 97,
+    "proposed_id": "jejunoileal_atresia",
+    "canonical_name": "Jejunoileal Atresia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Multiple dilated proximal small-bowel loops with abrupt atretic transition and gasless distal bowel on neonatal radiograph/contrast study.",
+    "rationale": "Separate atresia level from duodenal atresia; valuable neonatal imaging topic.",
+    "existing_parent_ids": [
+      "duodenal_atresia"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 98,
+    "proposed_id": "internal_hernia",
+    "canonical_name": "Paraduodenal and Transmesenteric Internal Hernia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT cluster of small-bowel loops in an abnormal sac/compartment with mesenteric vessel crowding or swirl; specify paraduodenal recess versus transmesenteric defect.",
+    "rationale": "Internal hernias are a distinct cause of closed-loop obstruction; retain both sites under a combined topic.",
+    "existing_parent_ids": [
+      "small_bowel_obstruction"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 99,
+    "proposed_id": "sclerosing_encapsulating_peritonitis",
+    "canonical_name": "Sclerosing Encapsulating Peritonitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Encased clustered bowel loops within a thick fibrous peritoneal membrane (“abdominal cocoon”) on CT.",
+    "rationale": "Distinct peritoneal process from mesenteric-root fibroinflammation; uncommon but highly visual.",
+    "existing_parent_ids": [
+      "sclerosing_mesenteritis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10244954/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 100,
+    "proposed_id": "median_arcuate_ligament_syndrome",
+    "canonical_name": "Median Arcuate Ligament Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Sagittal CTA shows focal hooked narrowing of proximal celiac artery with post-stenotic dilation, accentuated on expiration.",
+    "rationale": "Anatomically distinctive vascular compression pattern; retain as a separate syndrome from atherosclerotic ischemia.",
+    "existing_parent_ids": [
+      "chronic_mesenteric_ischemia"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 101,
+    "proposed_id": "chronic_mesenteric_ischemia",
+    "canonical_name": "Chronic Mesenteric Ischemia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA shows severe ostial mesenteric arterial stenosis/occlusion with collateral vessels; chronic cases often have multivessel disease.",
+    "rationale": "Clinically important chronic vascular disease distinct from already listed acute mesenteric ischemia.",
+    "existing_parent_ids": [
+      "acute_mesenteric_ischemia"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 102,
+    "proposed_id": "portal_vein_thrombosis_pylephlebitis",
+    "canonical_name": "Portal Vein Thrombosis and Pylephlebitis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Portal venous phase CT/Doppler shows intraluminal portal-vein filling defect or absent flow; pylephlebitis adds septic portal thrombosis and inflammatory source.",
+    "rationale": "Distinct venous thrombosis pattern vs hepatic venous obstruction in Budd–Chiari; grouped term is appropriate.",
+    "existing_parent_ids": [
+      "budd_chiari_syndrome",
+      "portal_hypertension_cirrhosis"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 103,
+    "proposed_id": "hepatic_sinusoidal_obstruction_syndrome",
+    "canonical_name": "Hepatic Sinusoidal Obstruction Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Doppler ultrasound may show hepatomegaly, ascites, reduced/monophasic hepatic venous flow and portal-flow changes after transplant/chemotherapy.",
+    "rationale": "Distinct sinusoidal microvascular injury versus large hepatic-vein thrombosis; visual imaging signs exist but are nonspecific.",
+    "existing_parent_ids": [
+      "budd_chiari_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6868080/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 104,
+    "proposed_id": "congestive_hepatopathy",
+    "canonical_name": "Congestive Hepatopathy and Fontan-Associated Liver Disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Heterogeneous “nutmeg” liver enhancement, dilated hepatic veins/IVC and pulsatile portal flow on Doppler in right-sided heart failure/Fontan circulation.",
+    "rationale": "Clinically useful congestive liver appearance distinct from thrombotic Budd–Chiari syndrome; combine Fontan-associated phenotype.",
+    "existing_parent_ids": [
+      "budd_chiari_syndrome",
+      "portal_hypertension_cirrhosis"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 105,
+    "proposed_id": "groove_pancreatitis",
+    "canonical_name": "Groove Pancreatitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Sheet-like soft tissue in pancreaticoduodenal groove with medial duodenal wall thickening or cysts on MRI/CT.",
+    "rationale": "Rare but recognizable pancreatitis pattern and important pancreatic cancer mimic.",
+    "existing_parent_ids": [
+      "pancreatic_ductal_adenocarcinoma",
+      "igg4_related_disease"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 106,
+    "proposed_id": "peritoneal_mesothelioma",
+    "canonical_name": "Peritoneal Mesothelioma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Diffuse peritoneal thickening/nodularity, omental cake, or ascites on CT, often without an identifiable gastrointestinal primary.",
+    "rationale": "Distinct primary peritoneal malignancy and visual comparison with mucinous peritoneal disease.",
+    "existing_parent_ids": [
+      "pseudomyxoma_peritonei"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7465865/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 107,
+    "proposed_id": "cryptosporidiosis",
+    "canonical_name": "Cryptosporidiosis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Small round acid-fast oocysts attached to the small-bowel epithelial brush border on stain; endoscopy may show villous blunting.",
+    "rationale": "The strongest image is histology/stool microscopy, and endoscopic mucosal changes are nonspecific; defer from this clinical/radiologic atlas scope.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 108,
+    "proposed_id": "esophageal_coin_ingestion",
+    "canonical_name": "Esophageal Coin Ingestion",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Coin-shaped radiopaque object in esophagus on AP view; coins usually appear en face in esophagus, unlike airway orientation.",
+    "rationale": "Directly imageable foreign-body emergency, distinct from battery injury.",
+    "existing_parent_ids": [
+      "button_battery_ingestion"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 109,
+    "proposed_id": "multiple_magnet_ingestion",
+    "canonical_name": "Multiple Magnet Ingestion",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Two or more magnets in separate bowel loops or clumped across bowel walls on radiograph, with pressure injury/perforation risk.",
+    "rationale": "Distinct and high-stakes imaging pattern compared with a single coin or button battery.",
+    "existing_parent_ids": [
+      "button_battery_ingestion",
+      "esophageal_coin_ingestion"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 110,
+    "proposed_id": "hepatic_epithelioid_hemangioendothelioma",
+    "canonical_name": "Hepatic Epithelioid Hemangioendothelioma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multiple peripheral hypoenhancing liver nodules coalescing to the capsule, with capsular retraction and possible “lollipop” vessel termination.",
+    "rationale": "Distinct rare vascular malignancy with high-value imaging signature; not a hemangioma subtype.",
+    "existing_parent_ids": [
+      "hepatic_hemangioma"
+    ],
+    "source_urls": [
+      "https://pubmed.ncbi.nlm.nih.gov/31238187/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 111,
+    "proposed_id": "polycystic_liver_disease",
+    "canonical_name": "Isolated Polycystic Liver Disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Numerous hepatic cysts with relative absence of renal cysts on CT/MRI.",
+    "rationale": "Distinct from ADPKD-associated liver cysts and useful when symptomatic hepatomegaly occurs.",
+    "existing_parent_ids": [
+      "autosomal_dominant_polycystic_kidney_disease"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 112,
+    "proposed_id": "xanthogranulomatous_cholecystitis",
+    "canonical_name": "Xanthogranulomatous Cholecystitis",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Marked thickened gallbladder wall with intramural hypoattenuating nodules and stones on CT, often mimicking carcinoma.",
+    "rationale": "Use a xanthogranulomatous-cholecystitis subsection in the existing gallstones/cholecystitis topic. It has a distinctive carcinoma-mimic pattern, but is an inflammatory cholecystitis subtype.",
+    "existing_parent_ids": [
+      "gallstones_cholecystitis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7791251/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 113,
+    "proposed_id": "secondary_sclerosing_cholangitis",
+    "canonical_name": "Secondary Sclerosing Cholangitis of Critical Illness",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRCP/ERCP shows biliary casts, multifocal intrahepatic strictures and pruning after critical illness, initially sparing the extrahepatic duct.",
+    "rationale": "Distinct ischemic cholangiopathy phenotype; not redundant with primary sclerosing cholangitis.",
+    "existing_parent_ids": [
+      "primary_sclerosing_cholangitis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7113589/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 114,
+    "proposed_id": "biliary_mucinous_cystic_neoplasm",
+    "canonical_name": "Biliary Mucinous Cystic Neoplasm",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multiloculated hepatic cyst with septa or mural nodules, usually no bile-duct communication; often in middle-aged women.",
+    "rationale": "Distinct cystic neoplasm of liver from isolated polycystic disease and echinococcosis; retain as a separate site from pancreatic MCN.",
+    "existing_parent_ids": [
+      "polycystic_liver_disease",
+      "cystic_echinococcosis"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 115,
+    "proposed_id": "dubin_johnson_syndrome",
+    "canonical_name": "Dubin-Johnson Syndrome",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Coarse dark pigment in centrilobular hepatocytes and grossly black liver.",
+    "rationale": "The defining visual feature is gross/histopathology and the syndrome otherwise has no distinctive clinical or radiologic image; defer for current visual atlas scope.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 116,
+    "proposed_id": "undifferentiated_embryonal_sarcoma",
+    "canonical_name": "Undifferentiated Embryonal Sarcoma of the Liver",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Large heterogeneous pediatric liver mass that appears cystic on CT but predominantly solid on ultrasound.",
+    "rationale": "Unusual cross-modality discrepancy makes a memorable tumor pattern; distinct from hepatoblastoma and infant hamartoma.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 117,
+    "proposed_id": "mesenchymal_hamartoma_of_the_liver",
+    "canonical_name": "Mesenchymal Hamartoma of the Liver",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Large multicystic infant liver mass with thin septa and intervening solid stromal tissue on ultrasound/CT.",
+    "rationale": "Distinct benign infant tumor with characteristic cystic imaging and useful malignant differential.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 118,
+    "proposed_id": "spigelian_obturator_hernia",
+    "canonical_name": "Spigelian and Obturator Hernias",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows Spigelian sac through semilunar fascia or obturator hernia between pectineus and obturator externus; label the two sites separately.",
+    "rationale": "Both are uncommon abdominal-wall/pelvic hernias with distinctive anatomic CT locations; combined topic is acceptable if clearly separated.",
+    "existing_parent_ids": [
+      "inguinal_femoral_hernia",
+      "ventral_umbilical_hernia"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 119,
+    "proposed_id": "esophageal_intramural_pseudodiverticulosis",
+    "canonical_name": "Esophageal Intramural Pseudodiverticulosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Barium esophagram shows numerous tiny flask-shaped intramural outpouchings, sometimes with a stricture.",
+    "rationale": "Rare but highly characteristic contrast-study appearance, distinct from true diverticula and candidal plaques.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 120,
+    "proposed_id": "emphysematous_gastritis",
+    "canonical_name": "Emphysematous Gastritis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows linear or bubbly gas within thickened gastric wall, possibly portal venous gas, with severe systemic illness.",
+    "rationale": "High-stakes imaging emergency, distinguishable from benign gastric emphysema.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 121,
+    "proposed_id": "gallbladder_cholesterolosis",
+    "canonical_name": "Cholesterolosis of the Gallbladder",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Gross specimen with yellow flecks in red gallbladder mucosa (“strawberry gallbladder”); ultrasound may show fixed nonshadowing polyps.",
+    "rationale": "Teaching anchor is predominantly gross pathology and ultrasound findings are nonspecific; lower value than actionable radiologic gallbladder entities.",
+    "existing_parent_ids": [
+      "gallstones_cholecystitis",
+      "gallbladder_carcinoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 122,
+    "proposed_id": "intestinal_duplication_cyst",
+    "canonical_name": "Intestinal Duplication Cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Cyst adjacent to bowel with layered inner echogenic mucosa and outer hypoechoic muscle (“gut signature”) on ultrasound.",
+    "rationale": "Distinct congenital lesion with a strong sonographic sign, separate from Meckel diverticulum.",
+    "existing_parent_ids": [
+      "meckel_diverticulum"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4879013/"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 123,
+    "proposed_id": "hookworm_infection",
+    "canonical_name": "Hookworm Infection",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Upper endoscopy shows adult hookworms attached to duodenal/jejunal mucosa, sometimes with punctate bleeding.",
+    "rationale": "Direct parasite visualization supports a memorable visual topic; separate from skin manifestations of animal hookworm.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.cdc.gov/dpdx/hookworm/index.html"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 124,
+    "proposed_id": "yersinia_enterocolitica_ileitis",
+    "canonical_name": "Yersinia Enterocolitica Ileitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Terminal ileal wall thickening and mesenteric lymphadenopathy on CT/ultrasound, with a relatively normal appendix in pseudoappendicitis.",
+    "rationale": "Distinct infectious ileitis and helpful Crohn/appendicitis differential; the source text describes a typical pseudoappendicitis presentation with reactive arthritis/erythema nodosum as possible sequelae.",
+    "existing_parent_ids": [
+      "acute_appendicitis"
+    ],
+    "source_urls": [
+      "https://www.cdc.gov/yersinia/healthcare.html"
+    ],
+    "evidence_status": "selected_source"
+  }
+]

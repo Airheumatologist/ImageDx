@@ -553,6 +553,8 @@ def refresh_panel_metadata(conn) -> dict:
         if figure is None or article is None:
             stats["errors"] += 1
             continue
+        article = dict(article)
+        db.attach_source_metadata(conn, {article["pmcid"]: article})
         try:
             parsed = jats.parse_article(_bundle_for_row(article).xml_text)
         except Exception as exc:  # noqa: BLE001 - per-figure isolation
@@ -628,6 +630,8 @@ def _article_rows(conn, figures: list[dict]) -> dict[str, dict | None]:
                 "SELECT * FROM articles WHERE pmcid = ?", (pmcid,)
             ).fetchone()
             article_rows[pmcid] = dict(row) if row is not None else None
+    # The write-boundary gate reads a case report's abstract.
+    db.attach_source_metadata(conn, {k: v for k, v in article_rows.items() if v is not None})
     return article_rows
 
 

@@ -1,0 +1,59 @@
+{
+  "updated_at_utc": "2026-10-28T22:08:39.268364+00:00",
+  "diseases_before": 1643,
+  "diseases_after": 2136,
+  "protected_tables_before": {
+    "articles": {
+      "rows": 33325,
+      "sha256": "c9e1088a7e4f9362266b62d201e5406532ccf27b778f9c23c5b457205730073e"
+    },
+    "figures": {
+      "rows": 127641,
+      "sha256": "259c4331cf0a6ca3eaf0cdc5c6d5304bec8c3dbb8365a0d40e810624dc96eb02"
+    },
+    "panels": {
+      "rows": 7141,
+      "sha256": "2fe28a0b13581417fe4cf3fa89dceac0ca9869b9d8b4aaab16c457ed6a2910ff"
+    },
+    "disease_findings": {
+      "rows": 114058,
+      "sha256": "cb0310d7bb0b3b50bce638ceec2fe81bd6789670c3e0a780f2aa644a6fd5157b"
+    },
+    "llm_calls": {
+      "rows": 70682,
+      "sha256": "3d0ee76b23f0e623890c46f1233cbca7de6d56b272f149a0c7ac1ccad1ef8461"
+    },
+    "findings_vocab": {
+      "rows": 65710,
+      "sha256": "c1cd542456676e465e5041aa8c7ed46a4e56f52706b9ee88aad3b33fa8bbb6f9"
+    }
+  },
+  "protected_tables_after": {
+    "articles": {
+      "rows": 33325,
+      "sha256": "c9e1088a7e4f9362266b62d201e5406532ccf27b778f9c23c5b457205730073e"
+    },
+    "figures": {
+      "rows": 127641,
+      "sha256": "259c4331cf0a6ca3eaf0cdc5c6d5304bec8c3dbb8365a0d40e810624dc96eb02"
+    },
+    "panels": {
+      "rows": 7141,
+      "sha256": "2fe28a0b13581417fe4cf3fa89dceac0ca9869b9d8b4aaab16c457ed6a2910ff"
+    },
+    "disease_findings": {
+      "rows": 114058,
+      "sha256": "cb0310d7bb0b3b50bce638ceec2fe81bd6789670c3e0a780f2aa644a6fd5157b"
+    },
+    "llm_calls": {
+      "rows": 70682,
+      "sha256": "3d0ee76b23f0e623890c46f1233cbca7de6d56b272f149a0c7ac1ccad1ef8461"
+    },
+    "findings_vocab": {
+      "rows": 65710,
+      "sha256": "c1cd542456676e465e5041aa8c7ed46a4e56f52706b9ee88aad3b33fa8bbb6f9"
+    }
+  },
+  "protected_contents_unchanged": true,
+  "note": "Only diseases were upserted; no init/seed of findings, acquisition, image or LLM work."
+}

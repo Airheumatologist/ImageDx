@@ -1,0 +1,1308 @@
+[
+  {
+    "uid": "D1624",
+    "section": "Orthopedics",
+    "proposed_id": "d1624",
+    "canonical_name": "Supracondylar humerus fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Elbow radiograph: posterior fat pad, altered Baumann angle, or anterior humeral line; puckered skin can indicate entrapment.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11352739/"
+    ]
+  },
+  {
+    "uid": "D1626",
+    "section": "Orthopedics",
+    "proposed_id": "d1626",
+    "canonical_name": "Monteggia fracture-dislocation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Proximal ulna fracture with radial head dislocated on elbow films.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11352739/"
+    ]
+  },
+  {
+    "uid": "D1628",
+    "section": "Orthopedics",
+    "proposed_id": "d1628",
+    "canonical_name": "Galeazzi fracture-dislocation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Distal radial shaft fracture with distal radioulnar joint disruption.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8993176/"
+    ]
+  },
+  {
+    "uid": "D1630",
+    "section": "Orthopedics",
+    "proposed_id": "d1630",
+    "canonical_name": "Lisfranc injury",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Weight-bearing foot radiograph: tarsometatarsal widening or fleck sign.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1632",
+    "section": "Orthopedics",
+    "proposed_id": "d1632",
+    "canonical_name": "Perilunate and lunate dislocation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral wrist film with spilled-teacup lunate and disrupted carpal arcs.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1634",
+    "section": "Orthopedics",
+    "proposed_id": "d1634",
+    "canonical_name": "Traumatic hip dislocation",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Shortened flexed, adducted, internally rotated leg; AP pelvis shows posteriorly displaced femoral head.",
+    "rationale": "Acute traumatic posterior hip displacement is distinct from congenital developmental dysplasia of the hip; the posture and trauma film are high-value teaching findings.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8993176/"
+    ]
+  },
+  {
+    "uid": "D1636",
+    "section": "Orthopedics",
+    "proposed_id": "d1636",
+    "canonical_name": "Knee dislocation",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Gross deformity or reduced knee with multiligament disruption; assess popliteal artery.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1638",
+    "section": "Orthopedics",
+    "proposed_id": "d1638",
+    "canonical_name": "Calcaneus fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral heel film with decreased Böhler angle; distinguish tongue-type and joint-depression patterns.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1640",
+    "section": "Orthopedics",
+    "proposed_id": "d1640",
+    "canonical_name": "Nonaccidental skeletal trauma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Classic metaphyseal lesions and posterior rib fractures on skeletal survey.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1642",
+    "section": "Orthopedics",
+    "proposed_id": "d1642",
+    "canonical_name": "Osgood-Schlatter disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prominent, fragmented tibial tubercle on lateral knee radiograph.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1644",
+    "section": "Orthopedics",
+    "proposed_id": "d1644",
+    "canonical_name": "Pyogenic spondylodiscitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows disc-space signal and adjacent endplate destruction.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1646",
+    "section": "Orthopedics",
+    "proposed_id": "d1646",
+    "canonical_name": "Spinal epidural abscess",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Contrast MRI shows epidural collection compressing the cord.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1648",
+    "section": "Orthopedics",
+    "proposed_id": "d1648",
+    "canonical_name": "Brodie abscess",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Geographic lucency with sclerotic rim; MRI penumbra sign.",
+    "rationale": "Include the subacute intraosseous abscess and MRI penumbra sign within the proposed chronic osteomyelitis topic to avoid redundant infection pages.",
+    "existing_parent_ids": [
+      "chronic_osteomyelitis"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1650",
+    "section": "Orthopedics",
+    "proposed_id": "d1650",
+    "canonical_name": "Chronic osteomyelitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Sequestrum, involucrum, cloaca, and sinus tract on radiograph/CT/MRI.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9047866/"
+    ]
+  },
+  {
+    "uid": "D1652",
+    "section": "Orthopedics",
+    "proposed_id": "d1652",
+    "canonical_name": "Neuropathic osteoarthropathy (Charcot)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Disorganized debris-filled joint with fragmentation and rocker-bottom foot.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1654",
+    "section": "Orthopedics",
+    "proposed_id": "d1654",
+    "canonical_name": "Hydroxyapatite deposition disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Periarticular calcific cloud in rotator-cuff tendon on shoulder radiograph.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1656",
+    "section": "Orthopedics",
+    "proposed_id": "d1656",
+    "canonical_name": "Degenerative spondylolisthesis",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "L4-L5 anterolisthesis with intact pars on lateral/oblique lumbar films.",
+    "rationale": "A current catalog parent already covers the underlying imaging pattern.",
+    "existing_parent_ids": [
+      "isthmic_spondylolisthesis"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1658",
+    "section": "Orthopedics",
+    "proposed_id": "d1658",
+    "canonical_name": "Posterior cruciate ligament tear",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Posterior sag on exam; MRI shows PCL discontinuity or dashboard contusion pattern.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1660",
+    "section": "Orthopedics",
+    "proposed_id": "d1660",
+    "canonical_name": "Extensor mechanism rupture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Palpable tendon gap with patella alta (patellar tendon) or baja (quadriceps) on lateral radiograph.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1662",
+    "section": "Orthopedics",
+    "proposed_id": "d1662",
+    "canonical_name": "Patellar dislocation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Sunrise view shows lateral patellar displacement; MRI may show MPFL injury and contusions.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1664",
+    "section": "Orthopedics",
+    "proposed_id": "d1664",
+    "canonical_name": "Acromioclavicular joint separation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Shoulder step-off and widened coracoclavicular distance on AP/Zanca view.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1666",
+    "section": "Orthopedics",
+    "proposed_id": "d1666",
+    "canonical_name": "Vertebral hemangioma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Corduroy trabeculae on radiograph and polka-dot trabeculae on axial CT.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1668",
+    "section": "Orthopedics",
+    "proposed_id": "d1668",
+    "canonical_name": "Skeletal metastases",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lytic missing pedicle, ivory vertebra, or permeative metadiaphyseal lesion.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1670",
+    "section": "Orthopedics",
+    "proposed_id": "d1670",
+    "canonical_name": "Secondary hypertrophic osteoarthropathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Digital clubbing with symmetric long-bone periostosis on radiographs.",
+    "rationale": "Distinct standalone clinical/radiographic pattern with teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "talar_neck_fracture",
+    "canonical_name": "Talar neck fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ankle lateral radiograph/CT shows talar neck fracture; Hawkins classification records subtalar/tibiotalar displacement, and the later Hawkins sign is subchondral talar-dome lucency.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6179081/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "jones_fracture",
+    "canonical_name": "Jones fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Oblique foot radiograph shows fracture at the metaphyseal-diaphyseal junction of the fifth metatarsal, extending into the fourth-fifth intermetatarsal articulation (zone 2).",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8788151/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "pelvic_apophyseal_avulsions",
+    "canonical_name": "Pelvic apophyseal avulsions",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Pelvic radiographs show a displaced apophyseal fragment at the ASIS, AIIS, ischial tuberosity, or lesser trochanter; MRI shows edema when the apophysis is unossified.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8688780/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "lateral_condyle_fracture",
+    "canonical_name": "Lateral condyle fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Pediatric elbow radiograph shows lateral distal-humeral metaphyseal fragment extending through the unossified articular cartilage; internal oblique view improves displacement assessment.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5337779/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "incarcerated_medial_epicondyle",
+    "canonical_name": "Incarcerated medial epicondyle",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "After elbow dislocation, radiograph shows medial epicondylar fragment trapped in the joint space rather than at its normal medial location.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5337779/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "radial_head_fracture",
+    "canonical_name": "Radial head fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Elbow radiograph shows radial-head cortical break or depression; a posterior fat-pad sign can disclose an occult fracture.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5337779/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "patella_fracture",
+    "canonical_name": "Patella fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "AP/lateral/sunrise knee films show transverse, vertical, or comminuted patellar fracture and possible articular step-off; assess extensor mechanism.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "pelvic_ring_disruption",
+    "canonical_name": "Pelvic ring disruption",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "AP/inlet/outlet pelvis views or CT show ring discontinuity, sacroiliac widening, pubic-ramus displacement, or vertical hemipelvic shift.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "acetabular_fracture",
+    "canonical_name": "Acetabular fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Pelvic oblique/Judet views or CT show fracture through acetabular columns/walls with disruption of iliopectineal or ilioischial lines.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "odontoid_fracture",
+    "canonical_name": "Odontoid fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Open-mouth and lateral cervical films/CT show fracture through C2 dens (type I tip, type II base, type III body).",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "jefferson_fracture",
+    "canonical_name": "Jefferson fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Axial CT shows bilateral C1 anterior and posterior arch fractures with lateral-mass displacement around the dens.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "hangman_fracture",
+    "canonical_name": "Hangman fracture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows bilateral pars interarticularis fractures of C2 with C2-on-C3 translation/angulation.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "chance_fracture",
+    "canonical_name": "Chance fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral spine CT shows a horizontal flexion-distraction fracture through vertebral body and posterior elements, often with a seatbelt injury.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "clay_shoveler_fracture",
+    "canonical_name": "Clay-shoveler fracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral cervical/thoracic radiograph shows avulsion fracture of a lower cervical or upper thoracic spinous-process tip.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "grisel_syndrome",
+    "canonical_name": "Grisel syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT/MRI shows nontraumatic atlantoaxial rotatory subluxation in a child after upper-airway infection or surgery.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "essex_lopresti_injury",
+    "canonical_name": "Essex-Lopresti injury",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radial-head fracture with proximal radial migration and distal radioulnar joint widening/positive ulnar variance; image elbow, forearm, and wrist.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "terrible_triad_of_the_elbow",
+    "canonical_name": "Terrible triad of the elbow",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Elbow films/CT show posterior dislocation with radial-head and coronoid-process fractures.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "biceps_tendon_rupture",
+    "canonical_name": "Biceps tendon rupture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Clinical Popeye bulge and palpable tendon gap; ultrasound/MRI shows proximal long-head tendon discontinuity or distal avulsion/retraction.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5937313/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "pectoralis_major_rupture",
+    "canonical_name": "Pectoralis major rupture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Acute chest/axillary ecchymosis with loss of anterior axillary fold; MRI shows tendon avulsion or retracted muscle-tendon unit.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5937313/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "thumb_ulnar_collateral_ligament_injury",
+    "canonical_name": "Thumb ulnar collateral ligament injury",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Thumb MCP valgus laxity; MRI/US shows UCL discontinuity, retraction, or Stener lesion superficial to the adductor aponeurosis.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5937313/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "jersey_finger",
+    "canonical_name": "Jersey finger",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Inability to flex DIP after forced extension; sagittal MRI/US shows FDP avulsion from distal phalanx with proximal tendon retraction.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5937313/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "scapholunate_dissociation",
+    "canonical_name": "Scapholunate dissociation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "PA wrist radiograph shows widened scapholunate interval (Terry-Thomas sign) and scaphoid ring sign; lateral view may show DISI.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5937313/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "medial_collateral_ligament_tear",
+    "canonical_name": "Medial collateral ligament tear",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Valgus stress tenderness/laxity; MRI shows edema and thickening or fiber discontinuity of the MCL, commonly with medial femoral condyle contusion.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8379491/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "posterolateral_corner_injury",
+    "canonical_name": "Posterolateral corner injury",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows edema or discontinuity of fibular collateral ligament, popliteus tendon, and popliteofibular ligament; fibular-head arcuate avulsion is a clue.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7571514/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "tibial_tubercle_avulsion",
+    "canonical_name": "Tibial tubercle avulsion",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral knee radiograph shows displaced tibial tubercle fragment in an adolescent; inspect for patella alta and extensor-mechanism disruption.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8688780/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "morel_lavallee_lesion",
+    "canonical_name": "Morel-Lavallée lesion",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows a lentiform hemolymphatic collection with fat globules in the plane between subcutaneous tissue and deep fascia, often over greater trochanter.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6251078/"
+    ]
+  },
+  {
+    "uid": "D1676",
+    "section": "Orthopedics",
+    "proposed_id": "pyomyositis",
+    "canonical_name": "Pyomyositis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows muscle edema progressing to a rim-enhancing intramuscular abscess with central fluid signal; US can guide drainage.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9047866/"
+    ]
+  },
+  {
+    "uid": "D1676",
+    "section": "Orthopedics",
+    "proposed_id": "fight_bite",
+    "canonical_name": "Fight bite",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small dorsal MCP laceration over a clenched-fist knuckle with swelling; radiograph may show tooth fragment or joint/phalangeal injury.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1676",
+    "section": "Orthopedics",
+    "proposed_id": "periprosthetic_joint_infection",
+    "canonical_name": "Periprosthetic joint infection",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Painful prosthesis with sinus tract or effusion; imaging can show periprosthetic lucency/loosening, while aspiration and cultures confirm infection.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1676",
+    "section": "Orthopedics",
+    "proposed_id": "particle_disease_osteolysis",
+    "canonical_name": "Particle-disease osteolysis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Serial arthroplasty films show focal expansile periprosthetic osteolytic scalloping/osteolysis around wear-bearing surfaces.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1676",
+    "section": "Orthopedics",
+    "proposed_id": "adverse_local_tissue_reaction_metallosis",
+    "canonical_name": "Adverse local tissue reaction (metallosis)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Metal-on-metal hip MRI with metal-artifact reduction shows periarticular pseudotumor, synovitis, or fluid collection; radiograph may show metal debris.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "primary_lymphoma_of_bone",
+    "canonical_name": "Primary lymphoma of bone",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radiograph/MRI shows a permeative marrow lesion with a large soft-tissue mass despite relatively limited cortical destruction.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5605823/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "lipoma_arborescens",
+    "canonical_name": "Lipoma arborescens",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Knee MRI shows frond-like synovial projections with T1/T2 signal matching fat and suppression on fat-saturated sequences, often with effusion.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5605823/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "elastofibroma_dorsi",
+    "canonical_name": "Elastofibroma dorsi",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Deep infrascapular lentiform mass abutting chest wall; MRI shows muscle-like fibrous signal interlaced with linear fat streaks, often bilateral.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7459389/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "intraosseous_lipoma",
+    "canonical_name": "Intraosseous lipoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Well-defined intramedullary lucency with sclerotic rim and central dystrophic calcification; CT/MRI confirms fat attenuation/signal.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5418895/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "nora_lesion",
+    "canonical_name": "Nora lesion",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radiograph shows a mineralized surface-based exostosis on a small bone of hand/foot, separated from medullary cavity; may have a cartilage cap.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3259322/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "periosteal_chondroma",
+    "canonical_name": "Periosteal chondroma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small cortical-surface cartilage mass with saucer-like cortical erosion, sclerotic rim, and overhanging edges on radiograph/CT.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5605823/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "periosteal_osteosarcoma",
+    "canonical_name": "Periosteal osteosarcoma",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Merge with osteosarcoma; classic surface lesion shows broad-based cortical attachment, periosteal reaction, and chondroid matrix on radiograph/MRI.",
+    "rationale": "This is a surface subtype of the existing osteosarcoma topic; retain the periosteal matrix/imaging pattern there.",
+    "existing_parent_ids": [
+      "osteosarcoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11213759/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "angiosarcoma_of_bone",
+    "canonical_name": "Angiosarcoma of bone",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "MRI/CT shows an aggressive osseous lesion but no reliable imaging pattern distinguishes angiosarcoma from other sarcomas; pathology defines the entity. A catalog cleanup recommendation remains: remove this synonym from Adamantinoma.",
+    "rationale": "No independently useful visual signature separates this pathology-defined sarcoma from the broader soft-tissue tumor differential.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "myxofibrosarcoma",
+    "canonical_name": "Myxofibrosarcoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI of a superficial lower-extremity mass shows high T2 myxoid signal and curvilinear enhancing fascial tails.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11254341/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "undifferentiated_pleomorphic_sarcoma",
+    "canonical_name": "Undifferentiated pleomorphic sarcoma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "MRI typically shows a heterogeneous aggressive mass, an appearance shared by many sarcomas; histology defines the subtype.",
+    "rationale": "No independently useful visual signature separates this pathology-defined sarcoma from the broader soft-tissue tumor differential.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "malignant_peripheral_nerve_sheath_tumor",
+    "canonical_name": "Malignant peripheral nerve sheath tumor",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "MRI may show a fusiform nerve-associated mass, but imaging overlaps benign nerve sheath tumors and other sarcomas; histology is required.",
+    "rationale": "No independently useful visual signature separates this pathology-defined sarcoma from the broader soft-tissue tumor differential.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "intramuscular_myxoma",
+    "canonical_name": "Intramuscular myxoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows a well-circumscribed intramuscular T1-low/T2-high mass with perilesional fat rind or edema and variable peripheral enhancement.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5605823/"
+    ]
+  },
+  {
+    "uid": "D1678",
+    "section": "Orthopedics",
+    "proposed_id": "plantar_fibromatosis",
+    "canonical_name": "Plantar fibromatosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Palpable medial plantar-arch nodule; US/MRI shows nodular thickening arising from the plantar aponeurosis, usually along its medial band.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5605823/"
+    ]
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "kohler_disease",
+    "canonical_name": "Köhler disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Child with midfoot pain; foot radiograph shows flattened, dense, fragmented navicular that later reossifies.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3298227/"
+    ]
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "freiberg_infraction",
+    "canonical_name": "Freiberg infraction",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radiograph shows flattening, sclerosis, and subchondral collapse of a metatarsal head (usually second) in an adolescent.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "panner_disease",
+    "canonical_name": "Panner disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Child with elbow pain; radiograph/MRI shows capitellar epiphyseal sclerosis, fragmentation, and flattening.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "muller_weiss_disease",
+    "canonical_name": "Müller-Weiss disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Adult midfoot radiographs show comma-shaped navicular collapse/sclerosis with lateral displacement and talonavicular arthritis.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "sinding_larsen_johansson_disease",
+    "canonical_name": "Sinding-Larsen-Johansson disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Adolescent with inferior patellar-pole tenderness; lateral knee film shows fragmentation/ossicle at the patellar tendon origin.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "discoid_meniscus",
+    "canonical_name": "Discoid meniscus",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows abnormally broad meniscus and continuity of anterior/posterior horns across at least three sagittal images (bow-tie sign).",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "adhesive_capsulitis",
+    "canonical_name": "Adhesive capsulitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Marked loss of passive external rotation; MRI may show thickened coracohumeral ligament and edema/obliteration of rotator interval fat.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "de_quervain_tenosynovitis",
+    "canonical_name": "de Quervain tenosynovitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radial-styloid pain with positive Finkelstein/Eichhoff maneuver; US shows thickened first dorsal compartment tendon sheath.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "cubital_tunnel_syndrome",
+    "canonical_name": "Cubital tunnel syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ulnar-distribution paresthesia and intrinsic hand weakness; ultrasound/MRI shows enlarged ulnar nerve at cubital tunnel, sometimes with dynamic subluxation.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "hallux_rigidus",
+    "canonical_name": "Hallux rigidus",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Merge with osteoarthritis; first MTP joint-space narrowing, subchondral sclerosis, and dorsal osteophyte with reduced dorsiflexion.",
+    "rationale": "Degenerative first-MTP arthropathy fits the existing osteoarthritis topic; add the dorsal osteophyte/limited-dorsiflexion pattern there.",
+    "existing_parent_ids": [
+      "osteoarthritis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11299320/"
+    ]
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "lesser_toe_deformities",
+    "canonical_name": "Lesser-toe deformities",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Inspection shows fixed or flexible hammertoe (PIP flexion), mallet toe (DIP flexion), or claw toe (MTP hyperextension with IP flexion); weight-bearing film defines alignment.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "morton_neuroma",
+    "canonical_name": "Morton neuroma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Forefoot squeeze/Mulder click; US/MRI shows plantar interdigital nerve thickening in a web space, classically third-fourth.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "haglund_syndrome",
+    "canonical_name": "Haglund syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral heel film shows posterosuperior calcaneal prominence with retrocalcaneal bursal fluid and distal Achilles insertional thickening.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "peroneal_tendon_dislocation",
+    "canonical_name": "Peroneal tendon dislocation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Dynamic US during resisted eversion shows peroneal tendons snapping anterior to fibula due to superior retinaculum injury; MRI depicts retinaculum tear.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "transient_osteoporosis_of_the_hip",
+    "canonical_name": "Transient osteoporosis of the hip",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows diffuse femoral-head/neck marrow edema and effusion without serpiginous necrotic line or subchondral collapse.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "subchondral_insufficiency_fracture_of_the_knee",
+    "canonical_name": "Subchondral insufficiency fracture of the knee",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows subchondral low-signal fracture line with extensive marrow edema, usually medial femoral condyle; early radiographs may be normal.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "neurogenic_heterotopic_ossification",
+    "canonical_name": "Neurogenic heterotopic ossification",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "After spinal cord/brain injury, radiograph/CT shows periarticular ectopic bone bridging soft tissues, commonly around hip.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "cervical_disc_herniation",
+    "canonical_name": "Cervical disc herniation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows focal cervical disc extrusion/protrusion indenting ventral thecal sac or compressing a nerve root/spinal cord.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "ossification_of_the_ligamentum_flavum",
+    "canonical_name": "Ossification of the ligamentum flavum",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows posterior ligamentum flavum ossification, often thoracic; MRI demonstrates posterior canal narrowing and cord compression.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "lumbar_facet_synovial_cyst",
+    "canonical_name": "Lumbar facet synovial cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI shows a fluid-signal juxtafacet cyst communicating with degenerative lumbar facet and narrowing lateral recess/canal.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "baastrup_disease",
+    "canonical_name": "Baastrup disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lateral lumbar radiograph/CT shows close contact and sclerosis of adjacent spinous processes; MRI may show interspinous bursitis/edema.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1680",
+    "section": "Orthopedics",
+    "proposed_id": "neuralgic_amyotrophy",
+    "canonical_name": "Neuralgic amyotrophy",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Acute severe shoulder pain followed by patchy weakness/atrophy; MR neurography may show focal nerve signal or denervation edema, but no specific image sign.",
+    "rationale": "Clinical pain-then-weakness pattern is important, but imaging is often normal or nonspecific and does not justify a visual atlas entry.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "tibial_hemimelia",
+    "canonical_name": "Tibial hemimelia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "AP leg radiograph shows partial/complete tibial absence or hypoplasia with fibular bowing and knee/ankle deformity.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "ulnar_longitudinal_deficiency",
+    "canonical_name": "Ulnar longitudinal deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Forearm/hand radiographs show hypoplastic or absent ulna with radial bowing and ulnar-sided digit deficiency.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "isolated_congenital_radioulnar_synostosis",
+    "canonical_name": "Isolated congenital radioulnar synostosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Forearm radiograph shows proximal radius-ulna bony bridge with fixed pronation; distinguish from syndromic synostosis.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "split_hand_foot_malformation",
+    "canonical_name": "Split-hand/foot malformation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Clinical/radiographic central ray deficiency creates median cleft with absent central metacarpals/metatarsals and divergent digits.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "congenital_knee_dislocation",
+    "canonical_name": "Congenital knee dislocation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Newborn knee rests in hyperextension; lateral radiograph/US shows anterior tibial displacement relative to distal femur.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "congenital_pseudarthrosis_of_the_clavicle",
+    "canonical_name": "Congenital pseudarthrosis of the clavicle",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Visible painless midclavicular prominence; radiograph shows a gap/nonunion, usually right midshaft, with tapered ends.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "jansen_metaphyseal_chondrodysplasia",
+    "canonical_name": "Jansen metaphyseal chondrodysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Skeletal survey shows metaphyseal widening, irregularity, cupping/fraying and severe short-limb disproportion.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "pyle_disease",
+    "canonical_name": "Pyle disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radiographs show marked metaphyseal expansion of long bones with thin cortices (Erlenmeyer-flask shape), especially around knees.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8891206/"
+    ]
+  },
+  {
+    "uid": "D1682",
+    "section": "Orthopedics",
+    "proposed_id": "frontometaphyseal_dysplasia",
+    "canonical_name": "Frontometaphyseal dysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radiographs show long-bone metaphyseal flaring/sclerosis and modeling defects; skull films show supraorbital hyperostosis and craniofacial changes.",
+    "rationale": "Distinct radiographic or clinical pattern supports an independent orthopedic atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "transitional_ankle_fractures",
+    "canonical_name": "Transitional ankle fractures",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Adolescent distal tibial epiphyseal fracture crosses epiphysis, physis, and metaphysis; CT axial/coronal reconstructions define Tillaux (anterolateral) versus triplane planes.",
+    "rationale": "Combine the two adolescent transitional patterns under one physis-crossing ankle-fracture topic, with subtype-specific CT anatomy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12628297/"
+    ]
+  },
+  {
+    "uid": "D1676",
+    "section": "Orthopedics",
+    "proposed_id": "septic_bursitis",
+    "canonical_name": "Septic bursitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "US/MRI shows distended olecranon or prepatellar bursa with thick hyperemic wall, echogenic debris, and surrounding cellulitis.",
+    "rationale": "The olecranon and prepatellar sites are one infection pattern; teach as a single septic bursitis topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8473557/"
+    ]
+  },
+  {
+    "uid": "D1674",
+    "section": "Orthopedics",
+    "proposed_id": "pediatric_incomplete_forearm_fractures",
+    "canonical_name": "Pediatric incomplete forearm fractures",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Pediatric forearm radiographs show torus cortical buckling or greenstick fracture with one cortex broken and the opposite cortex bowed/intact.",
+    "rationale": "Torus and greenstick injuries are paired pediatric incomplete-fracture patterns and should share one page.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5337779/"
+    ]
+  }
+]

@@ -1,0 +1,524 @@
+FINAL NEW MEDICAL TOPICS
+493 additions | P1 128 | P2 365
+P1 = add first; P2 = add next.
+
+BREAST
+001. [P1] Silicone Breast Implant Rupture
+002. [P2] Atypical Vascular Lesion of the Irradiated Breast
+003. [P2] Breast Implant Capsular Contracture
+004. [P2] Congenital Amastia and Amazia
+005. [P2] Granular Cell Tumor of the Breast
+006. [P2] Hyperkeratosis of the Nipple and Areola
+007. [P2] Juvenile Papillomatosis
+008. [P2] Lactating Adenoma
+009. [P2] Pseudoangiomatous Stromal Hyperplasia
+010. [P2] Radiation-Associated Angiosarcoma of the Breast
+011. [P2] Tuberculous Mastitis
+012. [P2] Tuberous Breast Deformity
+
+CARDIOLOGY
+013. [P1] Acute Myocarditis
+014. [P1] Anomalous Aortic Origin of a Coronary Artery
+015. [P1] Aortic Stenosis
+016. [P1] Atrial Septal Defect
+017. [P1] Blunt Traumatic Aortic Injury
+018. [P1] Degenerative Mitral Valve Disease
+019. [P1] Fibromuscular dysplasia
+020. [P1] Patent Ductus Arteriosus
+021. [P1] Penetrating Atherosclerotic Ulcer
+022. [P1] Spontaneous Coronary Artery Dissection
+023. [P1] Superior Vena Cava Syndrome
+024. [P1] Takotsubo Cardiomyopathy
+025. [P1] Valvar Pulmonary Stenosis
+026. [P1] Ventricular Septal Defect
+027. [P2] Arterial Thoracic Outlet Syndrome
+028. [P2] Congenitally Corrected Transposition of the Great Arteries
+029. [P2] Cor Triatriatum
+030. [P2] Coronary Artery Fistula
+031. [P2] Cystic Adventitial Disease
+032. [P2] Discrete Subaortic Stenosis
+033. [P2] Double Outlet Right Ventricle
+034. [P2] Double-Chambered Right Ventricle
+035. [P2] Generalized Arterial Calcification of Infancy
+036. [P2] Heterotaxy syndrome
+037. [P2] Hypothenar Hammer Syndrome
+038. [P2] Interrupted Aortic Arch
+039. [P2] Middle aortic syndrome
+040. [P2] Multisystem Inflammatory Syndrome in Children
+041. [P2] Mycotic Aortic Aneurysm
+042. [P2] Nonbacterial Thrombotic Endocarditis
+043. [P2] Papillary Fibroelastoma
+044. [P2] Partial Anomalous Pulmonary Venous Return
+045. [P2] Popliteal Artery Entrapment Syndrome
+046. [P2] Pulmonary artery sling
+047. [P2] Pulmonary Atresia with Ventricular Septal Defect
+048. [P2] Right Aortic Arch with Aberrant Left Subclavian Artery
+049. [P2] Shone Complex
+050. [P2] Sinus of Valsalva Aneurysm
+
+ENDOCRINOLOGY
+051. [P1] Insulinoma
+052. [P1] Pituitary apoplexy
+053. [P2] Aromatase deficiency
+054. [P2] Chanarin-Dorfman syndrome
+055. [P2] Hereditary vitamin D-resistant rickets
+056. [P2] Juvenile Paget disease
+057. [P2] Kenny-Caffey Syndrome
+058. [P2] Nelson syndrome
+059. [P2] P450 oxidoreductase deficiency
+060. [P2] POMC deficiency
+061. [P2] Rathke cleft cyst
+062. [P2] Sanjad-Sakati Syndrome
+063. [P2] SHORT syndrome
+064. [P2] Van Wyk-Grumbach syndrome
+065. [P2] VIPoma
+
+GASTROENTEROLOGY
+066. [P1] Ampullary Adenocarcinoma
+067. [P1] Annular Pancreas
+068. [P1] Appendiceal Mucocele
+069. [P1] Chronic Mesenteric Ischemia
+070. [P1] Emphysematous Gastritis
+071. [P1] Epiploic Appendagitis
+072. [P1] Esophageal Coin Ingestion
+073. [P1] Focal Nodular Hyperplasia
+074. [P1] Gallbladder Adenomyomatosis
+075. [P1] Gallstone Ileus (including Bouveret Syndrome)
+076. [P1] Gastric Volvulus
+077. [P1] Hepatic Hemangioma
+078. [P1] Hepatocellular Adenoma
+079. [P1] Jejunoileal Atresia
+080. [P1] Multiple Magnet Ingestion
+081. [P1] Omental Infarction
+082. [P1] Pancreatic Mucinous Cystic Neoplasm
+083. [P1] Pancreatic Serous Cystadenoma
+084. [P1] Paraduodenal and Transmesenteric Internal Hernia
+085. [P1] Pill-Induced Esophagitis
+086. [P1] Schatzki Ring
+087. [P1] Solid Pseudopapillary Neoplasm
+088. [P1] Splanchnic venous thrombosis
+089. [P1] Stercoral Colitis
+090. [P1] Superior Mesenteric Artery Syndrome
+091. [P2] Biliary Mucinous Cystic Neoplasm
+092. [P2] Congestive Hepatopathy and Fontan-Associated Liver Disease
+093. [P2] Encapsulating peritoneal sclerosis
+094. [P2] Esophageal Intramural Pseudodiverticulosis
+095. [P2] Groove Pancreatitis
+096. [P2] Hepatic Epithelioid Hemangioendothelioma
+097. [P2] Hepatic sinusoidal obstruction syndrome
+098. [P2] Herpes Simplex Esophagitis
+099. [P2] Hookworm Infection
+100. [P2] Intestinal duplication cyst
+101. [P2] Isolated Polycystic Liver Disease
+102. [P2] Median Arcuate Ligament Syndrome
+103. [P2] Obturator hernia
+104. [P2] Peritoneal Mesothelioma
+105. [P2] Sclerosing Mesenteritis
+106. [P2] Secondary Sclerosing Cholangitis of Critical Illness
+107. [P2] Spigelian hernia
+108. [P2] Undifferentiated Embryonal Sarcoma of the Liver
+109. [P2] Yersinia Enterocolitica Ileitis
+
+HEMATOLOGY
+110. [P1] Acquired hemophilia A
+111. [P1] Post-transplant lymphoproliferative disorder
+112. [P1] Primary mediastinal large B-cell lymphoma
+113. [P2] EBV-positive mucocutaneous ulcer
+114. [P2] Enteropathy-associated T-cell lymphoma
+115. [P2] Immunoproliferative small intestinal disease (alpha heavy chain)
+116. [P2] Plasmablastic lymphoma
+117. [P2] Plasminogen deficiency type 1 (ligneous disease)
+118. [P2] Radioulnar synostosis with amegakaryocytic thrombocytopenia
+119. [P2] Systemic ALK-positive anaplastic large cell lymphoma
+120. [P2] Systemic chronic active EBV disease
+121. [P2] T-cell prolymphocytic leukemia
+122. [P2] TEMPI syndrome
+123. [P2] Transient abnormal myelopoiesis
+124. [P2] Type I (monoclonal) cryoglobulinemia
+
+IMMUNOLOGY
+125. [P2] Adenosine deaminase deficiency (ADA-SCID)
+126. [P2] Autoimmune lymphoproliferative syndrome
+127. [P2] CARD9 deficiency
+128. [P2] COPA syndrome
+129. [P2] FOXN1 deficiency (nude SCID)
+130. [P2] IL-10 and IL-10-receptor deficiency
+131. [P2] Isolated congenital asplenia
+132. [P2] MHC class I deficiency (TAP1/TAP2)
+133. [P2] PLCG2-associated disease (PLAID / APLAID)
+134. [P2] Severe congenital neutropenia
+135. [P2] Spondyloenchondrodysplasia with immune dysregulation
+136. [P2] Trichohepatoenteric syndrome
+137. [P2] Vici syndrome
+138. [P2] WHIM syndrome
+
+NEPHROLOGY
+139. [P1] Acute pyelonephritis, including lobar nephronia
+140. [P1] Emphysematous pyelonephritis
+141. [P1] Horseshoe kidney
+142. [P1] Pyonephrosis
+143. [P1] Renal and perinephric abscess
+144. [P1] Renal osteodystrophy and secondary hyperparathyroidism
+145. [P2] Acquired cystic kidney disease
+146. [P2] Acute cortical necrosis
+147. [P2] Bartter syndrome
+148. [P2] Crossed fused renal ectopia
+149. [P2] Distal (type 1) renal tubular acidosis
+150. [P2] HNF1B related kidney disease
+151. [P2] Lithium nephropathy
+152. [P2] Nephronophthisis
+153. [P2] Nutcracker syndrome
+154. [P2] Page kidney
+155. [P2] Renal lymphoma
+156. [P2] Renal medullary carcinoma
+
+NEUROLOGY
+157. [P1] Acute flaccid myelitis
+158. [P1] Acute ischemic stroke
+159. [P1] Aneurysmal subarachnoid hemorrhage
+160. [P1] Carbon monoxide poisoning
+161. [P1] Ependymoma
+162. [P1] Frontotemporal dementia
+163. [P1] Guillain Barre syndrome
+164. [P1] Intracranial epidermoid cyst
+165. [P1] Oligodendroglioma
+166. [P1] Osmotic demyelination syndrome
+167. [P1] Periventricular nodular heterotopia
+168. [P1] Polymicrogyria
+169. [P1] Spinal cord infarction
+170. [P1] Spinal epidural abscess
+171. [P2] Acute necrotizing encephalopathy
+172. [P2] Alpers Huttenlocher syndrome
+173. [P2] Autoimmune GFAP astrocytopathy
+174. [P2] Balo concentric sclerosis
+175. [P2] Beta propeller protein associated neurodegeneration
+176. [P2] Biotin thiamine responsive basal ganglia disease
+177. [P2] Central neurocytoma
+178. [P2] Choroid plexus tumors
+179. [P2] CLIPPERS
+180. [P2] COL4A1 related disorders
+181. [P2] CSF1R related leukoencephalopathy
+182. [P2] Dyke Davidoff Masson syndrome
+183. [P2] Dysembryoplastic neuroepithelial tumor
+184. [P2] Dysferlinopathy
+185. [P2] Enterovirus A71 brainstem encephalitis
+186. [P2] Familial dysautonomia
+187. [P2] Ganglioglioma
+188. [P2] Heroin inhalation associated leukoencephalopathy
+189. [P2] Horizontal gaze palsy with progressive scoliosis
+190. [P2] HTRA1 related cerebral small vessel disease
+191. [P2] Idiopathic spinal cord herniation
+192. [P2] Infratentorial superficial siderosis
+193. [P2] Intracranial dermoid cyst
+194. [P2] Japanese encephalitis
+195. [P2] LAMA2 related muscular dystrophy
+196. [P2] Listeria rhombencephalitis
+197. [P2] Marchiafava Bignami disease
+198. [P2] Metronidazole induced encephalopathy
+199. [P2] Nasu Hakola disease
+200. [P2] Neuralgic amyotrophy
+201. [P2] Neuronal intranuclear inclusion disease
+202. [P2] Pleomorphic xanthoastrocytoma
+203. [P2] Pontocerebellar hypoplasia
+204. [P2] Retinal vasculopathy with cerebral leukoencephalopathy and systemic manifestations
+205. [P2] Rhombencephalosynapsis
+206. [P2] SPG11 related hereditary spastic paraplegia
+207. [P2] Spinal arachnoid web
+208. [P2] West Nile neuroinvasive disease
+209. [P2] X linked myotubular myopathy
+
+ORTHOPEDICS
+210. [P1] Acromioclavicular joint separation
+211. [P1] Calcaneus fracture
+212. [P1] Galeazzi fracture-dislocation
+213. [P1] Hangman fracture
+214. [P1] Jefferson fracture
+215. [P1] Knee dislocation
+216. [P1] Lisfranc injury
+217. [P1] Monteggia fracture-dislocation
+218. [P1] Neuropathic arthropathy
+219. [P1] Odontoid fracture
+220. [P1] Osgood-Schlatter disease
+221. [P1] Patellar dislocation
+222. [P1] Radial head fracture
+223. [P1] Supracondylar humerus fracture
+224. [P1] Traumatic hip dislocation
+225. [P2] Acetabular fracture
+226. [P2] Adhesive capsulitis
+227. [P2] Adverse local tissue reaction (metallosis)
+228. [P2] Atelosteogenesis
+229. [P2] Baastrup disease
+230. [P2] Biceps tendon rupture
+231. [P2] Cervical disc herniation
+232. [P2] Chance fracture
+233. [P2] Chronic osteomyelitis
+234. [P2] Clay-shoveler fracture
+235. [P2] Congenital knee dislocation
+236. [P2] Congenital pseudarthrosis of the clavicle
+237. [P2] Cubital tunnel syndrome
+238. [P2] de Quervain tenosynovitis
+239. [P2] Discoid meniscus
+240. [P2] Elastofibroma dorsi
+241. [P2] Essex-Lopresti injury
+242. [P2] Extensor mechanism rupture
+243. [P2] Fight bite
+244. [P2] Freiberg infraction
+245. [P2] Frontometaphyseal dysplasia
+246. [P2] Grisel syndrome
+247. [P2] Haglund syndrome
+248. [P2] Hydroxyapatite deposition disease
+249. [P2] Incarcerated medial epicondyle
+250. [P2] Intramuscular myxoma
+251. [P2] Intraosseous lipoma
+252. [P2] Isolated congenital radioulnar synostosis
+253. [P2] Jansen metaphyseal chondrodysplasia
+254. [P2] Jersey finger
+255. [P2] Jones fracture
+256. [P2] Köhler disease
+257. [P2] Lateral condyle fracture
+258. [P2] Lesser-toe deformities
+259. [P2] Lipoma arborescens
+260. [P2] Lumbar facet synovial cyst
+261. [P2] Medial collateral ligament tear
+262. [P2] Morel-Lavallée lesion
+263. [P2] Morton neuroma
+264. [P2] Myxofibrosarcoma
+265. [P2] Müller-Weiss disease
+266. [P2] Neurogenic heterotopic ossification
+267. [P2] Nora lesion
+268. [P2] Ossification of the ligamentum flavum
+269. [P2] Panner disease
+270. [P2] Particle-disease osteolysis
+271. [P2] Patella fracture
+272. [P2] Pectoralis major rupture
+273. [P2] Pediatric incomplete forearm fractures
+274. [P2] Pelvic apophyseal avulsions
+275. [P2] Pelvic ring disruption
+276. [P2] Perilunate and lunate dislocation
+277. [P2] Periosteal chondroma
+278. [P2] Periprosthetic joint infection
+279. [P2] Peroneal tendon dislocation
+280. [P2] Plantar fibromatosis
+281. [P2] Posterior cruciate ligament tear
+282. [P2] Posterolateral corner injury
+283. [P2] Primary lymphoma of bone
+284. [P2] Pyle disease
+285. [P2] Pyogenic spondylodiscitis
+286. [P2] Pyomyositis
+287. [P2] Scapholunate dissociation
+288. [P2] Septic bursitis
+289. [P2] Sinding-Larsen-Johansson disease
+290. [P2] Skeletal metastases
+291. [P2] Split-hand/foot malformation
+292. [P2] Subchondral insufficiency fracture of the knee
+293. [P2] Talar neck fracture
+294. [P2] Terrible triad of the elbow
+295. [P2] Thumb ulnar collateral ligament injury
+296. [P2] Tibial hemimelia
+297. [P2] Tibial tubercle avulsion
+298. [P2] Transient osteoporosis of the hip
+299. [P2] Transitional ankle fractures
+300. [P2] Ulnar longitudinal deficiency
+301. [P2] Vertebral hemangioma
+
+OTOLARYNGOLOGY
+302. [P1] Carotid body tumor
+303. [P1] Congenital laryngeal web
+304. [P1] Idiopathic subglottic stenosis
+305. [P1] Laryngeal cleft
+306. [P1] Laryngeal fracture
+307. [P1] Le Fort fractures (types I–III as one topic)
+308. [P1] Mandibular fracture
+309. [P1] Nasal bone fracture
+310. [P1] Nasal foreign body, including a button battery
+311. [P1] Nasal septal hematoma
+312. [P1] Orbital blowout fracture
+313. [P1] Parapharyngeal abscess
+314. [P1] Sinonasal fungal ball
+315. [P1] Superior semicircular canal dehiscence syndrome
+316. [P1] Temporal bone fracture (otic-capsule sparing versus violating)
+317. [P1] Tympanosclerosis
+318. [P1] Vallecular cyst
+319. [P1] Zygomaticomaxillary complex fracture
+320. [P2] Acute bacterial sialadenitis
+321. [P2] Cholesterol granuloma of the petrous apex
+322. [P2] Chronic invasive fungal rhinosinusitis
+323. [P2] Cocaine-induced midline destructive lesion
+324. [P2] Enlarged vestibular aqueduct
+325. [P2] External auditory canal cholesteatoma
+326. [P2] External auditory canal osteoma
+327. [P2] First branchial cleft anomaly
+328. [P2] Keratosis obturans
+329. [P2] Nasolabial (nasoalveolar) cyst
+330. [P2] Odontogenic sinusitis
+331. [P2] Petrous apicitis (Gradenigo syndrome)
+332. [P2] Preauricular sinus
+333. [P2] Reinke edema
+334. [P2] Sinonasal osteoma
+335. [P2] Sinonasal squamous cell carcinoma
+336. [P2] Vocal fold cyst
+337. [P2] Vocal fold nodules
+338. [P2] Vocal fold polyp
+339. [P2] Vocal process granuloma
+
+PEDIATRICS
+340. [P1] Erythema Toxicum Neonatorum
+341. [P1] Germinal matrix and intraventricular hemorrhage of prematurity
+342. [P1] Hair thread tourniquet syndrome
+343. [P1] Hydranencephaly
+344. [P1] Kernicterus
+345. [P1] Neonatal mastitis
+346. [P1] Periventricular leukomalacia
+347. [P1] Physical child abuse
+348. [P1] Pleuropulmonary blastoma
+349. [P1] Subgaleal Hemorrhage
+350. [P1] Umbilical Granuloma
+351. [P2] 3M Syndrome
+352. [P2] Alpha-Mannosidosis
+353. [P2] Asymmetric Periflexural Exanthem of Childhood
+354. [P2] ATR-X Syndrome
+355. [P2] Atypical Teratoid/Rhabdoid Tumor
+356. [P2] Beare-Stevenson Cutis Gyrata Syndrome
+357. [P2] Brachytelephalangic Chondrodysplasia Punctata
+358. [P2] Branchio-Oculo-Facial Syndrome
+359. [P2] CHILD Syndrome
+360. [P2] Cohen Syndrome
+361. [P2] Congenital High Airway Obstruction Syndrome (CHAOS)
+362. [P2] Congenital Infantile Fibrosarcoma
+363. [P2] Currarino Syndrome
+364. [P2] Desbuquois Dysplasia
+365. [P2] Donnai-Barrow Syndrome
+366. [P2] Feingold Syndrome
+367. [P2] Femoral Hypoplasia–Unusual Facies Syndrome
+368. [P2] Fetal Hydantoin Syndrome
+369. [P2] Fetal Valproate Syndrome
+370. [P2] Fryns Syndrome
+371. [P2] Fucosidosis
+372. [P2] Galactosialidosis
+373. [P2] Grebe Acromesomelic Dysplasia
+374. [P2] Greig Cephalopolysyndactyly Syndrome
+375. [P2] Hennekam Syndrome
+376. [P2] Infantile Acropustulosis
+377. [P2] Isotretinoin Embryopathy
+378. [P2] L1 syndrome
+379. [P2] Lipoblastoma
+380. [P2] LUMBAR Syndrome
+381. [P2] Marshall-Smith Syndrome
+382. [P2] Matthew Wood syndrome
+383. [P2] Meconium Plug Syndrome
+384. [P2] Meier-Gorlin Syndrome
+385. [P2] Melanotic Neuroectodermal Tumor of Infancy
+386. [P2] Melnick-Needles Syndrome
+387. [P2] Mesenchymal hamartoma of the liver
+388. [P2] Microcephalic osteodysplastic primordial dwarfism type II
+389. [P2] Miller Syndrome
+390. [P2] Molybdenum Cofactor Deficiency
+391. [P2] Muenke Syndrome
+392. [P2] Multiple Sulfatase Deficiency
+393. [P2] Myhre Syndrome
+394. [P2] Neonatal Adrenal Hemorrhage
+395. [P2] Neonatal Small Left Colon Syndrome
+396. [P2] Nicolaides-Baraitser Syndrome
+397. [P2] Opsismodysplasia
+398. [P2] Pallister Hall syndrome
+399. [P2] Pallister-Killian Syndrome
+400. [P2] Pediatric Cystic Nephroma
+401. [P2] Perlman Syndrome
+402. [P2] Pitt-Hopkins Syndrome
+403. [P2] Rhabdoid Tumor of the Kidney
+404. [P2] Roberts Syndrome
+405. [P2] Schinzel-Giedion Syndrome
+406. [P2] Stüve-Wiedemann Syndrome
+407. [P2] Warfarin Embryopathy
+408. [P2] Wiedemann Rautenstrauch syndrome
+409. [P2] Wiedemann-Steiner Syndrome
+
+PULMONOLOGY
+410. [P1] Airway foreign body aspiration
+411. [P1] Asbestos related nonmalignant thoracic disease
+412. [P1] Chronic Thromboembolic Pulmonary Hypertension
+413. [P1] Constrictive Bronchiolitis
+414. [P1] Fat Embolism Syndrome
+415. [P1] Idiopathic Nonspecific Interstitial Pneumonia
+416. [P1] Mature Mediastinal Teratoma
+417. [P1] Rounded Atelectasis
+418. [P1] Thymoma
+419. [P1] Tracheobronchomalacia
+420. [P2] Alveolar Macrophage Pneumonia (formerly Desquamative Interstitial Pneumonia)
+421. [P2] Amiodarone Pulmonary Toxicity
+422. [P2] Bronchial Anthracofibrosis
+423. [P2] Bronchial Atresia
+424. [P2] Bronchial Mucoepidermoid Carcinoma
+425. [P2] Bronchogenic Cyst
+426. [P2] Combined Pulmonary Fibrosis and Emphysema
+427. [P2] Complete Tracheal Rings
+428. [P2] Dendriform Pulmonary Ossification
+429. [P2] Diaphragmatic Eventration
+430. [P2] Diffuse Idiopathic Pulmonary Neuroendocrine Cell Hyperplasia (DIPNECH)
+431. [P2] Genetic surfactant dysfunction
+432. [P2] Inert metal pneumoconiosis
+433. [P2] Metastatic Pulmonary Calcification
+434. [P2] Neuroendocrine cell hyperplasia of infancy
+435. [P2] Posterior Mediastinal Schwannoma
+436. [P2] Proximal Interruption of a Pulmonary Artery
+437. [P2] Pulmonary agenesis and aplasia
+438. [P2] Pulmonary Artery Intimal Sarcoma
+439. [P2] Pulmonary Light-Chain Deposition Disease
+440. [P2] Pulmonary Sclerosing Pneumocytoma
+441. [P2] Pulmonary Talcosis
+442. [P2] Pulmonary Vein Stenosis
+443. [P2] Respiratory Bronchiolitis-Interstitial Lung Disease (RB-ILD)
+444. [P2] Spontaneous Pneumomediastinum
+445. [P2] Thoracic Splenosis
+446. [P2] Tracheobronchial Adenoid Cystic Carcinoma
+447. [P2] Vaping-Associated Lung Injury (EVALI)
+448. [P2] Williams-Campbell Syndrome
+
+RHEUMATOLOGY
+449. [P1] Secondary hypertrophic osteoarthropathy
+450. [P2] Camptodactyly arthropathy coxa vara pericarditis syndrome
+451. [P2] Dialysis related beta 2 microglobulin amyloidosis
+452. [P2] Fibroblastic rheumatism
+453. [P2] Multicentric osteolysis nodulosis and arthropathy
+454. [P2] Pachydermodactyly
+455. [P2] Palmar fasciitis and polyarthritis syndrome
+456. [P2] Singleton Merten syndrome
+457. [P2] Stiff skin syndrome
+458. [P2] Voriconazole induced periostitis
+
+UROLOGY
+459. [P1] Bladder calculus
+460. [P1] Bladder rupture
+461. [P1] Ectopic ureter
+462. [P1] Prostatic abscess
+463. [P1] Renal trauma
+464. [P1] Traumatic urethral injury
+465. [P1] Upper-tract urothelial carcinoma
+466. [P1] Ureterocele
+467. [P2] Acute idiopathic scrotal edema
+468. [P2] Anterior urethral valves
+469. [P2] Concealed (buried) penis
+470. [P2] Congenital bladder diverticulum (Hutch)
+471. [P2] Congenital megalourethra
+472. [P2] Congenital penile curvature
+473. [P2] Congenital renal arteriovenous malformation
+474. [P2] Cowper syringocele
+475. [P2] Encrusted cystitis and pyelitis
+476. [P2] Fibrous pseudotumor of the tunica vaginalis
+477. [P2] Idiopathic scrotal fat necrosis
+478. [P2] Median raphe cyst
+479. [P2] Megacystis-megaureter syndrome
+480. [P2] Neonatal paraurethral (Skene) cyst
+481. [P2] Nonvenereal sclerosing lymphangitis
+482. [P2] Pelvic lipomatosis
+483. [P2] Penile Mondor disease
+484. [P2] Penoscrotal transposition
+485. [P2] Persistent Mullerian duct syndrome
+486. [P2] Pyeloureteritis cystica
+487. [P2] Retrocaval ureter
+488. [P2] Sclerosing lipogranuloma (penile paraffinoma)
+489. [P2] Segmental testicular infarction
+490. [P2] Testicular epidermoid cyst
+491. [P2] Urethral duplication
+492. [P2] Webbed penis
+493. [P2] Zinner syndrome

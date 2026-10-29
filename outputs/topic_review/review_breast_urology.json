@@ -1,0 +1,894 @@
+[
+  {
+    "index": 1,
+    "proposed_id": "silicone_breast_implant_rupture",
+    "canonical_name": "Silicone Breast Implant Rupture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "MRI linguine sign of collapsed implant shell; US snowstorm from extracapsular silicone.",
+    "rationale": "Distinct implant complication with memorable cross-modality signs and possible palpable silicone/adenopathy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://acsearch.acr.org/docs/3100728/Narrative/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 2,
+    "proposed_id": "pseudoangiomatous_stromal_hyperplasia",
+    "canonical_name": "Pseudoangiomatous Stromal Hyperplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Rapidly enlarging mobile mass; mammographic oval mass/developing asymmetry and parallel hypoechoic US mass.",
+    "rationale": "Standalone mass-forming benign stromal lesion and carcinoma mimic; imaging is nonspecific but clinical and radiologic pattern is useful.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9901424/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 3,
+    "proposed_id": "lactating_adenoma",
+    "canonical_name": "Lactating Adenoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Pregnancy/lactation-associated mobile mass; US circumscribed oval lesion, becoming complex/cystic if infarcted.",
+    "rationale": "Distinct pregnancy-associated mass; useful clinical/imaging differential from galactocele and fibroadenoma.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10560982/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 4,
+    "proposed_id": "granular_cell_tumor_of_the_breast",
+    "canonical_name": "Granular Cell Tumor of the Breast",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Firm superficial mass with skin/nipple retraction; spiculated mammographic mass and posterior shadowing on US.",
+    "rationale": "High-value carcinoma mimic with visible and radiologic manifestations; diagnosis is confirmed histologically.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7170582/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 5,
+    "proposed_id": "papillary_carcinoma_of_the_breast",
+    "canonical_name": "Papillary Carcinoma of the Breast",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Retroareolar cystic-solid lesion with mural nodule and possible bloody discharge.",
+    "rationale": "Bundled encapsulated, solid, and invasive papillary carcinomas are biologically distinct; described imaging pattern overlaps intraductal papilloma and does not support one coherent standalone topic.",
+    "existing_parent_ids": [
+      "intraductal_papilloma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 6,
+    "proposed_id": "tuberculous_mastitis",
+    "canonical_name": "Tuberculous Mastitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Chronic breast mass with skin sinus; US shows heterogeneous collection and fistulous tract, sometimes necrotic axillary nodes.",
+    "rationale": "Distinct chronic infection that mimics carcinoma and has a teachable sinus/abscess pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7884561/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 7,
+    "proposed_id": "juvenile_papillomatosis",
+    "canonical_name": "Juvenile Papillomatosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Adolescent/young adult with localized firm mass; ultrasound clustered cysts of varying size (“Swiss cheese”).",
+    "rationale": "Named age-specific lesion with a recognizable ultrasound pattern, distinct from solitary papilloma and juvenile fibroadenoma.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 8,
+    "proposed_id": "sclerosing_adenosis",
+    "canonical_name": "Sclerosing Adenosis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Mammographic grouped calcifications, architectural distortion, or mass.",
+    "rationale": "Common imaging findings are nonspecific and the teaching value is mainly histopathologic; current radial-scar topic is a neighboring benign mimic, but not the same disease.",
+    "existing_parent_ids": [
+      "radial_scar"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 9,
+    "proposed_id": "radiation_associated_breast_angiosarcoma",
+    "canonical_name": "Radiation-Associated Angiosarcoma of the Breast",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Years after breast irradiation, violaceous bruise-like plaques/nodules in field; skin thickening or enhancing cutaneous mass.",
+    "rationale": "Distinct secondary cutaneous angiosarcoma phenotype; keep separate from primary parenchymal breast angiosarcoma.",
+    "existing_parent_ids": [
+      "primary_breast_angiosarcoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11355165/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 10,
+    "proposed_id": "tuberous_breast_deformity",
+    "canonical_name": "Tuberous Breast Deformity",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Constricted breast base, high fold, enlarged areola, and glandular herniation producing a tubular/Snoopy contour.",
+    "rationale": "Congenital visible deformity diagnosed by inspection, with a specific contour not represented by Poland syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 11,
+    "proposed_id": "neonatal_mastitis",
+    "canonical_name": "Neonatal Mastitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral erythematous, warm, tender neonatal breast bud; US fluid collection if abscess.",
+    "rationale": "Distinct neonatal infection and recognizable age/site presentation; not physiologic bilateral hormonal enlargement or lactational mastitis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3762045/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 12,
+    "proposed_id": "metastases_to_the_breast",
+    "canonical_name": "Metastases to the Breast",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Rapid superficial masses, often multiple/bilateral round circumscribed lesions without spiculation.",
+    "rationale": "This is a heterogeneous secondary-deposit category without a single disease-specific appearance; melanoma, lymphoma, and primary tumors already have separate records.",
+    "existing_parent_ids": [
+      "primary_breast_lymphoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 13,
+    "proposed_id": "adenoid_cystic_carcinoma_of_the_breast",
+    "canonical_name": "Adenoid Cystic Carcinoma of the Breast",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Slow central/periareolar mass, sometimes painful; imaging may be circumscribed or irregular.",
+    "rationale": "Rare histologic carcinoma subtype with no reliable characteristic image or clinical anchor beyond a nonspecific mass.",
+    "existing_parent_ids": [
+      "invasive_ductal_carcinoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 14,
+    "proposed_id": "secretory_carcinoma_of_the_breast",
+    "canonical_name": "Secretory Carcinoma of the Breast",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Circumscribed mobile breast mass in a child, adolescent, or young adult; oval hypoechoic US lesion.",
+    "rationale": "Age is notable but imaging overlaps common benign masses and diagnosis rests on histology; inadequate independent visual signature.",
+    "existing_parent_ids": [
+      "breast_fibroadenoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 15,
+    "proposed_id": "invasive_micropapillary_carcinoma",
+    "canonical_name": "Invasive Micropapillary Carcinoma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Irregular/spiculated mass and abnormal axillary nodes.",
+    "rationale": "A special histologic subtype with nonspecific imaging; nodal disease is not unique enough to justify a separate visual topic.",
+    "existing_parent_ids": [
+      "invasive_ductal_carcinoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 16,
+    "proposed_id": "mammary_myofibroblastoma",
+    "canonical_name": "Mammary Myofibroblastoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Slow, painless mobile breast mass, often in older man or postmenopausal woman; circumscribed oval lesion.",
+    "rationale": "Distinct benign stromal tumor with helpful demographic and imaging pattern, separate from gynecomastia and carcinoma.",
+    "existing_parent_ids": [
+      "gynecomastia"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 17,
+    "proposed_id": "atypical_ductal_hyperplasia",
+    "canonical_name": "Atypical Ductal Hyperplasia",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Screen-detected grouped amorphous, pleomorphic, or fine-linear calcifications.",
+    "rationale": "High-risk precursor is established by histology and calcifications are nonspecific; overlap with existing DCIS topic without a separate visual disease signature.",
+    "existing_parent_ids": [
+      "ductal_carcinoma_in_situ"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 18,
+    "proposed_id": "microglandular_adenosis",
+    "canonical_name": "Microglandular Adenosis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Irregular mass, asymmetry, or calcifications.",
+    "rationale": "Imaging is nonspecific and the central distinction is histologic (myoepithelial layer); a pathology-led entity rather than a visual atlas topic.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 19,
+    "proposed_id": "adenomyoepithelioma",
+    "canonical_name": "Adenomyoepithelioma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Older woman with circumscribed central mass, occasionally complex cystic-solid.",
+    "rationale": "Named biphasic pathology with nonspecific imaging and no stable disease-specific clinical appearance.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 20,
+    "proposed_id": "atypical_vascular_lesion_of_the_breast",
+    "canonical_name": "Atypical Vascular Lesion of the Irradiated Breast",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small pink/brown or erythematous papules/vesicles arising in irradiated breast skin.",
+    "rationale": "Visible post-radiation skin lesion is an important differential of radiation-associated angiosarcoma; retain separately because benign atypical vascular lesion is not angiosarcoma.",
+    "existing_parent_ids": [
+      "primary_breast_angiosarcoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 21,
+    "proposed_id": "mucocele_like_lesion",
+    "canonical_name": "Mucocele-Like Lesion",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Grouped coarse/pleomorphic calcifications or complex cystic mass.",
+    "rationale": "Calcifications/cystic mass are nonspecific and the lesion is principally a histologic risk-stratification diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 22,
+    "proposed_id": "hyperkeratosis_of_the_nipple_and_areola",
+    "canonical_name": "Hyperkeratosis of the Nipple and Areola",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Verrucous brown hyperkeratosis involving nipple and areola, unilateral or bilateral.",
+    "rationale": "Directly photographable skin/nipple diagnosis with no imaging requirement; distinct from Paget disease.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 23,
+    "proposed_id": "syringomatous_tumor_of_the_nipple",
+    "canonical_name": "Syringomatous Tumor of the Nipple",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Firm subareolar mass with nipple inversion/retraction or enlargement; irregular subareolar lesion.",
+    "rationale": "Rare locally infiltrative nipple tumor but imaging and examination overlap nipple adenoma and carcinoma; limited standalone visual specificity.",
+    "existing_parent_ids": [
+      "nipple_adenoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 24,
+    "proposed_id": "premature_thelarche",
+    "canonical_name": "Premature Thelarche",
+    "action": "EXCLUDE",
+    "priority": "P2",
+    "visual_anchor": "Isolated breast budding before age 8 without other pubertal signs.",
+    "rationale": "Developmental normal-variant presentation rather than a distinct lesion suitable for an atlas disease topic.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 25,
+    "proposed_id": "congenital_amastia_amazia",
+    "canonical_name": "Congenital Amastia and Amazia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Congenital absence of breast mound (amastia) or gland with preserved nipple-areola (amazia); pectoralis present.",
+    "rationale": "Distinct visible congenital phenotype and clinically useful distinction from Poland syndrome and accessory breast tissue.",
+    "existing_parent_ids": [
+      "accessory_breast_tissue"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 26,
+    "proposed_id": "breast_implant_capsular_contracture",
+    "canonical_name": "Breast Implant Capsular Contracture",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Firm, high, spherical, distorted breast after implant placement; Baker III visible distortion, IV pain/hardness.",
+    "rationale": "Standalone visible implant complication; no current broad implant topic and distinct from rupture.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 125,
+    "proposed_id": "upper_tract_urothelial_carcinoma",
+    "canonical_name": "Upper-tract urothelial carcinoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT urography shows enhancing filling defect or urothelial thickening in renal pelvis/ureter; ureteroscopy shows papillary tumor.",
+    "rationale": "Distinct upper-tract primary site from existing bladder urothelial carcinoma; radiologic localization is central.",
+    "existing_parent_ids": [
+      "urothelial_bladder_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/10605044/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 126,
+    "proposed_id": "renal_trauma",
+    "canonical_name": "Renal trauma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Multiphase contrast CT grades laceration/vascular injury; delayed phase demonstrates urinary extravasation and perirenal hematoma.",
+    "rationale": "Acute trauma entity with management-driving, image-based grading and no existing renal injury topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6886230/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 127,
+    "proposed_id": "bladder_rupture",
+    "canonical_name": "Bladder rupture",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Retrograde CT cystogram shows extraperitoneal perivesical/Retzius leak or intraperitoneal contrast outlining bowel.",
+    "rationale": "High-yield trauma pattern with distinct imaging and management implications.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4104146/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 128,
+    "proposed_id": "urethral_trauma",
+    "canonical_name": "Traumatic urethral injury",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Retrograde urethrogram shows contrast extravasation at membranous urethra after pelvic fracture or bulbar urethra after straddle injury.",
+    "rationale": "Distinct urethral trauma site patterns, often accompanied by recognizable perineal/butterfly hematoma; no existing topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4104146/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 129,
+    "proposed_id": "bladder_calculus",
+    "canonical_name": "Bladder calculus",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Plain film may show a spiculated “jackstone” in bladder; confirm at cystoscopy.",
+    "rationale": "A discrete visible stone morphology and endoscopic finding; distinct from upper-tract nephrolithiasis.",
+    "existing_parent_ids": [
+      "nephrolithiasis"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 130,
+    "proposed_id": "ureterocele",
+    "canonical_name": "Ureterocele",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Voiding/cystographic study shows intravesical cobra-head ureterocele; duplex obstruction may produce drooping-lily sign.",
+    "rationale": "Congenital urinary anomaly with recognizable imaging signs and potential visible prolapse; not covered by reflux or megaureter topics.",
+    "existing_parent_ids": [
+      "vesicoureteral_reflux"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 131,
+    "proposed_id": "ectopic_ureter",
+    "canonical_name": "Ectopic ureter",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "MR urography depicts ureter inserting distal to sphincter; continuous incontinence despite normal voiding in a girl.",
+    "rationale": "Anatomic anomaly with a classic clinical clue and imaging confirmation; separate from ectopic testis/cryptorchidism.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 132,
+    "proposed_id": "anterior_urethral_valves",
+    "canonical_name": "Anterior urethral valves",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "VCUG shows dilated anterior urethra proximal to valve, sometimes with anterior urethral diverticulum.",
+    "rationale": "Distinct anterior obstruction pattern; existing posterior urethral valves do not subsume it.",
+    "existing_parent_ids": [
+      "posterior_urethral_valves"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 133,
+    "proposed_id": "testicular_epidermoid_cyst",
+    "canonical_name": "Testicular epidermoid cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small intratesticular avascular mass with concentric onion-ring/lamellated ultrasound echoes.",
+    "rationale": "Highly recognizable benign testicular lesion that can mimic malignancy and alter operative decision-making.",
+    "existing_parent_ids": [
+      "testicular_germ_cell_tumor"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 134,
+    "proposed_id": "prostatic_abscess",
+    "canonical_name": "Prostatic abscess",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Fever/dysuria with rim-enhancing intraprostatic fluid collection on TRUS, CT, or MRI.",
+    "rationale": "Distinct focal suppurative complication with characteristic drainable collection, not covered by BPH or prostatitis-spectrum topics.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5678513/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 135,
+    "proposed_id": "zinner_syndrome",
+    "canonical_name": "Zinner syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "MRI/CT triad: unilateral renal agenesis, ipsilateral seminal-vesicle cyst, and ejaculatory-duct obstruction.",
+    "rationale": "Compact congenital syndrome with a specific cross-sectional imaging triad and clinically useful pelvic-mass differential.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6479056/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 136,
+    "proposed_id": "concealed_penis",
+    "canonical_name": "Concealed (buried) penis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Normal corporal length concealed by suprapubic/scrotal skin, visible as a buried shaft; stretched length is normal.",
+    "rationale": "Distinct visible genital anomaly and bedside distinction from micropenis; no existing topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6127540/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 137,
+    "proposed_id": "penile_hair_tourniquet",
+    "canonical_name": "Penile hair-tourniquet syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Circumferential coronal sulcus groove with embedded hair/thread and distal edema or dusky glans.",
+    "rationale": "Urgent, visually recognizable strangulation syndrome with a clear physical finding and no current parent topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5695288/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 138,
+    "proposed_id": "acute_idiopathic_scrotal_edema",
+    "canonical_name": "Acute idiopathic scrotal edema",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Acute scrotal wall edema/hyperemia with normal testes and epididymides; transverse Doppler “fountain” pattern.",
+    "rationale": "Important benign acute-scrotum mimic with a distinct sonographic sign and potential to avoid exploration.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3845344/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 139,
+    "proposed_id": "retrocaval_ureter",
+    "canonical_name": "Retrocaval ureter",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Right ureter courses behind IVC with reverse-J/fishhook or S-shaped course on urography.",
+    "rationale": "Congenital anatomic obstruction with distinctive cross-sectional/urographic course, separate from UPJ obstruction.",
+    "existing_parent_ids": [
+      "ureteropelvic_junction_obstruction"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 140,
+    "proposed_id": "encrusted_cystitis",
+    "canonical_name": "Encrusted cystitis and pyelitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows thin/mural calcified plaques coating bladder or collecting-system urothelium, often with alkaline urine.",
+    "rationale": "Specific encrusting infectious pattern distinct from emphysematous cystitis, which shows gas.",
+    "existing_parent_ids": [
+      "emphysematous_cystitis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7858656/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 141,
+    "proposed_id": "ketamine_cystitis",
+    "canonical_name": "Ketamine cystitis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Young adult with frequency/pain and a contracted thick-walled small bladder on imaging/cystoscopy.",
+    "rationale": "Imaging appearance is explicitly nonspecific and overlaps existing interstitial cystitis/bladder pain syndrome; substance exposure alone does not supply a distinct visual anchor.",
+    "existing_parent_ids": [
+      "interstitial_cystitis"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 142,
+    "proposed_id": "cowper_syringocele",
+    "canonical_name": "Cowper syringocele",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Urethrogram shows ventral bulbar channel/filling defect; MRI/US localizes dilated Cowper duct.",
+    "rationale": "Distinct male urethral gland duct lesion with a demonstrable imaging pattern, not covered by nonspecific stricture.",
+    "existing_parent_ids": [
+      "urethral_stricture"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 143,
+    "proposed_id": "congenital_bladder_diverticulum",
+    "canonical_name": "Congenital bladder diverticulum (Hutch)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "VCUG demonstrates paraureteral bladder outpouching near ureteral orifice, often associated with reflux.",
+    "rationale": "Congenital diverticulum is distinct from urachal anomalies and patent urachus; imaging-defined wall outpouching merits its own entry.",
+    "existing_parent_ids": [
+      "patent_urachus"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 144,
+    "proposed_id": "megacystis_megaureter_syndrome",
+    "canonical_name": "Megacystis-megaureter syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Imaging shows markedly enlarged smooth bladder with bilateral megaureters/reflux and no urethral obstruction.",
+    "rationale": "Distinct congenital bladder/ureter phenotype; not primary obstructive megaureter or megacystis-microcolon-intestinal hypoperistalsis syndrome.",
+    "existing_parent_ids": [
+      "primary_obstructive_megaureter"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 145,
+    "proposed_id": "persistent_mullerian_duct_syndrome",
+    "canonical_name": "Persistent Müllerian duct syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Phenotypic male with uterus/tubes on pelvic imaging, often discovered during hernia/cryptorchidism surgery.",
+    "rationale": "Distinct developmental syndrome with striking cross-sectional/surgical anatomy and clinical exam relevance.",
+    "existing_parent_ids": [
+      "cryptorchidism"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 146,
+    "proposed_id": "penile_mondor_disease",
+    "canonical_name": "Penile Mondor disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Painful palpable dorsal penile cord; Doppler shows thrombosed superficial dorsal vein with absent flow.",
+    "rationale": "Distinct venous thrombosis with confirmatory Doppler and cord appearance; do not merge with lymphangitis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11973117/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 147,
+    "proposed_id": "penile_sclerosing_lymphangitis",
+    "canonical_name": "Nonvenereal sclerosing lymphangitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Firm mobile serpiginous cord encircles or lies just proximal to coronal sulcus, usually without dorsal vein thrombosis.",
+    "rationale": "Separate lymphatic process from Mondor superficial thrombophlebitis; the clinical differential itself is visually teachable.",
+    "existing_parent_ids": [
+      "penile_mondor_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11233051/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 148,
+    "proposed_id": "penile_paraffinoma",
+    "canonical_name": "Sclerosing lipogranuloma (penile paraffinoma)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Deforming penile nodules, induration, ulcers, or draining sinuses after injection of paraffin/oil.",
+    "rationale": "Distinct injection-related foreign-body disease with visible deformity and skin breakdown; no existing penile malignancy topic captures it.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 149,
+    "proposed_id": "median_raphe_cyst",
+    "canonical_name": "Median raphe cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small midline ventral penile/perineal cyst along median raphe, apparent at birth or later.",
+    "rationale": "Visible congenital cutaneous cyst with specific midline anatomy and no existing equivalent.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 150,
+    "proposed_id": "leydig_cell_tumor",
+    "canonical_name": "Leydig cell tumor",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Small solid intratesticular mass; precocious puberty or gynecomastia may accompany hormone secretion.",
+    "rationale": "US is nonspecific and definitive recognition is histologic; existing germ-cell tumor is broad enough for initial mass workup absent a distinctive visual signature.",
+    "existing_parent_ids": [
+      "testicular_germ_cell_tumor"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 151,
+    "proposed_id": "segmental_testicular_infarction",
+    "canonical_name": "Segmental testicular infarction",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Acute pain with wedge-shaped avascular intratesticular segment and preserved flow in remainder.",
+    "rationale": "Strong imaging discriminator from torsion and tumor; distinct focal infarction pattern.",
+    "existing_parent_ids": [
+      "testicular_torsion"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8263845/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 152,
+    "proposed_id": "webbed_penis",
+    "canonical_name": "Webbed penis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Scrotal skin extends onto ventral shaft and erases penoscrotal angle, often apparent with erection/traction.",
+    "rationale": "Distinct congenital external phenotype with direct clinical photograph teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 153,
+    "proposed_id": "penoscrotal_transposition",
+    "canonical_name": "Penoscrotal transposition",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Scrotum lies cranial to penis, partially or completely; photograph defines degree of transposition.",
+    "rationale": "Distinct congenital external genital anomaly with clear visual recognition and surgical relevance.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 154,
+    "proposed_id": "congenital_penile_curvature",
+    "canonical_name": "Congenital penile curvature",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Persistent penile bend with orthotopic meatus, typically evident with erection; curvature documented by erection photograph.",
+    "rationale": "Distinct congenital penile shape abnormality; keep separate from acquired Peyronie plaque/curvature.",
+    "existing_parent_ids": [
+      "peyronie_disease"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 155,
+    "proposed_id": "paraurethral_cyst",
+    "canonical_name": "Neonatal paraurethral (Skene) cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Newborn interlabial cyst displaces urethral meatus off midline; US shows paraurethral cyst.",
+    "rationale": "Characteristic neonatal external finding with obstruction differential and no existing urethral topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5093777/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 156,
+    "proposed_id": "congenital_megalourethra",
+    "canonical_name": "Congenital megalourethra",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Penis balloons during voiding; VCUG shows markedly dilated urethra without distal valve.",
+    "rationale": "Rare but striking congenital urethral morphology; differs from valve obstruction and stricture.",
+    "existing_parent_ids": [
+      "posterior_urethral_valves"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 157,
+    "proposed_id": "urethral_duplication",
+    "canonical_name": "Urethral duplication",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Two urethral openings/channels demonstrated on exam and VCUG/retrograde urethrogram.",
+    "rationale": "Distinct anatomic anomaly with visible clinical clue and direct radiographic demonstration.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 158,
+    "proposed_id": "pelvic_lipomatosis",
+    "canonical_name": "Pelvic lipomatosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows abundant pelvic fat compressing bladder into an inverted-teardrop shape, often with upper-tract obstruction.",
+    "rationale": "Distinct imaging-defined pelvic disease, not generic hydronephrosis or obesity.",
+    "existing_parent_ids": [
+      "obstructive_uropathy_hydronephrosis"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 159,
+    "proposed_id": "pyeloureteritis_cystica",
+    "canonical_name": "Pyeloureteritis cystica",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Urography shows multiple small smooth round filling defects in renal pelvis/ureter from mucosal cysts.",
+    "rationale": "Characteristic multifocal urothelial filling-defect pattern distinct from urothelial carcinoma and stones.",
+    "existing_parent_ids": [
+      "upper_tract_urothelial_carcinoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 160,
+    "proposed_id": "urachal_cyst",
+    "canonical_name": "Urachal cyst",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Midline cyst along urachal tract between bladder dome and umbilicus.",
+    "rationale": "Urachal carcinoma catalog record explicitly includes congenital urachal anomalies; this is a named subtype within that existing combined entry.",
+    "existing_parent_ids": [
+      "urachal_carcinoma"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 161,
+    "proposed_id": "congenital_renal_arteriovenous_malformation",
+    "canonical_name": "Congenital renal arteriovenous malformation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Gross hematuria with serpiginous/corkscrew suburothelial vessels; angiography shows cirsoid AVM nidus.",
+    "rationale": "Distinct vascular cause of hematuria with angiographic vascular morphology and no existing renal AVM topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4921167/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 162,
+    "proposed_id": "idiopathic_scrotal_fat_necrosis",
+    "canonical_name": "Idiopathic scrotal fat necrosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prepubertal boy with focal hyperechoic scrotal fat adjacent to normal testes, sometimes following cold exposure.",
+    "rationale": "Distinct benign extratesticular acute-scrotum mimic with ultrasound localization that separates it from torsion.",
+    "existing_parent_ids": [
+      "testicular_torsion"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 163,
+    "proposed_id": "fibrous_pseudotumor_of_tunica",
+    "canonical_name": "Fibrous pseudotumor of the tunica vaginalis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Scrotal US shows multiple solid extratesticular tunical nodules, often T2-dark on MRI, with testis spared.",
+    "rationale": "Distinct benign paratesticular fibrous pseudotumor and useful testis-sparing imaging differential.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11703742/"
+    ],
+    "evidence_status": "supported"
+  }
+]

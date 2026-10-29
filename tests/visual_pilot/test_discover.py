@@ -374,13 +374,55 @@ def test_article_disease_keys_read_spelled_out_names():
 
 
 def test_acronym_named_topics_keep_a_spelled_out_search_name():
-    # The overview and disease passes search only names without an
-    # abbreviation; these two topics have no spelled-out name in use.
+    # The overview and disease passes drop bare abbreviations but keep one
+    # joined to a spelled-out word, so every topic has a title search name.
     catalog = diseases.load_diseases()
     missing = {key for key, d in catalog.items() if not discover.overview_disease_terms(d)}
-    assert missing == {"kbg_syndrome", "vacterl_association"}
+    assert missing == set()
     assert discover.overview_disease_terms(catalog["pfapa_syndrome"]) == [
-        "periodic fever, aphthous stomatitis, pharyngitis"]
+        "PFAPA Syndrome", "periodic fever, aphthous stomatitis, pharyngitis"]
+    assert discover.overview_disease_terms(catalog["kbg_syndrome"]) == ["KBG Syndrome"]
+
+
+def test_gene_named_topics_search_their_only_name_in_use():
+    catalog = diseases.load_diseases()
+    foxn1 = discover.overview_disease_terms(catalog["foxn1_deficiency_nude_scid"])
+    assert foxn1[0] == "FOXN1 deficiency" and "nude SCID" in foxn1
+    assert not any("(" in t for t in foxn1)  # the gloss form is never a title
+    assert "CARD9 deficiency" in discover.overview_disease_terms(catalog["card9_deficiency"])
+    assert "MHC class I deficiency" in discover.overview_disease_terms(
+        catalog["mhc_class_i_deficiency_tap1_tap2"])
+    # Bare abbreviations still go: "PsA" is also prostate-specific antigen.
+    assert "PsA" not in discover.overview_disease_terms(catalog["psa"])
+
+
+def test_mesh_hits_must_be_indexed_under_the_disease():
+    def hit(headings, keywords=()):
+        return europepmc.Hit(
+            pmcid="PMC1", pmid=None, doi=None, title="t", journal=None, year=None,
+            pub_types=[], license_raw=None, license_code="cc-by",
+            raw={"meshHeadingList": {"meshHeading": [{"descriptorName": h} for h in headings]},
+                 "keywordList": {"keyword": list(keywords)}},
+        )
+
+    terms = ["Laryngeal cleft", "laryngotracheoesophageal cleft"]
+    # MESH:"Laryngeal cleft" is not a descriptor; Europe PMC answers with
+    # cleft lip and palate articles, which are indexed under those instead.
+    assert not europepmc.indexed_under(hit(["Cleft Palate", "Cleft Lip"]), terms)
+    assert europepmc.indexed_under(hit(["Humans"], keywords=["laryngeal cleft"]), terms)
+    assert europepmc.indexed_under(hit(["Larynx", "Laryngeal cleft"]), terms)
+    # A multi-word heading that is part of the disease name counts.
+    assert europepmc.indexed_under(
+        hit(["Vitamin D-Dependent Rickets"]), ["vitamin D-dependent rickets type 2"])
+    # A one-word parent heading does not: "Rickets" covers every rickets.
+    assert not europepmc.indexed_under(hit(["Rickets"]), ["Hereditary vitamin D-resistant rickets"])
+    assert not europepmc.indexed_under(hit([]), terms)
+    # MeSH stores many descriptors inverted; word order does not matter.
+    assert europepmc.indexed_under(hit(["Lupus Erythematosus, Systemic"]), ["systemic lupus erythematosus"])
+    assert europepmc.indexed_under(hit(["Lymphoma, Large-Cell, Anaplastic"]), ["anaplastic large cell lymphoma"])
+    # A one-word term is a whole heading, not a word in one ("Lupus Nephritis").
+    assert not europepmc.indexed_under(hit(["Lupus Nephritis"]), ["lupus"])
+    assert europepmc.indexed_under(hit(["Gout"]), ["gout"])
 
 
 def test_name_variants_strip_parenthetical_gloss_and_fold_accents():

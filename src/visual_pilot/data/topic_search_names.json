@@ -541,5 +541,64 @@
   "swyer_james_macleod_syndrome": [
     "Swyer-James syndrome",
     "Macleod syndrome"
+  ],
+  "foxn1_deficiency_nude_scid": [
+    "FOXN1 deficiency",
+    "nude SCID",
+    "Nude/SCID"
+  ],
+  "mhc_class_i_deficiency_tap1_tap2": [
+    "MHC class I deficiency",
+    "TAP deficiency",
+    "TAP1 deficiency",
+    "TAP2 deficiency",
+    "bare lymphocyte syndrome type I",
+    "type I bare lymphocyte syndrome",
+    "type 1 bare lymphocyte syndrome"
+  ],
+  "card9_deficiency": [
+    "CARD9 deficiency"
+  ],
+  "col4a1_related_disorders": [
+    "COL4A1 mutation",
+    "COL4A1 variant",
+    "COL4A1-related disorder"
+  ],
+  "idiopathic_scrotal_fat_necrosis": [
+    "scrotal fat necrosis"
+  ],
+  "atypical_vascular_lesion_of_the_irradiated_breast": [
+    "atypical vascular lesion",
+    "atypical vascular lesions"
+  ],
+  "respiratory_bronchiolitis_interstitial_lung_disease_rb_ild": [
+    "respiratory bronchiolitis-associated interstitial lung disease",
+    "respiratory bronchiolitis interstitial lung disease"
+  ],
+  "hnf1b_related_kidney_disease": [
+    "HNF1B nephropathy",
+    "HNF1B mutation",
+    "HNF1B-associated kidney disease"
+  ],
+  "il_10_and_il_10_receptor_deficiency": [
+    "IL-10 receptor deficiency",
+    "IL10RA deficiency",
+    "IL10RB deficiency",
+    "interleukin-10 receptor deficiency"
+  ],
+  "plcg2_associated_disease_plaid_aplaid": [
+    "PLCG2-associated antibody deficiency and immune dysregulation",
+    "PLCG2 variant"
+  ],
+  "matthew_wood_syndrome": [
+    "Matthew-Wood syndrome",
+    "STRA6 deficiency",
+    "microphthalmia syndromic 9"
+  ],
+  "genetic_surfactant_dysfunction": [
+    "surfactant protein C deficiency",
+    "surfactant protein B deficiency",
+    "ABCA3 deficiency",
+    "surfactant dysfunction disorder"
   ]
 }

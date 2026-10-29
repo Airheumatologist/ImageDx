@@ -1,0 +1,101 @@
+D1689 Asbestosis
+Basal subpleural fibrosis, parenchymal bands, and pleural plaques.
+MATCHES: 0.80 babesiosis (Babesiosis) | 0.70 sclerosteosis (Sclerosteosis) | 0.67 chronic_arsenic_poisoning (Chronic Arsenic Poisoning (Arsenicosis))
+
+D1691 Benign asbestos pleural disease
+Calcified diaphragmatic plaques and the holly-leaf sign.
+MATCHES: 0.59 castleman_disease (Castleman Disease) | 0.59 facioscapulohumeral_muscular_dystrophy (Facioscapulohumeral Muscular Dystrophy) | 0.59 gallstones_cholecystitis (Gallstones and Acute Cholecystitis)
+
+D1693 Rounded atelectasis
+Comet-tail sign folded against a pleural plaque.
+MATCHES: 0.69 keratoconus (Keratoconus) | 0.67 coats_disease (Coats' Disease) | 0.62 bronchiectasis (Bronchiectasis)
+
+D1695 Chronic thromboembolic pulmonary hypertension
+Webs, bands, mosaic perfusion, and a mismatched ventilation-perfusion scan. Acute pulmonary embolism is already listed.
+Topic ID: chronic_thromboembolic_pulmonary_hypertension
+Synonyms: CTEPH, chronic thromboembolic disease
+Clinical: Dyspnea and signs of right-heart failure months or years after pulmonary emboli. Some patients have no known acute embolus. A loud pulmonary component of the second heart sound and edema are late findings.
+Radiologic: The ventilation-perfusion scan shows mismatched segmental defects. CT and pulmonary angiography show webs, bands, pouch defects, and abrupt cutoffs. The right ventricle is hypertrophied. The surgical specimen is a cast of organized thrombus.
+Pathology: Organized thrombus is incorporated into the pulmonary artery wall, with recanalized channels and fibrous webs. At thromboendarterectomy the material peels away as a recognizable cast.
+Inclusion: A treatable pulmonary hypertension with webs and a surgical cast. Acute pulmonary embolism is already in Pulmonology and is the fresh clot, not the organized web.
+MATCHES: 0.59 bronchopulmonary_sequestration (Bronchopulmonary sequestration) | 0.58 portal_hypertension_cirrhosis (Decompensated Cirrhosis with Severe Portal Hypertension) | 0.57 bronchopulmonary_dysplasia (Bronchopulmonary Dysplasia)
+
+D1703 Amiodarone pulmonary toxicity
+High-attenuation consolidation from the iodine in the drug.
+MATCHES: 0.60 aortopulmonary_window (Aortopulmonary Window) | 0.59 tracheobronchial_amyloidosis (Tracheobronchial Amyloidosis) | 0.55 paragonimiasis (Paragonimiasis (Pulmonary Distomiasis / Lung Fluke))
+
+D1705 Pulmonary talcosis
+High-attenuation centrilobular micronodules after intravenous talc.
+MATCHES: 0.79 pulmonary_abscess (Primary Lung Abscess (Necrotizing Anaerobic Cavitary Pneumonia)) | 0.76 paragonimiasis (Paragonimiasis (Pulmonary Distomiasis / Lung Fluke)) | 0.75 pulmonary_langerhans_cell_histiocytosis (Pulmonary Langerhans Cell Histiocytosis)
+
+D1707 Fat embolism syndrome
+Axillary and conjunctival petechiae plus geographic ground glass after a long-bone fracture.
+MATCHES: 0.73 bloom_syndrome (Bloom Syndrome) | 0.73 caroli_disease (Caroli Disease and Choledochal Malformations) | 0.73 moebius_syndrome (Möbius Syndrome)
+
+D1710 Idiopathic nonspecific interstitial pneumonia
+Basal ground glass with subpleural sparing.
+MATCHES: 0.68 lymphocytic_interstitial_pneumonia (Lymphocytic Interstitial Pneumonia) | 0.65 idiopathic_pulmonary_fibrosis (Idiopathic Pulmonary Fibrosis) | 0.62 cryptogenic_organizing_pneumonia (Cryptogenic Organizing Pneumonia)
+
+D1712 Desquamative interstitial pneumonia
+Smoker with basal ground glass and macrophage-filled alveoli.
+MATCHES: 0.81 idiopathic_pulmonary_fibrosis (Idiopathic Pulmonary Fibrosis) | 0.74 lymphocytic_interstitial_pneumonia (Lymphocytic Interstitial Pneumonia) | 0.61 acute_interstitial_pancreatitis (Acute interstitial pancreatitis)
+
+D1714 Combined pulmonary fibrosis and emphysema
+Upper-lobe emphysema and lower-lobe fibrosis in one chest.
+MATCHES: 0.60 hermansky_pudlak_syndrome (Hermansky-Pudlak Syndrome) | 0.57 nephrogenic_systemic_fibrosis (Nephrogenic Systemic Fibrosis) | 0.56 idiopathic_pulmonary_fibrosis (Idiopathic Pulmonary Fibrosis)
+
+D1716 Constrictive bronchiolitis
+Mosaic air trapping on expiratory CT. Swyer-James syndrome is already the unilateral post-infectious form.
+MATCHES: 0.73 constrictive_pericarditis (Constrictive Pericarditis) | 0.67 plastic_bronchitis (Plastic Bronchitis) | 0.65 neutropenic_enterocolitis (Neutropenic Enterocolitis (Typhlitis))
+
+D1718 Diffuse idiopathic pulmonary neuroendocrine cell hyperplasia (DIPNECH)
+Mosaic attenuation plus small nodules and tumorlets.
+MATCHES: 0.59 diffuse_idiopathic_skeletal_hyperostosis (Diffuse Idiopathic Skeletal Hyperostosis) | 0.56 idiopathic_pulmonary_fibrosis (Idiopathic Pulmonary Fibrosis) | 0.55 idiopathic_pulmonary_hemosiderosis (Idiopathic Pulmonary Hemosiderosis)
+
+D1721 Foreign body aspiration
+Unilateral air trapping and the object at bronchoscopy.
+MATCHES: 0.58 coarctation_of_the_aorta (Coarctation of the Aorta) | 0.56 exogenous_lipoid_pneumonia (Exogenous Lipoid Pneumonia) | 0.56 renal_infarction (Renal Infarction)
+
+D1723 Pleural empyema
+Split pleura sign. Empyema necessitans is already listed.
+MATCHES: 0.76 subdural_empyema (Subdural Empyema) | 0.72 thoracic_empyema_necessitans (Thoracic Empyema Necessitans) | 0.67 malignant_pleural_mesothelioma (Malignant Pleural Mesothelioma)
+
+D1725 Williams-Campbell syndrome
+Cystic bronchiectasis of the fourth- to sixth-order bronchi that balloons on inspiration.
+MATCHES: 0.80 williams_syndrome (Williams Syndrome) | 0.67 freeman_sheldon_syndrome (Freeman-Sheldon Syndrome) | 0.65 schwartz_jampel_syndrome (Schwartz-Jampel Syndrome)
+
+D1727 Bronchial atresia
+A mucocele with hyperinflation of the blind segment.
+MATCHES: 0.82 choanal_atresia (Choanal Atresia) | 0.74 anorectal_malformation (Anorectal Malformation (Imperforate Anus)) | 0.71 duodenal_atresia (Duodenal Atresia)
+
+D1729 Bronchogenic cyst
+A water-density mediastinal or intrapulmonary cyst.
+MATCHES: 0.65 odontogenic_keratocyst (Odontogenic Keratocyst) | 0.62 bartholin_gland_disease (Bartholin Gland Cyst and Abscess) | 0.60 bronchiectasis (Bronchiectasis)
+
+D1731 Pulmonary artery sling
+The left pulmonary artery arises from the right and compresses the trachea.
+MATCHES: 0.67 pulmonary_arteriovenous_malformation (Pulmonary Arteriovenous Malformation) | 0.67 pulmonary_abscess (Primary Lung Abscess (Necrotizing Anaerobic Cavitary Pneumonia)) | 0.65 pulmonary_embolism (Pulmonary embolism)
+
+D1733 Complete tracheal rings
+A round O-shaped trachea instead of the normal D shape.
+MATCHES: 0.63 double_aortic_arch (Double Aortic Arch) | 0.63 edwards_syndrome (Edwards Syndrome (Trisomy 18)) | 0.63 patau_syndrome (Patau Syndrome (Trisomy 13))
+
+D1735 Neuroendocrine cell hyperplasia of infancy
+Ground glass confined to the right middle lobe, lingula, and paramediastinal lung.
+MATCHES: 0.55 congenital_adrenal_hyperplasia (Congenital Adrenal Hyperplasia) | 0.53 sebaceous_hyperplasia (Sebaceous Hyperplasia) | 0.53 heck_disease (Heck Disease (Focal Epithelial Hyperplasia))
+
+D1737 Pleuropulmonary blastoma
+A multicystic lung lesion in a child, often mistaken for a congenital pulmonary airway malformation.
+MATCHES: 0.67 neuroblastoma (Neuroblastoma) | 0.65 paragonimiasis (Paragonimiasis (Pulmonary Distomiasis / Lung Fluke)) | 0.65 pulmonary_embolism (Pulmonary embolism)
+
+D1740 Nodular pulmonary amyloidosis
+Calcified or cystic nodules. Tracheobronchial amyloidosis is already listed.
+MATCHES: 0.71 systemic_al_amyloidosis (Systemic AL (Light-Chain) Amyloidosis) | 0.68 idiopathic_pulmonary_hemosiderosis (Idiopathic Pulmonary Hemosiderosis) | 0.67 primary_cutaneous_amyloidosis (Primary Cutaneous Amyloidosis (Lichen and Macular))
+
+D1742 Thymoma
+Anterior mediastinal mass, sometimes with pleural drop metastases.
+MATCHES: 0.71 auricular_hematoma_perichondritis (Auricular Hematoma and Auricular Perichondritis) | 0.67 trachoma (Trachoma) | 0.60 multiple_hereditary_exostoses (Hereditary Multiple Exostoses)
+
+D1744 Mature mediastinal teratoma
+Fat, calcium, or teeth, often with a fat-fluid level.
+MATCHES: 0.76 ovarian_dermoid_cyst (Ovarian Dermoid Cyst (Mature Cystic Teratoma)) | 0.65 testicular_germ_cell_tumor (Testicular Germ Cell Tumor) | 0.62 retinoblastoma (Retinoblastoma)

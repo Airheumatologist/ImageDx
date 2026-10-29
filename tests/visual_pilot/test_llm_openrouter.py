@@ -1,4 +1,4 @@
-"""OpenRouter request shape and cost accounting for the LLM client."""
+"""Xiaomi Token Plan request shape and cost accounting for the LLM client."""
 
 import json
 import sqlite3
@@ -60,8 +60,8 @@ class _Completions:
 
 
 def _credentials(monkeypatch):
-    monkeypatch.setattr(llm.config, "OPENROUTER_API_KEY", "k")
-    monkeypatch.setattr(llm.config, "OPENROUTER_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setattr(llm.config, "MIMO_API_KEY", "k")
+    monkeypatch.setattr(llm.config, "MIMO_BASE_URL", "https://example.invalid/v1")
 
 
 def _client(monkeypatch, usage, failures=()):
@@ -76,23 +76,24 @@ def test_request_asks_for_json_mode_with_reasoning_effort(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
     parsed, meta = client.call_json(
-        "p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA, reasoning_effort="low"
+        "p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA, reasoning_effort="low"
     )
     assert parsed == {"ok": True}
     assert meta["response_format"] == "json_object"
-    assert meta["provider"] == "openrouter"
+    assert meta["provider"] == "xiaomi"
     sent = completions.calls[0]
+    assert sent["model"] == "mimo-v2.6-flash"
     assert sent["response_format"] == {"type": "json_object"}
     assert sent["stream"] is True
     assert completions.streams[0].closed
-    assert sent["extra_body"] == {"reasoning": {"effort": "low"}}
+    assert sent["extra_body"] == {"thinking": {"type": "enabled"}}
     assert "not a schema" in sent["messages"][0]["content"]
 
 
 def test_empty_effort_sends_no_reasoning_field(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
     client, completions = _client(monkeypatch, usage)
-    client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA, reasoning_effort="")
+    client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA, reasoning_effort="")
     assert "extra_body" not in completions.calls[0]
 
 
@@ -100,7 +101,7 @@ def test_images_go_as_image_url_parts(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
     client, completions = _client(monkeypatch, usage)
     image = llm.ImageInput(data_url="data:image/jpeg;base64,AAAA")
-    client.call_json("p3", "qwen/qwen3.7-flash", "sys", "user", SCHEMA, images=[image])
+    client.call_json("p3", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA, images=[image])
     assert completions.calls[0]["messages"][1]["content"] == [
         {"type": "text", "text": "user"},
         {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,AAAA"}},
@@ -124,7 +125,7 @@ def test_cost_prices_cached_prompt_tokens_at_cache_hit_rate(monkeypatch):
 def test_cost_uses_the_amount_openrouter_reports(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=1_000_000, completion_tokens=0, cost=0.0123)
     client, _ = _client(monkeypatch, usage)
-    _, meta = client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
+    _, meta = client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
     assert meta["cost_usd"] == 0.0123
 
 
@@ -140,7 +141,7 @@ def test_mid_stream_timeout_is_retried(monkeypatch):
     client, completions = _client(
         monkeypatch, usage, failures=[_openai_httpx.ReadTimeout("stalled")]
     )
-    parsed, meta = client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
+    parsed, meta = client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
     assert parsed == {"ok": True}
     assert len(completions.calls) == 2
 
@@ -154,7 +155,7 @@ def test_fill_missing_supplies_echoed_keys_before_validation(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=1, completion_tokens=1)
     client, completions = _client(monkeypatch, usage)
     parsed, meta = client.call_json(
-        "p3", "qwen/qwen3.7-flash", "sys", "user", schema, fill_missing={"figure_id": "PMC1:f1"}
+        "p3", "xiaomi/mimo-v2.6-flash", "sys", "user", schema, fill_missing={"figure_id": "PMC1:f1"}
     )
     assert parsed == {"ok": True, "figure_id": "PMC1:f1"}
     assert meta["attempts"] == 1
@@ -176,6 +177,31 @@ def test_normalize_drops_forbidden_keys_and_calls_derived_defaults():
     assert json.loads(out) == {"panels": [1, 2], "compound": True}
 
 
+def test_normalize_snaps_misspelled_enum_and_drops_null_keyed_items():
+    item = {
+        "type": "object",
+        "properties": {"finding_key": {"type": "string"}, "evidence": {"type": "string"}},
+        "required": ["finding_key", "evidence"],
+    }
+    keys = ["pleomorphic_xanthoastrocytoma", "aps_type_1", "aps_type_2", None]
+    schema = {"properties": {"panels": {"type": "array", "items": {"properties": {
+        "disease_key": {"type": ["string", "null"], "enum": keys},
+        "findings": {"type": "array", "items": item},
+    }}}}}
+    reply = {"panels": [
+        {"disease_key": "pleomorphic_xanthocytoma",
+         "findings": [{"finding_key": None, "evidence": "x"}, {"finding_key": "f", "evidence": "y"}]},
+        {"disease_key": "aps_type_3", "findings": []},
+    ]}
+    out = json.loads(llm._normalize(json.dumps(reply), schema, {}))
+    assert out["panels"][0] == {
+        "disease_key": "pleomorphic_xanthoastrocytoma",
+        "findings": [{"finding_key": "f", "evidence": "y"}],
+    }
+    # A different number is a different disease: left for validation to reject.
+    assert out["panels"][1]["disease_key"] == "aps_type_3"
+
+
 def test_judge_derives_compound_from_panel_count():
     from src.visual_pilot import judge
 
@@ -184,12 +210,16 @@ def test_judge_derives_compound_from_panel_count():
     assert judge._lists_several_panels({}) is False
 
 
-def test_default_model_is_qwen_flash_on_openrouter():
+def test_default_models_use_opencode_text_and_openrouter_vision():
     from src.visual_pilot import config
 
-    assert config.DEFAULT_MODEL == "qwen/qwen3.7-flash"
-    assert config.model_price(config.DEFAULT_MODEL) == (0.03, 0.006, 0.13)
-    assert config.OPENROUTER_BASE_URL == "https://openrouter.ai/api/v1"
+    assert config.DEFAULT_MODEL == "opencode-go/iceman-contributor-free"
+    assert config.DEFAULT_VISION_MODEL == "z-ai/glm-5.3-flash"
+    assert config.OPENROUTER_PROVIDERS == ("open-inference",)
+    # Iceman is currently free. Legacy Token Plan prices remain available.
+    assert config.model_price(config.DEFAULT_MODEL) == (0.0, 0.0, 0.0)
+    assert config.model_price("xiaomi/mimo-v2.6-flash") == (0.0, 0.0, 0.0)
+    assert config.MIMO_BASE_URL == "https://token-plan-sgp.xiaomimimo.com/v1"
 
 
 def test_normalize_unwraps_fenced_and_wrapped_json():
@@ -200,31 +230,37 @@ def test_normalize_unwraps_fenced_and_wrapped_json():
     assert llm._normalize("not json", SCHEMA, {}) == "not json"
 
 
-def test_client_sends_user_agent_and_app_title(monkeypatch):
+def test_client_sends_user_agent(monkeypatch):
     _credentials(monkeypatch)
     headers = llm.LLMClient()._openai().default_headers
     assert headers["User-Agent"] == llm.USER_AGENT
-    assert headers["X-Title"] == llm.APP_TITLE
+
+
+def test_token_plan_and_openrouter_ids_share_a_cache_key():
+    client = llm.LLMClient()
+    old = client._input_hash("p3", "xiaomi/mimo-v2.6-flash", "", "sys", "user", [], "low")
+    new = client._input_hash("p3", "mimo-v2.6-flash", "", "sys", "user", [], "low")
+    assert old == new
 
 
 def test_missing_key_names_the_variable(monkeypatch):
-    monkeypatch.setattr(llm.config, "OPENROUTER_API_KEY", None)
-    with pytest.raises(llm.LLMError, match="OPENROUTER_API_KEY"):
+    monkeypatch.setattr(llm.config, "MIMO_API_KEY", None)
+    with pytest.raises(llm.LLMError, match="MIMO_API_KEY"):
         llm.LLMClient()._openai()
 
 
 def test_requests_carry_the_output_token_cap(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
-    client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
-    assert completions.calls[0]["max_tokens"] == llm.config.VP_LLM_MAX_OUTPUT_TOKENS
+    client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
+    assert completions.calls[0]["max_completion_tokens"] == llm.config.VP_LLM_MAX_OUTPUT_TOKENS
 
 
 def test_effort_off_disables_thinking(monkeypatch):
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
-    client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA, reasoning_effort="off")
-    assert completions.calls[0]["extra_body"] == {"reasoning": {"enabled": False}}
+    client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA, reasoning_effort="off")
+    assert completions.calls[0]["extra_body"] == {"thinking": {"type": "disabled"}}
 
 
 def test_pacer_spaces_requests_to_the_rpm_cap(monkeypatch):
@@ -245,7 +281,7 @@ def test_every_attempt_waits_for_the_pacer(monkeypatch):
     monkeypatch.setattr(llm, "_PACER", SimpleNamespace(wait=lambda: waits.append(1)))
     usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, cached_tokens=0)
     client, completions = _client(monkeypatch, usage)
-    client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
+    client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
     assert len(waits) == len(completions.calls) == 1
 
 
@@ -271,9 +307,9 @@ def test_rate_limit_backs_off_and_retries(monkeypatch):
         return original(**kwargs)
 
     completions.create = create
-    parsed, meta = client.call_json("p2", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
+    parsed, meta = client.call_json("p2", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
     assert parsed == {"ok": True}
-    assert calls == ["qwen/qwen3.7-flash"] * 2
+    assert calls == ["mimo-v2.6-flash"] * 2
     assert sleeps == [1.0]
 
 
@@ -291,7 +327,7 @@ def test_spent_credits_stop_like_a_spent_budget(monkeypatch):
 
     completions.create = no_credits
     with pytest.raises(llm.BudgetExceeded):
-        client.call_json("p3", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
+        client.call_json("p3", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
     assert len(calls) == 1 and sleeps == []
 
 
@@ -310,7 +346,7 @@ def test_mid_stream_error_chunk_is_retried(monkeypatch):
         return stream
 
     completions.create = create
-    parsed, _ = client.call_json("p3", "qwen/qwen3.7-flash", "sys", "user", SCHEMA)
+    parsed, _ = client.call_json("p3", "xiaomi/mimo-v2.6-flash", "sys", "user", SCHEMA)
     assert parsed == {"ok": True}
     assert len(completions.calls) == 2
     assert sleeps == [1.0]

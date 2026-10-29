@@ -27,11 +27,12 @@ import json
 import re
 from collections import Counter, deque
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from functools import lru_cache
 
 from PIL import Image
 
-from . import config, curation, db, diseases, gallery, llm, originals, pmc
+from . import config, curation, db, diseases, gallery, llm, originals, pmc, published
 from .demographics import resolve_age
 from . import prompts
 
@@ -441,12 +442,20 @@ def _load_queue(conn, args) -> tuple[list[dict], dict[str, dict]]:
     articles = {
         r["pmcid"]: dict(r)
         for r in conn.execute(
-            "SELECT pmcid, title, primary_disease_keys_json, license_code FROM articles "
+            "SELECT pmcid, title, primary_disease_keys_json, license_code, "
+            "publication_types_json FROM articles "
             "WHERE pmcid IN (SELECT value FROM json_each(?))",
             (db.to_json(sorted({r["pmcid"] for r in rows})),),
         )
     }
+    # The attribution gate reads a case report's abstract.
+    db.attach_source_metadata(conn, articles)
     figures = [fig for fig in (dict(r) for r in rows) if _admit(conn, fig, articles)]
+    figures = published.filter_queue(
+        conn, figures,
+        lambda figure: db.from_json(articles[figure["pmcid"]].get("primary_disease_keys_json"), []),
+        "judge", dry_run=bool(args.dry_run),
+    )
     conn.commit()
     figures = rank_figures(conn, figures, articles)
     if args.limit:
@@ -469,8 +478,9 @@ class _JudgeRun:
     (call order is not an input).
     """
 
-    def __init__(self, conn, articles: dict[str, dict]) -> None:
+    def __init__(self, conn, articles: dict[str, dict], db_lock=None) -> None:
         self.conn = conn
+        self.db_lock = db_lock if db_lock is not None else nullcontext()
         self.articles = articles
         self.allowed_by_disease = curation.approved_findings_by_disease(conn)
         self.totals = {"accepted": 0, "rejected": 0, "errors": 0, "plates": 0}
@@ -482,6 +492,8 @@ class _JudgeRun:
         # a stale WAL snapshot, and its next write fails at once with
         # "database is locked" (busy_timeout does not apply).
         self.vocab_rows = approved_vocab_rows(conn)
+        self.published_index = published.site_index()
+        self.published_skipped = 0
 
     def vocab_for(self, fig) -> list[dict]:
         keys = tuple(
@@ -492,13 +504,15 @@ class _JudgeRun:
         return self.vocab_cache[keys]
 
     def _fail(self, fig: dict, error: str) -> None:
+        # Caller owns db_lock: apply() is already inside the result loop's
+        # lock; generator-side fetch failures acquire it before calling here.
         db.set_status(
             self.conn, "figures", fig["figure_id"], "vision_error",
             error=error[:500],
             attempts=(fig["attempts"] or 0) + 1,
         )
-        self.totals["errors"] += 1
         self.conn.commit()
+        self.totals["errors"] += 1
 
     def _start_fetches(self, pending: deque, fig_iter, pool, window: int) -> None:
         while len(pending) < window:
@@ -529,7 +543,16 @@ class _JudgeRun:
                 try:
                     fetched = fut.result()
                 except Exception as exc:  # noqa: BLE001 - per-figure isolation
-                    self._fail(fig, f"fetch: {exc}")
+                    with self.db_lock:
+                        self._fail(fig, f"fetch: {exc}")
+                    continue
+                topics = db.from_json(self.articles[fig["pmcid"]].get("primary_disease_keys_json"), [])
+                matches = self.published_index.match_bytes(fig, topics, fetched[0])
+                if matches:
+                    with self.db_lock:
+                        published.mark_skipped(self.conn, fig, matches, "judge_pixels")
+                        self.conn.commit()
+                    self.published_skipped += 1
                     continue
                 yield self._request(fig, *fetched)
         finally:
@@ -625,6 +648,8 @@ class _JudgeRun:
             summary += " | rejections: " + ", ".join(
                 f"{k}={v}" for k, v in self.reasons.most_common()
             )
+        if self.published_skipped:
+            summary += f" | skipped already-published pixels={self.published_skipped}"
         return summary
 
 
@@ -643,7 +668,7 @@ def run(args) -> int:
         concurrency=config.VP_JUDGE_CONCURRENCY,
         timeout_seconds=config.VP_JUDGE_TIMEOUT_SECONDS,
     )
-    judge_run = _JudgeRun(conn, articles)
+    judge_run = _JudgeRun(conn, articles, db_lock=client.db_lock)
     budget_hit = False
     requests = judge_run.requests(figures)
     results = client.iter_many(requests, max_in_flight=config.VP_JUDGE_CONCURRENCY)
@@ -715,9 +740,9 @@ def requeue_plates(conn, disease=None, pmcids=None, dry_run=False,
         if pmc.license_allows(license_code) is None:
             continue
         counts["examined"] += 1
-        plate = curation.evaluate_plate(
-            vision, row, dict(article) if article else {}, allowed_by_disease
-        )
+        article = dict(article) if article else {}
+        db.attach_source_metadata(conn, {row["pmcid"]: article})
+        plate = curation.evaluate_plate(vision, row, article, allowed_by_disease)
         if plate is None:
             continue
         counts["plate_class"][plate["plate_class"]] += 1
@@ -750,13 +775,19 @@ def requeue_plates(conn, disease=None, pmcids=None, dry_run=False,
     }
 
 
-def _restore_age_vetoes(vision: dict) -> dict:
-    """The judgment with panels vetoed only by the retired age gate re-included."""
+def _restore_gate_vetoes(vision: dict, reasons: frozenset[str] | None = None) -> dict:
+    """The judgment with panels the deterministic curation gate vetoed
+    re-included (``reasons`` limits which gate reasons; None means any).
+
+    The model's own exclusions carry no ``curation_reason`` and stay out.
+    """
     restored = dict(vision)
     restored["panels"] = []
     for panel in vision.get("panels") or []:
         panel = dict(panel)
-        if panel.get("curation_reason") == curation.RETIRED_AGE_REASON:
+        reason = panel.get("curation_reason")
+        # Store's pixel check cannot be re-run without the image; leave it.
+        if reason and reason != curation.CROP_TOO_SMALL_REASON and (reasons is None or reason in reasons):
             panel["include"] = True
             panel.pop("exclusion_reason", None)
             panel.pop("curation_reason", None)
@@ -765,20 +796,30 @@ def _restore_age_vetoes(vision: dict) -> dict:
     return restored
 
 
-def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
-    """Lift the retired age gate from stored judgments (no LLM calls).
+def _restore_age_vetoes(vision: dict) -> dict:
+    """The judgment with panels vetoed only by the retired age gate re-included."""
+    return _restore_gate_vetoes(vision, frozenset({curation.RETIRED_AGE_REASON}))
 
-    Panels the model accepted but the v6 policy vetoed only for an unstated
-    patient age get their accept restored, and the whole judgment is
-    re-validated under the current policy, so every other gate (collage,
+
+def requeue_gate_vetoes(conn, disease=None, pmcids=None, dry_run=False,
+                        disease_keys=None, reasons: frozenset[str] | None = None) -> dict:
+    """Re-judge ``vision_rejected`` figures under the current deterministic
+    policy (no LLM call, no image fetch).
+
+    Panels the curation gate vetoed (``reasons``; default any gate reason)
+    get the model's accept back and the whole judgment is re-validated, and
+    every compound figure's whole-figure plate is recomputed, so a relaxed
+    gate (attribution, plates) admits them while every other gate (collage,
     other disease, license, crop size by fraction) still applies. Figures
-    that now pass flip to ``vision_accepted`` for the store stage. Pixel
-    crop-size checks are skipped since the image is not refetched; whole
-    figures do not need them.
+    that now pass flip to ``vision_accepted`` for the store stage; the
+    others keep their refreshed plate record. Pixel crop-size checks are
+    skipped since the image is not refetched; whole figures do not need
+    them. ``disease_keys`` limits the work to articles of those topics.
     """
     allowed_by_disease = curation.approved_findings_by_disease(conn)
     rows = db.rows_with_status(conn, "figures", "vision_rejected", disease=disease)
     wanted = set(pmcids) if pmcids else None
+    wanted_keys = set(disease_keys) if disease_keys else None
     counts = {"examined": 0, "requeued": 0, "still_rejected": Counter()}
     for source in rows:
         row = dict(source)
@@ -786,20 +827,31 @@ def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
             continue
         vision = db.from_json(row.get("vision_json"), {}) or {}
         panels = vision.get("panels") or []
-        if not any(p.get("curation_reason") == curation.RETIRED_AGE_REASON for p in panels):
+        compound = vision.get("figure_is_compound") is True or len(panels) > 1
+        restorable = any(
+            p.get("curation_reason") and p.get("curation_reason") != curation.CROP_TOO_SMALL_REASON
+            and (reasons is None or p.get("curation_reason") in reasons)
+            for p in panels
+        )
+        if not restorable and not (compound and reasons is None):
             continue
         article = conn.execute("SELECT * FROM articles WHERE pmcid=?", (row["pmcid"],)).fetchone()
-        license_code = row.get("effective_license") or (article["license_code"] if article else None)
+        article = dict(article) if article else {}
+        if wanted_keys is not None and not (
+            set(db.from_json(article.get("primary_disease_keys_json"), []) or []) & wanted_keys
+        ):
+            continue
+        license_code = row.get("effective_license") or article.get("license_code")
         if pmc.license_allows(pmc.normalize_license(license_code)) is None:
             continue
+        db.attach_source_metadata(conn, {row["pmcid"]: article})
         counts["examined"] += 1
         valid_keys = {
             f.get("finding_key") for p in panels for f in p.get("findings") or []
         }
         parsed = post_validate(
-            _restore_age_vetoes(vision), valid_keys, figure=row,
-            article=dict(article) if article else {},
-            allowed_by_disease=allowed_by_disease,
+            _restore_gate_vetoes(vision, reasons), valid_keys, figure=row,
+            article=article, allowed_by_disease=allowed_by_disease,
         )
         status = figure_status(parsed)
         if status != "vision_accepted":
@@ -808,6 +860,12 @@ def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
                 for p in parsed.get("panels") or []
                 if not p.get("include")
             )
+            if not dry_run and parsed.get("plate") != vision.get("plate"):
+                conn.execute(
+                    "UPDATE figures SET vision_json=?, updated_at=datetime('now') "
+                    "WHERE figure_id=?",
+                    (db.to_json({**vision, "plate": parsed.get("plate")}), row["figure_id"]),
+                )
             continue
         counts["requeued"] += 1
         if not dry_run:
@@ -817,6 +875,33 @@ def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
         conn.commit()
     counts["still_rejected"] = dict(counts["still_rejected"].most_common(10))
     return counts
+
+
+def requeue_age_vetoes(conn, disease=None, pmcids=None, dry_run=False) -> dict:
+    """Lift only the retired age gate from stored judgments (no LLM calls)."""
+    return requeue_gate_vetoes(
+        conn, disease=disease, pmcids=pmcids, dry_run=dry_run,
+        reasons=frozenset({curation.RETIRED_AGE_REASON}),
+    )
+
+
+def run_requeue_gate_vetoes(args) -> int:
+    conn = db.init_db()
+    keys = None
+    if getattr(args, "topics_under", None) is not None or getattr(args, "diseases", None):
+        keys = diseases.selected_keys(args)
+    try:
+        result = requeue_gate_vetoes(
+            conn,
+            disease=None if args.disease == "all" else args.disease,
+            pmcids=getattr(args, "pmcids", None),
+            dry_run=bool(args.dry_run),
+            disease_keys=keys,
+        )
+    finally:
+        conn.close()
+    print(json.dumps(result, indent=1, sort_keys=True))
+    return 0
 
 
 def run_requeue_age_vetoes(args) -> int:

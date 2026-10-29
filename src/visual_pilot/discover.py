@@ -183,11 +183,26 @@ def find_articles(disease_key: str, finding: dict, per_pair: int, skip: set[str]
 
 
 _ABBREVIATION = re.compile(r"[A-Z]{2}|[a-z][A-Z]")
+# A spelled-out word (four or more letters, not an all-caps token) next to an
+# abbreviation makes the phrase unambiguous in a title: "FOXN1 deficiency",
+# "KBG syndrome", "MHC class I deficiency".
+_SPELLED_WORD = re.compile(r"(?<![A-Za-z0-9])[A-Za-z][a-z]{3,}(?![A-Za-z0-9])")
 
 
 def overview_disease_terms(disease: dict) -> list[str]:
-    """Full disease names only: in a title, "PsA" also means prostate-specific antigen."""
-    terms = [t for t in disease_query_terms(disease) if not _ABBREVIATION.search(t)]
+    """Names unambiguous in a title.
+
+    A bare abbreviation is dropped: "PsA" also means prostate-specific
+    antigen. One joined to a spelled-out word is kept: gene-named topics
+    ("FOXN1 deficiency", "CARD9 deficiency", "HNF1B nephropathy") have no
+    other name in use, and dropping them left their searches empty.
+    """
+    terms = []
+    for term in disease_query_terms(disease):
+        # The gloss form "FOXN1 deficiency (nude SCID)" is never a title.
+        term = " ".join(diseases._PARENTHETICAL.sub(" ", term).split())
+        if term and (not _ABBREVIATION.search(term) or _SPELLED_WORD.search(term)):
+            terms.append(term)
     return list({t.lower(): t for t in terms}.values())
 
 
@@ -257,10 +272,17 @@ def find_disease_articles(
     picked: list[tuple[europepmc.Hit, str]] = []
     attempts = []
 
-    def take(query: str, scope: str, *, license_required: bool = True) -> None:
+    def take(query: str, scope: str, *, license_required: bool = True,
+             indexed_terms: list[str] | None = None) -> None:
         if not query or len(picked) >= limit:
             return
         total, hits = europepmc.search(query, limit=DISEASE_SEARCH_DEPTH)
+        if indexed_terms is not None:
+            # Europe PMC answers MESH:"<not a heading>" with loosely related
+            # articles ("Laryngeal cleft" -> cleft lip reviews, hundreds of
+            # them); keep only records whose own MeSH headings or keywords
+            # name the disease.
+            hits = [h for h in hits if europepmc.indexed_under(h, indexed_terms)]
         new = []
         for hit in sorted(hits, key=disease_pass_rank):
             if len(picked) >= limit:
@@ -278,7 +300,7 @@ def find_disease_articles(
     for scope, cases_only, fields in DISEASE_SCOPES:
         take(europepmc.build_disease_query(terms, cases_only=cases_only, fields=fields), scope)
     # Indexed under MeSH even when the title/abstract never repeats the name.
-    take(europepmc.build_mesh_query(terms), "disease_mesh")
+    take(europepmc.build_mesh_query(terms), "disease_mesh", indexed_terms=terms)
     if have == 0 and finding_terms:
         take(
             europepmc.build_manifestation_query(terms, finding_terms),
