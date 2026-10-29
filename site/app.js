@@ -7,6 +7,64 @@ const lb = $("lightbox");
 const cardPanels = new WeakMap();
 let lbItems = [];
 let lbIndex = 0;
+let imageZoom = 1;
+const imageViewport = $("lb-viewport");
+
+function layoutLightboxImage() {
+  const image = $("lb-media").firstElementChild;
+  if (!image || lb.hidden) return;
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  if (!width || !height) return;
+  const heightLimit = parseFloat(getComputedStyle(imageViewport).maxHeight) || imageViewport.clientHeight;
+  imageViewport.style.height = `${Math.max(180, Math.min(heightLimit, imageViewport.clientWidth * height / width))}px`;
+  const fit = Math.min(imageViewport.clientWidth / width, imageViewport.clientHeight / height);
+  const renderedWidth = width * fit * imageZoom;
+  const renderedHeight = height * fit * imageZoom;
+  image.style.width = `${renderedWidth}px`;
+  image.style.height = `${renderedHeight}px`;
+  $("lb-media").style.width = `${Math.max(imageViewport.clientWidth, renderedWidth)}px`;
+  $("lb-media").style.height = `${Math.max(imageViewport.clientHeight, renderedHeight)}px`;
+}
+
+function setImageZoom(value) {
+  const media = $("lb-media");
+  const centerX = (imageViewport.scrollLeft + imageViewport.clientWidth / 2) / (media.offsetWidth || 1);
+  const centerY = (imageViewport.scrollTop + imageViewport.clientHeight / 2) / (media.offsetHeight || 1);
+  imageZoom = Math.max(.5, Math.min(4, value));
+  layoutLightboxImage();
+  imageViewport.scrollLeft = imageZoom === 1 ? 0 : centerX * media.offsetWidth - imageViewport.clientWidth / 2;
+  imageViewport.scrollTop = imageZoom === 1 ? 0 : centerY * media.offsetHeight - imageViewport.clientHeight / 2;
+  imageViewport.classList.toggle("is-zoomed", imageZoom > 1);
+  $("lb-zoom-level").textContent = `${Math.round(imageZoom * 100)}%`;
+  $("lb-zoom-out").disabled = imageZoom <= .5;
+  $("lb-zoom-in").disabled = imageZoom >= 4;
+}
+$("lb-zoom-in").addEventListener("click", () => setImageZoom(imageZoom + .25));
+$("lb-zoom-out").addEventListener("click", () => setImageZoom(imageZoom - .25));
+$("lb-zoom-fit").addEventListener("click", () => setImageZoom(1));
+imageViewport.addEventListener("dblclick", () => setImageZoom(imageZoom === 1 ? 2 : 1));
+new ResizeObserver(layoutLightboxImage).observe(imageViewport);
+
+// Mouse dragging pans a magnified image; touch scrolling stays native.
+let imageDrag = null;
+imageViewport.addEventListener("pointerdown", event => {
+  if (event.pointerType !== "mouse" || event.button !== 0 || imageZoom <= 1) return;
+  event.preventDefault();
+  imageViewport.focus({ preventScroll: true });
+  imageDrag = { x: event.clientX, y: event.clientY, left: imageViewport.scrollLeft, top: imageViewport.scrollTop };
+  imageViewport.setPointerCapture(event.pointerId);
+  imageViewport.classList.add("is-dragging");
+});
+imageViewport.addEventListener("pointermove", event => {
+  if (!imageDrag) return;
+  imageViewport.scrollLeft = imageDrag.left + imageDrag.x - event.clientX;
+  imageViewport.scrollTop = imageDrag.top + imageDrag.y - event.clientY;
+});
+imageViewport.addEventListener("lostpointercapture", () => {
+  imageDrag = null;
+  imageViewport.classList.remove("is-dragging");
+});
 
 function setText(el, value) {
   if (value) el.textContent = value;
@@ -38,7 +96,7 @@ let touchStart = null;
 const stage = lb.querySelector(".lb-stage");
 stage.addEventListener("touchstart", (event) => {
   const t = event.touches[0];
-  touchStart = event.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null;
+  touchStart = imageZoom === 1 && event.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null;
 }, { passive: true });
 stage.addEventListener("touchend", (event) => {
   if (!touchStart) return;
@@ -51,10 +109,15 @@ stage.addEventListener("touchend", (event) => {
 document.addEventListener("keydown", (event) => {
   if (lb.hidden) return;
   if (event.key === "Escape") { event.preventDefault(); closeLightbox(); }
-  if (event.key === "ArrowLeft") { event.preventDefault(); stepLightbox(-1); }
-  if (event.key === "ArrowRight") { event.preventDefault(); stepLightbox(1); }
+  const panning = event.target === imageViewport && imageZoom > 1;
+  if (event.key === "ArrowLeft" && !panning) { event.preventDefault(); stepLightbox(-1); }
+  if (event.key === "ArrowRight" && !panning) { event.preventDefault(); stepLightbox(1); }
+  if (["+", "="].includes(event.key)) { event.preventDefault(); setImageZoom(imageZoom + .25); }
+  if (event.key === "-") { event.preventDefault(); setImageZoom(imageZoom - .25); }
+  if (event.key === "0") { event.preventDefault(); setImageZoom(1); }
   if (event.key === "Tab") {
-    const focusable = [...lb.querySelectorAll("button, a[href]")].filter(el => !el.disabled);
+    const focusable = [...lb.querySelectorAll("button, a[href], summary, [tabindex='0']")]
+      .filter(el => !el.disabled && el.getClientRects().length);
     if (!focusable.length) return;
     const first = focusable[0], last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
@@ -65,9 +128,9 @@ document.addEventListener("keydown", (event) => {
 function openLightbox(trigger) {
   const scope = trigger.closest(".section-panel") || document;
   lbItems = [...scope.querySelectorAll(".card-open")];
-  showLightboxItem(Math.max(0, lbItems.indexOf(trigger)));
   lb.hidden = false;
   document.body.classList.add("lb-open");
+  showLightboxItem(Math.max(0, lbItems.indexOf(trigger)));
   $("lb-close").focus();
 }
 
@@ -81,7 +144,10 @@ function showLightboxItem(index) {
   lb.scrollTop = 0;
   const image = VP.panelImage(panel, "lb-img", panel.image || src);
   image.setAttribute("aria-label", displayLabel(panel));
+  image.addEventListener("load", layoutLightboxImage);
+  image.addEventListener("dragstart", event => event.preventDefault());
   $("lb-media").replaceChildren(image);
+  setImageZoom(1);
   $("lb-title").textContent = displayLabel(panel);
 
   const details = $("lb-details");
@@ -115,12 +181,11 @@ function showLightboxItem(index) {
   if (locationValues.length) add(locationValues.length > 1 ? "Countries/regions listed in article metadata" : "Country/region listed in article metadata", locationValues.join(" · "));
   const context = panel.context || compactContext(panel);
   add("Context", context);
-  if (uniqueSources.length) {
-    const heading = document.createElement("h3");
-    heading.className = "source-heading";
-    heading.textContent = uniqueSources.length === 1 ? "Source" : "Sources";
-    details.append(heading);
-  }
+  const sourceDetails = document.createElement("details");
+  sourceDetails.className = "source-disclosure";
+  const summary = document.createElement("summary");
+  summary.textContent = uniqueSources.length === 1 ? "Source & attribution" : `Sources & attribution (${uniqueSources.length})`;
+  sourceDetails.append(summary);
   uniqueSources.forEach(source => {
     const section = document.createElement("section");
     section.className = "source-item";
@@ -134,8 +199,9 @@ function showLightboxItem(index) {
     if (source.figure_caption && source.figure_caption !== context) {
       addSourceRow(section, "Full figure caption", source.figure_caption);
     }
-    details.append(section);
+    sourceDetails.append(section);
   });
+  if (uniqueSources.length) details.append(sourceDetails);
 }
 
 function isStatedAgeLabel(age) {
@@ -228,7 +294,7 @@ function render() {
       : panels.length;
     return { tab, panels, count };
   });
-  // One section shows at a time. Start from the URL hash, else the first section with images.
+  // Every section stays on the page; the hash identifies the scroll destination.
   if (!entries.some(e => e.tab.key === state.active)) {
     const hash = decodeURIComponent(location.hash.slice(1));
     const start = entries.find(e => e.tab.key === hash)
@@ -238,17 +304,13 @@ function render() {
   $("topic-meta").textContent = [state.panels.length && plural(state.panels.length, "image"), plural(entries.length, "section")]
     .filter(Boolean).join(" · ");
 
-  for (const { tab, count } of entries) {
-    const chip = document.createElement("button");
-    chip.type = "button";
+  for (const { tab, panels, count } of entries) {
+    const chip = document.createElement("a");
+    chip.href = `#${encodeURIComponent(tab.key)}`;
     chip.className = "section-chip";
     chip.id = `tab-${tab.key}`;
     chip.dataset.key = tab.key;
-    chip.setAttribute("role", "tab");
-    const selected = tab.key === state.active;
-    chip.setAttribute("aria-selected", String(selected));
-    chip.setAttribute("aria-controls", "section-panel");
-    chip.tabIndex = selected ? 0 : -1;
+    if (tab.key === state.active) chip.setAttribute("aria-current", "location");
     const name = document.createElement("span");
     name.textContent = tab.label;
     const badge = document.createElement("span");
@@ -256,40 +318,67 @@ function render() {
     badge.textContent = String(count);
     badge.setAttribute("aria-label", tab.evidence_only ? plural(count, "finding") : plural(count, "image"));
     chip.append(name, badge);
-    chip.addEventListener("click", () => selectSection(tab.key));
+    chip.addEventListener("click", event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      selectSection(tab.key);
+    });
     nav.append(chip);
+
+    const panel = document.createElement("section");
+    panel.className = "section-panel";
+    panel.id = tab.key;
+    panel.setAttribute("aria-labelledby", `heading-${tab.key}`);
+    const heading = document.createElement("h2");
+    heading.className = "section-heading";
+    heading.id = `heading-${tab.key}`;
+    heading.textContent = tab.label;
+    panel.append(heading);
+    if (tab.evidence_only) renderEyeEvidence(panel);
+    else renderSection(panel, tab, panels);
+    content.append(panel);
   }
-  nav.hidden = entries.length < 2;
-
-  const entry = entries.find(e => e.tab.key === state.active);
-  if (!entry) return;
-  const panel = document.createElement("section");
-  panel.className = "section-panel";
-  panel.id = "section-panel";
-  panel.setAttribute("role", "tabpanel");
-  panel.setAttribute("aria-labelledby", `tab-${entry.tab.key}`);
-  if (entry.tab.evidence_only) renderEyeEvidence(panel);
-  else renderSection(panel, entry.tab, entry.panels);
-  content.append(panel);
-  // Keep the selected chip visible in the horizontally scrolling row.
-  const active = nav.querySelector("[aria-selected='true']");
-  if (active) nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+  nav.hidden = !entries.length;
+  updateNavHeight();
+  if (location.hash) requestAnimationFrame(() => selectSection(state.active, false));
 }
 
-function selectSection(key) {
-  if (key === state.active) return;
+function markSection(key) {
   state.active = key;
-  history.replaceState(null, "", `#${encodeURIComponent(key)}`);
-  render();
-  // render() rebuilt the chips; keep focus on the selected one so arrow keys keep working.
-  $(`tab-${key}`)?.focus({ preventScroll: true });
-  // If the chip row is stuck to the top, bring the new section's first row into view.
-  const nav = $("section-nav");
-  const navTop = nav.getBoundingClientRect().top + window.scrollY;
-  if (window.scrollY > navTop) window.scrollTo({ top: navTop });
+  for (const chip of $("section-nav").children) {
+    if (chip.dataset.key === key) chip.setAttribute("aria-current", "location");
+    else chip.removeAttribute("aria-current");
+  }
 }
 
-// Arrow keys move between section tabs (WAI-ARIA tabs pattern).
+function selectSection(key, updateHash = true) {
+  const panel = $(key);
+  if (!panel?.classList.contains("section-panel")) return;
+  markSection(key);
+  if (updateHash) history.replaceState(null, "", `#${encodeURIComponent(key)}`);
+  panel.scrollIntoView({ block: "start", behavior: "instant" });
+}
+
+function updateNavHeight() {
+  document.body.style.setProperty("--section-nav-height", `${$("section-nav").offsetHeight}px`);
+}
+new ResizeObserver(updateNavHeight).observe($("section-nav"));
+
+// Keep the current category in sync while browsing the continuous gallery.
+let scrollFrame = 0;
+window.addEventListener("scroll", () => {
+  if (scrollFrame) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = 0;
+    const sections = [...$("content").querySelectorAll(".section-panel")];
+    const boundary = $("section-nav").offsetHeight + 24;
+    const current = sections.filter(section => section.getBoundingClientRect().top <= boundary).pop() || sections[0];
+    if (current && current.id !== state.active) markSection(current.id);
+  });
+}, { passive: true });
+window.addEventListener("hashchange", () => selectSection(decodeURIComponent(location.hash.slice(1)), false));
+
+// Arrow keys are an additional shortcut; every category is also reachable with Tab.
 $("section-nav").addEventListener("keydown", (event) => {
   const chips = [...event.currentTarget.querySelectorAll(".section-chip")];
   const index = chips.indexOf(document.activeElement);
@@ -297,11 +386,19 @@ $("section-nav").addEventListener("keydown", (event) => {
   const next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: chips.length - 1 }[event.key];
   if (next === undefined) return;
   event.preventDefault();
-  selectSection(chips[(next + chips.length) % chips.length].dataset.key);
+  const chip = chips[(next + chips.length) % chips.length];
+  chip.focus({ preventScroll: true });
+  selectSection(chip.dataset.key);
 });
 
 function renderSection(content, tab, panels) {
-  if (!panels.length) { content.innerHTML = "<p class='empty'>No images yet.</p>"; return; }
+  if (!panels.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = "No images yet.";
+    content.append(empty);
+    return;
+  }
   const groupBy = tab.key === "pediatric" ? "clinical_tab" : tab.group_by;
   if (!groupBy) {
     const combined = panels.filter(p => p.plate_kind === "combined");
@@ -459,7 +556,7 @@ function loadPanels() {
       state.loading = false;
       state.panels = [];
       render();
-      $("content").innerHTML = "<p class='empty'>Images could not be loaded. Try switching sections.</p>";
+      $("content").innerHTML = "<p class='empty'>Images could not be loaded. Try reloading the page.</p>";
     });
 }
 
