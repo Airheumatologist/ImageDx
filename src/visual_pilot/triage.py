@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import re
 
-from . import config, curation, db, diseases, llm, pmc
+from . import config, curation, db, diseases, llm, pmc, published
 from . import prompts
 from .prompts import P2
 
@@ -504,6 +504,10 @@ def run(args) -> int:
         conn, "figures", "pending", disease=disease, limit=getattr(args, "limit", None),
         pmcids=pmcid_filter or None,
     ))
+    rows = published.filter_queue(
+        conn, rows, lambda figure: figure.get("_article_disease_keys", []),
+        "triage", dry_run=bool(args.dry_run),
+    )
     batches = _batches(rows, BATCH_SIZE)
 
     if args.dry_run:

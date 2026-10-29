@@ -1,0 +1,837 @@
+Cardiology:
+Abdominal aortic aneurysm — US/CT diameter, mural thrombus, retroperitoneal rupture.
+Thoracic aortic aneurysm — CXR widened mediastinum, CT/MR dilation; distinct from bicuspid aortopathy.
+Timothy Syndrome (Long QT Syndrome Type 8) (timothy_syndrome) — Bilateral cutaneous syndactyly of hands and feet, baldness at birth, dysmorphic round face, extreme QTc prolongation (600–750 ms) with 2:1 AV block, and CHD
+Mulibrey Nanism (Pericardial Constriction–Growth Restriction Syndrome) (mulibrey_nanism) — Triangular face, J-shaped sella turcica, yellowish mid-peripheral fundus dots, calcified constrictive pericarditis on echo/CT, and fibrous dysplasia of the tibia
+Paget-Schroetter Syndrome (Effort Thrombosis of the Axillosubclavian Vein) (paget_schroetter_syndrome) — Swollen, cyanotic arm with Urschel's chest/shoulder collateral veins in a young athlete; subclavian vein compression at the costoclavicular junction on venography
+May-Thurner Syndrome (Iliocaval Compression Syndrome) (may_thurner_syndrome) — Chronic left-leg swelling/ulceration or phlegmasia; extrinsic compression ("pancaking") of the left common iliac vein by the right common iliac artery against L5 on CT/MR venography
+Leriche Syndrome (Aortoiliac Occlusive Disease) (leriche_syndrome) — Pale, atrophic, hairless lower extremities with toe gangrene; complete infrarenal aortic occlusion at the bifurcation with Winslow pathway collaterals on CTA
+Char Syndrome (Patent Ductus Arteriosus with Facial Dysmorphism and Hand Anomalies) (char_syndrome) — Characteristic "duck-bill" mouth with flat nasal bridge, patent ductus arteriosus on echo, and hypoplasia/aplasia of the 5th finger middle phalanges on hand X-ray
+Geleophysic Dysplasia (Acromelic Dysplasia with Progressive Cardiac Valvular Disease) (geleophysic_dysplasia) — Round "happy-nature" face, tiptoe gait, stubby hands/feet with short tubular bones on X-ray, and severe nodular myxoid pan-valvular thickening on echo.
+Pulmonary:
+Broncholithiasis (broncholithiasis) — Expectorated chalky calcified stones (lithoptysis); intraluminal coral-like broncholith with granulations on bronchoscopy and calcified lymph node eroding into the bronchus on chest CT
+Hepatopulmonary Syndrome (HPS) (hepatopulmonary_syndrome) — Digital clubbing, cyanosis, spider angiomata; delayed left-atrial microbubble appearance (3–6 cardiac cycles) on agitated-saline contrast echo and dilated basal lung vessels on CT
+Solitary Fibrous Tumor of the Pleura (with Doege-Potter and Pierre-Marie-Bamberger Syndromes) (solitary_fibrous_tumor_of_the_pleura) — Clubbing + periosteal wrist/ankle swelling; giant pedunculated pleural mass on chest CT and parallel "tram-track" periostosis on long-bone X-ray
+Tracheobronchial Adenoid Cystic Carcinoma (tracheobronchial_adenoid_cystic_carcinoma) — Fleshy lobulated tracheal tumor on bronchoscopy, longitudinal tracheal wall thickening on CT, and "Swiss-cheese" cribriform cylinders on histology
+Lymphomatoid Granulomatosis (lymphomatoid_granulomatosis) — Violaceous ulcerating cutaneous nodules + bilateral peribronchovascular cavitating lung masses ("migratory nodules" / "reversed halo") on chest CT
+Caplan Syndrome (Rheumatoid Pneumoconiosis) (caplan_syndrome) — Deforming rheumatoid hand arthropathy and rheumatoid nodules paired with rapid crops of peripheral cavitating/calcifying lung nodules (0.5–5 cm) on background pneumoconiosis on chest CT
+Primary Lung Abscess (Necrotizing Anaerobic Cavitary Pneumonia) (pulmonary_abscess) — Putrid expectoration, carious dentition, clubbing, and thick-walled spherical lung cavity in a dependent segment with a sharp horizontal air-fluid level on chest X-ray/CT
+bronchiectasis — signet-ring/tram-track bronchi, tree-in-bud, mosaic perfusion.
+Pulmonary embolism — CTPA filling defect, Hampton hump/Westermark sign, RV strain.
+Primary lung carcinoma — a spiculated, cavitating, or central mass. Histologic subtypes and Pancoast tumor stay inside this topic.
+Spontaneous/tension pneumothorax — pleural line, absent lung markings, mediastinal shift.
+COPD
+EMPHYSEMA
+Pulmonary embolism — CTPA filling defect, Hampton hump/Westermark sign, RV strain.
+ARDS — bilateral dependent alveolar opacities without cardiomegaly.
+Idiopathic nonspecific interstitial pneumonia — basal ground glass and reticulation with subpleural sparing.
+IDIOPATHIC PULMONARY FIBROSIS
+Radiation-induced lung injury — opacity whose borders match the radiation port.
+• Paraquat poisoning — mouth erosions followed by rapidly progressive lung injury.
+Silicosis and coal workers’ pneumoconiosis — upper-lobe nodules, eggshell nodes, and progressive massive fibrosis.
+Asbestos-related pleural plaques — holly-leaf and diaphragmatic calcified plaques. Fibrotic asbestosis stays out because its usual-interstitial pattern duplicates idiopathic pulmonary fibrosis.
+Scimitar syndrome — the scimitar vein beside a hypoplastic right lung.
+Swyer-James-MacLeod syndrome — a unilateral small hyperlucent lung with air trapping.
+Mounier-Kuhn syndrome — tracheobronchomegaly with diverticulosis.
+Congenital pulmonary airway malformation — a macrocystic or microcystic lung mass on fetal ultrasound and CT.
+Bronchopulmonary sequestration — a nonfunctioning lung mass fed by a systemic artery.
+Congenital lobar overinflation — progressive hyperlucency of one lobe with mediastinal shift.
+Gastroenterology
+Acute diverticulitis — pericolic fat stranding, wall thickening, abscess.
+Small bowel obstruction — dilated loops, air-fluid levels, transition point.
+Acute mesenteric ischemia — CTA occlusion, absent wall enhancement, pneumatosis/portal gas.
+Acute interstitial pancreatitis — pancreatic edema/peripancreatic stranding; distinct from necrotizing form.
+Pancreatic ductal adenocarcinoma — hypoenhancing mass, double-duct sign, vascular encasement.
+Choledocholithiasis and ascending cholangitis — CBD dilation, filling defect, Charcot triad.
+Intestinal-type gastric adenocarcinoma — ulcerated/fungating mass; distinct from linitis plastica.
+Erosive esophagitis — distal mucosal breaks, Los Angeles grading, peptic stricture.
+Esophageal adenocarcinoma — distal mass arising in Barrett mucosa.
+Cholangiocarcinoma — biliary stricture with upstream dilation, periductal thickening
+Esophageal adenocarcinoma — a distal mass arising in columnar mucosa.
+• Esophageal candidiasis — confluent white plaques that do not wash off.
+• Caustic ingestion injury — perioral burns and graded endoscopic esophageal necrosis.
+• Button battery ingestion — the radiographic double-ring disk and a focal esophageal burn.
+• Diffuse esophageal spasm — a corkscrew esophagus on barium.
+• Gastric adenocarcinoma (intestinal type) — an ulcerated or fungating mass. Linitis plastica stays separate.
+• Chronic calcifying pancreatitis — intraductal calculi and a chain-of-lakes duct. Hereditary pancreatitis stays the monogenic subset.
+• Cholangiocarcinoma, including Klatskin tumor — a delayed-enhancing duct mass with ipsilateral atrophy.
+• Gallbladder carcinoma — a mass replacing the gallbladder fossa and invading the liver.
+• Recurrent pyogenic cholangitis — dilated intrahepatic ducts packed with pigment stones.
+• AIDS cholangiopathy — papillary stenosis with intrahepatic strictures.
+• Acute mesenteric ischemia — arterial or venous occlusion with nonenhancing bowel and portomesenteric gas.
+• Neutropenic enterocolitis (typhlitis) — marked cecal wall thickening during neutropenia.
+• Chronic radiation proctitis — pale rectal mucosa carpeted with telangiectasias.
+• Serrated polyposis syndrome — many large proximal serrated polyps.
+Intraductal papillary mucinous neoplasm — a fish-mouth papilla extruding mucin, with a communicating dilated duct.
+Sigmoid volvulus — the coffee-bean radiograph and the contrast beak.
+Cecal volvulus — the kidney-shaped cecum and the whirl on CT.
+Melanosis Coli (Anthraquinone Laxative-Induced Colonic Pigmentation) (melanosis_coli) — Iconic dark-brown/black "tiger-skin" or "alligator-skin" colonic mucosa broken by pale lymphoid follicles on colonoscopy; lipofuscin-laden macrophages on biopsy
+Tylosis with Esophageal Cancer (Howel-Evans Syndrome) (tylosis_with_esophageal_cancer) — Thick yellow waxy palmoplantar keratoderma + oral leukoplakia paired with mid/distal squamous esophageal carcinoma on endoscopy/barium swallow
+Autoimmune Metaplastic Atrophic Gastritis and Pernicious Anemia (autoimmune_atrophic_gastritis) — Beefy-red Hunter glossitis, pale thinned gastric body mucosa with visible submucosal vessels and Type I gastric carcinoid polyps on EGD
+Radiation Proctitis (Chronic Radiation Proctopathy and Enteritis) (radiation_proctitis) — Pale atrophic rectal mucosa covered by friable, coalescent "spider-like" telangiectasias on colonoscopy
+Esophagitis Dissecans Superficialis (Sloughing Esophagitis) (esophagitis_dissecans_superficialis) — Regurgitated intact white tubular esophageal mucosal casts and long strips of detached white squamous mucosa ("gift-wrap" appearance) on EGD
+Nephrology
+IgA nephropathy — mesangial proliferation, dominant IgA on immunofluorescence.
+Membranous nephropathy — thickened GBM, subepithelial spikes, granular IgG/C3.
+Minimal change disease — normal light microscopy, podocyte foot-process effacement.
+FSGS — segmental sclerosis/collapse, hyalinosis.
+Post-infectious glomerulonephritis — endocapillary hypercellularity, subepithelial humps, low C3.
+Lupus nephritis — full-house immunofluorescence, subendothelial deposits, wire loops.
+Diabetic nephropathy — Kimmelstiel-Wilson nodules, mesangial expansion.
+Acute interstitial nephritis — interstitial edema, lymphocytic/eosinophilic infiltrate, tubulitis.
+HUS — glomerular thrombi, schistocytes; enlarged echogenic kidneys.
+Acute pyelonephritis and renal abscess — striated nephrogram, perinephric stranding, rim-enhancing collection.
+Renal tuberculosis — moth-eaten calyces, strictures, putty kidney.
+Atherosclerotic renal artery stenosis / renal infarction / renal vein thrombosis — CTA/Doppler filling defects, wedge non-enhancement, absent venous flow.
+Pierson Syndrome (LAMB2-Related Oculorenal Syndrome) (pierson_syndrome) — Pathognomonic bilateral extreme congenital microcoria (fixed pinhole pupils <2 mm) with iris atrophy + neonatal nephrotic anasarca and enlarged hyperechoic kidneys on US
+Frasier Syndrome (WT1 Splice-Site Nephropathy with Gonadal Dysgenesis) (frasier_syndrome) — 46,XY complete female external genitalia, nephrotic edema (FSGS), and pelvic streak gonads with calcified gonadoblastoma on pelvic MRI/USCystinuria (Hereditary Dibasic Aminoaciduria and Cystine Urolithiasis) (cystinuria) — Pathognomonic colorless, flat, 6-sided hexagonal "benzene-ring" cystine crystals on urine microscopy and waxy yellow radiopaque staghorn calculi on CT/KUB
+Cranioectodermal Dysplasia (Sensenbrenner Syndrome) (cranioectodermal_dysplasia) — Dolichocephaly (sagittal craniosynostosis), sparse hair, microdontia, narrow thorax, brachydactyly, and hyperechoic nephronophthisis kidneys on US
+Adenine Phosphoribosyltransferase (APRT) Deficiency (2,8-Dihydroxyadeninuria) (aprt_deficiency) — Reddish-brown diaper stains, friable bluish-gray stones, and pathognomonic brown spherical crystals with a central "Maltese cross" under polarized urine microscopy
+Uromodulin-Associated Kidney Disease (ADTKD-UMOD / Familial Juvenile Hyperuricemic Nephropathy) (uromodulin_kidney_disease) — Precocious teenage/young-adult gouty podagra and tophi + "punched-out" overhanging rat-bite erosions on X-ray and shrunken corticomedullary-cyst kidneys
+Bilateral renal agenesis (Potter sequence) — Potter facies with absent kidneys and pulmonary hypoplasia.
+• Multicystic dysplastic kidney — a non-reniform cluster of noncommunicating cysts.
+Congenital dyserythropoietic anemia — binucleate erythroblasts or Swiss-cheese heterochromatin.
+• Shwachman-Diamond syndrome — neutropenia, pancreatic lipomatosis, and metaphyseal dysplasia.
+• Pearson marrow-pancreas syndrome — vacuolated marrow precursors and ring sideroblasts with pancreatic failure.
+• Idiopathic hypereosinophilic syndrome — urticaria, angioedema, or eosinophilic cardiac involvement with sustained eosinophilia.
+• Mantle cell lymphoma (multiple lymphomatous polyposis) — innumerable lymphomatous polyps.
+Urology
+Benign prostatic hyperplasia — enlarged transition zone, median lobe, post-void residual.
+Prostate cancer — PI-RADS lesion on mpMRI, diffusion restriction, bone/PSMA metastases.
+Nephrolithiasis — hyperdense stone, hydronephrosis, perinephric stranding on noncontrast CT.
+Obstructive uropathy/hydronephrosis — dilated pelvis/calyces, cortical thinning, transition point.
+Urethral stricture — retrograde urethrogram narrowing.
+Epididymitis/epididymo-orchitis — enlarged hyperemic epididymis, reactive hydrocele.
+Priapism — Doppler absent/reduced cavernosal flow (ischemic) or high flow (nonischemic).
+Acute bacterial prostatitis/prostatic abscess — tender prostate, rim-enhancing collection.
+Testicular rupture — disrupted tunica albuginea, heterogeneous testis, hematocele.
+Torsion of the appendix testis — avascular upper-pole nodule, blue-dot sign.
+Vesicoureteral reflux and UPJ obstruction — VCUG grading, pelvicalyceal dilation without ureteral dilation.
+Urethral prolapse — a circumferential red-purple doughnut of mucosa at the meatus of a prepubertal girl.
+• Urethral caruncle — a focal friable red lesion at the posterior meatus.
+• Urethral diverticulum — an anterior vaginal mass, with a horseshoe fluid collection on MRI.
+• Staghorn calculus — a branching cast of the renal pelvis and calyces.
+• Primary obstructive megaureter — a dilated ureter that narrows at an adynamic distal segment and does not reflux.
+• Urachal carcinoma — a midline, often calcified mass at the bladder dome.
+• Patent urachus — urine leaking from the umbilicus through a tract to the bladder dome.
+• Torsion of the appendix testis — the blue-dot sign with preserved testicular flow.
+• Emphysematous cystitis — gas outlining the bladder wall.
+Epispadias (epispadias) — Dorsal urethral cleft on a broad, flattened "spade-like" dorsally curved penis (or bifid clitoris) + wide pubic symphysis diastasis ("manta-ray pelvis") on pelvic X-ray
+Penile Intraepithelial Neoplasia (Erythroplasia of Queyrat and Bowenoid Papulosis) (erythroplasia_of_queyrat_and_bowenoid_papulosis) — Velvety bright-red glistening plaque on the glans penis vs. multiple reddish-brown/violaceous papules on the penile shaft with glomerular vessels on dermoscopy
+Giant Condyloma Acuminatum (Buschke-Löwenstein Tumor) (buschke_lowenstein_tumor) — Massive cauliflower-like exophytic verrucous penile/perianal mass with multiple urethrocutaneous fistulae and deep cavernosal invasion on pelvic MRI
+Idiopathic Scrotal Calcinosis (idiopathic_scrotal_calcinosis) — Numerous chalky yellowish-white intradermal nodules studding the scrotal skin with acoustic shadowing on ultrasound and normal serum calcium/phosphate
+Angiokeratoma of Fordyce (Scrotal and Vulvar Angiokeratomas) (angiokeratoma_of_fordyce) — 1–5 mm dark-red to blue-black vascular papules along the scrotum/labia majora with pathognomonic "dark lacunae" and whitish veil on dermoscopy
+Urethral Prolapse and Urethral Caruncle (urethral_prolapse_and_urethral_caruncle) — Circumferential violaceous "donut-shaped" mucosal eversion around the urethral meatus vs. focal raspberry-like posterior lip nodule
+Female Urethral Diverticulum (urethral_diverticulum) — Anterior vaginal wall mass expressing purulent discharge with pathognomonic T2-hyperintense "saddlebag / horseshoe" cystic lesion wrapping around the mid-urethra on pelvic MRI
+Congenital Urachal Anomalies and Urachal Adenocarcinoma (urachal_anomalies_and_urachal_carcinoma) — Umbilical urine drainage in neonates or mucosuria in adults; midline bladder-dome mass extending along the space of Retzius with peripheral calcifications on sagittal CT/MRI
+Renal Oncocytoma (renal_oncocytoma) — Mahogany-brown renal cortical tumor with a central stellate scar and "spoke-wheel" vascular pattern on CT/MRI/angiography
+Multicystic Dysplastic Kidney (MCDK) (multicystic_dysplastic_kidney) — Transilluminating neonatal flank mass with non-communicating anechoic cysts of varying sizes ("bunch of grapes") and no central renal pelvis on ultrasound.
+Staghorn Nephrolithiasis and Ureterolithiasis (staghorn_calculi_and_urolithiasis) — Branched coral-like radiopaque staghorn calculus casting the renal pelvis/calyces on KUB/CT, "twinkling artifact" and absent ureteral jet on Doppler US, and rectangular "coffin-lid" struvite crystals
+Neurology
+Acute ischemic stroke/TIA — hyperdense MCA, DWI restriction, CTA occlusion.
+Intracerebral hemorrhage — hyperdense parenchymal hematoma, edema, mass effect.
+Aneurysmal subarachnoid hemorrhage and saccular aneurysm — basal cistern blood, CTA/DSA aneurysm.
+Bacterial meningitis — leptomeningeal enhancement, hydrocephalus, infarcts.
+HSV encephalitis — medial temporal/insular T2/FLAIR hyperintensity.
+Brain abscess — ring enhancement with central restricted diffusion.
+Tuberculous meningitis — basal leptomeningeal enhancement, tuberculomas, hydrocephalus.
+Cerebral toxoplasmosis — multiple ring-enhancing basal ganglia lesions, eccentric target sign.
+Glioblastoma, brain metastases, meningioma, primary CNS lymphoma — characteristic MRI patterns.
+Obstructive hydrocephalus — enlarged ventricles with transependymal edema and obstruction.
+Epidural and subdural hematoma — biconvex vs crescentic extra-axial collections.
+Diffuse axonal injury — SWI microhemorrhages at gray-white junction/corpus callosum.
+Mesial temporal sclerosis — hippocampal atrophy and T2/FLAIR hyperintensity.
+Parkinson disease — substantia nigra swallow-tail loss, reduced DaTscan uptake.
+Trigeminal neuralgia — neurovascular compression at root entry zone on FIESTA/CISS.
+Methanol poisoning — bilateral putaminal necrosis with hyperemic optic neuropathy.
+• Add back: CADASIL — anterior-temporal and external-capsule white-matter hyperintensities with lacunes.
+• Add back: Progressive multifocal leukoencephalopathy — asymmetric T2 lesions involving subcortical U-fibers, typically without enhancement.
+• Dandy-Walker malformation — vermian hypoplasia with cystic enlargement of the fourth ventricle.
+• Mesial temporal sclerosis — hippocampal atrophy, T2 hyperintensity, and lost internal architecture.
+• Focal cortical dysplasia type II — the transmantle T2 tail.
+• Hypothalamic hamartoma — a hypothalamic mass that is isointense to gray matter, with gelastic seizures.
+• Diffuse intrinsic pontine glioma — an expansile pontine mass engulfing the basilar artery.
+• Intracranial dural arteriovenous fistula — dural feeders with retrograde cortical venous drainage. Spinal dural fistula stays separate.
+• Subcortical band heterotopia — a continuous subcortical gray-matter band.
+• Hemimegalencephaly — one enlarged, dysplastic hemisphere.
+• Walker-Warburg syndrome — cobblestone lissencephaly, a kinked brainstem, and retinal dysplasia.
+• Megalencephalic leukoencephalopathy with subcortical cysts — swollen white matter with anterior-temporal cysts.
+• L-2-hydroxyglutaric aciduria — centripetal subcortical white-matter signal that involves the dentate nuclei.
+• Primary familial brain calcification (Fahr disease) — symmetric calcification of the basal ganglia, thalami, and dentate nuclei.
+• Rett syndrome — loss of hand use with midline hand-wringing.
+• Myotonia congenita — generalized muscle hypertrophy with clinical myotonia.
+• Encephalocraniocutaneous lipomatosis (Haberland syndrome) — nevus psiloliparus, periocular choristomas, and intracranial lipomas.
+Parkinson's Disease (parkinson_disease)
+Subspecialty: Movement Disorders
+Clinical / Imaging Findings: Hypomimia ("masked facies"), camptocormic posture, unilateral pill-rolling resting tremor, and striatal hand deformity; loss of the substantia nigra Nigrosome-1 ("absent swallow-tail sign") on 3T/7T SWI MRI and asymmetric "comma-to-period" loss on DaTscan SPECT.
+Cervical Dystonia (Spasmodic Torticollis) (cervical_dystonia)
+Subspecialty: Movement Disorders
+Clinical / Imaging Findings: Sustained involuntary patterned head rotation/tilt with visible rope-like sternocleidomastoid hypertrophy and the classic bedside sensory trick (geste antagoniste); asymmetric muscle hypertrophy and hypermetabolism on neck CT/MRI and FDG-PET.
+Hemifacial Spasm (hemifacial_spasm)
+Subspecialty: Cranial Neuropathies
+Clinical / Imaging Findings: Paroxysmal unilateral orbicularis oculi closure with simultaneous ipsilateral eyebrow elevation and corner-of-mouth traction ("other Babinski sign" / Babinski-2 sign); AICA/PICA vascular loop compressing the CN VII root exit zone on 3D CISS/FIESTA MRI.
+Marcus Gunn Jaw-Winking Syndrome (marcus_gunn_jaw_winking_syndrome)
+Subspecialty: Cranial Neuropathies & Congenital Cranial Dysinnervation Disorders
+Clinical / Imaging Findings: Unilateral congenital upper-eyelid ptosis at rest with rapid upward eyelid retraction ("wink") upon jaw opening or lateral pterygoid contraction (trigemino-oculomotor synkinesis).
+Adie Tonic Pupil (Holmes-Adie Syndrome) (adie_tonic_pupil_syndrome)
+Subspecialty: Neuro-Ophthalmology & Pupillary Disorders
+Clinical / Imaging Findings: Unilateral dilated pupil with light-near dissociation, sectoral iris sphincter palsy with "vermiform" writhing on slit-lamp exam, and dramatic constriction to dilute 0.125% pilocarpine.
+Ramsay Hunt Syndrome (Herpes Zoster Oticus) (ramsay_hunt_syndrome)
+Subspecialty: Cranial Neuropathies
+Clinical / Imaging Findings: Acute ipsilateral lower motor neuron facial paralysis (lagophthalmos, Bell phenomenon, effaced nasolabial fold) paired with painful erythematous vesicles in the auricular concha/external auditory canal; linear gadolinium enhancement of the geniculate ganglion and CN VII/VIII on temporal bone MRI.
+Myotonia Congenita (myotonia_congenita)
+Subspecialty: Neuromuscular & Myotonic Disorders
+Clinical / Imaging Findings: Generalized skeletal muscle hypertrophy ("Herculean" physique), delayed hand-grip and eyelid relaxation ("warm-up phenomenon"), and visible percussion myotonia dimpling of the thenar eminence/tongue; diffuse muscle hypertrophy without fatty replacement on muscle MRI.
+Nemaline Myopathy (nemaline_myopathy)
+Subspecialty: Congenital Myopathies
+Clinical / Imaging Findings: Elongated expressionless myopathic facies, high-arched palate, tented "inverted-V" upper lip, and infantile hypotonia; pathognomonic dark red/purple rod-like nemaline bodies on modified Gomori trichrome muscle biopsy.
+Ullrich Congenital Muscular Dystrophy (ullrich_congenital_muscular_dystrophy)
+Subspecialty: Muscular Dystrophies
+Clinical / Imaging Findings: Severe neonatal hypotonia, extreme distal joint hyperlaxity (hyperextensible fingers/wrists/toes with protruding calcanei) paired with proximal contractures, follicular hyperkeratosis, and keloids; concentric outer-rim fatty infiltration of the vastus lateralis ("tiger-like" / "target" sign) on thigh MRI.
+Bethlem Myopathy (bethlem_myopathy)
+Subspecialty: Muscular Dystrophies
+Clinical / Imaging Findings: Childhood/adult-onset limb-girdle weakness with pathognomonic long-finger flexion contractures on passive wrist extension ("Bethlem prayer sign"), elbow/Achilles contractures, cigarette-paper/keloid scars, and central "shadow/target" fatty band around the rectus femoris central aponeurosis on thigh MRI.
+Chronic Inflammatory Demyelinating Polyradiculoneuropathy (CIDP) (chronic_inflammatory_demyelinating_polyradiculoneuropathy)
+Subspecialty: Autoimmune Neuropathies
+Clinical / Imaging Findings: Symmetric proximal and distal weakness with intrinsic hand/foot muscle wasting; dramatic fusiform hypertrophy and STIR hyperintensity/enhancement of the brachial plexus, lumbosacral plexus, and cauda equina on MRI, with "onion-bulb" formations on sural nerve biopsy.
+Subacute Combined Degeneration of the Spinal Cord (subacute_combined_degeneration)
+Subspecialty: Metabolic & Nutritional Myelopathies
+Clinical / Imaging Findings: Spastic-ataxic gait, beefy-red atrophic Hunter glossitis, and knuckle hyperpigmentation; pathognomonic symmetric dorsal column T2 hyperintensity ("inverted V sign" / "rabbit ears") on axial cervical/thoracic spine MRI.
+Dandy-Walker Malformation (dandy_walker_malformation)
+Subspecialty: Neurodevelopmental & Posterior Fossa Malformations
+Clinical / Imaging Findings: Infantile macrocephaly with prominent occipital bossing; sagittal brain MRI triad of cerebellar vermian hypoplasia/upward rotation, cystic 4th ventricular dilatation filling an enlarged posterior fossa, and torcular-lambdoid inversion.
+Schizencephaly (schizencephaly)
+Subspecialty: Neurodevelopmental & Cortical Malformations
+Clinical / Imaging Findings: Hemiparesis or tetraparesis and focal epilepsy; full-thickness CSF-filled cerebral transmantle cleft spanning from ependyma to pial surface and lined completely by dysplastic polymicrogyric gray matter (open-lip vs. closed-lip) on brain MRI.
+Encephalocraniocutaneous Lipomatosis (Haberland Syndrome) (encephalocraniocutaneous_lipomatosis)
+Subspecialty: Neurocutaneous Syndromes & Phakomatoses
+Clinical / Imaging Findings: Unilateral hairless fatty scalp plaque (nevus psiloliparus), ipsilateral pink epibulbar lipodermoid choristoma, periocular skin tags, and ipsilateral T1-bright intracranial/intraspinal leptomeningeal lipomas on brain/spine MRI.
+Cobb Syndrome (Spinal Arteriovenous Metameric Syndrome) (cobb_syndrome)
+Subspecialty: Neurocutaneous & Neurovascular Syndromes
+Clinical / Imaging Findings: Well-demarcated cutaneous port-wine stain, angioma, or angiokeratoma in a specific trunk/limb dermatome paired with an intramedullary or paraspinal arteriovenous malformation at the corresponding spinal cord metamere on spinal MRI and angiography.
+Lhermitte-Duclos Disease (Dysplastic Cerebellar Gangliocytoma) (lhermitte_duclos_disease)
+Subspecialty: Neurocutaneous Syndromes & CNS Oncology
+Clinical / Imaging Findings: Cerebellar ataxia, macrocephaly, and Cowden syndrome mucocutaneous papules; pathognomonic non-enhancing "tigroid" / "corduroy" striated cerebellar hemisphere mass on T1/T2 brain MRI.
+Pineal Germinoma (pineal_germinoma)
+Subspecialty: CNS Oncology & Neuro-Ophthalmology
+Clinical / Imaging Findings: Parinaud dorsal midbrain syndrome (supranuclear upgaze paralysis, Collier "tucked-lid" retraction, convergence-retraction nystagmus, light-near dissociation); midline pineal mass "engulfing" a central pineal calcification on CT with vivid enhancement and DWI restriction on MRI.
+Glioblastoma (glioblastoma)
+Subspecialty: CNS Oncology
+Clinical / Imaging Findings: Focal deficits and florid papilledema; thick, shaggy ring-enhancing intra-axial mass with central necrosis, extensive vasogenic edema, and corpus callosum invasion ("butterfly glioma") on brain MRI, with pseudopalisading necrosis and glomeruloid microvascular proliferation on histology.
+Intracranial Meningioma (intracranial_meningioma)
+Subspecialty: CNS Oncology
+Clinical / Imaging Findings: Proptosis, cranial nerve palsies, or Foster Kennedy syndrome (ipsilateral optic atrophy + contralateral papilledema in olfactory groove meningioma); extra-axial mass with homogeneous enhancement, CSF cleft, dural tail, adjacent calvarial hyperostosis, and "sunburst" vascular pedicle on MRI/CT, plus meningothelial whorls and psammoma bodies on pathology.
+Pilocytic Astrocytoma (pilocytic_astrocytoma)
+Subspecialty: CNS Oncology
+Clinical / Imaging Findings: Pediatric cerebellar ataxia, head tilt, or proptosis/optic atrophy (in NF1 optic pathway glioma); classic posterior fossa cyst with an avidly enhancing mural nodule on brain MRI and bipolar hair-like ("pilocytic") cells with eosinophilic Rosenthal fibers on pathology.
+Hypothalamic Hamartoma (hypothalamic_hamartoma)
+Subspecialty: CNS Oncology & Developmental Malformations
+Clinical / Imaging Findings: Gelastic (laughing) seizures and central precocious puberty; non-enhancing, gray-matter-isointense sessile or pedunculated nodule arising from the tuber cinereum/mammillary bodies on sagittal T1/T2 brain MRI.
+Ophthalmology
+Nonproliferative diabetic retinopathy and diabetic macular edema — microaneurysms, hemorrhages, exudates; OCT cysts.
+Branch retinal artery occlusion — sectoral retinal whitening, Hollenhorst plaque.
+Hypertensive retinopathy — AV nicking, copper/silver wiring, flame hemorrhages, macular star.
+Acute anterior uveitis and HLA-B27 uveitis — ciliary flush, keratic precipitates, hypopyon, synechiae.
+Optic neuritis — painful vision loss, RAPD, optic nerve enhancement, RNFL thinning.
+Infantile nystagmus syndrome — pendular/jerk nystagmus, null point, head nodding.
+HSV keratitis and herpes zoster ophthalmicus — dendritic ulcer; V1 rash, Hutchinson sign, keratitis/uveitis.
+Idiopathic orbital inflammation — painful proptosis, enhancing orbital mass/myositis.
+Ocular ischemic syndrome — mid-peripheral hemorrhages, rubeosis, delayed choroidal filling.
+Eales disease, Purtscher retinopathy, Valsalva retinopathy, sickle cell retinopathy — characteristic fundus hemorrhage/ischemia patterns.
+Pars planitis — snowbanks/snowballs, peripheral leakage.
+Orbital cavernous hemangioma — well-circumscribed T2-hyperintense intraconal mass with progressive fill-in.
+Conjunctival melanoma and eyelid sebaceous carcinoma — pigmented conjunctival lesion; yellow eyelid nodule with madarosis.
+Choroideremia
+Leber Congenital Amaurosis
+Oguchi Disease
+Hydroxychloroquine Retinopathy
+Purtscher Retinopathy
+Valsalva Retinopathy
+Eales Disease
+Serpiginous Choroiditis
+Acute Posterior Multifocal Placoid Pigment Epitheliopathy (APMPPE)
+Multiple Evanescent White Dot Syndrome (MEWDS)
+Presumed Ocular Histoplasmosis Syndrome (POHS)
+Pars Planitis
+HLA-B27-Associated Acute Anterior Uveitis
+Schnyder Corneal Dystrophy
+Epithelial Basement Membrane Dystrophy (Map-Dot-Fingerprint Dystrophy)
+Mooren Ulcer
+Terrien Marginal Degeneration
+Thygeson Superficial Punctate Keratitis
+Epidemic Keratoconjunctivitis
+Weill-Marchesani Syndrome
+Sebaceous Carcinoma of the Eyelid
+Orbital Cavernous Venous Malformation
+Congenital Hypertrophy of the Retinal Pigment Epithelium (CHRPE)
+Optic Disc Melanocytoma
+Blepharophimosis-Ptosis-Epicanthus Inversus Syndrome (BPES)
+Floppy Eyelid Syndrome
+• Herpes simplex keratitis — a dendritic epithelial ulcer on fluorescein staining.
+• Herpes zoster ophthalmicus — a V1 vesicular rash, Hutchinson sign, and pseudodendrites.
+• Epidemic keratoconjunctivitis — follicular conjunctivitis followed by subepithelial corneal infiltrates.
+• Thygeson superficial punctate keratitis — coarse stellate epithelial lesions.
+• Epithelial basement membrane dystrophy — map, dot, and fingerprint lines.
+• Posterior polymorphous corneal dystrophy — vesicles and railroad-track lesions at Descemet membrane.
+• Mooren ulcer — a painful peripheral ulcer with an overhanging central edge.
+• Sebaceous carcinoma — a yellowish eyelid mass with madarosis and pagetoid conjunctival spread.
+• Conjunctival melanoma — a pigmented conjunctival mass, often arising in primary acquired melanosis.
+• Primary vitreoretinal lymphoma — vitreous cells and sub-retinal yellow deposits in an older adult.
+• Choroideremia — scalloped loss of retinal pigment epithelium and choroid with a preserved macular island.
+• Norrie disease — bilateral congenital retinal dysplasia with leukocoria.
+• Serpiginous choroiditis — helicoid peripapillary lesions that leave geographic atrophy.
+• Acute posterior multifocal placoid pigment epitheliopathy — creamy placoid posterior-pole lesions.
+• Pars planitis — inferior snowbanks and vitreous snowballs.
+• Eales disease — idiopathic peripheral retinal vasculitis with neovascularization.
+• Presumed ocular histoplasmosis syndrome — histo spots, peripapillary atrophy, and macular neovascularization.
+• Polypoidal choroidal vasculopathy — polypoidal aneurysmal dilations on indocyanine-green angiography.
+• Idiopathic orbital inflammatory syndrome — painful proptosis with tendon-involving muscle enlargement.
+• Orbital cavernous venous malformation — a well-circumscribed intraconal mass with progressive contrast fill.
+Orthopedics
+Distal radius, scaphoid, femoral neck, proximal humerus, ankle, tibial plateau fractures — site-specific radiographic patterns; CT/MRI for occult injury.
+Osteoporosis — DXA T-score, vertebral compression, insufficiency fractures.
+ACL tear, meniscal tear, rotator cuff tear, Achilles rupture — MRI/ultrasound discontinuity, retraction, bone contusion.
+Glenohumeral dislocation — anterior/inferior displacement, Hill-Sachs/Bankart.
+Femoroacetabular impingement — alpha angle >55°, pistol-grip deformity, labral tear.
+Carpal tunnel syndrome — median nerve enlargement/flattening on ultrasound/MRI.
+De Quervain tenosynovitis, plantar fasciitis — tendon sheath thickening; plantar fascia >4 mm.
+Lumbar disc herniation, lumbar stenosis, cervical spondylotic myelopathy — MRI disc/stenosis/cord compression.
+Acute compartment syndrome — tense compartment, pain with passive stretch, delta pressure <30 mmHg.
+Unicameral bone cyst — a central metaphyseal lucency with the fallen-fragment sign.
+• Solitary enchondroma — a geographic lesion with chondroid matrix in a phalanx. Ollier disease and Maffucci syndrome stay the multiple forms.
+• Pycnodysostosis — osteosclerosis, open fontanelles, an obtuse mandibular angle, and acro-osteolysis.
+• Schmid metaphyseal chondrodysplasia — coxa vara and rachitic-looking metaphyses that spare the epiphyses.
+• Progressive pseudorheumatoid dysplasia — platyspondyly and enlarged epiphyses that mimic juvenile arthritis, without erosions.
+• Amyoplasia — internally rotated shoulders, extended elbows, flexed wrists, and dimples.
+• Proximal femoral focal deficiency — a short thigh with an absent or discontinuous proximal femur.
+• Fibular hemimelia — a short or absent fibula with anterior tibial bowing.
+• Developmental coxa vara — a low neck-shaft angle with the Fairbank metaphyseal fragment.
+• Hemivertebra — a lateral wedge vertebra causing a sharp congenital curve.
+• Ossification of the posterior longitudinal ligament — a CT-dense band behind the vertebral bodies.
+• Atypical femoral fracture — a transverse subtrochanteric fracture with lateral cortical beaking.
+Solitary Osteochondroma
+Solitary Enchondroma
+Unicameral Bone Cyst
+Chondromyxoid Fibroma
+Parosteal Osteosarcoma
+Synovial Sarcoma
+Well-Differentiated Liposarcoma
+Myxoid Liposarcoma
+Desmoid Tumor (Aggressive Fibromatosis)
+Epithelioid Sarcoma
+Congenital Pseudarthrosis of the Tibia
+Proximal Femoral Focal Deficiency
+Fibular Hemimelia
+Radial Longitudinal Deficiency (Radial Club Hand)
+Arthrogryposis Multiplex Congenita (Amyoplasia)
+Macrodactyly
+Trigger Finger (Stenosing Tenosynovitis)
+Mallet Finger
+Boutonnière Deformity
+Swan-Neck Deformity
+Pyknodysostosis
+Craniometaphyseal Dysplasia
+Metaphyseal Chondrodysplasia (Schmid Type)
+Rheumatology
+Polymyalgia rheumatica — shoulder/hip girdle pain, bursitis/tenosynovitis on US/MRI, FDG-PET uptake.
+Polymyositis — proximal weakness, MRI muscle edema, endomysial inflammation.
+Oligoarticular and polyarticular JIA — chronic arthritis, effusion/synovitis, uveitis.
+Basic calcium phosphate deposition disease — periarticular calcification, Milwaukee shoulder.
+Complex regional pain syndrome — patchy osteopenia, soft-tissue edema, trophic skin changes.
+Tietze syndrome — visible costochondral swelling, focal chondral enlargement.
+Basic Calcium Phosphate Crystal Deposition Disease (Milwaukee Shoulder Syndrome)
+Hemochromatosis Arthropathy
+Oligoarticular Juvenile Idiopathic Arthritis
+Polyarticular Juvenile Idiopathic Arthritis
+Enteropathic Arthritis
+Polymyalgia Rheumatica
+Anti-MDA5 Amyopathic Dermatomyositis
+Jaccoud Arthropathy
+Palindromic Rheumatism
+Drug-Induced Lupus Erythematosus
+PFAPA Syndrome
+Deficiency of the Interleukin-1 Receptor Antagonist (DIRA)
+STING-Associated Vasculopathy with Onset in Infancy (SAVI)
+Haploinsufficiency of A20 (HA20)
+MAGIC Syndrome
+Primary Raynaud Phenomenon
+Diabetic Cheiroarthropathy
+Deficiency of the IL-1 receptor antagonist (DIRA) — neonatal pustulosis with sterile osteomyelitis and periostitis.
+• STING-associated vasculopathy with onset in infancy (SAVI) — infantile acral violaceous plaques, digital loss, and nasal-septal damage.
+• Anti-MDA5 dermatomyositis — ulcerated palmar papules and ischemic digital ulcers with little weakness.
+• Acute hemorrhagic edema of infancy — large cockade purpuric plaques on the face and limbs of a well infant.
+• Primary Raynaud disease — sharply demarcated white-blue-red digits. Secondary Raynaud stays inside systemic sclerosis.
+Infectious Diseases
+• Ecthyma gangrenosum — a violaceous macule that becomes a black eschar in neutropenic Pseudomonas sepsis.
+• Erysipeloid — a sharp nonpurulent violaceous plaque on a fish- or meat-handler’s hand.
+• Inhalation anthrax — a widened mediastinum from hemorrhagic lymphadenitis, with little lobar infiltrate.
+• Rickettsialpox — a mite-bite eschar followed by a sparse vesicular eruption.
+• Typhoid fever — sparse salmon-colored rose spots on the trunk.
+• Lemierre syndrome — internal-jugular septic thrombosis and cavitary pulmonary emboli after Fusobacterium pharyngitis.
+• Pinta — colored pintids that end in achromic patches.
+• Bejel (endemic syphilis) — oral mucous patches, then gummas of skin and bone.
+• Mucocutaneous leishmaniasis — destruction of the nasal septum, palate, and lips.
+• Post-kala-azar dermal leishmaniasis — facial hypopigmented macules and nodules after treated visceral disease, with sensation preserved.
+• Botryomycosis — nodules, sinus tracts, and bacterial grains that mimic mycetoma.
+• Pulmonary Mycobacterium avium complex (Lady Windermere syndrome) — nodular bronchiectasis centered on the middle lobe and lingula.
+• Emergomycosis — disseminated molluscum-like papules in advanced HIV in southern Africa.
+• Chronic disseminated (hepatosplenic) candidiasis — bull’s-eye lesions in the liver and spleen after neutrophil recovery.
+• Pneumocystis jirovecii pneumonia — ground-glass opacity, cysts, and pneumothorax.
+• Toxoplasmic encephalitis — multiple ring-enhancing brain lesions, often with an eccentric target.
+• Piedra (white and black) — soft or hard nodules cemented to the hair shaft.
+• Herpangina — vesicles and ulcers limited to the soft palate and tonsillar pillars.
+• Chikungunya — a morbilliform eruption with severe polyarthritis; infants may show acral bullae and the chik sign.
+• Congenital varicella syndrome — dermatomal scars and limb hypoplasia.
+• Clonorchiasis and opisthorchiasis — dilated peripheral intrahepatic ducts with flukes or stones.
+• Trichuriasis — threadlike worms carpeting prolapsed rectal mucosa.
+• Botulism — bilateral ptosis with poorly reactive pupils; the infant form is a floppy baby.
+Bejel (Endemic Syphilis)
+Pinta
+Rat-Bite Fever
+Erysipeloid
+Glanders
+Brucellosis
+Typhoid Fever
+Botulism
+Lemierre Syndrome
+Pyogenic Brain Abscess
+Subdural Empyema
+Epidemic Typhus
+Murine Typhus
+Rickettsialpox
+Ehrlichiosis
+Anaplasmosis
+Nontuberculous Mycobacterial Infection
+Pneumocystis Pneumonia
+Phaeohyphomycosis
+Emergomycosis
+Black Piedra
+White Piedra
+Chikungunya
+Yellow Fever
+Ebola Virus Disease
+Marburg Virus Disease
+Lassa Fever
+Crimean-Congo Hemorrhagic Fever
+Herpangina
+Clonorchiasis
+Opisthorchiasis
+Trichuriasis
+Cimicosis (Bedbug Infestation)
+Dermatology
+Atopic dermatitis — flexural eczematous plaques, lichenification, Dennie-Morgan folds.
+Morbilliform drug eruption — symmetric trunk-predominant maculopapular exanthem.
+Bowen disease — erythematous scaly plaque, glomerular vessels on dermoscopy, full-thickness atypia.
+Telogen effluvium — diffuse shedding, positive hair pull, empty follicles on trichoscopy.
+Malassezia folliculitis — monomorphic follicular papules/pustules on trunk.
+Demodicosis — rosacea-like papulopustules, Demodex tails on dermoscopy.
+Diabetic dermopathy — atrophic brown shin macules.
+Sebaceous carcinoma — yellow eyelid nodule, madarosis, atypical sebocytes.
+Pityriasis Lichenoides Chronica
+Chronic Graft-versus-Host Disease
+Mucous Membrane Pemphigoid
+IgA Pemphigus
+Pemphigus Vegetans
+Lichen Planopilaris
+Frontal Fibrosing Alopecia
+Fox-Fordyce Disease
+Nevus Sebaceus of Jadassohn
+Palmoplantar Pustulosis
+Acrodermatitis Continua of Hallopeau
+Erythema Toxicum Neonatorum
+Transient Neonatal Pustular Melanosis
+Pancreatic Panniculitis
+Lupus Panniculitis
+Cutaneous Small-Vessel Vasculitis
+Warfarin-Induced Skin Necrosis
+Heparin-Induced Skin Necrosis
+Phytophotodermatitis
+Chronic Actinic Dermatitis
+Symmetrical Drug-Related Intertriginous and Flexural Exanthema (SDRIFE)
+Halogenoderma
+Ichthyosis Vulgaris
+Erythrokeratodermia Variabilis
+Primary Cutaneous Anaplastic Large Cell Lymphoma
+Subcutaneous Panniculitis-Like T-Cell Lymphoma
+Bowen Disease (Squamous Cell Carcinoma In Situ)
+Sebaceous Carcinoma
+Halo Nevus
+Blue Nevus
+Clear Cell Acanthoma
+Eccrine Poroma
+Onychomatricoma
+Subungual Exostosis
+Ichthyosis vulgaris — fine scale, flexure sparing, hyperlinear palms.
+• Lichen planopilaris, including frontal fibrosing alopecia — perifollicular scale and a receding frontal hairline with eyebrow loss.
+• Phytophotodermatitis, including berloque dermatitis — drip or handprint pigment after psoralen plus sun.
+• Exanthematous (morbilliform) drug eruption — symmetric trunk-predominant maculopapular rash.
+• Erythema toxicum neonatorum — blotchy pustules after birth, palms and soles spared.
+• Transient neonatal pustular melanosis — pustules and pigmented macules present at birth, including palms and soles.
+• Pityriasis alba — faintly scaly hypopigmented cheek patches in children.
+• Idiopathic guttate hypomelanosis — small porcelain macules on sun-exposed shins and forearms.
+• Poikiloderma of Civatte — red-brown reticulate pigment and telangiectasia on the sides of the neck.
+• Xanthelasma palpebrarum — soft yellow eyelid plaques.
+• Exogenous ochronosis — blue-black caviar papules after long-term hydroquinone.
+• Pseudoporphyria — skin fragility, milia, and hand blisters with normal porphyrins.
+• Congenital melanocytic nevus (small and medium) — a brown hairy birth nevus. Giant garment nevi stay inside neurocutaneous melanosis.
+• Blue nevus — a firm steel-blue papule.
+• Halo nevus (Sutton nevus) — a mole ringed by depigmentation.
+• Congenital dermal melanocytosis (Mongolian spot) — a blue-gray lumbosacral patch in a newborn.
+• Nevus sebaceus — a yellow hairless scalp plaque that thickens at puberty. Schimmelpenning syndrome stays separate.
+• Aplasia cutis congenita — a congenital hairless scalp scar or ulcer. Adams-Oliver syndrome stays the syndromic form.
+• Congenital hemangioma (RICH, NICH, and PICH) — a fully formed mass present at birth. Infantile hemangioma stays separate.
+• Palmoplantar pustulosis — sterile yellow pustules confined to palms and soles.
+• Angiokeratoma (solitary, Fordyce, and Mibelli) — a dark keratotic papule or clustered scrotal or vulvar papules. Fabry disease stays the widespread form.
+• Malassezia folliculitis — monomorphic itchy follicular pustules on the upper back.
+• Pseudomonas folliculitis (hot-tub folliculitis) — follicular pustules under a swimsuit after stagnant water.
+• Perianal streptococcal dermatitis — a sharp bright-red perianal rash in a child.
+• Bedbug infestation — grouped papules with a central punctum, often in a line.
+• Loxoscelism (recluse spider envenomation) — a red, white, and blue plaque that becomes a necrotic eschar.
+• Cnidarian envenomation — linear whip-like tentacle welts.
+• Fire ant envenomation — clustered sterile pustules on a red base.
+• Flagellate dermatosis (bleomycin and shiitake) — whip-like hyperpigmented streaks on the trunk.
+• Warfarin-induced skin necrosis — purpura progressing to full-thickness necrosis of breast, thigh, or abdomen.
+• Nicolau syndrome — livedoid necrosis in the territory of an intramuscular injection.
+• Acrodynia (pink disease) — painful pink peeling hands and feet from mercury.
+• Non-freezing cold injury (trench foot) — swollen anesthetic feet that later blister, without tissue ice.
+• Cutaneous radiation injury — geometric erythema, moist desquamation, and late poikiloderma in a treatment field.
+• Mycoplasma-induced rash and mucositis (MIRM / RIME) — severe mucositis of two or more sites with sparse skin lesions.
+• Acquired hypertrichosis lanuginosa — sudden downy lanugo as a paraneoplastic eruption.
+Pediatrics
+Neonatal RDS — reticulogranular opacities, air bronchograms, low lung volumes.
+Transient tachypnea of the newborn — perihilar streaking, prominent fissures, hyperinflation.
+Meconium aspiration syndrome — coarse asymmetric opacities, hyperinflation, air leaks.
+Acute viral bronchiolitis — hyperinflation, peribronchial cuffing, patchy atelectasis.
+Neonatal hypoxic-ischemic encephalopathy — basal ganglia/thalamic or watershed injury on MRI.
+Germinal matrix–IVH — echogenic germinal matrix/ventricular blood on cranial ultrasound.
+Medulloblastoma and Dandy-Walker malformation — posterior fossa mass; cystic fourth ventricle with vermian hypoplasia.
+Anencephaly — absent calvarium and a frog-like face, including on fetal ultrasound.
+• Sirenomelia — a single median lower limb with bilateral renal agenesis.
+• Cloacal exstrophy (OEIS complex) — an omphalocele, split bladder halves, and a midline intestinal plate.
+• Jejunoileal atresia — a mesenteric gap or apple-peel bowel, with a microcolon on contrast enema.
+• Conjoined twins — fused bodies on prenatal ultrasound and at delivery.
+• Megacystis-microcolon-intestinal hypoperistalsis syndrome (Berdon syndrome) — a giant bladder, microcolon, and a normal abdominal wall.
+• Biotinidase deficiency — alopecia with erosive periorificial dermatitis.
+• Tyrosinemia type II (Richner-Hanhart syndrome) — painful palmoplantar keratoderma and dendritic corneal ulcers.
+• Wolman disease — bilateral punctate adrenal calcification with hepatosplenomegaly.
+• GM1 gangliosidosis — coarse facies, dysostosis multiplex, and a cherry-red spot.
+• Mucopolysaccharidosis type VI (Maroteaux-Lamy syndrome) — a Hurler-like face and corneal clouding with preserved intelligence.
+• Glycogen storage disease type Ia (von Gierke disease) — doll-like cheeks, massive soft hepatomegaly, and eruptive xanthomas.
+• Fraser syndrome — cryptophthalmos with cutaneous syndactyly.
+• Fetal warfarin embryopathy — nasal hypoplasia and stippled epiphyses.
+VACTERL Association
+Mucopolysaccharidosis Type III (Sanfilippo Syndrome)
+Mucopolysaccharidosis Type VI (Maroteaux-Lamy Syndrome)
+Mucopolysaccharidosis Type VII (Sly Syndrome)
+GM1 Gangliosidosis
+Glycogen Storage Disease Type I (Von Gierke Disease)
+Roberts Syndrome
+Coffin-Lowry Syndrome
+Mowat-Wilson Syndrome
+Floating-Harbor Syndrome
+KBG Syndrome
+Fraser Syndrome
+Cat Eye Syndrome
+Jacobsen Syndrome
+Mosaic Trisomy 8 (Warkany Syndrome)
+Meconium Ileus
+Meconium Peritonitis
+Medulloblastoma
+Congenital Mesoblastic Nephroma
+Endocrinology
+Hashimoto thyroiditis — diffuse hypoechoic heterogeneous gland, fibrous septa.
+Subacute granulomatous thyroiditis — painful thyroid, focal hypoechoic lesion, low uptake.
+Follicular and anaplastic thyroid carcinoma — hypoechoic irregular nodule; infiltrative necrotic mass.
+Prolactinoma and nonfunctioning pituitary adenoma — sellar mass, suprasellar “snowman” extension.
+Adrenal myelolipoma — macroscopic fat-containing adrenal mass.
+Prolactinoma
+Lymphocytic Hypophysitis
+Empty Sella Syndrome
+Anaplastic Thyroid Carcinoma
+Follicular Thyroid Carcinoma
+Oncocytic (Hürthle Cell) Thyroid Carcinoma
+Hashimoto Thyroiditis
+Subacute Granulomatous Thyroiditis (de Quervain Thyroiditis)
+Adrenocortical Carcinoma
+Somatostatinoma
+Carney Triad
+Carney-Stratakis Syndrome
+Chronic Hypoparathyroidism
+Fahr Syndrome
+Tumor-Induced Osteomalacia
+Acrodysostosis
+Androgen Insensitivity Syndrome
+5-Alpha-Reductase Deficiency
+Wolfram Syndrome
+ROHHAD Syndrome
+Acquired Generalized Lipodystrophy
+Sitosterolemia
+Wolman Disease (Lysosomal Acid Lipase Deficiency)
+Acquired generalized lipodystrophy (Lawrence syndrome) — generalized fat loss after a previously normal distribution.
+• HIV-associated lipodystrophy — facial and limb lipoatrophy with a dorsocervical fat pad.
+• Androgen insensitivity syndrome — breast development, scant sexual hair, a blind vagina, and undescended testes.
+• 5α-reductase deficiency — a female-appearing or perineoscrotal phenotype that virilizes at puberty.
+• Familial male-limited precocious puberty — phallic enlargement and growth acceleration with prepubertal-sized testes.
+• Johanson-Blizzard syndrome — aplasia of the nasal alae, often with pancreatic lipomatosis.
+• Allgrove syndrome (triple A) — achalasia, alacrima, and ACTH-resistant adrenal insufficiency with hyperpigmentation.
+• Adrenocortical carcinoma — a large necrotic adrenal mass with virilization or rapid Cushing features.
+• POMC deficiency — red hair, pale skin, adrenal insufficiency, and early severe obesity.
+• Wolfram syndrome (DIDMOAD) — optic atrophy with juvenile diabetes.
+• Anaplastic thyroid carcinoma — a rapidly enlarging hard neck mass invading skin, airway, or vessels.
+• Hyperparathyroidism–jaw tumor syndrome — multiple ossifying fibromas of the jaws with parathyroid tumors.
+• Vitamin D–resistant rickets type II with alopecia — severe rachitic bones with absent scalp and body hair.
+Hematology:
+• Acute myeloid leukemia — Auer rods, gingival infiltration, and leukemia cutis. Acute promyelocytic leukemia stays separate.
+• Subcutaneous panniculitis-like T-cell lymphoma — subcutaneous plaques that mimic panniculitis.
+• Intravascular large B-cell lymphoma — livedoid skin plaques from lymphoma confined to small vessels.
+• Hemoglobin H disease — golf-ball inclusions on supravital stain, with hepatosplenomegaly.
+• MYH9-related disorder — giant platelets and sky-blue leukocyte inclusions, with nephritis, deafness, or cataracts.
+• Congenital dyserythropoietic anemia — binucleate erythroblasts or Swiss-cheese heterochromatin.
+• Shwachman-Diamond syndrome — neutropenia, pancreatic lipomatosis, and metaphyseal dysplasia.
+• Pearson marrow-pancreas syndrome — vacuolated marrow precursors and ring sideroblasts with pancreatic failure.
+• Idiopathic hypereosinophilic syndrome — urticaria, angioedema, or eosinophilic cardiac involvement with sustained eosinophilia.
+• Mantle cell lymphoma (multiple lymphomatous polyposis) — innumerable lymphomatous polyps.
+Acute Myeloid Leukemia
+Leukemia Cutis
+Essential Thrombocythemia
+Hypereosinophilic Syndrome
+Juvenile Myelomonocytic Leukemia
+Shwachman-Diamond Syndrome
+Aplastic Anemia
+Diffuse Large B-Cell Lymphoma
+Follicular Lymphoma
+Mantle Cell Lymphoma
+Angioimmunoblastic T-Cell Lymphoma
+Primary Central Nervous System Lymphoma
+Alpha-Thalassemia (Hemoglobin H Disease)
+Hemoglobin Bart's Hydrops Fetalis
+Hemoglobin C Disease
+Hemoglobin SC Disease
+Pyruvate Kinase Deficiency
+Sideroblastic Anemia
+Methemoglobinemia
+Hemolytic Uremic Syndrome
+Von Willebrand Disease
+Bernard-Soulier Syndrome
+May-Hegglin Anomaly (MYH9-Related Disease)
+Glanzmann Thrombasthenia
+Breast
+Fibroadenoma — oval circumscribed hypoechoic mass, popcorn calcification.
+Invasive ductal and lobular carcinoma — spiculated mass/architectural distortion; MRI for lobular.
+Fibrocystic change/cysts, fat necrosis, intraductal papilloma, duct ectasia, hamartoma, radial scar, primary angiosarcoma — characteristic US/mammographic patterns.
+Invasive Ductal Carcinoma (No Special Type)
+Invasive Lobular Carcinoma
+Breast Fibroadenoma
+Giant Juvenile Fibroadenoma
+Intraductal Papilloma
+Mammary Duct Ectasia
+Periductal Mastitis (Zuska Disease)
+Fat Necrosis of the Breast
+Lobular Carcinoma In Situ
+Metaplastic Breast Carcinoma
+Medullary Breast Carcinoma
+Primary Breast Angiosarcoma
+Primary Breast Lymphoma
+Galactocele
+Breast Hamartoma
+Radial Scar
+Nipple Adenoma
+Tuberous Breast Deformity
+Obstetrics & Gynecology
+Ectopic pregnancy — empty uterus, adnexal ring/mass, free fluid.
+Preeclampsia/eclampsia — growth restriction, abnormal Doppler, PRES on MRI.
+PID/tubo-ovarian abscess — thickened tubes, hydrosalpinx/pyosalpinx, rim-enhancing adnexal mass.
+Adenomyosis — junctional-zone thickening, myometrial cysts, “venetian blind” shadowing.
+High-grade serous ovarian carcinoma — complex cystic-solid mass, ascites, omental caking.
+PCOS — ≥20 follicles/ovary, ovarian volume >10 mL, “string of pearls.”
+Ovarian functional cysts — simple/hemorrhagic cyst, “ring of fire” corpus luteum.
+Placenta previa, abruption, accreta spectrum — placental localization, retroplacental hematoma, lacunae/loss of clear zone.
+Choriocarcinoma — hypervascular uterine mass, “cannonball” lung metastases.
+Endometrial polyp, OHSS, vulvar melanoma — echogenic endometrial mass; multicystic enlarged ovaries; pigmented vulvar lesion.
+• Trichomoniasis — a strawberry cervix with frothy discharge.
+• Ectopic pregnancy — an empty uterus with a tubal ring or extrauterine sac. Tubal, interstitial, cervical, and cesarean-scar sites stay inside this topic.
+• Placenta previa — placenta covering the internal os.
+• Placenta accreta spectrum — loss of the retroplacental clear zone, placental lacunae, and an interrupted bladder line.
+• Uterine inversion — a red bleeding mass at the introitus with an absent abdominal fundus.
+• Pelvic organ prolapse — descent of the vaginal walls or cervix to the introitus.
+• Adenomyosis — a thickened junctional zone and myometrial cysts on MRI.
+• Gestational choriocarcinoma — hemorrhagic vaginal nodules and cannonball lung metastases.
+• Cervical intraepithelial neoplasia — acetowhite epithelium, mosaicism, and punctation on colposcopy.
+• OHVIRA syndrome — uterus didelphys, an obstructed hemivagina, and ipsilateral renal agenesis.
+• Persistent cloaca — a single perineal opening for urethra, vagina, and rectum.
+• Twin-twin transfusion syndrome — the polyhydramnios–oligohydramnios stuck-twin pair.
+Polycystic Ovary Syndrome (PCOS)
+Uterine Adenomyosis
+Tubal Ectopic Pregnancy
+Gestational Choriocarcinoma
+Invasive Mole
+Cervical Intraepithelial Neoplasia (CIN)
+Uterine Procidentia (Pelvic Organ Prolapse)
+Cystocele
+Rectocele
+Septate Uterus
+Bicornuate Uterus
+Uterus Didelphys
+Tubo-Ovarian Abscess
+Hydrosalpinx
+Endometrial Polyp
+Endocervical Polyp
+Ovarian Serous Cystadenoma
+Ovarian High-Grade Serous Carcinoma
+Ovarian Mucinous Cystadenoma
+Ovarian Mucinous Carcinoma
+Ovarian Granulosa Cell Tumor
+Ovarian Sertoli-Leydig Cell Tumor
+Ovarian Fibroma (Meigs Syndrome)
+Ovarian Dysgerminoma
+Krukenberg Tumor
+Uterine Leiomyosarcoma
+Vaginal Clear Cell Adenocarcinoma
+Twin-to-Twin Transfusion Syndrome
+Placenta Accreta Spectrum
+Dentistry
+Actinic cheilitis — lower-lip erythema/scaling, blurred vermilion border.
+Pericoronitis — operculum over impacted third molar, trismus.
+Dentigerous cyst and odontogenic keratocyst — well-defined radiolucency around crown; scalloped multilocular radiolucency.
+Central giant cell granuloma and ossifying fibroma — multilocular lytic jaw lesion; ground-glass mixed lesion.
+Oral mucositis and drug-induced gingival overgrowth — ulcerative mucosa after chemo/radiation; firm bulbous gingival enlargement.
+Dentigerous Cyst
+Odontogenic Keratocyst
+Radicular Cyst
+Nasopalatine Duct Cyst
+Calcifying Odontogenic Cyst (Gorlin Cyst)
+Adenomatoid Odontogenic Tumor
+Odontogenic Myxoma
+Cementoblastoma
+Calcifying Epithelial Odontogenic Tumor (Pindborg Tumor)
+Florid Cemento-Osseous Dysplasia
+Central Giant Cell Granuloma
+Peripheral Giant Cell Granuloma
+Torus Palatinus
+Torus Mandibularis
+Taurodontism
+Dens Invaginatus (Dens in Dente)
+Dens Evaginatus (Talon Cusp)
+Regional Odontodysplasia
+Dentin Dysplasia
+Mesiodens (Supernumerary Teeth)
+Tetracycline Tooth Discoloration
+Necrotizing Sialometaplasia
+Median Rhomboid Glossitis
+Actinic Cheilitis
+Nicotinic Stomatitis
+Ankyloglossia
+Epulis Fissuratum
+Amalgam Tattoo
+Drug-Induced Gingival Overgrowth
+Garré Sclerosing Osteomyelitis
+Stafne Bone Cavity
+Nicotinic stomatitis — a white palate with red puncta at the minor-salivary orifices.
+• Median rhomboid glossitis — a fixed red diamond on the midline posterior tongue.
+• Angina bullosa hemorrhagica — a sudden blood blister on the soft palate.
+• Riga-Fede disease — a granulomatous ulcer on the ventral tongue of an infant, cut by natal teeth.
+• Laugier-Hunziker syndrome — adult lip macules with longitudinal melanonychia and no polyps.
+• Oral squamous papilloma — a solitary cauliflower nodule on the palate or uvula.
+• Irritation fibroma — a firm pink nodule on the bite line.
+• Epulis fissuratum — fibrous folds under a denture flange.
+• Congenital epulis — a pedunculated mass on the maxillary alveolus of a newborn girl.
+• Necrotizing sialometaplasia — a deep palatal crater that heals.
+• Acute bacterial sialadenitis — unilateral salivary swelling with pus at the duct.
+• Juvenile recurrent parotitis — repeated childhood parotid swelling with punctate sialectasis.
+• Mucoepidermoid carcinoma — a parotid mass or a bluish palatal swelling.
+• Floor-of-mouth dermoid cyst — a midline doughy swelling that lifts the tongue.
+• Odontogenic keratocyst — a mandibular radiolucency along an impacted tooth, with little expansion. Multiple cysts stay inside Gorlin syndrome.
+• Dentigerous cyst — a corticated lucency attached at the crown of an unerupted tooth.
+• Nasopalatine duct cyst — a heart-shaped midline maxillary lucency between vital incisors.
+• Adenomatoid odontogenic tumor — a pericoronal lucency around an unerupted canine, often with snowflake calcifications.
+• Odontogenic myxoma — a soap-bubble lucency that scallops between roots.
+• Cementoblastoma — a painful radiopaque mass fused to a root, with a lucent rim.
+• Cemento-osseous dysplasia (periapical and florid) — radiopacities at the apices of vital teeth.
+• Central ossifying fibroma of the jaws — a boxed-in mixed lucent-opaque jaw mass.
+• Central giant cell granuloma — an expansile anterior-jaw lucency that often crosses the midline.
+• Peripheral giant cell granuloma — a red-purple gingival nodule.
+• Peripheral ossifying fibroma — a firm nodule on the interdental papilla.
+• Drug-induced gingival enlargement — mulberry gingiva from phenytoin, cyclosporine, or a calcium-channel blocker.
+• Dentin dysplasia — short or rootless teeth with obliterated pulps.
+• Regional odontodysplasia (ghost teeth) — one quadrant of thin, large-pulp teeth.
+• Tetracycline tooth discoloration — intrinsic gray-brown bands that fluoresce.
+• Molar-incisor hypomineralization — chalky yellow-brown opacities limited to first permanent molars and incisors.
+• Internal tooth resorption (pink tooth of Mummery) — a pink crown with a ballooned pulp canal.
+Otolaryngology
+Acute rhinosinusitis; chronic rhinosinusitis without polyps; allergic fungal rhinosinusitis — air-fluid levels/mucosal thickening; hyperdense fungal mucin.
+Otosclerosis — fenestral lucency at fissula ante fenestram, stapes fixation.
+Chronic suppurative otitis media and malignant otitis externa — mastoid opacification/ossicular erosion; skull-base osteomyelitis.
+Adenoid hypertrophy — enlarged adenoid pad narrowing the nasopharynx.
+Oropharyngeal and hypopharyngeal SCC — enhancing mass with cervical adenopathy.
+Warthin tumor and mucoepidermoid carcinoma — cystic parotid mass; cystic/solid salivary malignancy.
+Retropharyngeal abscess and Lemierre syndrome — rim-enhancing prevertebral collection; IJ vein thrombosis with septic emboli.
+Necrotizing (malignant) otitis externa — granulation at the bone-cartilage junction with skull-base erosion.
+• Otosclerosis — a lucent halo at the fissula ante fenestram; Schwartze sign may show through the drum.
+• Exostoses of the external auditory canal (surfer’s ear) — broad bony mounds narrowing the canal.
+• Keratosis obturans — a keratin plug that expands the bony canal over an intact drum.
+• Allergic fungal rhinosinusitis — expansile sinuses packed with hyperdense allergic mucin.
+• Silent sinus syndrome — painless enophthalmos with an imploded maxillary antrum.
+• Sinonasal mucocele — an expansile mucus-filled frontal or ethmoid lesion that displaces the eye.
+• Congenital nasal pyriform aperture stenosis — anterior bony nasal narrowing in a newborn.
+• Nasal glial heterotopia — a firm nasal glial mass with no open intracranial connection.
+• Microtia and congenital aural atresia — a small or absent pinna and a bony atretic plate. Goldenhar syndrome and Treacher Collins syndrome stay the craniofacial syndromes.
+• Preauricular sinus and cyst — a pit anterior to the helix.
+• Reinke edema — diffuse gelatinous swelling of both vocal folds.
+• Retropharyngeal abscess — a widened prevertebral space and a rim-enhancing collection.
+• Laryngocele — an air-filled laryngeal saccule that enlarges with Valsalva.
+Glomus Tympanicum
+Glomus Jugulare
+Otosclerosis
+Tympanosclerosis
+Bullous Myringitis
+External Auditory Canal Exostoses
+Necrotizing External Otitis
+Microtia
+Preauricular Sinus and Cyst
+Allergic Fungal Rhinosinusitis
+Pott Puffy Tumor
+Paranasal Sinus Mucocele
+Antrochoanal Polyp
+Olfactory Neuroblastoma (Esthesioneuroblastoma)
+Nasal Septal Hematoma
+Nasal Septal Abscess
+Reinke Edema
+Vocal Fold Nodules
+Vocal Fold Polyps
+Laryngeal Contact Granuloma
+Laryngocele
+Warthin Tumor
+Salivary Gland Adenoid Cystic Carcinoma
+Mucoepidermoid Carcinoma
+Acute Suppurative Sialadenitis
+Retropharyngeal Abscess
+Eagle Syndrome
+Immunology
+SCID, Omenn syndrome — absent thymic shadow, erythroderma/alopecia.
+Leukocyte adhesion deficiency — delayed cord separation, omphalitis, necrotic skin ulcers.
+DOCK8 deficiency — severe atopic dermatitis, recurrent cutaneous viral infections, warts/molluscum.
+GATA2 deficiency — monocytopenia, NTM infections, HPV warts, lymphedema, pulmonary alveolar proteinosis.
+Shwachman-Diamond syndrome — fatty pancreatic atrophy, metaphyseal chondrodysplasia.
+Common Variable Immunodeficiency
+X-Linked Agammaglobulinemia
+Severe Combined Immunodeficiency
+Omenn Syndrome
+Hyper-IgM Syndrome
+DOCK8 Deficiency
+Chronic Mucocutaneous Candidiasis
+Leukocyte Adhesion Deficiency
+Autoimmune Lymphoproliferative Syndrome (ALPS)
+IPEX Syndrome
+GATA2 Deficiency
+WHIM Syndrome
+Serum Sickness
+Chronic mucocutaneous candidiasis — persistent Candida of mouth, skin, and nails.
+• Leukocyte adhesion deficiency — a cord still attached after three weeks, infections without pus, and a very high neutrophil count.
+• X-linked agammaglobulinemia (Bruton) — absent tonsils and nodes after maternal antibody wanes.
+• Severe combined immunodeficiency — no thymic shadow, absent lymphoid tissue, and early opportunistic infection.
+• Omenn syndrome — neonatal erythroderma, alopecia, hepatosplenomegaly, and enlarged nodes.
+• DOCK8 deficiency — severe eczema with extensive cutaneous herpes, warts, and molluscum.
+• WHIM syndrome — widespread warts with myelokathexis on the smear.
+• GATA2 deficiency (MonoMAC) — warts, lymphedema, monocytopenia, and atypical mycobacterial infection.
+• IPEX syndrome — neonatal diarrhea, eczematous erythroderma, and early diabetes in a boy.
+• Nijmegen breakage syndrome — microcephaly, a sloping forehead, infections, and lymphoma.

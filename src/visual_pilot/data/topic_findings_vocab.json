@@ -7209,6 +7209,24 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "barth_syndrome_myelocyte_arrest",
+  "label": "Myelocyte maturation arrest in bone marrow",
+  "disease_keys": [
+   "barth_syndrome"
+  ],
+  "category": "histology",
+  "synonyms": [
+   "Neutrophil maturation arrest"
+  ],
+  "caption_terms": [
+   "myelocyte arrest"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "danon_disease_extreme_left_ventricular_hypertrophy",
   "label": "Extreme left ventricular hypertrophy on echocardiography",
   "disease_keys": [
@@ -7682,6 +7700,7 @@
    "thick lips"
   ],
   "caption_terms": [
+   "thick lips",
    "coarse facial features",
    "coarse facies",
    "bulbous nasal tip"
@@ -7689,7 +7708,8 @@
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
-  "review": "edited"
+  "review": "edited",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "costello_syndrome_deep_palmoplantar_creases",
@@ -7871,6 +7891,7 @@
    "depressed nasal bridge"
   ],
   "caption_terms": [
+   "distinctive craniofacial features",
    "bitemporal constriction",
    "bitemporal narrowing",
    "high forehead with bitemporal narrowing"
@@ -7878,7 +7899,8 @@
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
-  "review": "edited"
+  "review": "edited",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "cardiofaciocutaneous_syndrome_sparse_woolly_hair",
@@ -11024,6 +11046,27 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "mulibrey_nanism_tall_vertebral_bodies",
+  "label": "Tall vertebral bodies with concave endplates",
+  "disease_keys": [
+   "mulibrey_nanism"
+  ],
+  "category": "radiology_xray",
+  "synonyms": [
+   "Tall vertebrae",
+   "Increased vertebral height"
+  ],
+  "caption_terms": [
+   "tall vertebral bodies",
+   "tall vertebrae",
+   "concave endplates"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "paget_schroetter_syndrome_subclavian_vein_thrombosis",
   "label": "Subclavian vein thrombosis on venography",
   "disease_keys": [
@@ -12711,6 +12754,26 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "review": "edited"
+ },
+ {
+  "finding_key": "buschke_ollendorff_syndrome_melorheostosis",
+  "label": "Melorheostosis with soft tissue ossification",
+  "disease_keys": [
+   "buschke_ollendorff_syndrome"
+  ],
+  "category": "radiology_xray",
+  "synonyms": [
+   "flowing hyperostosis",
+   "candle wax hyperostosis"
+  ],
+  "caption_terms": [
+   "melorheostosis",
+   "heterotopic ossification"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "calciphylaxis_retiform_purpura",
@@ -30008,6 +30071,7 @@
    "Chondrodysplasia punctata pattern"
   ],
   "caption_terms": [
+   "epiphyseal calcifications",
    "stippled epiphyses",
    "epiphyseal stippling",
    "punctate epiphyseal calcification",
@@ -30015,7 +30079,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "conradi_hunermann_happle_syndrome_sectorial_congenital_cataract",
@@ -56820,6 +56885,7 @@
    "transverse enamel ridges"
   ],
   "caption_terms": [
+   "enamel dysplasia",
    "dental enamel defects",
    "enamel hypoplasia",
    "pitted enamel",
@@ -56830,7 +56896,7 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "review": "edited",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "autoimmune_polyendocrine_syndrome_type_1_patchy_alopecia",
@@ -65378,6 +65444,26 @@
   "prompt_version": "p6.v1"
  },
  {
+  "finding_key": "acquired_partial_lipodystrophy_focal_hepatic_fat_mri",
+  "label": "Focal hepatic fat deposition on MRI",
+  "disease_keys": [
+   "acquired_partial_lipodystrophy"
+  ],
+  "category": "mri",
+  "synonyms": [
+   "Focal hepatic steatosis",
+   "Out-of-phase signal drop in liver lesions"
+  ],
+  "caption_terms": [
+   "focal hepatic lesions",
+   "intracellular lipid accumulation"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "lipedema_symmetric_leg_enlargement",
   "label": "Symmetric columnar leg enlargement",
   "disease_keys": [
@@ -70412,6 +70498,25 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "five_alpha_reductase_deficiency_micropenis",
+  "label": "Micropenis",
+  "disease_keys": [
+   "five_alpha_reductase_deficiency"
+  ],
+  "category": "clinical_general",
+  "synonyms": [
+   "Small phallus",
+   "Microphallus"
+  ],
+  "caption_terms": [
+   "micropenis"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "wolfram_syndrome_optic_disc_pallor",
   "label": "Optic disc pallor on funduscopy",
   "disease_keys": [
@@ -70691,6 +70796,7 @@
    "temperature dysregulation"
   ],
   "caption_terms": [
+   "excessive sweating",
    "autonomic dysregulation",
    "dysautonomia",
    "autonomic instability",
@@ -70698,7 +70804,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "deepseek-v4.1-flash",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "rohhad_syndrome_neuroendocrine_tumor",
@@ -78765,6 +78872,26 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "caption_terms_version": "p7.v2"
+ },
+ {
+  "finding_key": "intestinal_amebiasis_necrotizing_colitis",
+  "label": "Necrotizing amebic colitis",
+  "disease_keys": [
+   "intestinal_amebiasis"
+  ],
+  "category": "gross",
+  "synonyms": [
+   "fulminant amebic colitis",
+   "colonic necrosis"
+  ],
+  "caption_terms": [
+   "necrotic colon",
+   "circumferential necrotic"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "hepatocellular_carcinoma_arterial_hyperenhancement",
@@ -92386,6 +92513,7 @@
    "absence of erythroid precursors"
   ],
   "caption_terms": [
+   "reduced erythropoiesis",
    "erythroid hypoplasia",
    "erythroblastopenia",
    "absence of erythroid precursors"
@@ -92393,7 +92521,8 @@
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
-  "review": "edited"
+  "review": "edited",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "diamond_blackfan_anemia_craniofacial_dysmorphism",
@@ -99374,6 +99503,26 @@
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
   "prompt_version": "p6.v1"
+ },
+ {
+  "finding_key": "variegate_porphyria_cerebral_hypomyelination",
+  "label": "Cerebral white matter hypomyelination",
+  "disease_keys": [
+   "variegate_porphyria"
+  ],
+  "category": "mri",
+  "synonyms": [
+   "Hypomyelination",
+   "Homozygous VP leukoencephalopathy"
+  ],
+  "caption_terms": [
+   "hypomyelination",
+   "white matter hyperintensity"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "systemic_al_amyloidosis_periorbital_purpura",
@@ -117176,6 +117325,28 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "hand_foot_and_mouth_disease_fingertip_desquamation",
+  "label": "Fingertip skin peeling",
+  "disease_keys": [
+   "hand_foot_and_mouth_disease"
+  ],
+  "category": "skin",
+  "synonyms": [
+   "Acral desquamation",
+   "Fingertip peeling",
+   "Periungual desquamation"
+  ],
+  "caption_terms": [
+   "fingertip peeling",
+   "desquamation of fingertips",
+   "skin peeling on fingers",
+   "periungual desquamation"
+  ],
+  "source": "llm_topic_vocab",
+  "model": "muse-spark-1.3-contributor",
+  "prompt_version": "p6.v1"
+ },
+ {
   "finding_key": "cutaneous_larva_migrans_serpiginous_burrow",
   "label": "Serpiginous raised cutaneous burrow",
   "disease_keys": [
@@ -118842,6 +119013,25 @@
   "prompt_version": "p6.v1",
   "review": "edited",
   "caption_terms_version": "p7.v2"
+ },
+ {
+  "finding_key": "human_african_trypanosomiasis_areflexic_mydriasis",
+  "label": "Areflexic bilateral mydriasis",
+  "disease_keys": [
+   "human_african_trypanosomiasis"
+  ],
+  "category": "eye",
+  "synonyms": [
+   "fixed dilated pupils"
+  ],
+  "caption_terms": [
+   "areflective mydriasis",
+   "bilateral mydriasis"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "crusted_scabies_massive_adherent_hyperkeratotic_crusts",
@@ -129100,6 +129290,24 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "pulmonary_mycobacterium_avium_complex_pectus_excavatum",
+  "label": "Pectus excavatum (Lady Windermere habitus)",
+  "disease_keys": [
+   "pulmonary_mycobacterium_avium_complex"
+  ],
+  "category": "clinical_msk",
+  "synonyms": [
+   "Funnel chest"
+  ],
+  "caption_terms": [
+   "pectus excavatum"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "chronic_disseminated_candidiasis_bulls_eye_lesions_liver",
   "label": "Bull's-eye lesions in the liver on CT",
   "disease_keys": [
@@ -135000,6 +135208,7 @@
    "spindle-shaped arterial clefts"
   ],
   "caption_terms": [
+   "cholesterol emboli",
    "cholesterol crystal ghosts",
    "cholesterol clefts",
    "needle shaped cholesterol clefts",
@@ -135009,7 +135218,7 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "review": "edited",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "atheroembolic_renal_disease_livedo_reticularis",
@@ -148805,6 +149014,7 @@
    "Blaschko-linear hypopigmented macules"
   ],
   "caption_terms": [
+   "depigmented skin pattern",
    "blaschko linear hypopigmentation",
    "hypopigmented streaks along blaschko lines",
    "whorled hypopigmentation",
@@ -148814,7 +149024,7 @@
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "hypomelanosis_of_ito_hemihypertrophy",
@@ -157889,6 +158099,25 @@
   "prompt_version": "p6.v1"
  },
  {
+  "finding_key": "glutaric_aciduria_type_1_white_matter_changes",
+  "label": "Cerebral white matter changes",
+  "disease_keys": [
+   "glutaric_aciduria_type_1"
+  ],
+  "category": "mri",
+  "synonyms": [
+   "Leukoencephalopathy",
+   "White matter hyperintensity"
+  ],
+  "caption_terms": [
+   "periventricular hyperintensity"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "cerebrotendinous_xanthomatosis_achilles_tendon_xanthoma",
   "label": "Achilles tendon xanthomas",
   "disease_keys": [
@@ -159606,6 +159835,7 @@
    "Characteristic hair phenotype"
   ],
   "caption_terms": [
+   "curly hair",
    "kinky hair",
    "tightly curled hair",
    "woolly hair",
@@ -159613,7 +159843,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "giant_axonal_neuropathy_giant_axonal_swellings_biopsy",
@@ -159869,6 +160100,7 @@
    "Early elbow contracture"
   ],
   "caption_terms": [
+   "elbow contracture",
    "elbow flexion contracture",
    "elbow flexion deformity",
    "fixed flexion deformity of elbow",
@@ -159876,7 +160108,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "emery_dreifuss_muscular_dystrophy_achilles_tendon_contracture",
@@ -159913,6 +160146,7 @@
    "Humeroperoneal atrophy"
   ],
   "caption_terms": [
+   "calf muscle wasting",
    "humeroperoneal wasting",
    "biceps brachii wasting",
    "peroneal muscle atrophy",
@@ -159920,7 +160154,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "emery_dreifuss_muscular_dystrophy_rigid_spine",
@@ -194580,6 +194815,24 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "blepharophimosis_ptosis_epicanthus_inversus_syndrome_lop_ear",
+  "label": "Lop ear",
+  "disease_keys": [
+   "blepharophimosis_ptosis_epicanthus_inversus_syndrome"
+  ],
+  "category": "clinical_general",
+  "synonyms": [
+   "Folded helix"
+  ],
+  "caption_terms": [
+   "lop ear"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "posterior_polymorphous_corneal_dystrophy_descemet_membrane_vesicles",
   "label": "Vesicles at the level of Descemet membrane",
   "disease_keys": [
@@ -207916,6 +208169,25 @@
   "caption_terms_version": "p7.v2"
  },
  {
+  "finding_key": "volkmann_ischemic_contracture_fixed_digit_flexion",
+  "label": "Fixed flexion deformity of the digits",
+  "disease_keys": [
+   "volkmann_ischemic_contracture"
+  ],
+  "category": "clinical_msk",
+  "synonyms": [
+   "finger flexion contracture"
+  ],
+  "caption_terms": [
+   "fixed flexion deformity",
+   "digit flexion deformity"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
+ },
+ {
   "finding_key": "campomelic_dysplasia_anterior_tibial_bowing",
   "label": "Anterior bowing of tibia",
   "disease_keys": [
@@ -208388,6 +208660,26 @@
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
   "prompt_version": "p6.v1"
+ },
+ {
+  "finding_key": "spondyloepiphyseal_dysplasia_congenita_craniocervical_instability",
+  "label": "Craniocervical instability with cord compression",
+  "disease_keys": [
+   "spondyloepiphyseal_dysplasia_congenita"
+  ],
+  "category": "mri",
+  "synonyms": [
+   "Atlantoaxial instability",
+   "Upper cervical cord compression"
+  ],
+  "caption_terms": [
+   "dynamic instability",
+   "cord compression"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "kniest_dysplasia_dumbbell_shaped_long_bones",
@@ -210084,6 +210376,26 @@
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
   "prompt_version": "p6.v1"
+ },
+ {
+  "finding_key": "freeman_sheldon_syndrome_skew_foot",
+  "label": "Skew foot with hindfoot valgus",
+  "disease_keys": [
+   "freeman_sheldon_syndrome"
+  ],
+  "category": "radiology_xray",
+  "synonyms": [
+   "skewfoot",
+   "z-foot"
+  ],
+  "caption_terms": [
+   "hindfoot valgus",
+   "talocalcaneal angle"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "progressive_osseous_heteroplasia_cutaneous_ossification_plaques",
@@ -221567,6 +221879,26 @@
   "model": "deepseek-v4.1-flash",
   "prompt_version": "p6.v1",
   "caption_terms_version": "p7.v2"
+ },
+ {
+  "finding_key": "congenital_pseudarthrosis_of_the_tibia_paley_type",
+  "label": "Paley-type tibial lesion on radiograph",
+  "disease_keys": [
+   "congenital_pseudarthrosis_of_the_tibia"
+  ],
+  "category": "radiology_xray",
+  "synonyms": [
+   "Paley classification",
+   "Paley type 3",
+   "Paley type 4"
+  ],
+  "caption_terms": [
+   "paley type"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "radial_longitudinal_deficiency_radial_ray_deficiency",
@@ -233601,6 +233933,7 @@
    "cerebrospinal fluid-filled occipital sac"
   ],
   "caption_terms": [
+   "encephalocele",
    "posterior encephalocele",
    "occipital meningoencephalocele",
    "occipital encephalocele",
@@ -233610,7 +233943,7 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "review": "edited",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "meckel_gruber_syndrome_multicystic_dysplastic_kidneys",
@@ -233626,6 +233959,8 @@
    "sponge-like kidneys"
   ],
   "caption_terms": [
+   "polycystic kidney",
+   "enlarged kidneys",
    "multicystic dysplastic kidneys",
    "multicystic kidneys",
    "renal dysplasia",
@@ -233637,7 +233972,7 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "review": "edited",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "meckel_gruber_syndrome_postaxial_polydactyly",
@@ -233653,6 +233988,7 @@
    "sixth toe"
   ],
   "caption_terms": [
+   "polydactyly",
    "postaxial hexadactyly",
    "postaxial polydactyly",
    "extra postaxial digit",
@@ -233662,7 +233998,7 @@
   "source": "llm_topic_vocab",
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "meckel_gruber_syndrome_ductal_plate_malformation",
@@ -233677,6 +234013,7 @@
    "ductal plate malformation"
   ],
   "caption_terms": [
+   "bile duct dilatation",
    "congenital hepatic fibrosis",
    "ductal plate malformation",
    "proliferating bile ducts"
@@ -233685,7 +234022,7 @@
   "model": "stealth/space-bunny-alpha",
   "prompt_version": "p6.v1",
   "review": "edited",
-  "caption_terms_version": "p7.v2"
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "meckel_gruber_syndrome_pulmonary_hypoplasia",
@@ -238836,6 +239173,7 @@
    "Marfan-like habitus"
   ],
   "caption_terms": [
+   "marfan phenotype",
    "marfanoid habitus",
    "tall slender habitus",
    "dolichostenomelia",
@@ -238843,7 +239181,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "classical_homocystinuria_arachnodactyly",
@@ -239957,6 +240296,7 @@
    "Hydrops-like distended abdomen with short limbs"
   ],
   "caption_terms": [
+   "shortened limbs",
    "micromelic dwarfism",
    "extremely short limbs",
    "distended abdomen with short limbs",
@@ -239964,7 +240304,8 @@
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "achondrogenesis_poor_calvarial_mineralization",
@@ -243708,6 +244049,25 @@
   "model": "deepseek-v4.1-flash",
   "prompt_version": "p6.v1",
   "caption_terms_version": "p7.v2"
+ },
+ {
+  "finding_key": "meconium_aspiration_syndrome_subpleural_consolidation_us",
+  "label": "Subpleural consolidation on lung ultrasound",
+  "disease_keys": [
+   "meconium_aspiration_syndrome"
+  ],
+  "category": "us",
+  "synonyms": [
+   "Subpleural lung consolidation",
+   "Sonographic consolidation"
+  ],
+  "caption_terms": [
+   "sub pleural consolidation"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "neonatal_hypoxic_ischemic_encephalopathy_basal_ganglia_thalamic_injury",
@@ -249182,6 +249542,28 @@
   "source": "llm_topic_vocab",
   "model": "deepseek-v4.1-flash",
   "prompt_version": "p6.v1"
+ },
+ {
+  "finding_key": "jacobsen_syndrome_paris_trousseau_platelets",
+  "label": "Large platelets with dysmegakaryopoiesis",
+  "disease_keys": [
+   "jacobsen_syndrome"
+  ],
+  "category": "histology",
+  "synonyms": [
+   "Paris-Trousseau thrombocytopenia",
+   "giant platelets",
+   "micromegakaryocytes"
+  ],
+  "caption_terms": [
+   "large platelets",
+   "small megakaryocytes",
+   "heterogeneous granules"
+  ],
+  "source": "clinician_review",
+  "model": "claude-opus-5-5",
+  "prompt_version": "review.20261029",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "mosaic_trisomy_8_coronal_craniosynostosis",
@@ -278997,13 +279379,15 @@
    "erythematous helix and antihelix"
   ],
   "caption_terms": [
+   "auricle inflammation",
    "sparing of the lobule",
    "sparing of ear lobule",
    "erythematous swollen auricle"
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "auricular_hematoma_perichondritis_perichondrial_abscess",
@@ -304698,13 +305082,15 @@
    "Translucent midline membrane"
   ],
   "caption_terms": [
+   "dense adhesions",
    "fused labia minora",
    "midline translucent membrane",
    "labial agglutination"
   ],
   "source": "llm_topic_vocab",
   "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
+  "prompt_version": "p6.v1",
+  "caption_terms_version": "review.20261029"
  },
  {
   "finding_key": "labial_adhesions_pinhole_introitus_opening",
@@ -328202,27 +328588,5 @@
   "model": "deepseek-v4.1-flash",
   "prompt_version": "p6.v1",
   "caption_terms_version": "p7.v2"
- },
- {
-  "finding_key": "hand_foot_and_mouth_disease_fingertip_desquamation",
-  "label": "Fingertip skin peeling",
-  "disease_keys": [
-   "hand_foot_and_mouth_disease"
-  ],
-  "category": "skin",
-  "synonyms": [
-   "Acral desquamation",
-   "Fingertip peeling",
-   "Periungual desquamation"
-  ],
-  "caption_terms": [
-   "fingertip peeling",
-   "desquamation of fingertips",
-   "skin peeling on fingers",
-   "periungual desquamation"
-  ],
-  "source": "llm_topic_vocab",
-  "model": "muse-spark-1.3-contributor",
-  "prompt_version": "p6.v1"
  }
 ]

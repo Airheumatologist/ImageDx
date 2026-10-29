@@ -1,0 +1,115 @@
+D1624 Supracondylar humerus fracture
+Posterior fat pad, Baumann angle, and the puckered anterior elbow. Volkmann contracture is already a separate topic.
+MATCHES: 0.75 proximal_humerus_fracture (Proximal Humerus Fracture) | 0.59 ankle_fracture (Ankle Fracture) | 0.58 distal_radius_fracture (Distal Radius Fracture)
+
+D1626 Monteggia fracture-dislocation
+Proximal ulna fracture with a radial-head dislocation
+MATCHES: 0.59 glenohumeral_dislocation (Glenohumeral dislocation) | 0.55 nonarteritic_anterior_ischemic_optic_neuropathy (Nonarteritic Anterior Ischemic Optic Neuropathy (NAION)) | 0.55 aortic_dissection (Acute Aortic Dissection)
+
+D1628 Galeazzi fracture-dislocation
+Distal radius fracture with distal radioulnar joint dislocation. This is not the Galeazzi sign already described under developmental dysplasia of the hip.
+MATCHES: 0.56 glenohumeral_dislocation (Glenohumeral dislocation) | 0.55 ankle_fracture (Ankle Fracture) | 0.54 aortic_dissection (Acute Aortic Dissection)
+
+D1630 Lisfranc injury
+Midfoot widening and the fleck sign
+MATCHES: 0.67 burn_injury (Burn Injury (Thermal, Electrical and Chemical)) | 0.65 lightning_injury (Lightning Injury (Lichtenberg Figures)) | 0.62 high_pressure_injection_injury (High-Pressure Injection Injury of the Hand)
+
+D1632 Perilunate and lunate dislocation
+Spilled-teacup lunate and a broken carpal arc. Scaphoid fracture is already separate.
+MATCHES: 0.62 cervical_artery_dissection (Cervical Artery Dissection) | 0.56 peripheral_artery_disease (Peripheral Artery Disease and Critical Limb Ischemia) | 0.54 severe_tetanus (Severe Generalized Tetanus)
+
+D1634 Traumatic hip dislocation
+Flexed, adducted, internally rotated limb and a posterior dislocation film. This is not developmental dysplasia of the hip.
+MATCHES: 0.65 traction_alopecia (Traction Alopecia) | 0.64 developmental_dysplasia_of_the_hip (Developmental Dysplasia of the Hip) | 0.62 aortic_dissection (Acute Aortic Dissection)
+
+D1636 Knee dislocation
+Dimple sign and a multiligament knee film, including the vascular study
+MATCHES: 0.68 glenohumeral_dislocation (Glenohumeral dislocation) | 0.59 gastroschisis (Gastroschisis) | 0.59 developmental_dysplasia_of_the_hip (Developmental Dysplasia of the Hip)
+
+D1638 Calcaneus fracture
+Flattened Böhler angle; tongue-type versus joint-depression
+MATCHES: 0.73 ankle_fracture (Ankle Fracture) | 0.70 distal_radius_fracture (Distal Radius Fracture) | 0.68 tibial_plateau_fracture (Tibial Plateau Fracture)
+
+D1640 Nonaccidental skeletal trauma
+Classic metaphyseal lesion and posterior rib fractures
+MATCHES: 0.60 fluorosis (Fluorosis (Dental and Skeletal)) | 0.55 costello_syndrome (Costello Syndrome) | 0.54 central_giant_cell_granuloma (Central Giant Cell Granuloma)
+
+D1642 Osgood-Schlatter disease
+Prominent, fragmented tibial tubercle
+MATCHES: 0.68 pigmented_purpuric_dermatosis (Pigmented Purpuric Dermatosis (Schamberg)) | 0.65 tumoral_calcinosis (Hyperphosphatemic Familial Tumoral Calcinosis) | 0.64 x_linked_adrenoleukodystrophy (X-Linked Adrenoleukodystrophy)
+
+D1644 Pyogenic spondylodiscitis
+Disc and adjacent endplate destruction on MRI
+MATCHES: 0.62 isthmic_spondylolisthesis (Isthmic Spondylolisthesis) | 0.62 as (Ankylosing spondylitis) | 0.59 pyogenic_liver_abscess (Pyogenic Liver Abscess (Klebsiella / Enteric Hepatic Abscess))
+
+D1646 Spinal epidural abscess
+Dorsal epidural collection compressing the cord
+MATCHES: 0.72 nasal_septal_abscess (Nasal Septal Abscess) | 0.67 anorectal_abscess_fistula (Anorectal Abscess and Fistula-in-Ano) | 0.65 periapical_abscess (Periapical (Dental) Abscess)
+
+D1648 Brodie abscess
+Geographic lucency with a sclerotic rim and the MRI penumbra sign
+MATCHES: 0.80 brain_abscess (Brain abscess) | 0.76 bartholin_gland_disease (Bartholin Gland Cyst and Abscess) | 0.69 scurvy (Scurvy (Vitamin C Deficiency))
+
+D1650 Chronic osteomyelitis
+Sequestrum, involucrum, and cloaca. This is the pictured form of bone infection, not undifferentiated acute osteomyelitis.
+MATCHES: 0.68 rasmussen_encephalitis (Rasmussen Encephalitis) | 0.68 chronic_recurrent_multifocal_osteomyelitis (Chronic Recurrent Multifocal Osteomyelitis) | 0.67 poliomyelitis (Poliomyelitis)
+
+D1652 Neuropathic osteoarthropathy (Charcot)
+Rocker-bottom foot and a disorganized, debris-filled joint
+MATCHES: 0.80 kashin_beck_disease (Kashin-Beck Disease) | 0.74 pachydermoperiostosis (Pachydermoperiostosis (Primary Hypertrophic Osteoarthropathy)) | 0.68 psa (Psoriatic arthritis)
+
+D1654 Hydroxyapatite deposition disease
+Calcific cloud in the rotator cuff. Calcium pyrophosphate deposition disease is already in Rheumatology.
+MATCHES: 0.68 calcium_pyrophosphate_deposition_disease (Calcium Pyrophosphate Deposition Disease) | 0.64 dense_deposit_disease (Dense Deposit Disease) | 0.62 cystic_echinococcosis (Cystic Echinococcosis)
+
+D1656 Degenerative spondylolisthesis
+L4–L5 slip with an intact pars. Isthmic spondylolisthesis and the Scotty-dog sign are already covered.
+MATCHES: 0.72 isthmic_spondylolisthesis (Isthmic Spondylolisthesis) | 0.72 osteoarthritis (Osteoarthritis (Hand, Knee and Hip)) | 0.60 infantile_hypertrophic_pyloric_stenosis (Infantile Hypertrophic Pyloric Stenosis)
+
+D1658 Posterior cruciate ligament tear
+Posterior sag and a dashboard MRI pattern
+MATCHES: 0.91 anterior_cruciate_ligament_tear (Anterior Cruciate Ligament (ACL) Tear) | 0.55 congenital_diaphragmatic_hernia (Congenital Diaphragmatic Hernia) | 0.53 ossification_of_the_posterior_longitudinal_ligament (Ossification of the posterior longitudinal ligament)
+
+D1660 Extensor mechanism rupture
+Palpable gap with patella alta (patellar tendon) or patella baja (quadriceps)
+MATCHES: 0.58 achilles_tendon_rupture (Achilles Tendon Rupture) | 0.55 tympanic_membrane_perforation (Tympanic Membrane Perforation) | 0.54 donohue_syndrome (Donohue Syndrome)
+
+D1662 Patellar dislocation
+Lateral patella on the sunrise view and medial patellofemoral ligament injury on MRI
+MATCHES: 0.70 vacterl_association (VACTERL Association) | 0.69 phace_syndrome (PHACE Syndrome) | 0.65 aortic_dissection (Acute Aortic Dissection)
+
+D1664 Acromioclavicular joint separation
+Step-off at the shoulder and coracoclavicular widening
+MATCHES: 0.57 pediatric_intussusception (Pediatric Intussusception) | 0.57 wilson_disease (Wilson's Disease) | 0.57 canaliculitis (Canaliculitis)
+
+D1666 Vertebral hemangioma
+Corduroy vertebra and the polka-dot sign on CT
+MATCHES: 0.74 cherry_angioma (Cherry Angioma) | 0.72 congenital_hemangioma (Congenital hemangioma (RICH, NICH, and PICH)) | 0.70 angiolymphoid_hyperplasia_eosinophilia (Angiolymphoid Hyperplasia with Eosinophilia)
+
+D1668 Skeletal metastases
+Missing pedicle (winking-owl vertebra), ivory vertebra, and a permeative metadiaphyseal lesion
+MATCHES: 0.67 brain_metastases (Brain Metastases) | 0.57 fluorosis (Fluorosis (Dental and Skeletal)) | 0.53 paracoccidioidomycosis (Paracoccidioidomycosis)
+
+D1670 Secondary hypertrophic osteoarthropathy
+Clubbing plus symmetric periostosis. Primary disease is already Pachydermoperiostosis.
+MATCHES: 0.86 pachydermoperiostosis (Pachydermoperiostosis (Primary Hypertrophic Osteoarthropathy)) | 0.73 kashin_beck_disease (Kashin-Beck Disease) | 0.66 calcium_pyrophosphate_deposition_disease (Calcium Pyrophosphate Deposition Disease)
+
+D1674 Trauma and sports
+Talar neck fracture (Hawkins sign), Jones fracture, pelvic apophyseal avulsions, transitional ankle fractures (Tillaux and triplane), lateral condyle fracture, incarcerated medial epicondyle, radial head fracture, patella fracture, pelvic ring disruption, acetabular fracture, odontoid fracture, Jefferson fracture, hangman’s fracture, Chance fracture, clay-shoveler fracture, Grisel syndrome, Essex-Lopresti injury, terrible triad of the elbow, torus and greenstick forearm fractures, biceps tendon rupture, pectoralis major rupture, thumb ulnar collateral ligament injury, jersey finger, scapholunate dissociation, medial collateral ligament tear, posterolateral corner injury, tibial tubercle avulsion, and Morel-Lavallée lesion.
+MATCHES: 0.62 vernal_keratoconjunctivitis (Vernal Keratoconjunctivitis) | 0.61 solar_lentigines (Solar Lentigines) | 0.50 cutaneous_mastocytosis (Cutaneous Mastocytosis)
+
+D1676 Infection and implants
+Pyomyositis, septic olecranon and prepatellar bursitis, fight bite, periprosthetic joint infection, particle-disease osteolysis, and adverse local tissue reaction (metallosis).
+MATCHES: 0.62 mumps (Mumps) | 0.62 bacterial_keratitis (Bacterial Keratitis) | 0.59 lactational_mastitis_breast_abscess (Lactational Mastitis and Breast Abscess)
+
+D1678 Tumors and tumor-like lesions
+Primary lymphoma of bone, lipoma arborescens, elastofibroma dorsi, intraosseous lipoma, Nora lesion, periosteal chondroma, periosteal osteosarcoma, angiosarcoma of bone, myxofibrosarcoma, undifferentiated pleomorphic sarcoma, malignant peripheral nerve sheath tumor, intramuscular myxoma, and plantar fibromatosis. Adamantinoma currently lists “angiosarcoma of bone” as a synonym. That is a different tumor and should not stay attached to adamantinoma.
+MATCHES: 0.54 perniosis (Perniosis (Chilblains)) | 0.54 testicular_torsion (Testicular Torsion) | 0.52 tumoral_calcinosis (Hyperphosphatemic Familial Tumoral Calcinosis)
+
+D1680 Joint, tendon, and spine diagnoses
+Köhler disease, Freiberg infraction, Panner disease, Müller-Weiss disease, Sinding-Larsen-Johansson disease, discoid meniscus, adhesive capsulitis, de Quervain tenosynovitis, cubital tunnel syndrome, hallux rigidus, lesser-toe deformities, Morton neuroma, Haglund syndrome, peroneal tendon dislocation, transient osteoporosis of the hip, subchondral insufficiency fracture of the knee, neurogenic heterotopic ossification, cervical disc herniation, ossification of the ligamentum flavum, lumbar facet synovial cyst, Baastrup disease, and neuralgic amyotrophy.
+MATCHES: 0.57 osteopoikilosis (Osteopoikilosis) | 0.52 osteogenesis_imperfecta (Osteogenesis Imperfecta) | 0.52 infantile_pompe_disease (Infantile-Onset Pompe Disease)
+
+D1682 Congenital differences
+Tibial hemimelia, ulnar longitudinal deficiency, isolated congenital radioulnar synostosis, split-hand/foot malformation, congenital knee dislocation, and congenital pseudarthrosis of the clavicle. Rarer skeletal dysplasias that are still absent include Jansen metaphyseal chondrodysplasia, Pyle disease, and frontometaphyseal dysplasia.
+MATCHES: 0.68 congenital_dermal_melanocytosis (Congenital dermal melanocytosis (Mongolian spot)) | 0.67 acrodermatitis_enteropathica (Acrodermatitis Enteropathica) | 0.65 congenital_adrenal_hyperplasia (Congenital Adrenal Hyperplasia)

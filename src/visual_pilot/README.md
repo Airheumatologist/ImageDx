@@ -75,7 +75,9 @@ without changing finding keys. `requeue-terms` then returns discovery's
 `--retry-errors` also resets the attempt count of `vision_error` figures,
 except provider content refusals (HTTP 451). All three take `--diseases k1 k2
 ...` (as do `discover` and `run-all`). `run-all --skip-extract` skips the
-final library-wide text extraction.
+final text extraction for the selected topics. Extraction honors both
+`--disease` and `--diseases`, including shared articles, and preserves assertions
+belonging to unrelated topics.
 
 Each query is logged in `pair_search_attempts` (`policy_version`
 `epmc-fig.v1`; overview queries under finding key `_overview`). `run-all`
@@ -90,12 +92,26 @@ covered approved disease/finding pair while retaining all eligible alternatives.
 Existing manual or locked representative selections are preserved.
 
 Config env vars (see `env.example`): `VP_TRIAGE_MODEL`, `VP_EXTRACT_MODEL`,
-`VP_JUDGE_MODEL`, `VP_DESCRIBE_MODEL` (all default to the multimodal
-`qwen/qwen3.7-flash` on OpenRouter),
-`VP_TRIAGE_BATCH` (P2 batch size, default 40), `VP_IMAGE_MAX_EDGE`,
-`VP_CONCURRENCY`, `VP_FETCH_CONCURRENCY`, `VP_NCBI_API_KEY`, `VP_DATA_DIR`.
-The provider key comes from `.env` (`OPENROUTER_API_KEY`) via `config.py`.
-Discovery needs no key.
+`VP_DESCRIBE_MODEL` and `VP_VOCAB_MODEL` default to
+`opencode-go/iceman-contributor-free`; `VP_JUDGE_MODEL` defaults to
+`z-ai/glm-5.3-flash` on OpenRouter. Describe and mimic audit are text-only.
+OpenRouter requests allow only `open-inference`, with fallbacks disabled.
+No requests go to Relace. `OPENCODE_GO_API_KEY` (or `OPENCODE_API_KEY`) and
+`OPENROUTER_API_KEY` come from `.env` via `config.py`. Discovery needs no key.
+
+Iceman replies are validated locally without `response_format`, which its
+API rejects. Each Go client sends its own user agent and stable session
+header. Iceman image requests are rejected locally. OpenRouter's allowlist
+is included in cache identity and the actual upstream provider is logged.
+Run `python -m src.visual_pilot.smoke_providers --clinical` for live checks
+without production database writes. See
+`docs/provider-evaluation-2026-10-27.md` for results.
+
+The live-site duplicate gate (`published.py`) runs before P2 and P3.
+Metadata matches avoid image fetches and model calls; exact decoded-pixel
+matches avoid vision calls. `already_published` is an audited terminal
+status, not a clinical rejection. Only matches covering every attributed
+topic skip a figure. The existing site is read only.
 
 ## Whole-figure plates and coverage targets
 

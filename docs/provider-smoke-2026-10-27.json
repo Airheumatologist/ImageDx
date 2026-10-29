@@ -1,0 +1,450 @@
+{
+  "date": "2026-10-27",
+  "passed": true,
+  "openrouter_only": [
+    "open-inference"
+  ],
+  "allow_fallbacks": false,
+  "text_checks": [
+    {
+      "case": "p4_extract",
+      "model": "opencode-go/iceman-contributor-free",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "c84759c45d1a3b3a691f82151dffafece9c8c2b443002c13a12f57c6906d8222",
+        "stage": "p4_text_findings",
+        "model": "opencode-go/iceman-contributor-free",
+        "provider": "opencode-go",
+        "response_format": "prompt_json",
+        "upstream_provider": null,
+        "response_id": "chatcmpl-fc177ff6024440c3ac9bdfb24b80f6bc",
+        "cost_usd": 0.0,
+        "input_tokens": 520,
+        "output_tokens": 441,
+        "attempts": 1,
+        "reasoning_effort": null
+      },
+      "reply": {
+        "assertions": [
+          {
+            "disease_key": "dm",
+            "subtype": null,
+            "finding_key": "gottron_papules",
+            "proposed_finding": null,
+            "frequency_text": "75%",
+            "pct_low": 75,
+            "pct_high": 75,
+            "specificity_text": null,
+            "quote": "Gottron papules were present in 75% of patients with dermatomyositis."
+          }
+        ]
+      }
+    },
+    {
+      "case": "p5_describe",
+      "model": "opencode-go/iceman-contributor-free",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "9ec40bfef07b8467c234e15118609a8551ca8fd342c43c7283b9805eb2f2b1c8",
+        "stage": "p5_display_caption",
+        "model": "opencode-go/iceman-contributor-free",
+        "provider": "opencode-go",
+        "response_format": "prompt_json",
+        "upstream_provider": null,
+        "response_id": "chatcmpl-5dffe20a97104f17acad5e89bd137aa6",
+        "cost_usd": 0.0,
+        "input_tokens": 878,
+        "output_tokens": 610,
+        "attempts": 1,
+        "reasoning_effort": null
+      },
+      "reply": {
+        "title": "Untreated Gottron papules over the knuckles",
+        "description": "Gottron papules over the knuckles in untreated dermatomyositis.",
+        "section": null,
+        "subsection": null,
+        "treatment_related": false
+      }
+    },
+    {
+      "case": "p8_mimic",
+      "model": "opencode-go/iceman-contributor-free",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "40d981c7c1517f41ed79dd09e5253ef9a584c254bee0ea157e5251010497ec6a",
+        "stage": "p8_mimic_audit",
+        "model": "opencode-go/iceman-contributor-free",
+        "provider": "opencode-go",
+        "response_format": "prompt_json",
+        "upstream_provider": null,
+        "response_id": "chatcmpl-39927b3949b546a68f7c5836263fe8fd",
+        "cost_usd": 0.0,
+        "input_tokens": 664,
+        "output_tokens": 698,
+        "attempts": 1,
+        "reasoning_effort": null
+      },
+      "reply": {
+        "verdict": "other_disease",
+        "actual_diagnosis": "Psoriasis",
+        "reason": "The article states psoriasis was biopsy-confirmed and dermatomyositis was excluded, so the lesions represent psoriasis, not dermatomyositis."
+      }
+    },
+    {
+      "case": "p2_triage",
+      "model": "opencode-go/iceman-contributor-free",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "7e2152dcd22e6bf53c7357cf017b537c2272bf1436bfbad20cd709e6883e12ce",
+        "stage": "p2_caption_triage",
+        "model": "opencode-go/iceman-contributor-free",
+        "provider": "opencode-go",
+        "response_format": "prompt_json",
+        "upstream_provider": null,
+        "response_id": "chatcmpl-9b3badd9c5344377844bc06032c9b2f9",
+        "cost_usd": 0.0,
+        "input_tokens": 1231,
+        "output_tokens": 1643,
+        "attempts": 1,
+        "reasoning_effort": null
+      },
+      "reply": {
+        "results": [
+          {
+            "figure_id": "untreated",
+            "category": "clinical_photo",
+            "is_real_patient_image": true,
+            "third_party": false,
+            "third_party_quote": null,
+            "diseases_mentioned": [
+              "dm"
+            ],
+            "route": "keep",
+            "reason": "Untreated clinical photograph of Gottron papules in a human patient with dermatomyositis."
+          },
+          {
+            "figure_id": "chart",
+            "category": "flowchart",
+            "is_real_patient_image": null,
+            "third_party": false,
+            "third_party_quote": null,
+            "diseases_mentioned": [
+              "dm"
+            ],
+            "route": "drop",
+            "reason": "Flowchart of a diagnostic algorithm is non-patient content."
+          },
+          {
+            "figure_id": "animal",
+            "category": "other",
+            "is_real_patient_image": false,
+            "third_party": false,
+            "third_party_quote": null,
+            "diseases_mentioned": [
+              "dm"
+            ],
+            "route": "drop",
+            "reason": "Veterinary/animal model image."
+          },
+          {
+            "figure_id": "treatment",
+            "category": "clinical_photo",
+            "is_real_patient_image": true,
+            "third_party": false,
+            "third_party_quote": null,
+            "diseases_mentioned": [
+              "dm"
+            ],
+            "route": "drop",
+            "reason": "Before and after prednisone treatment comparison is a treatment figure."
+          },
+          {
+            "figure_id": "vague",
+            "category": "other",
+            "is_real_patient_image": null,
+            "third_party": false,
+            "third_party_quote": null,
+            "diseases_mentioned": [
+              "dm"
+            ],
+            "route": "uncertain",
+            "reason": "Caption 'Representative case' does not specify what the image shows."
+          },
+          {
+            "figure_id": "copyright",
+            "category": "clinical_photo",
+            "is_real_patient_image": true,
+            "third_party": true,
+            "third_party_quote": "Reproduced with permission from another source.",
+            "diseases_mentioned": [
+              "dm"
+            ],
+            "route": "keep",
+            "reason": "Human clinical photograph of Gottron papules in dermatomyositis; third-party reproduced image."
+          }
+        ]
+      }
+    },
+    {
+      "case": "p6_vocab",
+      "model": "opencode-go/iceman-contributor-free",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "da3d5647797245fbf4e2c079207d05da145078f500d7fbd2de33643dbac245d4",
+        "stage": "p6_topic_vocab",
+        "model": "opencode-go/iceman-contributor-free",
+        "provider": "opencode-go",
+        "response_format": "prompt_json",
+        "upstream_provider": null,
+        "response_id": "chatcmpl-40b5ab6f0de5416a84a73e0a60f9268a",
+        "cost_usd": 0.0,
+        "input_tokens": 795,
+        "output_tokens": 1967,
+        "attempts": 1,
+        "reasoning_effort": null
+      },
+      "reply": {
+        "findings": [
+          {
+            "key": "gottron_papules",
+            "label": "Gottron papules over knuckles",
+            "category": "skin",
+            "synonyms": [
+              "Gottron's papules"
+            ],
+            "caption_terms": [
+              "gottron papules",
+              "gottron's papules",
+              "violaceous papules over metacarpophalangeal joints",
+              "violaceous papules over interphalangeal joints"
+            ]
+          },
+          {
+            "key": "heliotrope_discoloration",
+            "label": "Heliotrope periorbital discoloration",
+            "category": "skin",
+            "synonyms": [
+              "heliotrope sign"
+            ],
+            "caption_terms": [
+              "heliotrope discoloration",
+              "violaceous periorbital discoloration",
+              "lilac periorbital discoloration"
+            ]
+          },
+          {
+            "key": "shawl_sign",
+            "label": "Shawl sign",
+            "category": "skin",
+            "synonyms": [],
+            "caption_terms": [
+              "shawl sign",
+              "poikiloderma over posterior shoulders",
+              "poikiloderma in shawl distribution"
+            ]
+          },
+          {
+            "key": "v_sign",
+            "label": "V sign over upper chest",
+            "category": "skin",
+            "synonyms": [
+              "anterior V sign"
+            ],
+            "caption_terms": [
+              "v sign",
+              "photodistributed v sign",
+              "poikiloderma over anterior upper chest"
+            ]
+          },
+          {
+            "key": "holster_sign",
+            "label": "Holster sign on lateral hips",
+            "category": "skin",
+            "synonyms": [],
+            "caption_terms": [
+              "holster sign",
+              "poikiloderma over lateral hips",
+              "poikiloderma over trochanteric area"
+            ]
+          },
+          {
+            "key": "giant_nailfold_capillaries",
+            "label": "Giant nailfold capillaries",
+            "category": "capillaroscopy",
+            "synonyms": [
+              "megacapillaries"
+            ],
+            "caption_terms": [
+              "giant nailfold capillaries",
+              "megacapillaries on nailfold capillaroscopy",
+              "dilated nailfold capillaries with dropouts"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "vision_checks": [
+    {
+      "case": "vision_shapes",
+      "model": "z-ai/glm-5.3-flash",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "5330bf3f0bcd5577bb222f690de8178027e0d8b4dd6cb2b9f1c9092af518eafc",
+        "stage": "vision_shapes",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "openrouter",
+        "response_format": "json_object",
+        "upstream_provider": "OpenInference",
+        "response_id": "gen-1793150277-ISyd1RgL8lUm26dSgGbJ",
+        "cost_usd": 7.95091e-05,
+        "input_tokens": 867,
+        "output_tokens": 397,
+        "attempts": 2,
+        "reasoning_effort": "low"
+      },
+      "reply": {
+        "left_color": "red",
+        "left_shape": "rectangle",
+        "right_color": "blue",
+        "right_shape": "circle"
+      }
+    },
+    {
+      "case": "p3_public_clinical_photo",
+      "model": "z-ai/glm-5.3-flash",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "bb5642a7d5a0ad02acc30581bac3600474f3bcaa917e7d20619b890148b4d8aa",
+        "stage": "p3_vision_judge",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "openrouter",
+        "response_format": "json_object",
+        "upstream_provider": "OpenInference",
+        "response_id": "gen-1793150276-GD7ajSsEveMWQWn8ZwRR",
+        "cost_usd": 0.0002158277,
+        "input_tokens": 2269,
+        "output_tokens": 1103,
+        "attempts": 1,
+        "reasoning_effort": "low"
+      },
+      "reply": {
+        "figure_id": "PMC7139382:ijms-21-02178-f006",
+        "figure_is_compound": false,
+        "panels": [
+          {
+            "panel_label": "A",
+            "bbox": [
+              0.0,
+              0.0,
+              1.0,
+              1.0
+            ],
+            "include": true,
+            "exclusion_reason": null,
+            "disease_key": "dm",
+            "subtype": "cancer_associated",
+            "modality": "clinical_photo",
+            "body_site": "upper chest",
+            "findings": [
+              {
+                "finding_key": "v_sign",
+                "evidence": "Erythematous maculopapular rash of the V area of upper chest."
+              }
+            ],
+            "proposed_findings": [
+              "Erythematous maculopapular rash"
+            ],
+            "typicality": "classic",
+            "stage": null,
+            "age_group": "unknown",
+            "skin_tone": "unknown",
+            "stated_ethnicity": null,
+            "stated_ethnicity_quote": null,
+            "annotations_present": false,
+            "confidence": 0.95,
+            "rationale": "The panel displays an erythematous maculopapular rash in the V area of the upper chest, consistent with the V-sign mentioned in the caption and article context, specifically for paraneoplastic dermatomyositis."
+          }
+        ]
+      }
+    },
+    {
+      "case": "p3_diagram",
+      "model": "z-ai/glm-5.3-flash",
+      "passed": true,
+      "meta": {
+        "cached": false,
+        "input_hash": "cc377197bb1ed82f10e2d8bb8211539fd69ef1b6a3de9e9d89a324c0dd530575",
+        "stage": "p3_vision_judge",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "openrouter",
+        "response_format": "json_object",
+        "upstream_provider": "OpenInference",
+        "response_id": "gen-1793150280-AYc6hwsDzJnNNCJrGz2c",
+        "cost_usd": 0.0003619473,
+        "input_tokens": 4211,
+        "output_tokens": 1728,
+        "attempts": 2,
+        "reasoning_effort": "low"
+      },
+      "reply": {
+        "figure_id": "synthetic:diagram",
+        "figure_is_compound": false,
+        "panels": [
+          {
+            "panel_label": "A",
+            "bbox": [
+              0.0,
+              0.0,
+              1.0,
+              1.0
+            ],
+            "include": false,
+            "exclusion_reason": "diagram",
+            "disease_key": null,
+            "subtype": null,
+            "modality": "other",
+            "body_site": null,
+            "findings": [],
+            "proposed_findings": [],
+            "typicality": null,
+            "stage": null,
+            "age_group": "unknown",
+            "skin_tone": null,
+            "stated_ethnicity": null,
+            "stated_ethnicity_quote": null,
+            "annotations_present": false,
+            "confidence": 0.0,
+            "rationale": "The image is a schematic diagram representing a diagnostic pathway and is explicitly stated to be not a patient image. It fails to meet the criteria for inclusion in the clinical visual-diagnosis library."
+          }
+        ]
+      }
+    }
+  ],
+  "initial_all_stage_summary": {
+    "passed": true,
+    "checks": 8,
+    "seconds": 40.71,
+    "cost_usd": 0.0006755914,
+    "openrouter_only": [
+      "open-inference",
+      "relace"
+    ]
+  },
+  "openinference_only_summary": {
+    "passed": true,
+    "checks": 3,
+    "seconds": 12.95,
+    "cost_usd": 0.0006572841,
+    "openrouter_only": [
+      "open-inference"
+    ]
+  }
+}

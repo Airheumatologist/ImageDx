@@ -266,6 +266,47 @@ def test_mixed_disease_plate_stays_excluded(tmp_path):
     conn.close()
 
 
+def test_requeue_gate_vetoes_revalidates_under_the_current_policy(tmp_path):
+    from src.visual_pilot import curation, db, judge
+
+    conn = make_db(tmp_path)
+    _seed_sle(conn)
+    add_article(conn, "PMC1", title="An unusual presentation: a case", publication_types=("Case Reports",))
+    conn.execute(
+        "INSERT INTO article_source_metadata(pmcid,source,metadata_json,fetched_at) "
+        "VALUES(?,?,?,datetime('now'))",
+        ("PMC1", "test", db.to_json({"abstract": "A woman with systemic lupus erythematosus."})),
+    )
+    vetoed = {"figure_is_compound": False, "panels": [{
+        "panel_label": "A", "bbox": [0, 0, 1, 1], "include": False,
+        "exclusion_reason": "not_patient_image",
+        "curation_reason": "disease association not stated in figure caption",
+        "disease_key": "sle", "modality": "clinical_photo",
+        "findings": [{"finding_key": "malar_rash", "evidence": "visual"}],
+    }]}
+    add_figure(conn, "PMC1:f1", "PMC1", caption="Malar rash over both cheeks.", vision=vetoed)
+    # The model's own exclusion carries no curation_reason and is never restored.
+    model = {**vetoed, "panels": [{**vetoed["panels"][0], "exclusion_reason": "diagram"}]}
+    del model["panels"][0]["curation_reason"]
+    add_figure(conn, "PMC1:f2", "PMC1", caption="Pathway diagram.", vision=model)
+    conn.execute("UPDATE figures SET status='vision_rejected'")
+
+    assert judge.requeue_gate_vetoes(conn, dry_run=True)["requeued"] == 1
+    result = judge.requeue_gate_vetoes(conn)
+    assert (result["examined"], result["requeued"]) == (1, 1)
+    rows = {r["figure_id"]: r for r in conn.execute("SELECT * FROM figures")}
+    assert rows["PMC1:f1"]["status"] == "vision_accepted"
+    assert db.from_json(rows["PMC1:f1"]["vision_json"])["panels"][0]["include"] is True
+    assert rows["PMC1:f2"]["status"] == "vision_rejected"
+    # Store's pixel-based veto cannot be re-checked without the image.
+    small = dict(db.from_json(rows["PMC1:f2"]["vision_json"]))
+    small["panels"][0]["curation_reason"] = curation.CROP_TOO_SMALL_REASON
+    conn.execute("UPDATE figures SET vision_json=? WHERE figure_id='PMC1:f2'", (db.to_json(small),))
+    conn.commit()
+    assert judge.requeue_gate_vetoes(conn, dry_run=True)["requeued"] == 0
+    conn.close()
+
+
 def test_requeue_age_vetoes_restores_only_age_vetoed_accepts(tmp_path):
     from src.visual_pilot import curation, db, judge
 

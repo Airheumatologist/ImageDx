@@ -1,27 +1,30 @@
 """LLM provider layer for the visual pilot.
 
-Streamed OpenRouter chat completions in JSON mode, with the schema in the
-system prompt and the JSON reply validated locally. One repair retry on
-validation failure, an ``llm_calls``-backed response cache + cost ledger, a
+Streamed OpenCode Go text and OpenRouter vision completions, with legacy
+Xiaomi support. Schemas are in the system prompt and replies are validated
+locally. One repair retry on validation failure, an ``llm_calls``-backed response cache + cost ledger, a
 budget guard, dry-run mode, and concurrent batching.
 
 There is no provider batch API, so ``call_many``/``iter_many`` run requests
 on a thread pool of ``VP_CONCURRENCY`` workers, with a per-client timeout,
 lazy completion-order
 ``iter_many``, process-wide request pacing (``VP_LLM_RPM``), and a 429 retry budget (``VP_RATE_LIMIT_RETRIES``) that is
-independent of ``max_retries``. A 402 (OpenRouter credits spent) stops the
+independent of ``max_retries``. A 402 (provider credits/quota spent) stops the
 run like an exhausted budget.
 """
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
+import re
 import sqlite3
 import threading
 import time
 import urllib.parse
 import urllib.request
+import uuid
 from collections.abc import Iterable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
@@ -42,10 +45,13 @@ except ImportError:  # pragma: no cover - older openai uses httpx itself
 from . import config, db, timing
 
 
-PROVIDER = "openrouter"
+PROVIDER = "xiaomi"
+OPENCODE_GO = "opencode-go"
+OPENROUTER = "openrouter"
 USER_AGENT = "image-dx-visual-pilot/1.0"
-# OpenRouter's app attribution header.
-APP_TITLE = "image-dx-visual-pilot"
+# Replies cached under the OpenRouter model id. The Token Plan id is the
+# same MiMo checkpoint without the vendor prefix.
+_CACHE_MODEL_ALIAS = {"mimo-v2.6-flash": "xiaomi/mimo-v2.6-flash"}
 
 
 class LLMError(Exception):
@@ -116,8 +122,7 @@ class _RequestPacer:
 # Shared by every LLMClient: the provider's rate limit is per account.
 _PACER = _RequestPacer(config.VP_LLM_RPM)
 
-# OpenRouter answers 402 once the account's credits are spent; retrying
-# cannot help.
+# Xiaomi answers 402 once the Token Plan quota is spent; retrying cannot help.
 _NO_CREDITS = 402
 
 # Error classes worth a retry (rate limits, network blips, server 5xx).
@@ -180,15 +185,63 @@ class _DeadlineTransport(_openai_httpx.HTTPTransport):
         return response
 
 
-def _chat_extra_kwargs(effort: str) -> dict:
-    """Request kwargs beyond the messages: JSON mode, reasoning, token cap."""
-    extra_kwargs: dict = {"response_format": {"type": "json_object"}}
-    if effort == "off":
-        extra_kwargs["extra_body"] = {"reasoning": {"enabled": False}}
-    elif effort:
-        extra_kwargs["extra_body"] = {"reasoning": {"effort": effort}}
+def _cache_model(model: str) -> str:
+    """Model id used in ``llm_calls`` hashes.
+
+    A resumed run should reuse judgments already accepted for this checkpoint.
+    """
+    return _CACHE_MODEL_ALIAS.get(model, model)
+
+
+def _provider_model(model: str) -> str:
+    """Strip the configured provider prefix for the upstream API."""
+    if model.startswith(("xiaomi/", "opencode-go/", "openrouter/")):
+        return model.split("/", 1)[1]
+    return model
+
+
+def _provider(model: str) -> str:
+    if model.startswith("opencode-go/"):
+        return OPENCODE_GO
+    if model.startswith(("openrouter/", "z-ai/")):
+        return OPENROUTER
+    return PROVIDER
+
+
+def _chat_extra_kwargs(effort: str, provider: str = PROVIDER) -> dict:
+    """Provider-specific JSON format, strict routing, reasoning and token cap.
+
+    Xiaomi thinking is ``enabled`` or ``disabled``. ``off`` disables it.
+    low/medium/high, kept so existing cache keys still match, enable it.
+    """
+    # Iceman rejects response_format. Schema-in-prompt + local validation
+    # and the existing repair retry enforce JSON for that provider.
+    extra_kwargs: dict = {}
+    if provider != OPENCODE_GO:
+        extra_kwargs["response_format"] = {"type": "json_object"}
+    if provider == OPENROUTER:
+        extra_body: dict = {
+            "provider": {
+                "only": list(config.OPENROUTER_PROVIDERS),
+                "order": list(config.OPENROUTER_PROVIDERS),
+                "allow_fallbacks": False,
+                "require_parameters": True,
+            }
+        }
+        if effort:
+            extra_body["reasoning"] = (
+                {"enabled": False} if effort == "off" else {"effort": effort}
+            )
+        extra_kwargs["extra_body"] = extra_body
+    # Iceman advertises no configurable reasoning options. Never forward
+    # Xiaomi's vendor-specific thinking switch to OpenCode Go.
+    if provider == PROVIDER and effort:
+        extra_kwargs["extra_body"] = {
+            "thinking": {"type": "disabled" if effort == "off" else "enabled"}
+        }
     if config.VP_LLM_MAX_OUTPUT_TOKENS:
-        extra_kwargs["max_tokens"] = config.VP_LLM_MAX_OUTPUT_TOKENS
+        token_field = "max_tokens" if provider == OPENROUTER else "max_completion_tokens"
+        extra_kwargs[token_field] = config.VP_LLM_MAX_OUTPUT_TOKENS
     return extra_kwargs
 
 
@@ -204,8 +257,8 @@ class LLMClient:
         concurrency: int | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
-        self.api_key = config.OPENROUTER_API_KEY
-        self.base_url = config.OPENROUTER_BASE_URL
+        self.api_key = config.MIMO_API_KEY
+        self.base_url = config.MIMO_BASE_URL
         self.conn = db_conn
         self.budget_usd = budget_usd
         self.dry_run = dry_run
@@ -219,6 +272,9 @@ class LLMClient:
         )
         self.spent_usd = 0.0  # live spend in this run only
         self._client: openai.OpenAI | None = None
+        self._go_client: openai.OpenAI | None = None
+        self._router_client: openai.OpenAI | None = None
+        self._go_session_id = str(uuid.uuid4())
         self._lock = threading.Lock()
         # Worker threads write llm_calls through the caller's connection under
         # this lock; callers streaming iter_many must hold it for their own
@@ -251,6 +307,11 @@ class LLMClient:
         is not part of the cache key.
         """
         images = images or []
+        if model == "opencode-go/iceman-contributor-free" and images:
+            raise LLMError(
+                "Iceman Contributor Free accepts text only; configure a vision "
+                "model for VP_JUDGE_MODEL. No image request was sent."
+            )
         effort = (
             config.LLM_REASONING_EFFORT if reasoning_effort is None else reasoning_effort
         ).strip()
@@ -304,8 +365,10 @@ class LLMClient:
             "input_hash": input_hash,
             "stage": stage,
             "model": model,
-            "provider": PROVIDER,
-            "response_format": "json_object",
+            "provider": _provider(model),
+            "response_format": "prompt_json" if _provider(model) == OPENCODE_GO else "json_object",
+            "upstream_provider": usage.get("upstream_provider"),
+            "response_id": usage.get("response_id"),
             "cost_usd": cost,
             "input_tokens": usage.get("input_tokens"),
             "output_tokens": usage.get("output_tokens"),
@@ -373,25 +436,48 @@ class LLMClient:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
-    def _openai(self) -> openai.OpenAI:
+    def _openai(self, provider: str = PROVIDER) -> openai.OpenAI:
         with self._client_init_lock:
+            if provider == OPENROUTER:
+                if self._router_client is None:
+                    if not config.OPENROUTER_API_KEY:
+                        raise LLMError("OPENROUTER_API_KEY is not set")
+                    self._router_client = self._new_openai(
+                        config.OPENROUTER_API_KEY,
+                        base_url=config.OPENROUTER_BASE_URL,
+                    )
+                return self._router_client
+            if provider == OPENCODE_GO:
+                if self._go_client is None:
+                    if not config.OPENCODE_GO_API_KEY:
+                        raise LLMError("OPENCODE_GO_API_KEY (or OPENCODE_API_KEY) is not set")
+                    self._go_client = self._new_openai(
+                        config.OPENCODE_GO_API_KEY,
+                        base_url=config.OPENCODE_GO_BASE_URL,
+                        headers={"x-opencode-session": self._go_session_id},
+                    )
+                return self._go_client
             if self._client is None:
                 if not self.api_key:
-                    raise LLMError("OPENROUTER_API_KEY is not set")
+                    raise LLMError("MIMO_API_KEY is not set")
                 self._client = self._new_openai(self.api_key)
             return self._client
 
-    def _new_openai(self, api_key: str) -> openai.OpenAI:
+    def _new_openai(
+        self, api_key: str, *, base_url: str | None = None, headers: dict | None = None
+    ) -> openai.OpenAI:
         # max_retries=0: transient retries are handled here so that
-        # budget/cache semantics stay under our control.
+        # budget/cache semantics stay under our control. The SDK sends
+        # Authorization: Bearer, which Xiaomi's OpenAI-compatible API accepts.
+        base_url = base_url or self.base_url
         return openai.OpenAI(
-            api_key=api_key, base_url=self.base_url,
+            api_key=api_key, base_url=base_url,
             timeout=self.timeout_seconds, max_retries=0,
-            default_headers={"User-Agent": USER_AGENT, "X-Title": APP_TITLE},
+            default_headers={"User-Agent": USER_AGENT, **(headers or {})},
             http_client=openai.DefaultHttpxClient(
                 transport=_DeadlineTransport(
                     config.VP_LLM_MAX_REQUEST_SECONDS,
-                    proxy=_env_proxy(self.base_url),
+                    proxy=_env_proxy(base_url),
                 ),
             ),
         )
@@ -412,11 +498,15 @@ class LLMClient:
             "user_content": user_content,
             "images": [im.identity() for im in images],
         }
+        if _provider(model) == OPENROUTER:
+            # Old unrestricted OpenRouter results must not satisfy the
+            # user's restricted routing request from cache.
+            payload["provider_only"] = list(config.OPENROUTER_PROVIDERS)
         if effort:
             # Only a set effort joins the identity, so model-default calls
             # keep the cache keys they had before efforts were configurable.
             payload["reasoning_effort"] = effort
-        return db.llm_input_hash(stage, model, payload)
+        return db.llm_input_hash(stage, _cache_model(model), payload)
 
     @property
     def db_lock(self) -> threading.Lock:
@@ -476,7 +566,7 @@ class LLMClient:
 
         def _send():
             with _IN_FLIGHT:
-                return self._stream_chat(model, messages, _chat_extra_kwargs(effort))
+                return self._stream_chat(model, messages, _chat_extra_kwargs(effort, _provider(model)))
 
         return self._with_retries(_send)
 
@@ -486,8 +576,8 @@ class LLMClient:
         Streamed so a slow generation never sits on an idle socket.
         _normalize unwraps fenced replies in case JSON mode is ignored.
         """
-        stream = self._openai().chat.completions.create(
-            model=model,
+        stream = self._openai(_provider(model)).chat.completions.create(
+            model=_provider_model(model),
             messages=messages,
             stream=True,
             stream_options={"include_usage": True},
@@ -495,16 +585,20 @@ class LLMClient:
         )
         content: list[str] = []
         usage = None
+        upstream_provider = None
+        response_id = None
         got_choice = False
         try:
             for chunk in stream:
+                upstream_provider = getattr(chunk, "provider", None) or upstream_provider
+                response_id = getattr(chunk, "id", None) or response_id
                 error = getattr(chunk, "error", None)
                 if error:
-                    # OpenRouter reports an upstream failure after the 200 as
-                    # a chunk carrying ``error``; retry it like a 5xx.
+                    # A provider that reports an upstream failure after the
+                    # 200 does so as a chunk carrying ``error``; retry it like a 5xx.
                     raise openai.InternalServerError(
                         f"provider error mid-stream: {error}",
-                        response=self._error_response(), body=None,
+                        response=self._error_response(model), body=None,
                     )
                 if getattr(chunk, "usage", None):
                     usage = chunk.usage
@@ -522,15 +616,20 @@ class LLMClient:
         if not got_choice:
             raise openai.InternalServerError(
                 "provider error: empty choices returned",
-                response=self._error_response(), body=None,
+                response=self._error_response(model), body=None,
             )
         message = SimpleNamespace(content="".join(content))
-        return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage,
+                               provider=upstream_provider, id=response_id)
 
-    def _error_response(self) -> httpx.Response:
+    def _error_response(self, model: str = "") -> httpx.Response:
         """A 502 response object for errors raised from a 200 stream."""
+        base_url = {
+            OPENCODE_GO: config.OPENCODE_GO_BASE_URL,
+            OPENROUTER: config.OPENROUTER_BASE_URL,
+        }.get(_provider(model), self.base_url)
         return httpx.Response(502, request=httpx.Request(
-            "POST", self.base_url.rstrip("/") + "/chat/completions"))
+            "POST", base_url.rstrip("/") + "/chat/completions"))
 
     def _call_with_validation(
         self,
@@ -554,6 +653,8 @@ class LLMClient:
                 )
             resp = self._send_once(model, system, request_text, schema, images, effort)
             attempts += 1
+            usage["upstream_provider"] = getattr(resp, "provider", None)
+            usage["response_id"] = getattr(resp, "id", None)
             u = getattr(resp, "usage", None)
             if u is not None:
                 usage["input_tokens"] += getattr(u, "prompt_tokens", 0) or 0
@@ -602,7 +703,7 @@ class LLMClient:
             except openai.APIStatusError as exc:
                 if exc.status_code == _NO_CREDITS:
                     timing.count("llm_402")
-                    raise BudgetExceeded(f"OpenRouter credits exhausted: {exc}") from exc
+                    raise BudgetExceeded(f"Provider quota exhausted: {exc}") from exc
                 if not isinstance(exc, _TRANSIENT_ERRORS):
                     raise
                 error = exc
@@ -655,7 +756,7 @@ class LLMClient:
 
     def _cost(self, model: str, usage: dict) -> float | None:
         if usage.get("cost_usd") is not None:
-            return usage["cost_usd"]  # OpenRouter's billed amount
+            return usage["cost_usd"]  # billed amount, when the provider reports one
         price = config.model_price(model)
         if price is None:
             return None
@@ -685,8 +786,12 @@ class LLMClient:
             "prompt_version": prompt_version,
             "attempts": meta["attempts"],
             "response_format": meta["response_format"],
-            "provider": PROVIDER,
+            "provider": _provider(model),
+            "upstream_provider": meta.get("upstream_provider"),
+            "response_id": meta.get("response_id"),
         }
+        if _provider(model) == OPENROUTER:
+            request_meta["provider_only"] = list(config.OPENROUTER_PROVIDERS)
         row = (
             stage,
             model,
@@ -765,13 +870,68 @@ def _normalize(content: str, schema: dict, defaults: dict) -> str:
         if key not in parsed:
             parsed[key] = value(parsed) if callable(value) else value
             changed = True
+    changed = _repair_nested(parsed, schema) or changed
     return json.dumps(parsed, ensure_ascii=False) if changed else unwrapped
+
+
+def _repair_nested(value: Any, schema: dict) -> bool:
+    """Fix two nested slips that otherwise fail a whole reply; True if changed.
+
+    A string just off its enum (``pleomorphic_xanthocytoma`` for
+    ``pleomorphic_xanthoastrocytoma``) snaps to the single close value with
+    the same digits, so ``type_1`` never becomes ``type_2``. An array item
+    whose required non-null string is null (a finding with no
+    ``finding_key``) is dropped.
+    """
+    changed = False
+    if isinstance(value, dict):
+        for key, sub in (schema.get("properties") or {}).items():
+            if key not in value:
+                continue
+            snapped = _snap_enum(value[key], sub)
+            if snapped is not None:
+                value[key] = snapped
+                changed = True
+            elif _repair_nested(value[key], sub):
+                changed = True
+    elif isinstance(value, list) and isinstance(schema.get("items"), dict):
+        items = schema["items"]
+        required = [
+            key for key in items.get("required") or []
+            if (items.get("properties") or {}).get(key, {}).get("type") == "string"
+        ]
+        kept = [
+            item for item in value
+            if not (isinstance(item, dict) and any(item.get(k, "") is None for k in required))
+        ]
+        if len(kept) != len(value):
+            value[:] = kept
+            changed = True
+        for i, item in enumerate(value):
+            snapped = _snap_enum(item, items)
+            if snapped is not None:
+                value[i] = snapped
+                changed = True
+            elif _repair_nested(item, items):
+                changed = True
+    return changed
+
+
+def _snap_enum(value: Any, schema: dict) -> str | None:
+    """The one enum string ``value`` misspells, or None to leave it."""
+    enum = schema.get("enum")
+    if not isinstance(value, str) or not enum or value in enum:
+        return None
+    digits = re.findall(r"\d+", value)
+    options = [e for e in enum if isinstance(e, str) and re.findall(r"\d+", e) == digits]
+    close = difflib.get_close_matches(value, options, n=2, cutoff=0.85)
+    return close[0] if len(close) == 1 else None
 
 
 def _cached_tokens(usage) -> int:
     """Prompt tokens served from the provider cache.
 
-    OpenRouter reports the OpenAI-style ``prompt_tokens_details.cached_tokens``;
+    Xiaomi reports the OpenAI-style ``prompt_tokens_details.cached_tokens``;
     a flat ``usage.cached_tokens`` is accepted too.
     """
     cached = getattr(usage, "cached_tokens", None)

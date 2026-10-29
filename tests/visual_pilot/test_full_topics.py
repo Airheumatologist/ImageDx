@@ -166,6 +166,11 @@ def test_disease_names_match_across_punctuation():
     assert acronym.search("Cervical Adenitis (PFAPA) Syndrome")
     assert not acronym.search("pfapa")
     assert not curation._term_pattern("Gout").search("goutweed")
+    # An acronym inside a name keeps its capitals.
+    child = curation._term_pattern("CHILD Syndrome")
+    assert child.search("ichthyosiform naevus in CHILD syndrome")
+    assert not child.search("a battered child syndrome case")
+    assert "child_syndrome" not in curation._diseases_in_text("Battered child syndrome in a boy")
 
 
 def test_pfapa_title_attributes_a_terse_caption():
@@ -177,6 +182,134 @@ def test_pfapa_title_attributes_a_terse_caption():
     panel = {"disease_key": "pfapa_syndrome"}
     caption = "Exudative pharyngitis Arrow pointing to pus spots over tonsils"
     assert curation._attribution_reason(panel, caption, {"title": title}) is None
+
+
+def test_parent_disease_and_own_manifestation_in_caption_are_not_other_diseases():
+    panel = {"disease_key": "hereditary_vitamin_d_resistant_rickets"}
+    title = "Novel Vitamin D Receptor Mutations in Hereditary Vitamin D Resistant Rickets in Chinese."
+    # "rickets" is a catalog topic of its own, but it is HVDRR's parent
+    # disease, not another diagnosis.
+    caption = ("Antero-posterior radiograph of the patient's hand with rickets "
+               "demonstrates cupping and fraying of the metaphyseal region.")
+    assert curation._attribution_reason(panel, caption, {"title": title}) is None
+    assert "rickets_osteomalacia" in curation._kindred_keys("hereditary_vitamin_d_resistant_rickets")
+    # An unrelated catalog disease in the caption still excludes the panel.
+    other = curation._attribution_reason(
+        {"disease_key": "laryngeal_cleft"},
+        "Intra-oral photograph of a bilateral cleft palate.",
+        {"title": "Laryngeal cleft: a case report"},
+    )
+    assert other == "caption identifies another disease"
+
+
+def test_case_report_abstract_attributes_a_terse_caption():
+    panel = {"disease_key": "hereditary_vitamin_d_resistant_rickets"}
+    caption = "(A,B) Rachitic changes of the lower (A) and upper (B) extremity bones (at diagnosis)."
+    case = {
+        "title": "Vitamin D-Resistant Rickets and Cinacalcet-One More Favorable Experience.",
+        "publication_types_json": '["Journal Article", "Case Reports"]',
+        "source_metadata": {"abstract": "Hereditary vitamin D-resistant rickets (HVDRR) is an "
+                                        "autosomal recessive disorder. We report a girl with "
+                                        "hereditary vitamin D-resistant rickets and alopecia."},
+    }
+    assert curation._attribution_reason(panel, caption, case) is None
+    # A review's abstract does not tie a figure to one patient.
+    review = {**case, "publication_types_json": '["Review"]', "title": "Rickets: an update."}
+    assert curation._attribution_reason(panel, caption, review) == (
+        "disease association not stated in figure caption")
+    # Nor does a case report whose abstract never names the disease.
+    silent = {**case, "source_metadata": {"abstract": "A girl with rickets and alopecia."}}
+    assert curation._attribution_reason(panel, caption, silent) == (
+        "disease association not stated in figure caption")
+
+
+def test_veterinary_subjects_are_recognized_without_a_model_phrase():
+    vet = curation._VETERINARY
+    assert vet.search("NSDHL frameshift deletion in a mixed breed dog with epidermal nevi")
+    assert vet.search("MRI findings in six dogs with ependymoma of the brain")
+    assert vet.search("Dermatitis in an adult cat with alopecia")
+    for human in ("A CAT scan of the calf", "Mandibular fracture in a child resulting from a dog attack",
+                  "cat scratch fever with ascending rash", "a severe presentation of cat-eye syndrome",
+                  "a fall from the monkey bars", "CT showing a horse-shoe shaped kidney",
+                  "Ovine-reinforced hybrid mesh with porcine dermal matrix", "Hair tourniquet in a boy"):
+        assert not vet.search(human), human
+
+
+def test_kindred_keys_are_parents_and_own_findings_only():
+    kindred = curation._kindred_keys
+    # Parent disease by name suffix; a finding that is a topic by whole name.
+    assert "rickets_osteomalacia" in kindred("x_linked_hypophosphatemic_rickets")
+    assert "cutaneous_small_vessel_vasculitis" in kindred("iga_vasculitis")
+    # Shared acronyms ("MFS"), look-alikes ("male Turner syndrome"), hyphenated
+    # compounds ("Meier-Gorlin"), negations ("non-Langerhans") and comparators
+    # ("smallpox-like scars") are different diseases.
+    assert "miller_fisher_syndrome" not in kindred("marfan_syndrome")
+    assert "turner_syndrome" not in kindred("noonan_syndrome")
+    assert "gorlin_syndrome" not in kindred("meier_gorlin_syndrome")
+    assert "langerhans_cell_histiocytosis" not in kindred("erdheim_chester_disease")
+    assert "congenital_generalized_lipodystrophy" not in kindred("acquired_generalized_lipodystrophy")
+    assert "smallpox" not in kindred("hydroa_vacciniforme")
+    assert "sle" not in kindred("lupus_miliaris_disseminatus_faciei")
+    assert "erysipelas_cellulitis" not in kindred("eosinophilic_cellulitis")
+    title = "Noonan syndrome in a girl: a case report"
+    assert curation._attribution_reason(
+        {"disease_key": "noonan_syndrome"},
+        "Webbed neck in a girl with Turner syndrome.", {"title": title},
+    ) == "caption identifies another disease"
+
+
+def test_case_report_waiver_needs_one_affirmed_case():
+    panel = {"disease_key": "sarcoidosis"}
+    caption = "Erythematous plaques on the forearm."
+    base = {"publication_types_json": '["Case Reports"]'}
+    # The abstract names the target only to rule it out.
+    ruled_out = {**base, "title": "Secondary syphilis in a patient",
+                 "source_metadata": {"abstract": "Sarcoidosis was suspected, but biopsy and "
+                                                 "serology confirmed secondary syphilis."}}
+    assert curation._attribution_reason(panel, caption, ruled_out) == (
+        "disease association not stated in figure caption")
+    # A title naming another disease, or a mimic story, is not this case.
+    other = {**base, "title": "Cutaneous tuberculosis: a case report",
+             "source_metadata": {"abstract": "Sarcoidosis is a granulomatous disease. We report ..."}}
+    assert curation._attribution_reason(panel, caption, other) == (
+        "disease association not stated in figure caption")
+    mimic = {**base, "title": "A rash mimicking sarcoidosis",
+             "source_metadata": {"abstract": "We report a patient with sarcoidosis."}}
+    assert curation._attribution_reason(panel, caption, mimic) == (
+        "disease association not stated in figure caption")
+    # Several patients are not one case, whatever the publication type says.
+    series = {**base, "title": "Outcomes in a patient cohort with skin lesions",
+              "source_metadata": {"abstract": "We report sarcoidosis in 12 patients."}}
+    assert not curation._is_case_report(series)
+    assert curation._is_case_report({"title": "Atopic dermatitis: a case-based review"}) is False
+    # Background sentences and differentials do not attribute.
+    background = {**base, "title": "Granulomatous plaques of the forearm",
+                  "source_metadata": {"abstract": "Sarcoidosis is a granulomatous disease. "
+                                                  "Spontaneous regression can be due to sarcoidosis. "
+                                                  "We report a woman with plaques."}}
+    assert curation._attribution_reason(panel, caption, background) == (
+        "disease association not stated in figure caption")
+    # One affirmed case passes.
+    case = {**base, "title": "Granulomatous plaques of the forearm",
+            "source_metadata": {"abstract": "Sarcoidosis was suspected. A biopsy confirmed "
+                                            "cutaneous sarcoidosis in this 40-year-old woman."}}
+    assert curation._attribution_reason(panel, caption, case) is None
+    # Several patients make the abstract's names unattributable to one figure.
+    several = {**case, "source_metadata": {"abstract": "We describe four unrelated patients; one "
+                                                       "woman was diagnosed with sarcoidosis."}}
+    assert curation._attribution_reason(panel, caption, several) == (
+        "disease association not stated in figure caption")
+
+
+def test_mimic_titles_attribute_only_their_subject():
+    caption = "Axial CT image."
+    assert curation._attribution_reason(
+        {"disease_key": "broncholithiasis"}, caption,
+        {"title": "Broncholithiasis mimicking metallic projectiles at autopsy"}) is None
+    assert curation._attribution_reason(
+        {"disease_key": "tonsillitis_pharyngitis"}, caption,
+        {"title": "Epstein-Barr virus masquerading as exudative tonsillitis"}) == (
+        "disease association not stated in figure caption")
 
 
 def test_disease_index_matches_the_brute_force_search():

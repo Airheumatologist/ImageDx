@@ -218,6 +218,44 @@ def _hit(rec: dict) -> Hit | None:
     )
 
 
+def indexed_terms(hit: Hit) -> list[str]:
+    """The record's MeSH descriptor names and author keywords."""
+    raw = hit.raw or {}
+    headings = (raw.get("meshHeadingList") or {}).get("meshHeading") or []
+    names = [str(h.get("descriptorName") or "") for h in headings if isinstance(h, dict)]
+    names += [str(k) for k in (raw.get("keywordList") or {}).get("keyword") or []]
+    return [n.strip() for n in names if n and n.strip()]
+
+
+def indexed_under(hit: Hit, terms: list[str]) -> bool:
+    """Whether the record is indexed under the disease: a MeSH heading or
+    keyword names one of ``terms`` in any word order ("Lupus Erythematosus,
+    Systemic"), or a multi-word heading is part of one ("Vitamin D-Dependent
+    Rickets" for "vitamin D-dependent rickets type 2"), or a multi-word term
+    is part of a heading. A one-word term must be a whole heading: "Rickets"
+    covers every rickets.
+
+    ``MESH:"<phrase>"`` for a phrase that is not a descriptor returns
+    hundreds of loosely related records; this is the local check.
+    """
+    headings = [frozenset(pair_terms.content_words(name)) for name in indexed_terms(hit)]
+    headings = [h for h in headings if h]
+    if not headings:
+        return False
+    for term in terms:
+        words = frozenset(pair_terms.content_words(term))
+        if not words:
+            continue
+        for heading in headings:
+            if heading == words:
+                return True
+            if len(heading) >= 2 and heading < words:
+                return True
+            if len(words) >= 2 and words < heading:
+                return True
+    return False
+
+
 def eligible(hit: Hit, *, license_required: bool = True) -> bool:
     """A usable hit. ``license_required=False`` is for the relaxed tier: the
     Europe PMC license field is not trusted there and every figure is gated

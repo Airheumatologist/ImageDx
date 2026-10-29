@@ -1,8 +1,9 @@
 """Stage 1 seed data: the disease catalog and findings vocabulary.
 
 The catalog is the single disease list, ``data/main_database_topics.json``:
-every topic under its specialty, keyed by ``topic_id``. Every topic has
-published images; a topic left with none is deleted from the list.
+every topic under its specialty, keyed by ``topic_id``. Reviewed additions
+awaiting image curation remain in the master catalog. Image publication
+eligibility is determined separately from catalog membership.
 
 The vocabulary is the curated ``findings_vocab.json`` plus
 ``topic_findings_vocab.json`` written by ``build-vocab`` for every topic

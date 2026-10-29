@@ -1,0 +1,680 @@
+[
+  {
+    "index": 27,
+    "proposed_id": "ventricular_septal_defect",
+    "canonical_name": "Ventricular Septal Defect",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Color Doppler left-to-right jet across the ventricular septum; a large shunt enlarges the left atrium and ventricle.",
+    "rationale": "Distinct congenital shunt with a teachable Doppler jet; the listed AV septal defect is an inlet lesion with different anatomy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 28,
+    "proposed_id": "atrial_septal_defect",
+    "canonical_name": "Atrial Septal Defect",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Fossa ovalis defect with left-to-right flow and right atrial/right ventricular volume enlargement on echo.",
+    "rationale": "Common atrial shunt with a clear echo target and a different site from the existing complete AV septal defect.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.asecho.org/guideline/asd-and-pfo-assessment-by-echo/",
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 29,
+    "proposed_id": "patent_ductus_arteriosus",
+    "canonical_name": "Patent Ductus Arteriosus",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Ductal color jet from descending aorta to left pulmonary artery; large PDA produces left-heart enlargement and pulmonary plethora.",
+    "rationale": "Distinct arterial shunt and ductal-view Doppler sign; not the existing aortopulmonary window.",
+    "existing_parent_ids": [
+      "aortopulmonary_window"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 30,
+    "proposed_id": "valvar_pulmonary_stenosis",
+    "canonical_name": "Valvar Pulmonary Stenosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Doming pulmonary valve with turbulent systolic flow and poststenotic main pulmonary artery dilation.",
+    "rationale": "Distinct valve-level lesion with reproducible echo and radiographic findings; Noonan syndrome is not a substitute for the lesion.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 31,
+    "proposed_id": "aortic_stenosis",
+    "canonical_name": "Aortic Stenosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Calcified, restricted trileaflet valve on echo/CT with concentric left ventricular hypertrophy.",
+    "rationale": "Create one aortic stenosis page covering degenerative calcific and congenital valvar forms with clear age-specific valve morphology and imaging. The existing rheumatic heart disease and bicuspid aortopathy pages do not provide a general stenosis overview.",
+    "existing_parent_ids": [
+      "rheumatic_heart_disease",
+      "bicuspid_aortic_valve_aortopathy"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9725093/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 32,
+    "proposed_id": "degenerative_mitral_valve_disease",
+    "canonical_name": "Degenerative Mitral Valve Disease",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Systolic billowing or flail mitral scallop above the annular plane with eccentric regurgitant jet on 2D/3D echo.",
+    "rationale": "A named valve phenotype with strong echo teaching value; distinct from rheumatic mitral stenosis and its fused commissures.",
+    "existing_parent_ids": [
+      "rheumatic_heart_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9725093/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 33,
+    "proposed_id": "takotsubo_cardiomyopathy",
+    "canonical_name": "Takotsubo Cardiomyopathy",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Circumferential apical or midventricular ballooning with basal hyperkinesis on echo or ventriculography.",
+    "rationale": "Recognizable imaging pattern and important ACS mimic; separate from apical hypertrophic cardiomyopathy.",
+    "existing_parent_ids": [
+      "hypertrophic_obstructive_cardiomyopathy"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7471594/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 34,
+    "proposed_id": "apical_hypertrophic_cardiomyopathy",
+    "canonical_name": "Apical hypertrophic cardiomyopathy phenotype",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Apical hypertrophy and spade-shaped left ventricular cavity on MRI or ventriculography.",
+    "rationale": "Apical morphology and giant negative T waves are already explicitly covered in the existing hypertrophic cardiomyopathy topic; add this as a dedicated phenotype section there rather than a separate disease page.",
+    "existing_parent_ids": [
+      "hypertrophic_obstructive_cardiomyopathy"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 35,
+    "proposed_id": "left_ventricular_noncompaction",
+    "canonical_name": "Left Ventricular Noncompaction",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Prominent apical/lateral trabeculations with deep perfused recesses and thin compact myocardium on echo or CMR.",
+    "rationale": "Distinctive two-layer imaging phenotype merits teaching, while noting diagnostic overcalling and overlap with physiologic trabeculation.",
+    "existing_parent_ids": [
+      "hypertrophic_obstructive_cardiomyopathy"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 36,
+    "proposed_id": "papillary_fibroelastoma",
+    "canonical_name": "Papillary Fibroelastoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small independently mobile, stalked valvular mass with a fronded/shimmering edge on echocardiography.",
+    "rationale": "The valve-based mass and embolic presentation are visually distinct from the listed atrial myxoma.",
+    "existing_parent_ids": [
+      "cardiac_myxoma_carney_complex"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 37,
+    "proposed_id": "spontaneous_coronary_artery_dissection",
+    "canonical_name": "Spontaneous Coronary Artery Dissection",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Angiographic intimal flap/double lumen or long smooth narrowing from intramural hematoma in a coronary artery.",
+    "rationale": "Distinct nonatherosclerotic coronary emergency with characteristic angiographic patterns; no existing coronary dissection topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5957087/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 38,
+    "proposed_id": "anomalous_aortic_origin_of_a_coronary_artery",
+    "canonical_name": "Anomalous Aortic Origin of a Coronary Artery",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Coronary CTA shows an anomalous ostium from the opposite sinus, slit-like takeoff, and interarterial/intramural course.",
+    "rationale": "High-value coronary CTA anatomy distinct from the listed anomalous coronary origin from the pulmonary artery.",
+    "existing_parent_ids": [
+      "alcapa_syndrome"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 39,
+    "proposed_id": "sinus_of_valsalva_aneurysm",
+    "canonical_name": "Sinus of Valsalva Aneurysm",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "A windsock sac arising from a sinus of Valsalva into a chamber, with a jet if ruptured.",
+    "rationale": "A named root lesion with a characteristic echo/CTA morphology distinct from fusiform thoracic aneurysm.",
+    "existing_parent_ids": [
+      "thoracic_aortic_aneurysm"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 40,
+    "proposed_id": "coronary_artery_fistula",
+    "canonical_name": "Coronary Artery Fistula",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Dilated tortuous coronary artery traced on CTA/angiography to a cardiac chamber or pulmonary artery, with Doppler runoff.",
+    "rationale": "Distinct coronary runoff anatomy and Doppler finding; not the existing pulmonary-origin coronary anomaly.",
+    "existing_parent_ids": [
+      "alcapa_syndrome"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 41,
+    "proposed_id": "congenitally_corrected_transposition",
+    "canonical_name": "Congenitally Corrected Transposition of the Great Arteries",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Echo/CMR demonstrates both atrioventricular and ventriculoarterial discordance; anterior-left aorta and systemic morphologic RV.",
+    "rationale": "A separate double-discordance anatomy with distinct lifelong imaging; D-TGA has concordant AV connections.",
+    "existing_parent_ids": [
+      "d_transposition_of_the_great_arteries"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 42,
+    "proposed_id": "fibromuscular_dysplasia",
+    "canonical_name": "Fibromuscular Dysplasia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA/MRA or angiography shows multifocal string-of-beads stenoses, especially in renal or cervical arteries.",
+    "rationale": "Distinct nonatherosclerotic arteriopathy with signature vascular imaging and important SCAD association.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 43,
+    "proposed_id": "aortic_intramural_hematoma",
+    "canonical_name": "Aortic Intramural Hematoma",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Noncontrast CT shows crescentic high attenuation in aortic wall; contrast CT shows thickening without an intimal flap.",
+    "rationale": "The existing Acute Aortic Dissection topic already lists intramural hematoma among CTA manifestations. Expand that parent with the noncontrast crescentic hyperattenuation and no-flap distinction rather than creating a second page.",
+    "existing_parent_ids": [
+      "aortic_dissection"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9860464/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 44,
+    "proposed_id": "penetrating_atherosclerotic_ulcer",
+    "canonical_name": "Penetrating Atherosclerotic Ulcer",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA shows a focal contrast-filled crater penetrating aortic plaque, often with adjacent intramural hematoma.",
+    "rationale": "Different acute aortic syndrome morphology from dissection and fusiform aneurysm; characteristic CTA finding.",
+    "existing_parent_ids": [
+      "aortic_dissection",
+      "thoracic_aortic_aneurysm"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9860464/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 45,
+    "proposed_id": "partial_anomalous_pulmonary_venous_return",
+    "canonical_name": "Partial Anomalous Pulmonary Venous Return",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT/CMR maps anomalous pulmonary veins draining to systemic venous structures; sinus venosus defects may coexist while the fossa ovalis remains intact.",
+    "rationale": "The sinus venosus ASD component belongs with the new ASD topic. PAPVR merits a distinct page for anomalous venous drainage and right-heart volume loading; the catalog has total anomalous return and scimitar syndrome but not partial anomalous return.",
+    "existing_parent_ids": [
+      "total_anomalous_pulmonary_venous_return"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 46,
+    "proposed_id": "pulmonary_atresia_with_ventricular_septal_defect",
+    "canonical_name": "Pulmonary Atresia with Ventricular Septal Defect",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA maps atretic RV outflow, VSD/overriding aorta, and major aortopulmonary collateral arteries supplying lung segments.",
+    "rationale": "Distinct cyanotic anatomy and collateral map; existing intact-septum pulmonary atresia and TOF do not capture this configuration.",
+    "existing_parent_ids": [
+      "pulmonary_atresia_intact_septum",
+      "tetralogy_of_fallot"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 47,
+    "proposed_id": "interrupted_aortic_arch",
+    "canonical_name": "Interrupted Aortic Arch",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA/3D reconstruction shows complete interruption of the arch with descending aorta supplied through the duct.",
+    "rationale": "Complete arch discontinuity is visually distinct from listed coarctation, a focal narrowing.",
+    "existing_parent_ids": [
+      "coarctation_of_the_aorta"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 48,
+    "proposed_id": "double_outlet_right_ventricle",
+    "canonical_name": "Double Outlet Right Ventricle",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Echo/CMR shows both great arteries arising predominantly from the right ventricle and defines VSD-to-outlet relationship.",
+    "rationale": "Distinct conotruncal anatomy whose VSD relationship determines physiology; does not duplicate listed TGA or truncus.",
+    "existing_parent_ids": [
+      "d_transposition_of_the_great_arteries",
+      "truncus_arteriosus"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 49,
+    "proposed_id": "heterotaxy_syndrome",
+    "canonical_name": "Heterotaxy Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Cross-sectional imaging shows abnormal organ situs, systemic/pulmonary venous return, and cardiac position/segmental anatomy.",
+    "rationale": "Distinctive multisystem laterality pattern with highly visual cardiac and visceral anatomy; no existing heterotaxy topic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 50,
+    "proposed_id": "discrete_subaortic_stenosis",
+    "canonical_name": "Discrete Subaortic Stenosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Echo shows a discrete fibrous/fibromuscular shelf below an normally opening aortic valve with LVOT jet.",
+    "rationale": "A discrete membrane is distinct from muscle-mediated obstructive HCM and valvar aortic stenosis.",
+    "existing_parent_ids": [
+      "hypertrophic_obstructive_cardiomyopathy"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 51,
+    "proposed_id": "shone_complex",
+    "canonical_name": "Shone Complex",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Echo depicts multilevel left-sided obstruction: parachute mitral valve/ring, subaortic ridge, and coarctation.",
+    "rationale": "A recognizable combined congenital pattern rather than a redundant isolated lesion; existing coarctation covers only one level.",
+    "existing_parent_ids": [
+      "coarctation_of_the_aorta"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9048561/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 52,
+    "proposed_id": "cor_triatriatum",
+    "canonical_name": "Cor Triatriatum",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Left atrial membrane separates pulmonary venous chamber from distal atrium; appendage lies distal to the membrane.",
+    "rationale": "Distinct membrane anatomy and Doppler gradient; clarifies difference from supravalvar mitral ring.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 53,
+    "proposed_id": "right_aortic_arch_aberrant_left_subclavian",
+    "canonical_name": "Right Aortic Arch with Aberrant Left Subclavian Artery",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA shows right arch and aberrant left subclavian from Kommerell diverticulum; esophagram may show posterior indentation.",
+    "rationale": "Distinct vascular ring configuration with a characteristic CT course; existing double arch is a different ring.",
+    "existing_parent_ids": [
+      "double_aortic_arch"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 54,
+    "proposed_id": "pulmonary_artery_sling",
+    "canonical_name": "Pulmonary Artery Sling",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA shows left pulmonary artery arising from right pulmonary artery and passing between trachea and esophagus.",
+    "rationale": "Rare but high-yield airway-compression configuration, distinct from aortic vascular rings.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 55,
+    "proposed_id": "double_chambered_right_ventricle",
+    "canonical_name": "Double-Chambered Right Ventricle",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Echo/CMR shows anomalous muscle bundle dividing RV into high-pressure inlet and low-pressure outlet, with normal pulmonary valve.",
+    "rationale": "Distinct intracavitary obstruction and echo finding, unlike valvar pulmonary stenosis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 56,
+    "proposed_id": "absent_pulmonary_valve_syndrome",
+    "canonical_name": "Absent Pulmonary Valve Syndrome",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Aneurysmal pulmonary arteries and rudimentary valve with severe stenosis/regurgitation compress adjacent bronchi on CT.",
+    "rationale": "Absent pulmonary valve is a recognizable tetralogy variant already accommodated by the existing Tetralogy of Fallot topic, which includes pulmonary artery tree imaging and airway compression. Add the aneurysmal pulmonary artery/bronchial compression pattern as a variant subsection.",
+    "existing_parent_ids": [
+      "tetralogy_of_fallot"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC1994462/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 57,
+    "proposed_id": "congenital_valvar_aortic_stenosis",
+    "canonical_name": "Congenital valvar aortic stenosis",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Echo shows domed unicuspid/bicuspid congenital valve with high gradient, sometimes duct-dependent systemic flow in neonate.",
+    "rationale": "Fold congenital and calcific causes into one new Aortic Stenosis page (candidate 31), with age/valve morphology as separate etiologies. This is a closely related valve lesion and avoids proliferating separate pages for the same stenosis syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 58,
+    "proposed_id": "blunt_traumatic_aortic_injury",
+    "canonical_name": "Blunt Traumatic Aortic Injury",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA shows isthmic intimal injury, pseudoaneurysm or contour defect with periaortic/mediastinal hematoma after deceleration trauma.",
+    "rationale": "Mechanism, location, and acute imaging differ from spontaneous aortic dissection; a distinct trauma diagnosis.",
+    "existing_parent_ids": [
+      "aortic_dissection"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 59,
+    "proposed_id": "mycotic_aortic_aneurysm",
+    "canonical_name": "Mycotic Aortic Aneurysm",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA shows rapidly enlarging saccular aneurysm with periaortic inflammatory stranding/fluid or gas.",
+    "rationale": "Infection changes the characteristic morphology and urgency; distinct from listed degenerative aneurysm topics.",
+    "existing_parent_ids": [
+      "thoracic_aortic_aneurysm",
+      "abdominal_aortic_aneurysm"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 60,
+    "proposed_id": "middle_aortic_syndrome",
+    "canonical_name": "Middle Aortic Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA/MRA shows long mid-thoracic/abdominal aortic narrowing with renal/visceral branch stenoses and collaterals.",
+    "rationale": "Anatomic distribution and branch involvement distinguish it from isthmic coarctation.",
+    "existing_parent_ids": [
+      "coarctation_of_the_aorta"
+    ],
+    "source_urls": [
+      "https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000000603"
+    ],
+    "evidence_status": "selected_source"
+  },
+  {
+    "index": 61,
+    "proposed_id": "popliteal_artery_entrapment_syndrome",
+    "canonical_name": "Popliteal Artery Entrapment Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Dynamic duplex/MRA shows popliteal artery compression with plantar flexion and abnormal gastrocnemius relationship.",
+    "rationale": "Distinct dynamic compression syndrome in young athletes, unlike atherosclerotic peripheral arterial disease.",
+    "existing_parent_ids": [
+      "peripheral_artery_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8569273/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 62,
+    "proposed_id": "cystic_adventitial_disease",
+    "canonical_name": "Cystic Adventitial Disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ultrasound/MRI shows nonenhancing mucin cysts in popliteal arterial adventitia causing smooth eccentric/scimitar narrowing.",
+    "rationale": "A rare but iconic vessel-wall cyst with a clear imaging sign, distinct from muscular entrapment.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4899987/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 63,
+    "proposed_id": "hypothenar_hammer_syndrome",
+    "canonical_name": "Hypothenar Hammer Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Angiography shows ulnar artery aneurysm/occlusion over the hook of hamate with distal digital emboli.",
+    "rationale": "Specific occupational arterial injury with distinctive angiographic site and hand findings; no existing comparator.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6747911/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 64,
+    "proposed_id": "nutcracker_syndrome",
+    "canonical_name": "Nutcracker Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT/MR/US shows left renal vein compression between SMA and aorta with beak and gonadal/pelvic collaterals.",
+    "rationale": "Distinct venous compression syndrome with a recognizable cross-sectional sign; May-Thurner is a different vessel.",
+    "existing_parent_ids": [
+      "may_thurner_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8569268/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 65,
+    "proposed_id": "superior_vena_cava_syndrome",
+    "canonical_name": "Superior Vena Cava Syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Contrast CT/venography shows SVC narrowing or occlusion and azygos/chest-wall collateral pathways; facial plethora is visible clinically.",
+    "rationale": "Clinically and radiologically recognizable syndrome spanning many causes; neither malignant causes nor venous thrombosis topics substitute for the obstruction pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC13098589/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 66,
+    "proposed_id": "arterial_thoracic_outlet_syndrome",
+    "canonical_name": "Arterial Thoracic Outlet Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA with arm elevation shows subclavian artery compression, often poststenotic aneurysm and distal emboli; radiograph may show cervical rib.",
+    "rationale": "Distinct arterial compression and embolic phenotype, unlike listed effort venous thrombosis.",
+    "existing_parent_ids": [
+      "paget_schroetter_syndrome"
+    ],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 67,
+    "proposed_id": "giant_cell_myocarditis",
+    "canonical_name": "Giant Cell Myocarditis",
+    "action": "EXCLUDE",
+    "priority": "P2",
+    "visual_anchor": "Cardiac MRI may show edema and noncoronary enhancement, but these findings do not distinguish giant-cell myocarditis.",
+    "rationale": "The defining giant-cell finding requires myocardial biopsy; candidate has no distinctive clinical or radiologic anchor beyond nonspecific myocarditis findings, so it fails the visual-manifestation criterion.",
+    "existing_parent_ids": [],
+    "source_urls": [],
+    "evidence_status": "not_verified"
+  },
+  {
+    "index": 68,
+    "proposed_id": "acute_myocarditis",
+    "canonical_name": "Acute Myocarditis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CMR shows myocardial edema with subepicardial or mid-wall nonischemic enhancement, often lateral, not following a coronary territory.",
+    "rationale": "The MRI pattern is useful for acute myocarditis but cannot establish a lymphocytic histotype. Use one acute myocarditis page that teaches CMR edema and nonischemic enhancement, with biopsy subtypes in the differential.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8871324/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 69,
+    "proposed_id": "multisystem_inflammatory_syndrome_in_children",
+    "canonical_name": "Multisystem Inflammatory Syndrome in Children",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Echo shows transient ventricular dysfunction with possible coronary dilation/aneurysm and pericardial effusion after postinfectious illness.",
+    "rationale": "Distinct shock-predominant postinfectious pediatric syndrome with an echo anchor; Kawasaki disease remains a separate syndrome.",
+    "existing_parent_ids": [
+      "kawasaki_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/9011620/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 70,
+    "proposed_id": "nonbacterial_thrombotic_endocarditis",
+    "canonical_name": "Nonbacterial Thrombotic Endocarditis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "TEE shows broad-based small valve vegetations without leaflet destruction or abscess, in a patient with systemic emboli.",
+    "rationale": "Sterile thrombotic vegetations have a distinct clinical context and imaging contrast with destructive infective endocarditis.",
+    "existing_parent_ids": [
+      "infective_endocarditis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10532023/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "index": 71,
+    "proposed_id": "generalized_arterial_calcification_of_infancy",
+    "canonical_name": "Generalized Arterial Calcification of Infancy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Plain films/CT show extensive arterial-wall calcification in an infant, often involving aorta and coronary arteries.",
+    "rationale": "Rare disease with a highly distinctive age-specific radiographic pattern, unlike valve calcification of older adults.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11211934/"
+    ],
+    "evidence_status": "supported"
+  }
+]

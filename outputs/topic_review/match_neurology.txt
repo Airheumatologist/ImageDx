@@ -1,0 +1,275 @@
+D1159 Acute ischemic stroke
+Hyperdense artery, territorial diffusion restriction, and a vessel cutoff on CT angiography. This is the counterpart of intracerebral hemorrhage, which is already listed.
+MATCHES: 0.68 ocular_ischemic_syndrome (Ocular ischemic syndrome) | 0.57 acute_mesenteric_ischemia (Acute mesenteric ischemia) | 0.57 volkmann_ischemic_contracture (Volkmann Ischemic Contracture)
+
+D1161 Aneurysmal subarachnoid hemorrhage
+Basal star-shaped hyperdensity and a saccular aneurysm on vascular imaging.
+MATCHES: 0.57 cephalohematoma (Cephalohematoma) | 0.51 intracerebral_hemorrhage (Intracerebral hemorrhage) | 0.50 hartnup_disease (Hartnup Disease)
+
+D1163 Spinal epidural abscess
+An enhancing epidural collection compressing the cord, with fever and a neurologic deficit. Brain abscess is already in Neurology.
+MATCHES: 0.72 nasal_septal_abscess (Nasal Septal Abscess) | 0.67 anorectal_abscess_fistula (Anorectal Abscess and Fistula-in-Ano) | 0.65 periapical_abscess (Periapical (Dental) Abscess)
+
+D1165 Spinal cord infarction
+Owl-eye anterior horns and a pencil-like anterior cord signal. Fibrocartilaginous embolism and surfer’s myelopathy belong inside this topic.
+MATCHES: 0.74 renal_infarction (Renal Infarction) | 0.71 omphalitis (Omphalitis) | 0.70 paronychia (Paronychia)
+
+D1167 Cauda equina syndrome
+A tight central canal, usually from a large disc, with saddle sensory loss.
+MATCHES: 0.75 cryopyrin_associated_periodic_syndromes (Cryopyrin-Associated Periodic Syndromes (CAPS / NOMID)) | 0.74 caudal_regression_syndrome (Caudal Regression Syndrome (Sacral Agenesis)) | 0.73 cowden_syndrome (Cowden Syndrome)
+
+D1169 Guillain-Barré syndrome
+Enhancing cauda equina nerve roots and facial diplegia. Miller Fisher syndrome is already separate.
+MATCHES: 0.73 prune_belly_syndrome (Prune Belly Syndrome) | 0.72 acute_colonic_pseudo_obstruction (Acute Colonic Pseudo-Obstruction) | 0.71 duane_retraction_syndrome (Duane Retraction Syndrome)
+
+D1172 Osmotic demyelination syndrome
+Trident-shaped central pontine signal, with or without extrapontine basal ganglia.
+MATCHES: 0.69 central_centrifugal_cicatricial_alopecia (Central Centrifugal Cicatricial Alopecia) | 0.68 pseudoexfoliation_syndrome (Pseudoexfoliation Syndrome) | 0.67 kleefstra_syndrome (Kleefstra Syndrome)
+
+D1174 Carbon monoxide poisoning
+Bilateral globus pallidus lesions. Methanol poisoning is already listed.
+MATCHES: 0.70 lead_poisoning (Lead Poisoning (Plumbism)) | 0.61 chronic_arsenic_poisoning (Chronic Arsenic Poisoning (Arsenicosis)) | 0.60 methanol_poisoning (Methanol poisoning)
+
+D1176 Infratentorial superficial siderosis
+Hemosiderin coating the cerebellum, brainstem, and cranial nerves, with ataxia and hearing loss. Cortical superficial siderosis is already inside cerebral amyloid angiopathy.
+MATCHES: 0.60 porokeratosis (Porokeratosis) | 0.58 superficial_thrombophlebitis (Superficial Thrombophlebitis) | 0.57 caffey_disease (Caffey Disease)
+
+D1178 Baló concentric sclerosis
+Concentric rings of demyelination. Neuromyelitis optica and MOGAD are already separate from multiple sclerosis.
+MATCHES: 0.63 lichen_sclerosus (Lichen Sclerosus) | 0.63 otosclerosis (Otosclerosis) | 0.62 infantile_hypertrophic_pyloric_stenosis (Infantile Hypertrophic Pyloric Stenosis)
+
+D1180 CLIPPERS
+Pepper-like punctate enhancement in the pons.
+MATCHES: 0.55 hand_foot_syndrome (Hand-Foot Syndrome (Chemotherapy-Induced Palmar-Plantar Erythrodysesthesia)) | 0.55 congenital_rubella_syndrome (Congenital Rubella Syndrome) | 0.55 pierre_robin_sequence (Pierre Robin Sequence)
+
+D1182 Marchiafava-Bignami disease
+Sandwich-sign signal in the corpus callosum.
+MATCHES: 0.64 cleidocranial_dysplasia (Cleidocranial Dysplasia) | 0.63 budd_chiari_syndrome (Budd-Chiari Syndrome (Hepatic Venous Outflow Tract Obstruction)) | 0.63 paroxysmal_nocturnal_hemoglobinuria (Paroxysmal Nocturnal Hemoglobinuria)
+
+D1184 Metronidazole-induced encephalopathy
+Symmetric dentate-nucleus signal.
+MATCHES: 0.68 wernicke_encephalopathy (Wernicke Encephalopathy) | 0.63 levamisole_vasculopathy (Levamisole-Induced Vasculopathy) | 0.63 aicardi_goutieres_syndrome (Aicardi-Goutières Syndrome)
+
+D1186 Neuronal intranuclear inclusion disease
+A ribbon of diffusion restriction along the corticomedullary junction, confirmed on skin biopsy.
+MATCHES: 0.67 congenital_cytomegalovirus (Congenital Cytomegalovirus Infection) | 0.61 gaucher_disease_type_1 (Gaucher Disease Type 1) | 0.60 chronic_granulomatous_disease (Chronic Granulomatous Disease)
+
+D1188 Biotin-thiamine-responsive basal ganglia disease
+Symmetric striatal swelling in a child or young adult. It is treatable, so the image changes management.
+MATCHES: 0.54 asherman_syndrome (Asherman Syndrome (Intrauterine Adhesions)) | 0.51 minimal_change_disease (Minimal change disease) | 0.49 chronic_granulomatous_disease (Chronic Granulomatous Disease)
+
+D1190 CARASIL
+Alopecia, leukoencephalopathy, and arc-shaped external-capsule lesions. CADASIL is already listed.
+MATCHES: 0.86 cadasil (CADASIL (Cerebral Autosomal Dominant Arteriopathy with Subcortical Infarcts and Leukoencephalopathy)) | 0.71 ascariasis (Ascariasis) | 0.67 anal_squamous_cell_carcinoma (Anal Squamous Cell Carcinoma and Anal Intraepithelial Neoplasia)
+
+D1192 Japanese encephalitis
+Bilateral thalamic signal.
+MATCHES: 0.79 rabies (Rabies) | 0.73 rasmussen_encephalitis (Rasmussen Encephalitis) | 0.72 vogt_koyanagi_harada_disease (Vogt-Koyanagi-Harada Disease)
+
+D1194 Listeria rhombencephalitis
+Brainstem signal or abscess with cranial-nerve signs.
+MATCHES: 0.69 lgi1_antibody_encephalitis (LGI1-Antibody Encephalitis) | 0.68 vogt_koyanagi_harada_disease (Vogt-Koyanagi-Harada Disease) | 0.68 acute_disseminated_encephalomyelitis (Acute Disseminated Encephalomyelitis)
+
+D1196 Acute flaccid myelitis
+Anterior-horn signal in a child. Poliomyelitis is already under Infectious Diseases.
+MATCHES: 0.67 dacryocystitis (Dacryocystitis and Nasolacrimal Duct Obstruction) | 0.67 acute_mastoiditis (Acute Mastoiditis) | 0.62 poliomyelitis (Poliomyelitis)
+
+D1198 Subacute sclerosing panencephalitis
+Asymmetric white-matter disease after measles, which is already listed as the acute infection.
+MATCHES: 0.66 acute_disseminated_encephalomyelitis (Acute Disseminated Encephalomyelitis) | 0.66 acute_necrotizing_pancreatitis (Acute Necrotizing Pancreatitis with Retroperitoneal Hemorrhage) | 0.65 leigh_syndrome (Leigh Syndrome)
+
+D1201 Kernicterus
+Globus pallidus and subthalamic signal, with athetoid cerebral palsy and enamel dysplasia.
+MATCHES: 0.64 becker_nevus (Becker Nevus (Becker Melanosis)) | 0.62 epidermal_nevus (Epidermal Nevus) | 0.61 meniscal_tear (Meniscal Tear)
+
+D1203 Germinal-matrix hemorrhage
+Cranial-ultrasound grades in a premature infant.
+MATCHES: 0.61 angina_bullosa_hemorrhagica (Angina bullosa hemorrhagica) | 0.60 intracerebral_hemorrhage (Intracerebral hemorrhage) | 0.58 cephalohematoma (Cephalohematoma)
+
+D1205 Periventricular leukomalacia
+Scalloped ventricles and periventricular volume loss with spastic diplegia. Neonatal hypoxic-ischemic encephalopathy is already in Pediatrics.
+MATCHES: 0.60 persistent_cloaca (Persistent cloaca) | 0.60 complete_atrioventricular_septal_defect (Complete Atrioventricular Septal Defect) | 0.60 proliferative_verrucous_leukoplakia (Proliferative Verrucous Leukoplakia)
+
+D1207 Polymicrogyria
+Pebbled cortex. Bilateral perisylvian polymicrogyria is the classic subtype, with pseudobulbar palsy.
+MATCHES: 0.64 hutchinson_gilford_progeria_syndrome (Hutchinson-Gilford Progeria Syndrome) | 0.64 microtia (Microtia and Congenital Aural Atresia) | 0.58 accessory_breast_tissue (Accessory Breast Tissue and Polythelia)
+
+D1209 Periventricular nodular heterotopia
+Gray-matter nodules along the ventricles. Subcortical band heterotopia is already listed.
+MATCHES: 0.64 subcortical_band_heterotopia (Subcortical band heterotopia) | 0.55 testicular_germ_cell_tumor (Testicular Germ Cell Tumor) | 0.54 multinodular_goiter (Multinodular Goiter)
+
+D1211 Ependymoma
+A plastic tumor on the floor of the fourth ventricle. Myxopapillary ependymoma of the filum is a site of the same tumor.
+MATCHES: 0.64 pelvic_endometriosis (Pelvic Endometriosis) | 0.57 conradi_hunermann_happle_syndrome (Conradi-Hünermann-Happle Syndrome) | 0.57 poems_syndrome (POEMS Syndrome)
+
+D1213 Oligodendroglioma
+A calcified, gyriform cortical tumor.
+MATCHES: 0.59 entropion_ectropion (Entropion and Ectropion) | 0.58 colorectal_polyps_adenocarcinoma (Colorectal Polyps and Colorectal Adenocarcinoma) | 0.58 chondroblastoma (Chondroblastoma)
+
+D1215 Ganglioglioma and dysembryoplastic neuroepithelial tumor
+Temporal epilepsy tumors: cyst with a mural nodule, or a bubbly cortical lesion.
+MATCHES: 0.52 angiolymphoid_hyperplasia_eosinophilia (Angiolymphoid Hyperplasia with Eosinophilia) | 0.50 gastrointestinal_angiodysplasia (Gastrointestinal Angiodysplasia) | 0.48 primary_open_angle_glaucoma (Primary Open-Angle Glaucoma)
+
+D1217 Neuralgic amyotrophy (Parsonage-Turner)
+Scapular winging and patchy shoulder-girdle muscle edema or atrophy.
+MATCHES: 0.79 hirayama_disease (Hirayama Disease (Juvenile Monomelic Amyotrophy)) | 0.67 age_related_macular_degeneration (Age-Related Macular Degeneration) | 0.63 nemaline_myopathy (Nemaline Myopathy)
+
+D1219 Frontotemporal dementia
+Knife-edge frontal and anterior temporal atrophy.
+MATCHES: 0.56 giant_cell_arteritis (Giant Cell Arteritis) | 0.56 encephalocele (Encephalocele) | 0.52 snakebite_envenomation (Snakebite Envenomation)
+
+D1224 Heroin pyrolysate leukoencephalopathy (“chasing the dragon”)
+symmetric cerebellar white-matter injury.
+MATCHES: 0.68 posterior_reversible_encephalopathy_syndrome (Posterior Reversible Encephalopathy Syndrome (PRES)) | 0.64 progressive_multifocal_leukoencephalopathy (Progressive multifocal leukoencephalopathy) | 0.63 wernicke_encephalopathy (Wernicke Encephalopathy)
+
+D1226 Copper-deficiency myeloneuropathy and nitrous-oxide myeloneuropathy
+the inverted-V dorsal-column sign. Subacute combined degeneration from B12 deficiency is already listed; these are the two mimics physicians miss.
+MATCHES: 0.44 hereditary_angioedema (Hereditary Angioedema) | 0.43 pmm2_cdg (PMM2-CDG (Congenital Disorder of Glycosylation Type Ia)) | 0.42 neurocysticercosis (Neurocysticercosis)
+
+D1228 Adult-onset leukoencephalopathy with axonal spheroids (CSF1R / ALSP)
+white-matter disease with persistent diffusion restriction and calcifications.
+MATCHES: 0.63 megalencephalic_leukoencephalopathy_with_subcortical_cysts (Megalencephalic leukoencephalopathy with subcortical cysts) | 0.52 progressive_multifocal_leukoencephalopathy (Progressive multifocal leukoencephalopathy) | 0.51 posterior_reversible_encephalopathy_syndrome (Posterior Reversible Encephalopathy Syndrome (PRES))
+
+D1230 Nasu-Hakola disease
+frontal leukoencephalopathy plus painful bone cysts.
+MATCHES: 0.73 prurigo_pigmentosa (Prurigo Pigmentosa) | 0.69 arrhythmogenic_right_ventricular_cardiomyopathy (Arrhythmogenic Right Ventricular Cardiomyopathy (ARVC / Naxos Disease)) | 0.69 periductal_mastitis (Periductal Mastitis (Zuska Disease))
+
+D1232 Retinal vasculopathy with cerebral leukoencephalopathy (RVCL-S)
+tumor-like white-matter lesions with a rim of edema. Aicardi-Goutières syndrome is the other TREX1 disease and is already listed.
+MATCHES: 0.61 cadasil (CADASIL (Cerebral Autosomal Dominant Arteriopathy with Subcortical Infarcts and Leukoencephalopathy)) | 0.59 posterior_reversible_encephalopathy_syndrome (Posterior Reversible Encephalopathy Syndrome (PRES)) | 0.58 progressive_multifocal_leukoencephalopathy (Progressive multifocal leukoencephalopathy)
+
+D1234 Beta-propeller protein-associated neurodegeneration (BPAN)
+T1 hyperintense halo in the substantia nigra.
+MATCHES: 0.72 pantothenate_kinase_associated_neurodegeneration (Pantothenate Kinase-Associated Neurodegeneration) | 0.58 retinitis_pigmentosa (Retinitis Pigmentosa) | 0.58 age_related_macular_degeneration (Age-Related Macular Degeneration)
+
+D1236 Alpers-Huttenlocher syndrome
+occipital and thalamic injury with explosive liver failure.
+MATCHES: 0.71 charge_syndrome (CHARGE Syndrome) | 0.68 leriche_syndrome (Leriche Syndrome (Aortoiliac Occlusive Disease)) | 0.68 beals_syndrome (Beals Syndrome)
+
+D1238 Acute necrotizing encephalopathy
+bilateral thalamic necrosis after a viral illness.
+MATCHES: 0.88 leigh_syndrome (Leigh Syndrome) | 0.74 acute_esophageal_necrosis (Acute Esophageal Necrosis (Black Esophagus)) | 0.72 acute_necrotizing_pancreatitis (Acute Necrotizing Pancreatitis with Retroperitoneal Hemorrhage)
+
+D1240 West Nile neuroinvasive disease
+anterior-horn or basal-ganglia signal.
+MATCHES: 0.65 ebstein_anomaly (Ebstein Anomaly) | 0.61 polycythemia_vera (Polycythemia Vera) | 0.61 amyotrophic_lateral_sclerosis (Amyotrophic Lateral Sclerosis)
+
+D1242 Enterovirus 71 brainstem encephalitis
+dorsal pons and dentate signal plus the hand-foot-mouth rash.
+MATCHES: 0.62 anti_nmda_receptor_encephalitis (Anti-NMDA Receptor Encephalitis) | 0.62 rabies (Rabies) | 0.61 acute_disseminated_encephalomyelitis (Acute Disseminated Encephalomyelitis)
+
+D1244 Primary amebic meningoencephalitis
+Naegleria trophozoite and late necrosis of the frontal base.
+MATCHES: 0.70 cryptococcosis (Disseminated Cryptococcosis and Cryptococcal Meningitis) | 0.68 rabies (Rabies) | 0.68 anti_nmda_receptor_encephalitis (Anti-NMDA Receptor Encephalitis)
+
+D1246 Idiopathic hypertrophic pachymeningitis
+smooth dural thickening and enhancement. IgG4-related disease is listed, and its images are pancreas, orbit, and retroperitoneum.
+MATCHES: 0.70 hypertrophic_obstructive_cardiomyopathy (Hypertrophic Obstructive Cardiomyopathy) | 0.69 pachydermoperiostosis (Pachydermoperiostosis (Primary Hypertrophic Osteoarthropathy)) | 0.64 hypereosinophilic_syndrome (Idiopathic hypereosinophilic syndrome)
+
+D1248 Autoimmune GFAP astrocytopathy
+radial perivascular enhancement. Alexander disease is the genetic GFAP disorder and is already listed.
+MATCHES: 0.71 sjogren_syndrome (Sjögren's Syndrome) | 0.67 immune_mediated_necrotizing_myopathy (Immune-Mediated Necrotizing Myopathy) | 0.60 immune_thrombocytopenia (Immune Thrombocytopenia)
+
+D1250 Intravascular lymphoma
+infarcts of different ages. Primary CNS lymphoma is already listed and looks different.
+MATCHES: 0.81 intravascular_large_b_cell_lymphoma (Intravascular large B-cell lymphoma) | 0.72 follicular_lymphoma (Follicular Lymphoma) | 0.70 uveal_melanoma (Uveal Melanoma)
+
+D1252 Dyke-Davidoff-Masson syndrome
+cerebral hemiatrophy with calvarial thickening and an enlarged sinus.
+MATCHES: 0.67 stiff_person_syndrome (Stiff-Person Syndrome) | 0.63 edwards_syndrome (Edwards Syndrome (Trisomy 18)) | 0.63 sneddon_syndrome (Sneddon Syndrome)
+
+D1254 COL4A1-related disorder
+porencephaly, leukoencephalopathy, and cataract.
+MATCHES: 0.80 papillorenal_syndrome (Papillorenal Syndrome) | 0.80 charge_syndrome (CHARGE Syndrome) | 0.75 myh9_related_disorder (MYH9-Related Disorder (May-Hegglin Anomaly))
+
+D1256 Hydranencephaly
+fluid-filled hemispheres with a preserved falx and posterior fossa.
+MATCHES: 0.85 anencephaly (Anencephaly) | 0.76 holoprosencephaly (Holoprosencephaly) | 0.69 schizencephaly (Schizencephaly)
+
+D1258 Horizontal gaze palsy with progressive scoliosis
+split-pons sign, butterfly medulla, and scoliosis.
+MATCHES: 0.52 lupus_miliaris_disseminatus_faciei (Lupus Miliaris Disseminatus Faciei) | 0.51 ssc (Systemic sclerosis) | 0.47 adolescent_idiopathic_scoliosis (Adolescent Idiopathic Scoliosis)
+
+D1260 Rhombencephalosynapsis
+fused cerebellar hemispheres. Gomez-Lopez-Hernandez syndrome adds parietal alopecia.
+MATCHES: 0.62 apert_syndrome (Apert Syndrome) | 0.61 holoprosencephaly (Holoprosencephaly) | 0.60 rabies (Rabies)
+
+D1262 Pontocerebellar hypoplasia
+a flat pons and dragonfly cerebellum.
+MATCHES: 0.71 multiple_system_atrophy (Multiple System Atrophy) | 0.68 spinocerebellar_ataxia_type_3 (Spinocerebellar Ataxia Type 3) | 0.65 focal_dermal_hypoplasia (Focal Dermal Hypoplasia (Goltz Syndrome))
+
+D1264 Merosin-deficient congenital muscular dystrophy
+diffuse white-matter signal with hypotonia and high creatine kinase. Walker-Warburg syndrome already covers the severe cobblestone end.
+MATCHES: 0.78 ullrich_congenital_muscular_dystrophy (Ullrich Congenital Muscular Dystrophy) | 0.68 duchenne_muscular_dystrophy (Duchenne Muscular Dystrophy) | 0.64 charcot_marie_tooth_disease_type_1a (Charcot-Marie-Tooth Disease Type 1A)
+
+D1266 Idiopathic spinal cord herniation
+the cord kinked through a ventral dural defect.
+MATCHES: 0.69 idiopathic_intracranial_hypertension (Idiopathic Intracranial Hypertension (Papilledema)) | 0.61 esophageal_achalasia (Esophageal Achalasia and Megaesophagus) | 0.61 idiopathic_orbital_inflammation (Idiopathic orbital inflammation)
+
+D1268 Spinal arachnoid web
+the scalpel sign.
+MATCHES: 0.56 sarcoidosis (Sarcoidosis) | 0.55 sparganosis (Sparganosis) | 0.53 cutaneous_endometriosis (Cutaneous Endometriosis)
+
+D1270 Intracranial epidermoid
+a cerebellopontine-angle mass bright on diffusion imaging. The skin epidermal inclusion cyst is a different disease.
+MATCHES: 0.68 intracranial_meningioma (Intracranial Meningioma) | 0.67 spontaneous_intracranial_hypotension (Spontaneous Intracranial Hypotension) | 0.62 idiopathic_intracranial_hypertension (Idiopathic Intracranial Hypertension (Papilledema))
+
+D1272 Intracranial dermoid
+fat and droplet rupture in the cisterns.
+MATCHES: 0.68 intracranial_meningioma (Intracranial Meningioma) | 0.67 spontaneous_intracranial_hypotension (Spontaneous Intracranial Hypotension) | 0.64 cerebral_cavernous_malformation (Cerebral Cavernous Malformation)
+
+D1274 Central neurocytoma
+a bubbly mass attached to the septum pellucidum.
+MATCHES: 0.73 renal_oncocytoma (Renal Oncocytoma) | 0.72 chondrosarcoma (Chondrosarcoma) | 0.71 neurofibromatosis_type_2 (Neurofibromatosis Type 2)
+
+D1276 Choroid plexus papilloma
+a frond-like ventricular mass in a young child with hydrocephalus.
+MATCHES: 0.67 uveal_melanoma (Uveal Melanoma) | 0.65 sinonasal_inverted_papilloma (Sinonasal Inverted Papilloma) | 0.65 oral_squamous_papilloma (Oral squamous papilloma)
+
+D1278 Pleomorphic xanthoastrocytoma
+a superficial cyst and nodule in a young person.
+MATCHES: 0.70 pleomorphic_adenoma (Pleomorphic Adenoma (Parotid)) | 0.67 pilocytic_astrocytoma (Pilocytic Astrocytoma) | 0.58 lymphatic_filariasis (Lymphatic Filariasis)
+
+D1281 SPG11 hereditary spastic paraplegia
+a thin corpus callosum. Other hereditary spastic paraplegias often have a normal MRI, so they are a weak standalone topic.
+MATCHES: 0.56 amelogenesis_imperfecta (Amelogenesis Imperfecta) | 0.56 hereditary_pancreatitis (Hereditary Pancreatitis (PRSS1 / SPINK1-Associated Chronic Pancreatitis)) | 0.54 diamond_blackfan_anemia (Diamond-Blackfan Anemia)
+
+D1283 Becker muscular dystrophy
+calf enlargement in someone who is still walking. Duchenne is already listed.
+MATCHES: 0.79 duchenne_muscular_dystrophy (Duchenne Muscular Dystrophy) | 0.77 emery_dreifuss_muscular_dystrophy (Emery-Dreifuss Muscular Dystrophy) | 0.71 facioscapulohumeral_muscular_dystrophy (Facioscapulohumeral Muscular Dystrophy)
+
+D1285 Dysferlinopathy (Miyoshi myopathy)
+selective calf atrophy. Limb-girdle muscular dystrophy as a whole is an umbrella and should stay out.
+MATCHES: 0.69 neuroferritinopathy (Neuroferritinopathy) | 0.65 nemaline_myopathy (Nemaline Myopathy) | 0.63 purtscher_retinopathy (Purtscher Retinopathy)
+
+D1287 X-linked myotubular myopathy
+ptosis, a long face, ophthalmoplegia, and central nuclei on biopsy.
+MATCHES: 0.65 congenital_zika_syndrome (Congenital Zika Syndrome) | 0.59 nemaline_myopathy (Nemaline Myopathy) | 0.58 livedoid_vasculopathy (Livedoid Vasculopathy (Atrophie Blanche))
+
+D1289 Central core disease
+cores on oxidative stains, hypotonia, and malignant-hyperthermia risk. Nemaline myopathy is already listed.
+MATCHES: 0.73 eales_disease (Eales Disease) | 0.71 celiac_disease (Celiac Disease (Gluten-Sensitive Enteropathy) and Dermatitis Herpetiformis) | 0.71 norrie_disease (Norrie disease)
+
+D1291 Hereditary neuropathy with liability to pressure palsies
+tomacula and recurrent pressure palsies. CMT1A is already listed.
+MATCHES: 0.56 hereditary_elliptocytosis (Hereditary Elliptocytosis and Pyropoikilocytosis) | 0.55 charcot_marie_tooth_disease_type_1a (Charcot-Marie-Tooth Disease Type 1A) | 0.52 hereditary_spherocytosis (Hereditary Spherocytosis)
+
+D1293 Multifocal motor neuropathy
+asymmetric hand wasting and enlarged nerves on ultrasound.
+MATCHES: 0.61 giant_axonal_neuropathy (Giant Axonal Neuropathy) | 0.61 hirayama_disease (Hirayama Disease (Juvenile Monomelic Amyotrophy)) | 0.58 nonarteritic_anterior_ischemic_optic_neuropathy (Nonarteritic Anterior Ischemic Optic Neuropathy (NAION))
+
+D1295 Lafora disease
+PAS-positive inclusions in sweat-duct cells.
+MATCHES: 0.81 spinocerebellar_ataxia_type_3 (Spinocerebellar Ataxia Type 3) | 0.77 tularemia (Tularemia) | 0.76 linear_iga_bullous_dermatosis (Linear IgA Bullous Dermatosis)
+
+D1297 MERRF
+ragged-red fibers and lipomas. MELAS and Kearns-Sayre are already listed.
+MATCHES: 0.50 erythema_gyratum_repens (Erythema Gyratum Repens) | 0.50 eosinophilic_pustular_folliculitis (Eosinophilic Pustular Folliculitis (Ofuji Disease)) | 0.50 primary_myelofibrosis (Primary Myelofibrosis)
+
+D1299 Infantile neuroaxonal dystrophy (PLA2G6)
+cerebellar atrophy. PKAN is already listed.
+MATCHES: 0.65 corneal_stromal_dystrophies (Corneal Stromal Dystrophies (Granular, Lattice, Macular)) | 0.64 spinal_muscular_atrophy (Spinal Muscular Atrophy) | 0.64 alexander_disease (Alexander Disease)
+
+D1301 Familial dysautonomia (Riley-Day)
+absent overflow tears and a smooth tongue. Congenital insensitivity to pain with anhidrosis is already listed.
+MATCHES: 0.68 familial_dysbetalipoproteinemia (Familial Dysbetalipoproteinemia (Type III Hyperlipoproteinemia)) | 0.63 cardiac_myxoma_carney_complex (Cardiac Myxoma and Carney Complex) | 0.62 familial_hypercholesterolemia (Familial Hypercholesterolemia)

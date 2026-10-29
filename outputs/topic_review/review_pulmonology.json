@@ -1,0 +1,1024 @@
+[
+  {
+    "section": "Pulmonology",
+    "proposed_id": "asbestosis",
+    "canonical_name": "Asbestosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "HRCT: basal subpleural reticulation, parenchymal bands, and/or honeycombing with pleural plaques; early disease may show subpleural dots/lines.",
+    "rationale": "Strong exposure-linked fibrosis pattern. Keep distinct findings as a unified asbestos-related thoracic disease topic with pleural plaque and rounded-atelectasis subsections.",
+    "existing_parent_ids": [
+      "malignant_pleural_mesothelioma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10400370/",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12070196/"
+    ],
+    "uid": "D1689",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "benign_asbestos_pleural_disease",
+    "canonical_name": "Benign Asbestos Pleural Disease",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows bilateral pleural plaques, especially along posterolateral chest wall and diaphragmatic pleura; plaques may be calcified.",
+    "rationale": "Highly imageable exposure effect, best grouped with asbestosis and rounded atelectasis in one asbestos-related thoracic disease topic.",
+    "existing_parent_ids": [
+      "malignant_pleural_mesothelioma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12070196/"
+    ],
+    "uid": "D1691",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "rounded_atelectasis",
+    "canonical_name": "Rounded Atelectasis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Pleural-based rounded mass adjacent to thickened pleura, with converging bronchovascular structures curving into the lesion (comet-tail sign).",
+    "rationale": "Memorable mass mimic in asbestos-related pleural disease; include as a subsection in unified asbestos-related thoracic disease page.",
+    "existing_parent_ids": [
+      "malignant_pleural_mesothelioma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10400370/",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12070196/"
+    ],
+    "uid": "D1693",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "chronic_thromboembolic_pulmonary_hypertension",
+    "canonical_name": "Chronic Thromboembolic Pulmonary Hypertension",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "V/Q scan shows segmental mismatched perfusion defects; CTPA shows eccentric organized thrombus, webs/bands, pouch defects, mosaic perfusion, and enlarged bronchial arteries.",
+    "rationale": "Distinct chronic organized vascular disease from acute PE, with treatable pulmonary hypertension and diagnostic imaging criteria.",
+    "existing_parent_ids": [
+      "pulmonary_embolism"
+    ],
+    "source_urls": [
+      "https://publications.ersnet.org/content/erj/61/1/2200879",
+      "https://publications.ersnet.org/content/erj/57/6/2002828"
+    ],
+    "uid": "D1695",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "amiodarone_pulmonary_toxicity",
+    "canonical_name": "Amiodarone Pulmonary Toxicity",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "HRCT may show peripheral ground-glass opacity or consolidation; high-attenuation lung opacities and high-attenuation liver/spleen support iodine-rich drug accumulation.",
+    "rationale": "Distinct medication-associated lung injury pattern with a potentially useful attenuation clue.",
+    "existing_parent_ids": [
+      "radiation_induced_lung_injury"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC2687560/"
+    ],
+    "uid": "D1703",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_talcosis",
+    "canonical_name": "Pulmonary Talcosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT after intravenous injection of crushed tablets may show centrilobular micronodules/tree-in-bud pattern, sometimes high attenuation, with upper-lobe/costophrenic sparing.",
+    "rationale": "Distinct particulate exposure with memorable distribution and vascular/centrilobular imaging; separate from silicosis and coal pneumoconiosis.",
+    "existing_parent_ids": [
+      "silicosis_and_coal_workers_pneumoconiosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7337224/",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6032555/"
+    ],
+    "uid": "D1705",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "fat_embolism_syndrome",
+    "canonical_name": "Fat Embolism Syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "After long-bone injury, conjunctival/axillary petechiae; chest CT may show diffuse or patchy ground-glass opacity, septal thickening, and centrilobular nodules.",
+    "rationale": "Time-sensitive trauma syndrome with a characteristic clinical petechial distribution plus pulmonary imaging findings.",
+    "existing_parent_ids": [
+      "pulmonary_embolism"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11046538/"
+    ],
+    "uid": "D1707",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "idiopathic_nonspecific_interstitial_pneumonia",
+    "canonical_name": "Idiopathic Nonspecific Interstitial Pneumonia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "HRCT shows lower-lung-predominant ground-glass opacity or fine reticulation with relative subpleural sparing; traction bronchiectasis if fibrotic.",
+    "rationale": "Subpleural sparing is a useful imaging pattern distinguishing NSIP from UIP, though secondary causes must be considered.",
+    "existing_parent_ids": [
+      "idiopathic_pulmonary_fibrosis"
+    ],
+    "source_urls": [
+      "https://publications.ersnet.org/content/erj/66/6/2500158"
+    ],
+    "uid": "D1710",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "alveolar_macrophage_pneumonia",
+    "canonical_name": "Alveolar Macrophage Pneumonia (formerly Desquamative Interstitial Pneumonia)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "HRCT typically shows diffuse/basal ground-glass opacity in a smoker, sometimes with subpleural sparing and emphysema.",
+    "rationale": "Use current ERS/ATS 2025 term “alveolar macrophage pneumonia” (AMP); preserve DIP as a former-name synonym. Radiology and smoking context support a visual topic.",
+    "existing_parent_ids": [
+      "pulmonary_langerhans_cell_histiocytosis"
+    ],
+    "source_urls": [
+      "https://publications.ersnet.org/content/erj/66/6/2500158"
+    ],
+    "uid": "D1712",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "combined_pulmonary_fibrosis_and_emphysema",
+    "canonical_name": "Combined Pulmonary Fibrosis and Emphysema",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "HRCT shows upper-lobe centrilobular/paraseptal emphysema with lower-lobe subpleural fibrosis/honeycombing in the same patient.",
+    "rationale": "Distinct mixed pattern with physiologic consequences and radiographic contrast across lung zones.",
+    "existing_parent_ids": [
+      "idiopathic_pulmonary_fibrosis",
+      "emphysema"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7615200/"
+    ],
+    "uid": "D1714",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "constrictive_bronchiolitis",
+    "canonical_name": "Constrictive Bronchiolitis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Expiratory HRCT shows patchy lobular air trapping/mosaic attenuation, sometimes with bronchiectasis and bronchial-wall thickening.",
+    "rationale": "Distinct small-airway disease and bilateral counterpart to the unilateral postinfectious Swyer–James pattern.",
+    "existing_parent_ids": [
+      "swyer_james_macleod_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC2948389/"
+    ],
+    "uid": "D1716",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "diffuse_idiopathic_pulmonary_neuroendocrine_cell_hyperplasia",
+    "canonical_name": "Diffuse Idiopathic Pulmonary Neuroendocrine Cell Hyperplasia (DIPNECH)",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "HRCT shows diffuse mosaic attenuation/air trapping with multiple small centrilobular nodules and occasional tumorlets or carcinoids.",
+    "rationale": "Distinct airway-neuroendocrine disorder with a recognizable combined CT pattern.",
+    "existing_parent_ids": [
+      "bronchial_carcinoid_tumor"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC13405576/"
+    ],
+    "uid": "D1718",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "foreign_body_aspiration",
+    "canonical_name": "Foreign Body Aspiration",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Unilateral air trapping/hyperinflation or atelectasis on expiratory chest radiograph; object may be directly visualized at bronchoscopy.",
+    "rationale": "Common, actionable pediatric airway emergency with clinical and endoscopic teaching value.",
+    "existing_parent_ids": [
+      "congenital_lobar_overinflation"
+    ],
+    "source_urls": [
+      "https://www.rch.org.au/clinicalguide/guideline_index/Foreign_body_inhalation/"
+    ],
+    "uid": "D1721",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pleural_empyema",
+    "canonical_name": "Pleural Empyema",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Contrast CT shows loculated lenticular pleural fluid with enhancing visceral and parietal pleura (split-pleura sign); necessitans extends through chest wall.",
+    "rationale": "Broaden existing thoracic empyema necessitans page to Pleural Empyema (including necessitans), preserving the existing sign and representing extension as a complication.",
+    "existing_parent_ids": [
+      "thoracic_empyema_necessitans"
+    ],
+    "source_urls": [
+      "https://publications.ersnet.org/content/erj/61/2/2201062"
+    ],
+    "uid": "D1723",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "williams_campbell_syndrome",
+    "canonical_name": "Williams-Campbell Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Inspiratory/expiratory CT shows peripheral cystic bronchiectasis from deficient cartilaginous support in fourth- to sixth-order bronchi, with dynamic ballooning/collapse.",
+    "rationale": "Rare congenital bronchiectasis phenotype; imageable but the classic description is based on limited cases.",
+    "existing_parent_ids": [
+      "bronchiectasis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4193147/"
+    ],
+    "uid": "D1725",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "bronchial_atresia",
+    "canonical_name": "Bronchial Atresia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows a blind-ending bronchus with a mucocele/bronchocele and adjacent segmental hyperinflation/air trapping.",
+    "rationale": "Characteristic paired mucocele plus hyperinflation is highly teachable and distinct from other congenital lung malformations.",
+    "existing_parent_ids": [
+      "congenital_pulmonary_airway_malformation"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7863713/"
+    ],
+    "uid": "D1727",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "bronchogenic_cyst",
+    "canonical_name": "Bronchogenic Cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Smooth, sharply marginated water-attenuation mediastinal (often subcarinal) or intrapulmonary cyst on CT; proteinaceous contents may increase attenuation.",
+    "rationale": "Distinct foregut-derived mediastinal lesion and useful cystic-mass differential.",
+    "existing_parent_ids": [
+      "congenital_pulmonary_airway_malformation"
+    ],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK553873/"
+    ],
+    "uid": "D1729",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_artery_sling",
+    "canonical_name": "Pulmonary Artery Sling",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTA shows left pulmonary artery arising from right pulmonary artery and passing between trachea and esophagus, often with airway compression.",
+    "rationale": "Distinct vascular-airway congenital anomaly with actionable cross-sectional anatomy.",
+    "existing_parent_ids": [
+      "scimitar_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6435093/"
+    ],
+    "uid": "D1731",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "complete_tracheal_rings",
+    "canonical_name": "Complete Tracheal Rings",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Axial CT/bronchoscopy shows a circular O-shaped trachea lacking the posterior membranous wall, often with long-segment stenosis.",
+    "rationale": "Distinct congenital airway morphology; may accompany pulmonary artery sling but should remain an independently describable anomaly.",
+    "existing_parent_ids": [
+      "mounier_kuhn_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6435093/"
+    ],
+    "uid": "D1733",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "neuroendocrine_cell_hyperplasia_of_infancy",
+    "canonical_name": "Neuroendocrine Cell Hyperplasia of Infancy (NEHI)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "HRCT shows geographic ground-glass opacity concentrated in the right middle lobe, lingula, and paramediastinal lung, with air trapping/hyperinflation.",
+    "rationale": "Distinct infant diffuse-lung-disease pattern; diagnosis requires clinical context and careful exclusion of alternatives.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_proteinosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7120961/"
+    ],
+    "uid": "D1735",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pleuropulmonary_blastoma",
+    "canonical_name": "Pleuropulmonary Blastoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Pediatric CT shows a unilateral multicystic or mixed solid-cystic lung mass; solid type may invade pleura/chest wall.",
+    "rationale": "High-stakes pediatric malignancy and key differential for CPAM; separate organ-specific neoplasm.",
+    "existing_parent_ids": [
+      "congenital_pulmonary_airway_malformation"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9813943/"
+    ],
+    "uid": "D1737",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "nodular_pulmonary_amyloidosis",
+    "canonical_name": "Nodular Pulmonary Amyloidosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows one or more peripheral, often slowly growing calcified nodules; cysts may coexist.",
+    "rationale": "Distinct parenchymal amyloid manifestation from existing tracheobronchial amyloidosis; imaging rather than shared pathology justifies separate scope.",
+    "existing_parent_ids": [
+      "tracheobronchial_amyloidosis",
+      "systemic_al_amyloidosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6307644/"
+    ],
+    "uid": "D1740",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "thymoma",
+    "canonical_name": "Thymoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CT shows a well-circumscribed or lobulated anterior mediastinal soft-tissue mass; pleural “drop” implants can indicate dissemination.",
+    "rationale": "A common anterior mediastinal tumor with distinct thoracic anatomy and staging pattern.",
+    "existing_parent_ids": [
+      "primary_lung_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10606219/"
+    ],
+    "uid": "D1742",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "mature_mediastinal_teratoma",
+    "canonical_name": "Mature Mediastinal Teratoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Anterior mediastinal mass with macroscopic fat, fluid, soft tissue, and coarse calcification/teeth; fat-fluid level may be present.",
+    "rationale": "Highly recognizable imaging pattern of a mature mediastinal germ-cell tumor; retain distinct thoracic site from ovarian/testicular teratomas.",
+    "existing_parent_ids": [
+      "primary_lung_carcinoma"
+    ],
+    "source_urls": [
+      "https://pubmed.ncbi.nlm.nih.gov/9308448/"
+    ],
+    "uid": "D1744",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "respiratory_bronchiolitis_interstitial_lung_disease",
+    "canonical_name": "Respiratory Bronchiolitis-Interstitial Lung Disease (RB-ILD)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Smoker with ill-defined upper-lobe centrilobular nodules, patchy ground-glass opacity, bronchial-wall thickening, and often emphysema on HRCT.",
+    "rationale": "A distinct symptomatic smoking-related ILD with an imageable pattern, although it overlaps smoking-related macrophage disorders.",
+    "existing_parent_ids": [
+      "pulmonary_langerhans_cell_histiocytosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11492237/"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 1",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "hard_metal_lung_disease",
+    "canonical_name": "Hard-Metal Lung Disease (Giant Cell Interstitial Pneumonia)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Occupational CT may show ground-glass opacity, centrilobular nodules, mosaic attenuation/air trapping, and fibrosis with traction bronchiectasis.",
+    "rationale": "Distinct cobalt/tungsten exposure-associated ILD; imaging alone is nonspecific, so anchor to occupational history and giant-cell interstitial pneumonia.",
+    "existing_parent_ids": [
+      "silicosis_and_coal_workers_pneumoconiosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11353255/"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 2",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "vaping_associated_lung_injury",
+    "canonical_name": "Vaping-Associated Lung Injury (EVALI)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Chest CT commonly shows bilateral ground-glass opacity with subpleural/lobular sparing, sometimes consolidation or upper-lobe centrilobular nodules.",
+    "rationale": "Current exposure-linked acute lung injury with a recognizable but nonspecific imaging spectrum; preserve exposure-based diagnostic framing.",
+    "existing_parent_ids": [
+      "acute_respiratory_distress_syndrome"
+    ],
+    "source_urls": [
+      "https://journal.chestnet.org/article/S0012-3692%2821%2900862-X/pdf",
+      "https://www.cdc.gov/mmwr/volumes/68/wr/mm6846e2.htm"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 3",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "metastatic_pulmonary_calcification",
+    "canonical_name": "Metastatic Pulmonary Calcification",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows upper-lobe-predominant centrilobular ground-glass nodules or calcified nodules in chronic renal failure/hyperparathyroidism; bone scintigraphy may show diffuse pulmonary uptake.",
+    "rationale": "A radiologically distinctive metabolic complication that is separate from primary alveolar microlithiasis.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_microlithiasis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5586513/"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 4",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "siderosis",
+    "canonical_name": "Siderosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Occupational radiograph/CT may show numerous dense fine nodular opacities from retained iron-containing dust, often with little functional impairment.",
+    "rationale": "One of three named inert-metal pneumoconioses; keep separate candidate records, but they may be presented together in an inert-metal pneumoconiosis section because clinical effects and imaging patterns overlap.",
+    "existing_parent_ids": [
+      "silicosis_and_coal_workers_pneumoconiosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11617341/"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 5a",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "stannosis",
+    "canonical_name": "Stannosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Occupational radiograph/CT may show numerous dense fine nodular opacities from retained tin-containing dust, often with little functional impairment.",
+    "rationale": "One of three named inert-metal pneumoconioses; keep separate candidate records, but they may be presented together in an inert-metal pneumoconiosis section because clinical effects and imaging patterns overlap.",
+    "existing_parent_ids": [
+      "silicosis_and_coal_workers_pneumoconiosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11617341/"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 5b",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "baritosis",
+    "canonical_name": "Baritosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Occupational radiograph/CT may show numerous dense fine nodular opacities from retained barium-containing dust, often with little functional impairment.",
+    "rationale": "One of three named inert-metal pneumoconioses; keep separate candidate records, but they may be presented together in an inert-metal pneumoconiosis section because clinical effects and imaging patterns overlap.",
+    "existing_parent_ids": [
+      "silicosis_and_coal_workers_pneumoconiosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11617341/"
+    ],
+    "source_paragraph": "Newtopics.txt:1736 item 5c",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "surfactant_protein_b_deficiency",
+    "canonical_name": "Surfactant Protein B Deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infant chest radiograph may show diffuse hazy/granular opacities; HRCT shows ground-glass opacity with septal thickening, and later-onset forms may develop cysts/fibrosis.",
+    "rationale": "Separate gene-defined surfactant disorders have overlapping radiology, but disease-specific age/severity and syndromic context justify distinct records; avoid claiming imaging alone identifies the genotype.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_proteinosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 1",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "sftpc_related_lung_disease",
+    "canonical_name": "SFTPC-Related Interstitial Lung Disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infant chest radiograph may show diffuse hazy/granular opacities; HRCT shows ground-glass opacity with septal thickening, and later-onset forms may develop cysts/fibrosis.",
+    "rationale": "Separate gene-defined surfactant disorders have overlapping radiology, but disease-specific age/severity and syndromic context justify distinct records; avoid claiming imaging alone identifies the genotype.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_proteinosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 2",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "abca3_deficiency",
+    "canonical_name": "ABCA3-Related Surfactant Deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infant chest radiograph may show diffuse hazy/granular opacities; HRCT shows ground-glass opacity with septal thickening, and later-onset forms may develop cysts/fibrosis.",
+    "rationale": "Separate gene-defined surfactant disorders have overlapping radiology, but disease-specific age/severity and syndromic context justify distinct records; avoid claiming imaging alone identifies the genotype.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_proteinosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 3",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "nkx2_1_related_lung_disease",
+    "canonical_name": "NKX2-1-Related Lung Disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Infant chest radiograph may show diffuse hazy/granular opacities; HRCT shows ground-glass opacity with septal thickening, and later-onset forms may develop cysts/fibrosis.",
+    "rationale": "Separate gene-defined surfactant disorders have overlapping radiology, but disease-specific age/severity and syndromic context justify distinct records; avoid claiming imaging alone identifies the genotype.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_proteinosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11580020/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 4",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_agenesis",
+    "canonical_name": "Pulmonary Agenesis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral opaque small hemithorax with marked ipsilateral mediastinal shift, absent ipsilateral main bronchus and pulmonary vasculature, and compensatory contralateral hyperinflation.",
+    "rationale": "Distinct congenital absence of lung, bronchus, and vessels; differentiate from aplasia and prior pneumonectomy.",
+    "existing_parent_ids": [
+      "congenital_pulmonary_airway_malformation"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8557233/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 5",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_aplasia",
+    "canonical_name": "Pulmonary Aplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Unilateral volume loss and mediastinal shift with a blind-ending rudimentary main bronchus but absent distal parenchyma and pulmonary vessels on CT.",
+    "rationale": "Distinct from agenesis by rudimentary blind bronchus; retain as separate congenital anomaly.",
+    "existing_parent_ids": [
+      "congenital_pulmonary_airway_malformation"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8557233/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 6",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "proximal_interruption_of_pulmonary_artery",
+    "canonical_name": "Proximal Interruption of a Pulmonary Artery",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT angiography shows absent proximal branch pulmonary artery with distal intrapulmonary branches supplied by systemic collaterals and a small ipsilateral lung.",
+    "rationale": "Distinct congenital vascular anomaly and cause of hemoptysis; not equivalent to scimitar syndrome.",
+    "existing_parent_ids": [
+      "pulmonary_arteriovenous_malformation",
+      "scimitar_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6435093/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 7",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_vein_stenosis",
+    "canonical_name": "Pulmonary Vein Stenosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CTA/MRA shows focal pulmonary-vein narrowing or abrupt cutoff with regional septal thickening, ground-glass edema, waxing/waning opacities, or decreased perfusion.",
+    "rationale": "Distinct venous obstruction and important mimic of infection or pulmonary embolism; congenital and acquired forms can be explained together.",
+    "existing_parent_ids": [
+      "pulmonary_veno_occlusive_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6039802/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 8",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_artery_intimal_sarcoma",
+    "canonical_name": "Pulmonary Artery Intimal Sarcoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "CTPA shows a lobulated, expansile filling defect with vessel enlargement/wall-eclipsing; MRI shows heterogeneous enhancement and PET may be FDG avid.",
+    "rationale": "Rare but critical PE mimic with a distinct tumor-like vascular imaging pattern.",
+    "existing_parent_ids": [
+      "pulmonary_embolism"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8104460/"
+    ],
+    "source_paragraph": "Newtopics.txt:1737 item 9",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "tracheobronchomalacia",
+    "canonical_name": "Tracheobronchomalacia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Dynamic expiratory CT or bronchoscopy demonstrates excessive expiratory collapse of the trachea and/or main bronchi.",
+    "rationale": "Distinct dynamic central-airway disorder; separate from tracheal diverticula/bronchiectasis in Mounier–Kuhn syndrome.",
+    "existing_parent_ids": [
+      "mounier_kuhn_syndrome"
+    ],
+    "source_urls": [
+      "https://acsearch.acr.org/docs/3195161/Narrative"
+    ],
+    "source_paragraph": "Newtopics.txt:1738 item 1",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "idiopathic_subglottic_stenosis",
+    "canonical_name": "Idiopathic Subglottic Stenosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Endoscopy/CT shows a short concentric scar-like narrowing below the glottis, commonly in the cricoid/subglottic airway.",
+    "rationale": "Duplicate cross-specialty candidate with Otolaryngology; leave ADD for central deduplication into one airway page.",
+    "existing_parent_ids": [
+      "primary_lung_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5900086/"
+    ],
+    "source_paragraph": "Newtopics.txt:1738 item 2",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "tracheobronchial_adenoid_cystic_carcinoma",
+    "canonical_name": "Tracheobronchial Adenoid Cystic Carcinoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows smooth submucosal tracheal or main-bronchial wall thickening/narrowing, sometimes with longitudinal extension; bronchoscopy shows a submucosal lesion.",
+    "rationale": "A tracheobronchial salivary-gland-type primary has a characteristic airway-centered appearance and is clinically distinct from conventional lung carcinoma and salivary-gland ACC; the existing broad primary lung carcinoma topic excludes subtype proliferation, so a focused airway topic is justified.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7115773/"
+    ],
+    "source_paragraph": "Newtopics.txt:1738 item 3",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "bronchial_mucoepidermoid_carcinoma",
+    "canonical_name": "Bronchial Mucoepidermoid Carcinoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Central endobronchial soft-tissue nodule/mass on CT causing focal airway narrowing, atelectasis, or recurrent postobstructive infection.",
+    "rationale": "Distinct bronchial primary with airway-specific presentation; do not merge with oral/salivary mucoepidermoid carcinoma solely for shared histology.",
+    "existing_parent_ids": [
+      "primary_lung_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10547440/"
+    ],
+    "source_paragraph": "Newtopics.txt:1738 item 4",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_inflammatory_myofibroblastic_tumor",
+    "canonical_name": "Pulmonary Inflammatory Myofibroblastic Tumor",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT shows a solitary, well-circumscribed, often peripheral lung nodule/mass with variable enhancement or calcification.",
+    "rationale": "Distinct mesenchymal lung neoplasm with imageable mass pattern; histology/genetics confirm.",
+    "existing_parent_ids": [
+      "primary_lung_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC12019978/"
+    ],
+    "source_paragraph": "Newtopics.txt:1739 item 1",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_sclerosing_pneumocytoma",
+    "canonical_name": "Pulmonary Sclerosing Pneumocytoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Usually a well-circumscribed, peripherally located, round/oval nodule with homogeneous enhancement; marginal pseudocapsule or overlying-vessel sign may appear.",
+    "rationale": "Distinct lung neoplasm with useful solitary-nodule image, not a generic “sclerosing” tumor subtype.",
+    "existing_parent_ids": [
+      "primary_lung_carcinoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8857380/"
+    ],
+    "source_paragraph": "Newtopics.txt:1739 item 2",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "posterior_mediastinal_schwannoma",
+    "canonical_name": "Posterior Mediastinal Schwannoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Well-circumscribed paravertebral/posterior mediastinal mass, often with smooth neural-foraminal widening or dumbbell extension on CT/MRI.",
+    "rationale": "Thoracic anatomic location provides distinct imaging differential; do not merge solely with vestibular schwannoma.",
+    "existing_parent_ids": [
+      "vestibular_schwannoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10606219/"
+    ],
+    "source_paragraph": "Newtopics.txt:1739 item 3",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "diaphragmatic_eventration",
+    "canonical_name": "Diaphragmatic Eventration",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Smooth elevated intact hemidiaphragm with preserved continuity on CT/ultrasound; dynamic ultrasound can show reduced excursion.",
+    "rationale": "Distinct from diaphragmatic hernia because the diaphragm remains intact; clear radiographic/dynamic anchor.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pubs.rsna.org/doi/10.1148/rg.230110"
+    ],
+    "source_paragraph": "Newtopics.txt:1739 item 4",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "spontaneous_pneumomediastinum",
+    "canonical_name": "Spontaneous Pneumomediastinum",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Chest radiograph/CT shows mediastinal air outlining the heart, great vessels, or trachea, sometimes with continuous-diaphragm sign.",
+    "rationale": "Distinct from pneumothorax and tension pneumothorax; clinical context distinguishes spontaneous from traumatic/iatrogenic causes.",
+    "existing_parent_ids": [
+      "pneumothorax"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4241491/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 1",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "congenital_pulmonary_lymphangiectasia",
+    "canonical_name": "Congenital Pulmonary Lymphangiectasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Neonatal imaging may show diffuse interstitial thickening, septal lines, ground-glass opacity, and pleural effusions; pathology demonstrates dilated lymphatics.",
+    "rationale": "Distinct congenital diffuse lung disorder; do not collapse with diffuse pulmonary lymphangiomatosis, which is a separate entity.",
+    "existing_parent_ids": [
+      "diffuse_pulmonary_lymphangiomatosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11364587/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 2",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "alveolar_capillary_dysplasia_with_misalignment_of_pulmonary_veins",
+    "canonical_name": "Alveolar Capillary Dysplasia with Misalignment of Pulmonary Veins (ACD/MPV)",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Neonate with refractory pulmonary hypertension and diffuse bilateral opacities; imaging is nonspecific.",
+    "rationale": "Pathology-led lethal developmental disorder without a disease-specific clinical or radiologic visual anchor; defer under current scope.",
+    "existing_parent_ids": [
+      "pulmonary_veno_occlusive_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7120961/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 3",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_light_chain_deposition_disease",
+    "canonical_name": "Pulmonary Light-Chain Deposition Disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT may show multiple cysts and nodules, often peribronchovascular, with airway-wall thickening or calcification.",
+    "rationale": "Distinct parenchymal/airway deposition disorder from systemic AL amyloidosis and tracheobronchial amyloidosis; radiologic pattern merits separate topic.",
+    "existing_parent_ids": [
+      "systemic_al_amyloidosis",
+      "tracheobronchial_amyloidosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7290530/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 4",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "dendriform_pulmonary_ossification",
+    "canonical_name": "Dendriform Pulmonary Ossification",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Thin branching, bone-density opacities in dependent lower-lobe subpleural/interstitial lung on CT, often incidentally detected.",
+    "rationale": "Distinct branching ossification pattern and useful radiologic teaching entity.",
+    "existing_parent_ids": [
+      "pulmonary_alveolar_microlithiasis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3737610/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 5",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "bronchial_anthracofibrosis",
+    "canonical_name": "Bronchial Anthracofibrosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bronchoscopy shows black anthracotic pigmentation with bronchial narrowing/stenosis, often involving the right middle lobe; CT may show calcified nodes and atelectasis.",
+    "rationale": "Highly recognizable bronchoscopic appearance with useful TB/exposure context.",
+    "existing_parent_ids": [
+      "silicosis_and_coal_workers_pneumoconiosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5761165/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 6",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "thoracic_splenosis",
+    "canonical_name": "Thoracic Splenosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multiple left pleural-based nodules on CT after remote splenic trauma/splenectomy; lesions enhance like splenic tissue and show uptake on heat-damaged RBC scan.",
+    "rationale": "Distinct benign thoracic nodule mimic with a specific history and confirmatory nuclear medicine study.",
+    "existing_parent_ids": [
+      "malignant_pleural_mesothelioma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6229217/"
+    ],
+    "source_paragraph": "Newtopics.txt:1740 item 7",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "idiopathic_pulmonary_arterial_hypertension",
+    "canonical_name": "Idiopathic Pulmonary Arterial Hypertension",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "CT may show enlarged main pulmonary artery, right-heart enlargement, and peripheral vascular pruning; imaging supports but does not establish PAH.",
+    "rationale": "Distinct clinical pulmonary vascular diagnosis with supportive imaging; right-heart catheterization is required for diagnosis.",
+    "existing_parent_ids": [
+      "pulmonary_veno_occlusive_disease",
+      "pulmonary_capillary_hemangiomatosis"
+    ],
+    "source_urls": [
+      "https://publications.ersnet.org/content/erj/61/1/2200879"
+    ],
+    "source_paragraph": "Newtopics.txt:1741 item 1",
+    "evidence_status": "supported"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "acute_fibrinous_and_organizing_pneumonia",
+    "canonical_name": "Acute Fibrinous and Organizing Pneumonia (AFOP)",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Imaging may show multifocal ground-glass opacity or consolidation resembling organizing pneumonia or diffuse alveolar damage.",
+    "rationale": "Primarily a histopathologic pattern with no specific radiologic signature; parent instruction recommends deferring absent stronger visual value.",
+    "existing_parent_ids": [
+      "cryptogenic_organizing_pneumonia",
+      "acute_respiratory_distress_syndrome"
+    ],
+    "source_urls": [
+      "https://publications.ersnet.org/content/erj/66/6/2500158"
+    ],
+    "source_paragraph": "Newtopics.txt:1741 item 2",
+    "evidence_status": "selected_source"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "pulmonary_tumor_thrombotic_microangiopathy",
+    "canonical_name": "Pulmonary Tumor Thrombotic Microangiopathy",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "CT findings can include centrilobular nodules, tree-in-bud opacities, septal thickening, and pulmonary artery enlargement, all nonspecific.",
+    "rationale": "Severe but usually diagnosed pathologically or postmortem; no reliable disease-specific visual anchor for a standalone atlas topic.",
+    "existing_parent_ids": [
+      "pulmonary_embolism",
+      "pulmonary_veno_occlusive_disease"
+    ],
+    "source_urls": [],
+    "source_paragraph": "Newtopics.txt:1741 item 3",
+    "evidence_status": "not_verified"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "fire_eater_pneumonia",
+    "canonical_name": "Fire-Eater Pneumonia",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "After aspiration of kerosene/fire-breathing fuel, CT may show fat-attenuation consolidation or crazy-paving with dependent distribution.",
+    "rationale": "Named exposure syndrome is a form of exogenous lipoid pneumonia; merge into existing exogenous_lipoid_pneumonia and preserve “fire-eater” as context/synonym.",
+    "existing_parent_ids": [
+      "exogenous_lipoid_pneumonia"
+    ],
+    "source_urls": [],
+    "source_paragraph": "Newtopics.txt:1741 item 4",
+    "evidence_status": "not_verified"
+  },
+  {
+    "section": "Pulmonology",
+    "proposed_id": "silo_filler_disease",
+    "canonical_name": "Silo-Filler Disease (Nitrogen Dioxide Toxicity)",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Acute exposure may cause nonspecific bilateral opacities, delayed pulmonary edema, or bronchiolitis obliterans.",
+    "rationale": "Toxic exposure syndrome with nonspecific radiology and no reliably distinctive photograph; defer per focused visual-atlas criteria.",
+    "existing_parent_ids": [
+      "acute_respiratory_distress_syndrome"
+    ],
+    "source_urls": [],
+    "source_paragraph": "Newtopics.txt:1741 item 5",
+    "evidence_status": "not_verified"
+  }
+]

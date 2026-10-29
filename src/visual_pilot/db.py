@@ -664,6 +664,25 @@ def rows_with_status(
     return list(conn.execute(sql, params))
 
 
+def attach_source_metadata(conn, articles: dict[str, dict]) -> None:
+    """Add each article's Europe PMC core record (abstract, publication
+    types) as ``source_metadata``, as ``publication.panel_records`` does, so
+    the curation gate sees the same article at judge, store and publication.
+    """
+    if not articles:
+        return
+    rows = conn.execute(
+        "SELECT pmcid, metadata_json FROM article_source_metadata "
+        "WHERE pmcid IN (SELECT value FROM json_each(?))",
+        (to_json(sorted(articles)),),
+    )
+    for row in rows:
+        article = articles.get(row["pmcid"])
+        if article is not None:
+            metadata = from_json(row["metadata_json"], {})
+            article["source_metadata"] = metadata if isinstance(metadata, dict) else {}
+
+
 def _require_table(table: str) -> None:
     if table not in _PK_COLUMNS:
         raise ValueError(f"unknown table {table!r}; expected one of {sorted(_PK_COLUMNS)}")

@@ -1,0 +1,495 @@
+001 P1 Breast | Silicone Breast Implant Rupture | MRI linguine sign of collapsed implant shell; US snowstorm from extracapsular silicone.
+002 P2 Breast | Atypical Vascular Lesion of the Irradiated Breast | Small pink/brown or erythematous papules/vesicles arising in irradiated breast skin.
+003 P2 Breast | Breast Implant Capsular Contracture | Firm, high, spherical, distorted breast after implant placement; Baker III visible distortion, IV pain/hardness.
+004 P2 Breast | Congenital Amastia and Amazia | Congenital absence of breast mound (amastia) or gland with preserved nipple-areola (amazia); pectoralis present.
+005 P2 Breast | Granular Cell Tumor of the Breast | Firm superficial mass with skin/nipple retraction; spiculated mammographic mass and posterior shadowing on US.
+006 P2 Breast | Hyperkeratosis of the Nipple and Areola | Verrucous brown hyperkeratosis involving nipple and areola, unilateral or bilateral.
+007 P2 Breast | Juvenile Papillomatosis | Adolescent/young adult with localized firm mass; ultrasound clustered cysts of varying size (“Swiss cheese”).
+008 P2 Breast | Lactating Adenoma | Pregnancy/lactation-associated mobile mass; US circumscribed oval lesion, becoming complex/cystic if infarcted.
+009 P2 Breast | Pseudoangiomatous Stromal Hyperplasia | Rapidly enlarging mobile mass; mammographic oval mass/developing asymmetry and parallel hypoechoic US mass.
+010 P2 Breast | Radiation-Associated Angiosarcoma of the Breast | Years after breast irradiation, violaceous bruise-like plaques/nodules in field; skin thickening or enhancing cutaneous mass.
+011 P2 Breast | Tuberculous Mastitis | Chronic breast mass with skin sinus; US shows heterogeneous collection and fistulous tract, sometimes necrotic axillary nodes.
+012 P2 Breast | Tuberous Breast Deformity | Constricted breast base, high fold, enlarged areola, and glandular herniation producing a tubular/Snoopy contour.
+013 P1 Cardiology | Anomalous Aortic Origin of a Coronary Artery | Coronary CTA shows an anomalous ostium from the opposite sinus, slit-like takeoff, and interarterial/intramural course.
+014 P1 Cardiology | Aortic Stenosis | Calcified, restricted trileaflet valve on echo/CT with concentric left ventricular hypertrophy.
+015 P1 Cardiology | Atrial Septal Defect | Fossa ovalis defect with left-to-right flow and right atrial/right ventricular volume enlargement on echo.
+016 P1 Cardiology | Blunt Traumatic Aortic Injury | CTA shows isthmic intimal injury, pseudoaneurysm or contour defect with periaortic/mediastinal hematoma after deceleration trauma.
+017 P1 Cardiology | Congenitally Corrected Transposition of the Great Arteries | Echo/CMR demonstrates both atrioventricular and ventriculoarterial discordance; anterior-left aorta and systemic morphologic RV.
+018 P1 Cardiology | Degenerative Mitral Valve Disease | Systolic billowing or flail mitral scallop above the annular plane with eccentric regurgitant jet on 2D/3D echo.
+019 P1 Cardiology | Double Outlet Right Ventricle | Echo/CMR shows both great arteries arising predominantly from the right ventricle and defines VSD-to-outlet relationship.
+020 P1 Cardiology | Fibromuscular dysplasia | CTA/MRA or angiography shows multifocal string-of-beads stenoses, especially in renal or cervical arteries.
+021 P1 Cardiology | Heterotaxy syndrome | Cross-sectional imaging reveals abnormal organ laterality, interrupted IVC with azygos continuation or anomalous venous return, splenic anomalies, and complex congenital heart anatomy.
+022 P1 Cardiology | Interrupted Aortic Arch | CTA/3D reconstruction shows complete interruption of the arch with descending aorta supplied through the duct.
+023 P1 Cardiology | Partial Anomalous Pulmonary Venous Return | CT/CMR maps anomalous pulmonary veins draining to systemic venous structures; sinus venosus defects may coexist while the fossa ovalis remains intact.
+024 P1 Cardiology | Patent Ductus Arteriosus | Ductal color jet from descending aorta to left pulmonary artery; large PDA produces left-heart enlargement and pulmonary plethora.
+025 P1 Cardiology | Penetrating Atherosclerotic Ulcer | CTA shows a focal contrast-filled crater penetrating aortic plaque, often with adjacent intramural hematoma.
+026 P1 Cardiology | Pulmonary artery sling | CTA shows left pulmonary artery arising from right pulmonary artery and passing between trachea and esophagus, often with airway compression.
+027 P1 Cardiology | Pulmonary Atresia with Ventricular Septal Defect | CTA maps atretic RV outflow, VSD/overriding aorta, and major aortopulmonary collateral arteries supplying lung segments.
+028 P1 Cardiology | Spontaneous Coronary Artery Dissection | Angiographic intimal flap/double lumen or long smooth narrowing from intramural hematoma in a coronary artery.
+029 P1 Cardiology | Superior Vena Cava Syndrome | Contrast CT/venography shows SVC narrowing or occlusion and azygos/chest-wall collateral pathways; facial plethora is visible clinically.
+030 P1 Cardiology | Takotsubo Cardiomyopathy | Circumferential apical or midventricular ballooning with basal hyperkinesis on echo or ventriculography.
+031 P1 Cardiology | Valvar Pulmonary Stenosis | Doming pulmonary valve with turbulent systolic flow and poststenotic main pulmonary artery dilation.
+032 P1 Cardiology | Ventricular Septal Defect | Color Doppler left-to-right jet across the ventricular septum; a large shunt enlarges the left atrium and ventricle.
+033 P2 Cardiology | Acute Myocarditis | CMR shows myocardial edema with subepicardial or mid-wall nonischemic enhancement, often lateral, not following a coronary territory.
+034 P2 Cardiology | Arterial Thoracic Outlet Syndrome | CTA with arm elevation shows subclavian artery compression, often poststenotic aneurysm and distal emboli; radiograph may show cervical rib.
+035 P2 Cardiology | Cor Triatriatum | Left atrial membrane separates pulmonary venous chamber from distal atrium; appendage lies distal to the membrane.
+036 P2 Cardiology | Coronary Artery Fistula | Dilated tortuous coronary artery traced on CTA/angiography to a cardiac chamber or pulmonary artery, with Doppler runoff.
+037 P2 Cardiology | Cystic Adventitial Disease | Ultrasound/MRI shows nonenhancing mucin cysts in popliteal arterial adventitia causing smooth eccentric/scimitar narrowing.
+038 P2 Cardiology | Discrete Subaortic Stenosis | Echo shows a discrete fibrous/fibromuscular shelf below an normally opening aortic valve with LVOT jet.
+039 P2 Cardiology | Double-Chambered Right Ventricle | Echo/CMR shows anomalous muscle bundle dividing RV into high-pressure inlet and low-pressure outlet, with normal pulmonary valve.
+040 P2 Cardiology | Generalized Arterial Calcification of Infancy | Plain films/CT show extensive arterial-wall calcification in an infant, often involving aorta and coronary arteries.
+041 P2 Cardiology | Hypothenar Hammer Syndrome | Angiography shows ulnar artery aneurysm/occlusion over the hook of hamate with distal digital emboli.
+042 P2 Cardiology | Left Ventricular Noncompaction | Prominent apical/lateral trabeculations with deep perfused recesses and thin compact myocardium on echo or CMR.
+043 P2 Cardiology | Middle aortic syndrome | CTA/MRA shows long mid-thoracic/abdominal aortic narrowing with renal/visceral branch stenoses and collaterals.
+044 P2 Cardiology | Multisystem Inflammatory Syndrome in Children | Echo shows transient ventricular dysfunction with possible coronary dilation/aneurysm and pericardial effusion after postinfectious illness.
+045 P2 Cardiology | Mycotic Aortic Aneurysm | CTA shows rapidly enlarging saccular aneurysm with periaortic inflammatory stranding/fluid or gas.
+046 P2 Cardiology | Nonbacterial Thrombotic Endocarditis | TEE shows broad-based small valve vegetations without leaflet destruction or abscess, in a patient with systemic emboli.
+047 P2 Cardiology | Papillary Fibroelastoma | Small independently mobile, stalked valvular mass with a fronded/shimmering edge on echocardiography.
+048 P2 Cardiology | Popliteal Artery Entrapment Syndrome | Dynamic duplex/MRA shows popliteal artery compression with plantar flexion and abnormal gastrocnemius relationship.
+049 P2 Cardiology | Right Aortic Arch with Aberrant Left Subclavian Artery | CTA shows right arch and aberrant left subclavian from Kommerell diverticulum; esophagram may show posterior indentation.
+050 P2 Cardiology | Shone Complex | Echo depicts multilevel left-sided obstruction: parachute mitral valve/ring, subaortic ridge, and coarctation.
+051 P2 Cardiology | Sinus of Valsalva Aneurysm | A windsock sac arising from a sinus of Valsalva into a chamber, with a jet if ruptured.
+052 P1 Endocrinology | Insulinoma | Hypervascular pancreatic lesion on arterial CT/MRI or receptor PET in fasting hypoglycemia.
+053 P1 Endocrinology | Pituitary apoplexy | Sudden headache/ophthalmoplegia; MRI shows hemorrhagic or infarcted sellar mass.
+054 P2 Endocrinology | Aromatase deficiency | Maternal virilization, virilized 46,XX infant, and later multicystic ovaries.
+055 P2 Endocrinology | Chanarin-Dorfman syndrome | Congenital ichthyosis with Jordan anomaly (lipid vacuoles) in leukocytes.
+056 P2 Endocrinology | Hereditary vitamin D-resistant rickets | Rachitic metaphyseal cupping/fraying with total alopecia.
+057 P2 Endocrinology | Juvenile Paget disease | Childhood generalized bone expansion and long-bone deformity.
+058 P2 Endocrinology | Kenny-Caffey Syndrome | Kenny-Caffey: deep-set eyes, cortical thickening, and medullary stenosis on long-bone films.
+059 P2 Endocrinology | Nelson syndrome | Generalized hyperpigmentation after bilateral adrenalectomy with enlarging pituitary macroadenoma on MRI.
+060 P2 Endocrinology | P450 oxidoreductase deficiency | Craniosynostosis, bowed femora, atypical genitalia with adrenal steroidogenic failure.
+061 P2 Endocrinology | POMC deficiency | Early obesity, adrenal insufficiency, and characteristic red hair.
+062 P2 Endocrinology | Rathke cleft cyst | Midline nonenhancing sellar cyst with intracystic T2-dark waxy nodule.
+063 P2 Endocrinology | Sanjad-Sakati Syndrome | Severe growth deficiency and characteristic face with deep set eyes, beaked nose, micrognathia, and congenital hypoparathyroidism; skeletal findings vary.
+064 P2 Endocrinology | SHORT syndrome | Partial lipodystrophy, Rieger anomaly, and characteristic triangular facies.
+065 P2 Endocrinology | Van Wyk-Grumbach syndrome | Precocious puberty with delayed bone age, multicystic ovaries, and pituitary hyperplasia in severe hypothyroidism.
+066 P2 Endocrinology | VIPoma | Pancreatic tail mass and liver lesions with secretory diarrhea and hypokalemia.
+067 P1 Gastroenterology | Ampullary Adenocarcinoma | Endoscopic ulcerated or polypoid ampulla; CT/MRCP may show bile and pancreatic duct dilation ending at the ampulla.
+068 P1 Gastroenterology | Annular Pancreas | Pancreatic tissue encircling the second duodenum with proximal gastric/duodenal dilation on CT or upper GI contrast study.
+069 P1 Gastroenterology | Appendiceal Mucocele | Fluid-filled, dilated tubular appendix with mural calcification or layered “onion-skin” appearance on ultrasound.
+070 P1 Gastroenterology | Chronic Mesenteric Ischemia | CTA shows severe ostial mesenteric arterial stenosis/occlusion with collateral vessels; chronic cases often have multivessel disease.
+071 P1 Gastroenterology | Emphysematous Gastritis | CT shows linear or bubbly gas within thickened gastric wall, possibly portal venous gas, with severe systemic illness.
+072 P1 Gastroenterology | Epiploic Appendagitis | Small ovoid fat-attenuation lesion abutting colon with hyperattenuating rim and possible central dot on CT.
+073 P1 Gastroenterology | Esophageal Coin Ingestion | Coin-shaped radiopaque object in esophagus on AP view; coins usually appear en face in esophagus, unlike airway orientation.
+074 P1 Gastroenterology | Focal Nodular Hyperplasia | Homogeneous arterial hyperenhancement with a central T2-bright scar and delayed scar enhancement.
+075 P1 Gastroenterology | Gallbladder Adenomyomatosis | Gallbladder wall thickening with intramural Rokitansky–Aschoff sinuses producing ultrasound comet-tail artifact or MRI pearl-necklace sign.
+076 P1 Gastroenterology | Gallstone Ileus (including Bouveret Syndrome) | Rigler pattern: ectopic gallstone, pneumobilia, and bowel obstruction; duodenal impaction in Bouveret syndrome.
+077 P1 Gastroenterology | Gastric Volvulus | Abnormally rotated or upside-down stomach on radiograph/CT; mesenteroaxial form places antrum above gastroesophageal junction.
+078 P1 Gastroenterology | Hepatic Hemangioma | Peripheral discontinuous nodular enhancement with progressive centripetal fill-in; markedly T2-bright liver lesion.
+079 P1 Gastroenterology | Hepatic sinusoidal obstruction syndrome | Post-transplant Doppler: slow/reversed portal flow, gallbladder wall thickening, narrowed hepatic veins.
+080 P1 Gastroenterology | Hepatocellular Adenoma | Arterially enhancing liver mass; subtype clues include opposed-phase signal drop (HNF1A) or inflammatory atoll sign.
+081 P1 Gastroenterology | Jejunoileal Atresia | Multiple dilated proximal small-bowel loops with abrupt atretic transition and gasless distal bowel on neonatal radiograph/contrast study.
+082 P1 Gastroenterology | Multiple Magnet Ingestion | Two or more magnets in separate bowel loops or clumped across bowel walls on radiograph, with pressure injury/perforation risk.
+083 P1 Gastroenterology | Pancreatic Mucinous Cystic Neoplasm | Body/tail multilocular cystic pancreatic mass in a woman, with septa or peripheral calcification and no duct communication.
+084 P1 Gastroenterology | Pancreatic Serous Cystadenoma | Microcystic honeycomb pancreatic mass with central scar or sunburst calcification and no duct communication.
+085 P1 Gastroenterology | Paraduodenal and Transmesenteric Internal Hernia | CT cluster of small-bowel loops in an abnormal sac/compartment with mesenteric vessel crowding or swirl; specify paraduodenal recess versus transmesenteric defect.
+086 P1 Gastroenterology | Solid Pseudopapillary Neoplasm | Well-circumscribed encapsulated pancreatic mass with hemorrhagic/cystic center and peripheral solid tissue.
+087 P1 Gastroenterology | Splanchnic venous thrombosis | Portal, mesenteric, or splenic venous filling defects and chronic portal cavernous transformation; include infective pylephlebitis as a subtype.
+088 P1 Gastroenterology | Stercoral Colitis | Fecaloma with colonic dilation and wall thickening plus pericolonic fat stranding, often rectosigmoid, on CT.
+089 P1 Gastroenterology | Superior Mesenteric Artery Syndrome | CT sagittal narrowing of third duodenum between aorta and SMA with proximal gastric/duodenal dilation and reduced aortomesenteric angle/distance.
+090 P2 Gastroenterology | Biliary Mucinous Cystic Neoplasm | Multiloculated hepatic cyst with septa or mural nodules, usually no bile-duct communication; often in middle-aged women.
+091 P2 Gastroenterology | Congestive Hepatopathy and Fontan-Associated Liver Disease | Heterogeneous “nutmeg” liver enhancement, dilated hepatic veins/IVC and pulsatile portal flow on Doppler in right-sided heart failure/Fontan circulation.
+092 P2 Gastroenterology | Encapsulating peritoneal sclerosis | Encased clustered bowel loops within a thick fibrous peritoneal membrane (“abdominal cocoon”) on CT.
+093 P2 Gastroenterology | Esophageal Intramural Pseudodiverticulosis | Barium esophagram shows numerous tiny flask-shaped intramural outpouchings, sometimes with a stricture.
+094 P2 Gastroenterology | Groove Pancreatitis | Sheet-like soft tissue in pancreaticoduodenal groove with medial duodenal wall thickening or cysts on MRI/CT.
+095 P2 Gastroenterology | Hepatic Epithelioid Hemangioendothelioma | Multiple peripheral hypoenhancing liver nodules coalescing to the capsule, with capsular retraction and possible “lollipop” vessel termination.
+096 P2 Gastroenterology | Herpes Simplex Esophagitis | Multiple small, sharply demarcated punched-out esophageal ulcers on endoscopy, often distal; biopsy from ulcer edge.
+097 P2 Gastroenterology | Hookworm Infection | Upper endoscopy shows adult hookworms attached to duodenal/jejunal mucosa, sometimes with punctate bleeding.
+098 P2 Gastroenterology | Intestinal duplication cyst | Cyst adjacent to bowel with layered inner echogenic mucosa and outer hypoechoic muscle (“gut signature”) on ultrasound.
+099 P2 Gastroenterology | Isolated Polycystic Liver Disease | Numerous hepatic cysts with relative absence of renal cysts on CT/MRI.
+100 P2 Gastroenterology | Median Arcuate Ligament Syndrome | Sagittal CTA shows focal hooked narrowing of proximal celiac artery with post-stenotic dilation, accentuated on expiration.
+101 P2 Gastroenterology | Omental Infarction | Larger heterogeneous inflamed fat-density lesion within omentum, usually not directly abutting colon, without central dot.
+102 P2 Gastroenterology | Peritoneal Mesothelioma | Diffuse peritoneal thickening/nodularity, omental cake, or ascites on CT, often without an identifiable gastrointestinal primary.
+103 P2 Gastroenterology | Pill-Induced Esophagitis | Discrete opposing mid-esophageal ulcers at a pill-stasis site, often with focal mucosal injury on endoscopy.
+104 P2 Gastroenterology | Schatzki Ring | Thin circumferential mucosal ring at the distal esophagus, best seen as a short shelf-like narrowing on barium esophagram.
+105 P2 Gastroenterology | Sclerosing Mesenteritis | Root-of-mesentery misty fat or mass that encases mesenteric vessels while preserving a fat-ring halo; possible pseudocapsule on CT.
+106 P2 Gastroenterology | Secondary Sclerosing Cholangitis of Critical Illness | MRCP/ERCP shows biliary casts, multifocal intrahepatic strictures and pruning after critical illness, initially sparing the extrahepatic duct.
+107 P2 Gastroenterology | Spigelian and Obturator Hernias | CT shows Spigelian sac through semilunar fascia or obturator hernia between pectineus and obturator externus; label the two sites separately.
+108 P2 Gastroenterology | Undifferentiated Embryonal Sarcoma of the Liver | Large heterogeneous pediatric liver mass that appears cystic on CT but predominantly solid on ultrasound.
+109 P2 Gastroenterology | Yersinia Enterocolitica Ileitis | Terminal ileal wall thickening and mesenteric lymphadenopathy on CT/ultrasound, with a relatively normal appendix in pseudoappendicitis.
+110 P1 Hematology | Acquired hemophilia A | Spontaneous skin, muscle, or retroperitoneal hematomas without typical hemarthroses.
+111 P1 Hematology | Hemoglobin Bart’s hydrops fetalis | Prenatal US: hydrops, scalp edema, ascites, cardiomegaly, and thick placenta.
+112 P1 Hematology | Post-transplant lymphoproliferative disorder | Post-transplant extranodal allograft, GI, lung, skin, or CNS lesions on PET/CT.
+113 P1 Hematology | Primary mediastinal large B-cell lymphoma | Facial plethora/chest-wall collaterals with bulky anterior mediastinal mass compressing SVC.
+114 P2 Hematology | EBV-positive mucocutaneous ulcer | Single sharply edged oral or skin ulcer without mass or systemic lymphoma.
+115 P2 Hematology | Enteropathy-associated T-cell lymphoma | Celiac-associated jejunal thickening and aneurysmal dilatation, with ulcers or perforation.
+116 P2 Hematology | Immunoproliferative small intestinal disease (alpha heavy chain) | Proximal small bowel thickened folds, cobblestoning, villous edema, and ulcers.
+117 P2 Hematology | Plasmablastic lymphoma | Fungating gingival/palatal mass with lytic maxillary or mandibular lesion.
+118 P2 Hematology | Plasminogen deficiency type 1 (ligneous disease) | Wood-like conjunctival membranes and gingival pseudomembranes with tooth loss.
+119 P2 Hematology | Radioulnar synostosis with amegakaryocytic thrombocytopenia | Blocked forearm rotation with bilateral proximal radioulnar synostosis and petechiae.
+120 P2 Hematology | Systemic ALK-positive anaplastic large cell lymphoma | Ulcerated violaceous skin nodules with PET-avid nodal/visceral disease.
+121 P2 Hematology | Systemic chronic active EBV disease | Hemorrhagic bullae, necrosis, and scars precisely at mosquito-bite sites.
+122 P2 Hematology | T-cell prolymphocytic leukemia | Diffuse erythematous papules/plaques, periorbital edema, leonine facies.
+123 P2 Hematology | TEMPI syndrome | Facial/truncal telangiectasias plus perinephric fluid on CT/US and pulmonary shunt.
+124 P2 Hematology | Transient abnormal myelopoiesis | Vesiculopustular lesions in a neonate with Down syndrome, sometimes concentrated at adhesive or venipuncture sites; blood evaluation establishes transient abnormal myelopoiesis.
+125 P2 Hematology | Type I (monoclonal) cryoglobulinemia | Noninflammatory retiform purpura, acral necrosis, and digital/ear gangrene.
+126 P2 Immunology | Adenosine deaminase deficiency (ADA-SCID) | Chest radiograph may show absent thymic shadow; characteristic costochondral flaring/cupping (“scorbutic”/rachitic-like) is supportive but not universal.
+127 P2 Immunology | Autoimmune lymphoproliferative syndrome | Generalized cervical/axillary lymphadenopathy with splenomegaly on examination or ultrasound/CT.
+128 P2 Immunology | CARD9 deficiency | Deep dermatophytosis with plaques/nodules or draining abscesses; MRI can show Candida brain abscess.
+129 P2 Immunology | FOXN1 deficiency (nude SCID) | Congenital alopecia with eyebrow/lash loss and nail dystrophy on clinical photographs; absent thymic shadow on infant radiograph.
+130 P2 Immunology | IL-10 and IL-10-receptor deficiency | Infantile perianal fistulas/abscesses and deep colonic ulcers on endoscopy.
+131 P2 Immunology | Isolated congenital asplenia | Howell–Jolly bodies on peripheral smear; ultrasound/CT confirms absent spleen with situs solitus.
+132 P2 Immunology | MHC class I deficiency (TAP1/TAP2) | Chronic necrotizing skin ulcers and nasal cartilage destruction; bronchiectasis may be seen on chest CT.
+133 P2 Immunology | PLCG2-associated disease (PLAID / APLAID) | Evaporative-cold induced wheals; APLAID may show neonatal acral ulceration and granulomatous skin plaques.
+134 P2 Immunology | Severe congenital neutropenia | Early severe gingivitis/periodontitis, oral ulcers, and alveolar bone loss.
+135 P2 Immunology | Spondyloenchondrodysplasia with immune dysregulation | Spine radiographs show platyspondyly/metaphyseal lesions; brain CT can show basal-ganglia calcification.
+136 P2 Immunology | Trichohepatoenteric syndrome | Brittle woolly hair with trichorrhexis nodosa on light microscopy, plus characteristic facial appearance.
+137 P2 Immunology | Vici syndrome | Brain MRI shows corpus-callosum agenesis, colpocephaly, and pontine/cerebellar hypoplasia; hypopigmentation/cataracts clinically.
+138 P2 Immunology | WHIM syndrome | Extensive refractory cutaneous/plantar/anogenital warts with recurrent infections.
+139 P1 Nephrology | Emphysematous pyelonephritis | CT shows gas in renal parenchyma/collecting system with possible perinephric extension.
+140 P1 Nephrology | Pyonephrosis | Obstructed collecting system with mobile echogenic debris/fluid-debris level on ultrasound, with hydronephrosis.
+141 P2 Nephrology | Acquired cystic kidney disease | Multiple bilateral renal cysts in small echogenic kidneys on ultrasound/CT in advanced CKD or dialysis.
+142 P2 Nephrology | Acute cortical necrosis | Contrast CT shows bilateral cortical hypoenhancement with preserved medullary enhancement (reverse-rim sign); chronic cortical calcification may follow.
+143 P2 Nephrology | Acute pyelonephritis, including lobar nephronia | Contrast CT may show wedge-shaped hypoenhancement or a striated nephrogram; lobar nephronia appears mass-like.
+144 P2 Nephrology | Bartter syndrome | Bilateral medullary nephrocalcinosis in a neonate with antenatal polyhydramnios.
+145 P2 Nephrology | Crossed fused renal ectopia | Both renal moieties lie on one side; trace the crossed ureter to its normal contralateral bladder insertion on CT/urography.
+146 P2 Nephrology | Distal (type 1) renal tubular acidosis | Medullary nephrocalcinosis on US/CT; pediatric rickets films may show metaphyseal cupping/fraying.
+147 P2 Nephrology | HNF1B related kidney disease | Renal ultrasound shows cysts/dysplasia; abdominal imaging may show hypoplastic or absent pancreatic body/tail.
+148 P2 Nephrology | Horseshoe kidney | CT/urography shows fused lower poles via midline isthmus, low position, and anteriorly rotated renal pelves.
+149 P2 Nephrology | Lithium nephropathy | MRI shows innumerable tiny bilateral cortical and medullary T2-bright microcysts in chronic lithium exposure.
+150 P2 Nephrology | Nephronophthisis | Small/normal echogenic kidneys with corticomedullary-junction cysts on ultrasound.
+151 P2 Nephrology | Nutcracker syndrome | CT/MR/US shows left renal vein compression between SMA and aorta with beak and gonadal/pelvic collaterals.
+152 P2 Nephrology | Page kidney | Subcapsular hematoma compresses/flattenes renal parenchyma on CT or ultrasound, with new secondary hypertension.
+153 P2 Nephrology | Renal and perinephric abscess | Round or wedge-shaped low-attenuation renal/perinephric collection with enhancing rim on contrast CT.
+154 P2 Nephrology | Renal lymphoma | Multiple bilateral homogeneous hypoenhancing renal masses, diffuse enlargement, or perirenal rind on CT/MRI.
+155 P2 Nephrology | Renal medullary carcinoma | Infiltrative hypoenhancing central/medullary renal mass in a young patient, often with sickle cell trait and nodal disease.
+156 P2 Nephrology | Renal osteodystrophy and secondary hyperparathyroidism | Rugger-jersey spine, salt-and-pepper skull, and subperiosteal resorption in CKD.
+157 P1 Neurology | Acute flaccid myelitis | Longitudinal gray matter predominant spinal cord T2 signal with acute asymmetric flaccid weakness.
+158 P1 Neurology | Acute ischemic stroke | Territorial diffusion restriction, early CT ischemic changes, and arterial occlusion on CTA.
+159 P1 Neurology | Aneurysmal subarachnoid hemorrhage | Blood in basal cisterns and sulci on CT, with a causative aneurysm on CTA or angiography.
+160 P1 Neurology | Carbon monoxide poisoning | Bilateral globus pallidus injury and delayed white matter abnormalities may appear on MRI.
+161 P1 Neurology | Ependymoma | Intraventricular or spinal mass; posterior fossa tumors may extend through the fourth ventricular outlets.
+162 P1 Neurology | Frontotemporal dementia | Frontal and anterior temporal predominant atrophy or hypometabolism.
+163 P1 Neurology | Guillain Barre syndrome | Facial diplegia or flaccid weakness; smooth cauda equina root enhancement can support an atypical case.
+164 P1 Neurology | Intracranial epidermoid cyst | Extra axial CSF like lesion with marked DWI hyperintensity.
+165 P1 Neurology | Oligodendroglioma | Cortical or subcortical infiltrative mass often containing calcification.
+166 P1 Neurology | Osmotic demyelination syndrome | Symmetric central pontine signal with peripheral sparing, sometimes with extrapontine lesions.
+167 P1 Neurology | Periventricular nodular heterotopia | Gray matter signal nodules lining the lateral ventricles.
+168 P1 Neurology | Polymicrogyria | Excess small gyri with an irregular cortical surface and gray white junction on MRI.
+169 P1 Neurology | Spinal cord infarction | Anterior cord diffusion restriction; sagittal pencil like signal and axial owl eyes may occur.
+170 P1 Neurology | Spinal epidural abscess | Rim enhancing epidural collection with cord or cauda equina compression on MRI.
+171 P2 Neurology | Acute necrotizing encephalopathy | Symmetric thalamic lesions, sometimes with concentric hemorrhagic or necrotic components.
+172 P2 Neurology | Alpers Huttenlocher syndrome | Posterior cortical and thalamic MRI abnormalities with refractory epilepsy and liver disease.
+173 P2 Neurology | Autoimmune GFAP astrocytopathy | Radial perivascular enhancement extending from the ventricles, with possible cord or meningeal involvement.
+174 P2 Neurology | Balo concentric sclerosis | Alternating concentric rings on T2 and diffusion imaging.
+175 P2 Neurology | Beta propeller protein associated neurodegeneration | Iron sensitive substantia nigra and pallidal signal, with a T1 bright nigral halo in later disease.
+176 P2 Neurology | Biotin thiamine responsive basal ganglia disease | Symmetric caudate and putamen swelling or injury on MRI in acute encephalopathy.
+177 P2 Neurology | Central neurocytoma | Bubbly intraventricular mass near the foramen of Monro and septum pellucidum.
+178 P2 Neurology | Choroid plexus tumors | Frond like avidly enhancing ventricular papilloma versus invasive heterogeneous carcinoma with necrosis or dissemination; hydrocephalus may accompany either.
+179 P2 Neurology | CLIPPERS | Numerous punctate and curvilinear enhancing foci centered on the pons and cerebellar peduncles.
+180 P2 Neurology | COL4A1 related disorders | Porencephaly, small vessel disease, and variable ocular abnormalities such as cataract.
+181 P2 Neurology | CSF1R related leukoencephalopathy | Confluent white matter injury, callosal thinning, persistent diffusion abnormalities, and small CT calcifications.
+182 P2 Neurology | Dyke Davidoff Masson syndrome | Cerebral hemiatrophy with ipsilateral calvarial thickening and sinus enlargement.
+183 P2 Neurology | Dysembryoplastic neuroepithelial tumor | Bubbly multinodular cortical lesion with little mass effect in a patient with epilepsy.
+184 P2 Neurology | Dysferlinopathy | Miyoshi phenotype shows prominent posterior calf wasting, with selective muscle involvement on imaging.
+185 P2 Neurology | Enterovirus A71 brainstem encephalitis | Dorsal brainstem signal with a compatible hand foot and mouth eruption.
+186 P2 Neurology | Familial dysautonomia | Smooth tongue from absent fungiform papillae and absent overflow emotional tears.
+187 P2 Neurology | Ganglioglioma | Superficial cortical tumor, often temporal, sometimes cystic with a mural nodule or calcification.
+188 P2 Neurology | Heroin inhalation associated leukoencephalopathy | Symmetric cerebellar and posterior cerebral white matter abnormalities.
+189 P2 Neurology | Horizontal gaze palsy with progressive scoliosis | Split pons and butterfly shaped medulla with progressive scoliosis.
+190 P2 Neurology | HTRA1 related cerebral small vessel disease | Leukoencephalopathy with lacunes; classic CARASIL adds early alopecia and spondylosis, and an arc sign can involve the pons and middle cerebellar peduncles.
+191 P2 Neurology | Idiopathic spinal cord herniation | Focal ventral cord displacement and kinking through a dural defect on MRI.
+192 P2 Neurology | Infratentorial superficial siderosis | Susceptibility blooming coating cerebellar folia, brainstem, and cranial nerves.
+193 P2 Neurology | Intracranial dermoid cyst | Fat containing intracranial lesion, with disseminated fat droplets after rupture.
+194 P2 Neurology | Japanese encephalitis | Bilateral thalamic lesions, sometimes involving basal ganglia and brainstem.
+195 P2 Neurology | LAMA2 related muscular dystrophy | Congenital weakness or contractures with extensive characteristic white matter signal abnormalities.
+196 P2 Neurology | Listeria rhombencephalitis | Brainstem and cerebellar peduncle inflammation or microabscesses on MRI.
+197 P2 Neurology | Marchiafava Bignami disease | Corpus callosum swelling or injury with selective central layer involvement.
+198 P2 Neurology | Metronidazole induced encephalopathy | Symmetric dentate nucleus abnormalities, sometimes involving the splenium or brainstem.
+199 P2 Neurology | Nasu Hakola disease | Cystic bone lesions paired with frontal predominant white matter degeneration.
+200 P2 Neurology | Neuralgic amyotrophy | Scapular winging with patchy muscle denervation edema or atrophy on MRI.
+201 P2 Neurology | Neuronal intranuclear inclusion disease | Curvilinear DWI hyperintensity along the corticomedullary junction.
+202 P2 Neurology | Pleomorphic xanthoastrocytoma | Superficial hemispheric cyst and mural nodule, sometimes with meningeal contact.
+203 P2 Neurology | Pontocerebellar hypoplasia | Small ventral pons and cerebellum; a dragonfly configuration occurs in some forms.
+204 P2 Neurology | Retinal vasculopathy with cerebral leukoencephalopathy and systemic manifestations | Retinal vascular abnormalities and enhancing white matter lesions that can resemble tumors.
+205 P2 Neurology | Rhombencephalosynapsis | Fusion of cerebellar hemispheres across a deficient vermis.
+206 P2 Neurology | SPG11 related hereditary spastic paraplegia | Thin corpus callosum and ears of the lynx white matter signal near the frontal horns.
+207 P2 Neurology | Spinal arachnoid web | Focal dorsal cord indentation producing a sagittal scalpel sign, sometimes with a syrinx.
+208 P2 Neurology | West Nile neuroinvasive disease | Deep gray, brainstem, or anterior horn abnormalities can accompany encephalitis or acute flaccid paralysis.
+209 P2 Neurology | X linked myotubular myopathy | Long myopathic face, ptosis, ophthalmoparesis, and severe neonatal hypotonia.
+210 P1 Orthopedics | Hangman fracture | CT shows bilateral pars interarticularis fractures of C2 with C2-on-C3 translation/angulation.
+211 P1 Orthopedics | Jefferson fracture | Axial CT shows bilateral C1 anterior and posterior arch fractures with lateral-mass displacement around the dens.
+212 P1 Orthopedics | Knee dislocation | Gross deformity or reduced knee with multiligament disruption; assess popliteal artery.
+213 P1 Orthopedics | Neuropathic arthropathy | Joint fragmentation, debris, disorganization, and collapse; rocker bottom foot in advanced midfoot disease.
+214 P1 Orthopedics | Odontoid fracture | Open-mouth and lateral cervical films/CT show fracture through C2 dens (type I tip, type II base, type III body).
+215 P1 Orthopedics | Supracondylar humerus fracture | Elbow radiograph: posterior fat pad, altered Baumann angle, or anterior humeral line; puckered skin can indicate entrapment.
+216 P1 Orthopedics | Traumatic hip dislocation | Shortened flexed, adducted, internally rotated leg; AP pelvis shows posteriorly displaced femoral head.
+217 P2 Orthopedics | Acetabular fracture | Pelvic oblique/Judet views or CT show fracture through acetabular columns/walls with disruption of iliopectineal or ilioischial lines.
+218 P2 Orthopedics | Acromioclavicular joint separation | Shoulder step-off and widened coracoclavicular distance on AP/Zanca view.
+219 P2 Orthopedics | Adhesive capsulitis | Marked loss of passive external rotation; MRI may show thickened coracohumeral ligament and edema/obliteration of rotator interval fat.
+220 P2 Orthopedics | Adverse local tissue reaction (metallosis) | Metal-on-metal hip MRI with metal-artifact reduction shows periarticular pseudotumor, synovitis, or fluid collection; radiograph may show metal debris.
+221 P2 Orthopedics | Atelosteogenesis | Severe limb shortening with hypoplastic or poorly ossified long bones and characteristic joint or skeletal abnormalities; include boomerang phenotype as a labeled variant.
+222 P2 Orthopedics | Baastrup disease | Lateral lumbar radiograph/CT shows close contact and sclerosis of adjacent spinous processes; MRI may show interspinous bursitis/edema.
+223 P2 Orthopedics | Biceps tendon rupture | Clinical Popeye bulge and palpable tendon gap; ultrasound/MRI shows proximal long-head tendon discontinuity or distal avulsion/retraction.
+224 P2 Orthopedics | Calcaneus fracture | Lateral heel film with decreased Böhler angle; distinguish tongue-type and joint-depression patterns.
+225 P2 Orthopedics | Cervical disc herniation | MRI shows focal cervical disc extrusion/protrusion indenting ventral thecal sac or compressing a nerve root/spinal cord.
+226 P2 Orthopedics | Chance fracture | Lateral spine CT shows a horizontal flexion-distraction fracture through vertebral body and posterior elements, often with a seatbelt injury.
+227 P2 Orthopedics | Chronic osteomyelitis | Sequestrum, involucrum, cloaca, and sinus tract on radiograph/CT/MRI.
+228 P2 Orthopedics | Clay-shoveler fracture | Lateral cervical/thoracic radiograph shows avulsion fracture of a lower cervical or upper thoracic spinous-process tip.
+229 P2 Orthopedics | Congenital knee dislocation | Newborn knee rests in hyperextension; lateral radiograph/US shows anterior tibial displacement relative to distal femur.
+230 P2 Orthopedics | Congenital pseudarthrosis of the clavicle | Visible painless midclavicular prominence; radiograph shows a gap/nonunion, usually right midshaft, with tapered ends.
+231 P2 Orthopedics | Cubital tunnel syndrome | Ulnar-distribution paresthesia and intrinsic hand weakness; ultrasound/MRI shows enlarged ulnar nerve at cubital tunnel, sometimes with dynamic subluxation.
+232 P2 Orthopedics | de Quervain tenosynovitis | Radial-styloid pain with positive Finkelstein/Eichhoff maneuver; US shows thickened first dorsal compartment tendon sheath.
+233 P2 Orthopedics | Discoid meniscus | MRI shows abnormally broad meniscus and continuity of anterior/posterior horns across at least three sagittal images (bow-tie sign).
+234 P2 Orthopedics | Elastofibroma dorsi | Deep infrascapular lentiform mass abutting chest wall; MRI shows muscle-like fibrous signal interlaced with linear fat streaks, often bilateral.
+235 P2 Orthopedics | Essex-Lopresti injury | Radial-head fracture with proximal radial migration and distal radioulnar joint widening/positive ulnar variance; image elbow, forearm, and wrist.
+236 P2 Orthopedics | Extensor mechanism rupture | Palpable tendon gap with patella alta (patellar tendon) or baja (quadriceps) on lateral radiograph.
+237 P2 Orthopedics | Fight bite | Small dorsal MCP laceration over a clenched-fist knuckle with swelling; radiograph may show tooth fragment or joint/phalangeal injury.
+238 P2 Orthopedics | Freiberg infraction | Radiograph shows flattening, sclerosis, and subchondral collapse of a metatarsal head (usually second) in an adolescent.
+239 P2 Orthopedics | Frontometaphyseal dysplasia | Prominent supraorbital ridges and craniofacial hyperostosis with metaphyseal flaring, long-bone bowing, and digital contractures.
+240 P2 Orthopedics | Galeazzi fracture-dislocation | Distal radial shaft fracture with distal radioulnar joint disruption.
+241 P2 Orthopedics | Grisel syndrome | CT/MRI shows nontraumatic atlantoaxial rotatory subluxation in a child after upper-airway infection or surgery.
+242 P2 Orthopedics | Haglund syndrome | Lateral heel film shows posterosuperior calcaneal prominence with retrocalcaneal bursal fluid and distal Achilles insertional thickening.
+243 P2 Orthopedics | Hydroxyapatite deposition disease | Periarticular calcific cloud in rotator-cuff tendon on shoulder radiograph.
+244 P2 Orthopedics | Incarcerated medial epicondyle | After elbow dislocation, radiograph shows medial epicondylar fragment trapped in the joint space rather than at its normal medial location.
+245 P2 Orthopedics | Intramuscular myxoma | MRI shows a well-circumscribed intramuscular T1-low/T2-high mass with perilesional fat rind or edema and variable peripheral enhancement.
+246 P2 Orthopedics | Intraosseous lipoma | Well-defined intramedullary lucency with sclerotic rim and central dystrophic calcification; CT/MRI confirms fat attenuation/signal.
+247 P2 Orthopedics | Isolated congenital radioulnar synostosis | Forearm radiograph shows proximal radius-ulna bony bridge with fixed pronation; distinguish from syndromic synostosis.
+248 P2 Orthopedics | Jansen metaphyseal chondrodysplasia | Short stature with metaphyseal widening, cupping/fraying, and cortical erosion.
+249 P2 Orthopedics | Jersey finger | Inability to flex DIP after forced extension; sagittal MRI/US shows FDP avulsion from distal phalanx with proximal tendon retraction.
+250 P2 Orthopedics | Jones fracture | Oblique foot radiograph shows fracture at the metaphyseal-diaphyseal junction of the fifth metatarsal, extending into the fourth-fifth intermetatarsal articulation (zone 2).
+251 P2 Orthopedics | Köhler disease | Child with midfoot pain; foot radiograph shows flattened, dense, fragmented navicular that later reossifies.
+252 P2 Orthopedics | Lateral condyle fracture | Pediatric elbow radiograph shows lateral distal-humeral metaphyseal fragment extending through the unossified articular cartilage; internal oblique view improves displacement assessment.
+253 P2 Orthopedics | Lesser-toe deformities | Inspection shows fixed or flexible hammertoe (PIP flexion), mallet toe (DIP flexion), or claw toe (MTP hyperextension with IP flexion); weight-bearing film defines alignment.
+254 P2 Orthopedics | Lipoma arborescens | Knee MRI shows frond-like synovial projections with T1/T2 signal matching fat and suppression on fat-saturated sequences, often with effusion.
+255 P2 Orthopedics | Lisfranc injury | Weight-bearing foot radiograph: tarsometatarsal widening or fleck sign.
+256 P2 Orthopedics | Lumbar facet synovial cyst | MRI shows a fluid-signal juxtafacet cyst communicating with degenerative lumbar facet and narrowing lateral recess/canal.
+257 P2 Orthopedics | Medial collateral ligament tear | Valgus stress tenderness/laxity; MRI shows edema and thickening or fiber discontinuity of the MCL, commonly with medial femoral condyle contusion.
+258 P2 Orthopedics | Monteggia fracture-dislocation | Proximal ulna fracture with radial head dislocated on elbow films.
+259 P2 Orthopedics | Morel-Lavallée lesion | MRI shows a lentiform hemolymphatic collection with fat globules in the plane between subcutaneous tissue and deep fascia, often over greater trochanter.
+260 P2 Orthopedics | Morton neuroma | Forefoot squeeze/Mulder click; US/MRI shows plantar interdigital nerve thickening in a web space, classically third-fourth.
+261 P2 Orthopedics | Myxofibrosarcoma | MRI of a superficial lower-extremity mass shows high T2 myxoid signal and curvilinear enhancing fascial tails.
+262 P2 Orthopedics | Müller-Weiss disease | Adult midfoot radiographs show comma-shaped navicular collapse/sclerosis with lateral displacement and talonavicular arthritis.
+263 P2 Orthopedics | Neurogenic heterotopic ossification | After spinal cord/brain injury, radiograph/CT shows periarticular ectopic bone bridging soft tissues, commonly around hip.
+264 P2 Orthopedics | Nora lesion | Radiograph shows a mineralized surface-based exostosis on a small bone of hand/foot, separated from medullary cavity; may have a cartilage cap.
+265 P2 Orthopedics | Osgood-Schlatter disease | Prominent, fragmented tibial tubercle on lateral knee radiograph.
+266 P2 Orthopedics | Ossification of the ligamentum flavum | CT shows posterior ligamentum flavum ossification, often thoracic; MRI demonstrates posterior canal narrowing and cord compression.
+267 P2 Orthopedics | Panner disease | Child with elbow pain; radiograph/MRI shows capitellar epiphyseal sclerosis, fragmentation, and flattening.
+268 P2 Orthopedics | Particle-disease osteolysis | Serial arthroplasty films show focal expansile periprosthetic osteolytic scalloping/osteolysis around wear-bearing surfaces.
+269 P2 Orthopedics | Patella fracture | AP/lateral/sunrise knee films show transverse, vertical, or comminuted patellar fracture and possible articular step-off; assess extensor mechanism.
+270 P2 Orthopedics | Patellar dislocation | Sunrise view shows lateral patellar displacement; MRI may show MPFL injury and contusions.
+271 P2 Orthopedics | Pectoralis major rupture | Acute chest/axillary ecchymosis with loss of anterior axillary fold; MRI shows tendon avulsion or retracted muscle-tendon unit.
+272 P2 Orthopedics | Pediatric incomplete forearm fractures | Pediatric forearm radiographs show torus cortical buckling or greenstick fracture with one cortex broken and the opposite cortex bowed/intact.
+273 P2 Orthopedics | Pelvic apophyseal avulsions | Pelvic radiographs show a displaced apophyseal fragment at the ASIS, AIIS, ischial tuberosity, or lesser trochanter; MRI shows edema when the apophysis is unossified.
+274 P2 Orthopedics | Pelvic ring disruption | AP/inlet/outlet pelvis views or CT show ring discontinuity, sacroiliac widening, pubic-ramus displacement, or vertical hemipelvic shift.
+275 P2 Orthopedics | Perilunate and lunate dislocation | Lateral wrist film with spilled-teacup lunate and disrupted carpal arcs.
+276 P2 Orthopedics | Periosteal chondroma | Small cortical-surface cartilage mass with saucer-like cortical erosion, sclerotic rim, and overhanging edges on radiograph/CT.
+277 P2 Orthopedics | Periprosthetic joint infection | Painful prosthesis with sinus tract or effusion; imaging can show periprosthetic lucency/loosening, while aspiration and cultures confirm infection.
+278 P2 Orthopedics | Peroneal tendon dislocation | Dynamic US during resisted eversion shows peroneal tendons snapping anterior to fibula due to superior retinaculum injury; MRI depicts retinaculum tear.
+279 P2 Orthopedics | Plantar fibromatosis | Palpable medial plantar-arch nodule; US/MRI shows nodular thickening arising from the plantar aponeurosis, usually along its medial band.
+280 P2 Orthopedics | Posterior cruciate ligament tear | Posterior sag on exam; MRI shows PCL discontinuity or dashboard contusion pattern.
+281 P2 Orthopedics | Posterolateral corner injury | MRI shows edema or discontinuity of fibular collateral ligament, popliteus tendon, and popliteofibular ligament; fibular-head arcuate avulsion is a clue.
+282 P2 Orthopedics | Primary lymphoma of bone | Radiograph/MRI shows a permeative marrow lesion with a large soft-tissue mass despite relatively limited cortical destruction.
+283 P2 Orthopedics | Pyle disease | Radiographs show marked metaphyseal expansion of long bones with thin cortices (Erlenmeyer-flask shape), especially around knees.
+284 P2 Orthopedics | Pyogenic spondylodiscitis | MRI shows disc-space signal and adjacent endplate destruction.
+285 P2 Orthopedics | Pyomyositis | MRI shows muscle edema progressing to a rim-enhancing intramuscular abscess with central fluid signal; US can guide drainage.
+286 P2 Orthopedics | Radial head fracture | Elbow radiograph shows radial-head cortical break or depression; a posterior fat-pad sign can disclose an occult fracture.
+287 P2 Orthopedics | Scapholunate dissociation | PA wrist radiograph shows widened scapholunate interval (Terry-Thomas sign) and scaphoid ring sign; lateral view may show DISI.
+288 P2 Orthopedics | Septic bursitis | US/MRI shows distended olecranon or prepatellar bursa with thick hyperemic wall, echogenic debris, and surrounding cellulitis.
+289 P2 Orthopedics | Sinding-Larsen-Johansson disease | Adolescent with inferior patellar-pole tenderness; lateral knee film shows fragmentation/ossicle at the patellar tendon origin.
+290 P2 Orthopedics | Skeletal metastases | Lytic missing pedicle, ivory vertebra, or permeative metadiaphyseal lesion.
+291 P2 Orthopedics | Split-hand/foot malformation | Clinical/radiographic central ray deficiency creates median cleft with absent central metacarpals/metatarsals and divergent digits.
+292 P2 Orthopedics | Subchondral insufficiency fracture of the knee | MRI shows subchondral low-signal fracture line with extensive marrow edema, usually medial femoral condyle; early radiographs may be normal.
+293 P2 Orthopedics | Talar neck fracture | Ankle lateral radiograph/CT shows talar neck fracture; Hawkins classification records subtalar/tibiotalar displacement, and the later Hawkins sign is subchondral talar-dome lucency.
+294 P2 Orthopedics | Terrible triad of the elbow | Elbow films/CT show posterior dislocation with radial-head and coronoid-process fractures.
+295 P2 Orthopedics | Thumb ulnar collateral ligament injury | Thumb MCP valgus laxity; MRI/US shows UCL discontinuity, retraction, or Stener lesion superficial to the adductor aponeurosis.
+296 P2 Orthopedics | Tibial hemimelia | AP leg radiograph shows partial/complete tibial absence or hypoplasia with fibular bowing and knee/ankle deformity.
+297 P2 Orthopedics | Tibial tubercle avulsion | Lateral knee radiograph shows displaced tibial tubercle fragment in an adolescent; inspect for patella alta and extensor-mechanism disruption.
+298 P2 Orthopedics | Transient osteoporosis of the hip | Diffuse femoral head and neck marrow edema, later osteopenia, without the typical focal necrotic boundary.
+299 P2 Orthopedics | Transitional ankle fractures | Adolescent distal tibial epiphyseal fracture crosses epiphysis, physis, and metaphysis; CT axial/coronal reconstructions define Tillaux (anterolateral) versus triplane planes.
+300 P2 Orthopedics | Ulnar longitudinal deficiency | Forearm/hand radiographs show hypoplastic or absent ulna with radial bowing and ulnar-sided digit deficiency.
+301 P2 Orthopedics | Vertebral hemangioma | Corduroy trabeculae on radiograph and polka-dot trabeculae on axial CT.
+302 P1 Otolaryngology | Carotid body tumor | Hypervascular carotid bifurcation mass splaying ICA and ECA (lyre sign) on CTA/MRA.
+303 P1 Otolaryngology | Congenital laryngeal web | Thin anterior glottic web visible at laryngoscopy, sometimes with a small anterior notch.
+304 P1 Otolaryngology | Idiopathic subglottic stenosis | Short circumferential fibrotic narrowing immediately below the glottis on endoscopy/CT.
+305 P1 Otolaryngology | Laryngeal cleft | Posterior interarytenoid cleft on direct laryngoscopy/bronchoscopy; aspiration on swallow study.
+306 P1 Otolaryngology | Laryngeal fracture | CT cartilage discontinuity or laryngeal framework displacement with laryngoscopic mucosal injury/airway edema.
+307 P1 Otolaryngology | Le Fort fractures (types I–III as one topic) | CT shows Le Fort fracture line crossing the maxilla/pterygoid plates; classify I, II, or III by separation level.
+308 P1 Otolaryngology | Mandibular fracture | Mandibular cortical discontinuity on panoramic radiograph/CT; assess symphysis, body, angle, and condyle.
+309 P1 Otolaryngology | Nasal bone fracture | Displaced or comminuted nasal-bone fracture on facial CT, with bridge deviation/swelling clinically.
+310 P1 Otolaryngology | Nasal foreign body, including a button battery | Unilateral nasal discharge with visible foreign body; button battery may produce septal ulceration/perforation.
+311 P1 Otolaryngology | Nasal septal hematoma | Boggy, fluctuant bilateral septal swelling obstructing both nasal passages after trauma.
+312 P1 Otolaryngology | Orbital blowout fracture | Orbital floor defect with herniated orbital fat/inferior rectus and maxillary hemosinus on coronal CT.
+313 P1 Otolaryngology | Parapharyngeal abscess | Rim-enhancing collection in parapharyngeal space on contrast CT, with airway displacement.
+314 P1 Otolaryngology | Sinonasal fungal ball | Single opacified sinus containing central hyperattenuating/calcific material with reactive wall sclerosis on CT.
+315 P1 Otolaryngology | Superior semicircular canal dehiscence | Thin-section temporal-bone CT with canal-plane Pöschl and orthogonal Stenvers reformats showing absent bony roof.
+316 P1 Otolaryngology | Temporal bone fracture (otic-capsule sparing versus violating) | High-resolution temporal-bone CT shows fracture line and whether it crosses otic capsule; associated hemotympanum/CSF leak.
+317 P1 Otolaryngology | Tympanosclerosis | Discrete chalk-white plaques in the tympanic membrane, often with reduced membrane mobility.
+318 P1 Otolaryngology | Vallecular cyst | Smooth cyst arising in vallecula, displacing epiglottis posteriorly on flexible laryngoscopy.
+319 P1 Otolaryngology | Zygomaticomaxillary complex fracture | CT shows zygomatic arch depression, widened lateral orbit, and disruption of zygomaticomaxillary/orbital rims.
+320 P2 Otolaryngology | Acute bacterial sialadenitis | Unilateral tender swollen salivary gland with purulent drainage at duct orifice.
+321 P2 Otolaryngology | Cholesterol granuloma of the petrous apex | Petrous-apex lesion with high signal on both T1- and T2-weighted MRI and smooth expansion.
+322 P2 Otolaryngology | Chronic invasive fungal rhinosinusitis | Unilateral infiltrative sinonasal soft tissue with bone destruction and extrasinus extension on CT/MRI.
+323 P2 Otolaryngology | Cocaine-induced midline destructive lesion | Midline septal, turbinate, and palatal ulceration with cartilage/bone destruction; palate perforation in advanced disease.
+324 P2 Otolaryngology | Enlarged vestibular aqueduct | Enlarged vestibular aqueduct on high-resolution temporal-bone CT, measured at midpoint; commonly bilateral.
+325 P2 Otolaryngology | External auditory canal cholesteatoma | Focal canal-floor soft-tissue erosion with sequestrated bone on temporal-bone CT; keratin debris on otoscopy.
+326 P2 Otolaryngology | External auditory canal osteoma | Single dense pedunculated bony projection from the external auditory canal on otoscopy/CT.
+327 P2 Otolaryngology | First branchial cleft anomaly | Periauricular pit/cyst or draining sinus with tract through/parotid region toward external auditory canal.
+328 P2 Otolaryngology | Keratosis obturans | Dense keratin plug filling an expanded external canal, with severe otalgia and conductive hearing loss.
+329 P2 Otolaryngology | Nasolabial (nasoalveolar) cyst | Smooth cystic swelling at the nasal ala/vestibule, typically below the piriform aperture on CT/MRI.
+330 P2 Otolaryngology | Odontogenic sinusitis | Unilateral maxillary sinus opacification contiguous with a diseased maxillary tooth or dental implant on CT.
+331 P2 Otolaryngology | Petrous apicitis (Gradenigo syndrome) | Petrous-apex opacification/erosion on temporal-bone CT with adjacent apical inflammation; diplopia from CN VI palsy.
+332 P2 Otolaryngology | Preauricular sinus | Small pit immediately anterior to the ascending helix; expressible discharge when infected.
+333 P2 Otolaryngology | Reinke edema | Bilateral diffuse gelatinous/polypoid swelling of the true vocal folds on laryngoscopy.
+334 P2 Otolaryngology | Sinonasal osteoma | Well-defined ivory-density lesion attached to a frontal or ethmoid sinus wall on CT.
+335 P2 Otolaryngology | Sinonasal squamous cell carcinoma | Irregular enhancing sinonasal mass with focal bone destruction and orbital/skull-base extension on CT/MRI.
+336 P2 Otolaryngology | Vocal fold cyst | Smooth subepithelial vocal-fold cyst causing focal bulge and impaired mucosal wave on stroboscopy.
+337 P2 Otolaryngology | Vocal fold nodules | Bilateral symmetric callus-like lesions at the junction of anterior and middle thirds of true vocal folds on laryngoscopy.
+338 P2 Otolaryngology | Vocal fold polyp | Unilateral focal pedunculated or sessile lesion on the free edge of a true vocal fold.
+339 P2 Otolaryngology | Vocal process granuloma | Posterior vocal-process granuloma at the arytenoid vocal process on laryngoscopy.
+340 P1 Pediatrics | Atypical Teratoid/Rhabdoid Tumor | Large heterogeneous infant CNS mass with possible hemorrhage, cysts, restricted diffusion, and hydrocephalus; posterior-fossa lesions can mimic medulloblastoma.
+341 P1 Pediatrics | Congenital High Airway Obstruction Syndrome (CHAOS) | Prenatal ultrasound/MRI shows enlarged echogenic lungs, dilated distal airways, flattened/inverted diaphragm, and fetal hydrops from laryngeal/tracheal obstruction.
+342 P1 Pediatrics | Currarino Syndrome | Lateral sacral radiograph shows hemisacrum/sickle-shaped sacrum; MRI/US depicts presacral mass with anorectal malformation.
+343 P1 Pediatrics | Germinal matrix and intraventricular hemorrhage of prematurity | Caudothalamic groove hemorrhage and intraventricular blood on cranial ultrasound.
+344 P1 Pediatrics | Hair thread tourniquet syndrome | A constricting hair or thread with distal swelling or ischemia on a digit, toe, or penis; include genital presentations within one topic.
+345 P1 Pediatrics | Hydranencephaly | Near absence of cerebral hemispheres replaced by fluid, with preserved falx and variable deep structures.
+346 P1 Pediatrics | Kernicterus | Bilateral pallidal signal abnormalities, with chronic T2 changes; early bilirubin injury can be T1 bright.
+347 P1 Pediatrics | Periventricular leukomalacia | Periventricular cysts or white matter volume loss with irregular ventricular margins.
+348 P1 Pediatrics | Physical child abuse | Classic metaphyseal lesions, suspicious rib fracture patterns, and intracranial injury; interpret the entire clinical context rather than treating an isolated sign as proof.
+349 P1 Pediatrics | Pleuropulmonary blastoma | In a young child, CT shows a multiseptated cystic or mixed cystic-solid lung mass, sometimes with pneumothorax, in a DICER1 context.
+350 P1 Pediatrics | Subgaleal Hemorrhage | Diffuse boggy scalp collection crosses sutures and midline, with subaponeurotic fluid on ultrasound; unlike suture-confined cephalohematoma.
+351 P2 Pediatrics | 3M Syndrome | Severe prenatal/postnatal growth restriction with slender long bones, tall vertebral bodies, and characteristic vertebral endplate changes.
+352 P2 Pediatrics | Alpha-Mannosidosis | Coarse facies, hearing loss, hepatosplenomegaly, and dysostosis multiplex on skeletal radiographs.
+353 P2 Pediatrics | Asymmetric Periflexural Exanthem of Childhood | Unilateral/periflexural papular erythematous eruption begins near an axilla or groin and spreads centrifugally, often becoming bilateral but asymmetric.
+354 P2 Pediatrics | ATR-X Syndrome | Characteristic hypotonic facies with upturned nose, tented upper lip, widely spaced teeth, and genital anomalies; HbH inclusions can support diagnosis.
+355 P2 Pediatrics | Beare-Stevenson Cutis Gyrata Syndrome | Cutis gyrata with acanthosis nigricans, craniosynostosis, prominent umbilical stump, and characteristic facial appearance.
+356 P2 Pediatrics | Brachytelephalangic Chondrodysplasia Punctata | Short distal phalanges with punctate epiphyseal calcifications and midface/nasal hypoplasia on radiographs.
+357 P2 Pediatrics | Branchio-Oculo-Facial Syndrome | Branchial skin defects, ocular coloboma/microphthalmia, and cleft lip or prominent philtral pillars with a broad nasal tip.
+358 P2 Pediatrics | CHILD Syndrome | Strictly unilateral, sharply demarcated ichthyosiform inflammatory nevus follows Blaschko lines with ipsilateral limb hypoplasia/reduction.
+359 P2 Pediatrics | Choroid Plexus Tumors (Papilloma and Carcinoma) | Intraventricular tumors are usually lobulated and avidly enhancing; papillomas are frond-like and may cause hydrocephalus, while carcinomas are invasive/heterogeneous and may show necrosis, hemorrhage, or dissemination.
+360 P2 Pediatrics | Cohen Syndrome | Thick hair and eyebrows, downslanting palpebral fissures, open-mouth appearance, joint hypermobility, and later retinal dystrophy.
+361 P2 Pediatrics | Congenital Infantile Fibrosarcoma | A rapidly growing infant soft-tissue mass is often heterogeneous and avidly enhancing on MRI, with hemorrhage or necrosis; imaging overlaps vascular tumors and needs pathology correlation.
+362 P2 Pediatrics | Desbuquois Dysplasia | Short limbs and joint laxity with “Swedish key” proximal femoral appearance and vertebral coronal clefts on radiographs.
+363 P2 Pediatrics | Donnai-Barrow Syndrome | Characteristic facial appearance with high myopia/retinal detachment, sensorineural hearing loss, and diaphragmatic/omphalocele defects.
+364 P2 Pediatrics | Erythema Toxicum Neonatorum | Well newborn has blanching erythematous macules/papules with central papules or pustules, mainly trunk and proximal limbs, sparing palms and soles.
+365 P2 Pediatrics | Feingold Syndrome | Microcephaly, short palpebral fissures, brachymesophalangy with clinodactyly, toe syndactyly, and gastrointestinal atresia.
+366 P2 Pediatrics | Femoral Hypoplasia–Unusual Facies Syndrome | Bilateral or asymmetric femoral hypoplasia with upslanting palpebral fissures, short nose, long philtrum, and cleft palate.
+367 P2 Pediatrics | Fetal Hydantoin Syndrome | Prenatal phenytoin exposure with nail/digital hypoplasia, midface hypoplasia, cleft lip/palate, and growth restriction.
+368 P2 Pediatrics | Fetal Valproate Syndrome | Prenatal valproate exposure may produce characteristic facial features, metopic ridge, radial-ray defects, and neural-tube defects.
+369 P2 Pediatrics | Fryns Syndrome | Coarse facial appearance, distal nail hypoplasia, and diaphragmatic hernia on prenatal or neonatal imaging.
+370 P2 Pediatrics | Fucosidosis | Progressive coarse facial features and skeletal dysostosis with possible angiokeratomas and white-matter changes.
+371 P2 Pediatrics | Galactosialidosis | Coarse facies, cherry-red spots, skeletal dysplasia, and vacuolated cells in infantile disease.
+372 P2 Pediatrics | Grebe Acromesomelic Dysplasia | Marked acromesomelic limb shortening with severe hand/foot abnormalities and characteristic short, broad tubular bones.
+373 P2 Pediatrics | Greig Cephalopolysyndactyly Syndrome | Macrocephaly, hypertelorism, preaxial polydactyly, and cutaneous syndactyly.
+374 P2 Pediatrics | Hennekam Syndrome | Lymphedema with characteristic coarse facial appearance, intestinal lymphangiectasia, and possible lymphatic malformations on imaging.
+375 P2 Pediatrics | Infantile Acropustulosis | Recurrent intensely pruritic crops of sterile vesiculopustules favoring palms and soles, often starting in early infancy.
+376 P2 Pediatrics | Isotretinoin Embryopathy | Craniofacial dysmorphism with microtia/ear canal anomalies, conotruncal cardiac defects, and thymic/CNS abnormalities after exposure.
+377 P2 Pediatrics | L1 syndrome | Prenatal/neonatal imaging shows aqueductal stenosis with hydrocephalus; examination shows adducted thumbs.
+378 P2 Pediatrics | Lipoblastoma | Infant/toddler has a rapidly enlarging soft-tissue mass; MRI shows lobulated fat-containing lesion with septa and variable nonfatty components.
+379 P2 Pediatrics | LUMBAR Syndrome | Segmental lower-body infantile hemangioma with underlying lumbosacral, urogenital, anorectal, or renal anomalies on MRI/US.
+380 P2 Pediatrics | Marshall-Smith Syndrome | Progeroid facies with prominent eyes, upturned nose, broad forehead, accelerated skeletal maturation, and respiratory/airway problems.
+381 P2 Pediatrics | Matthew Wood syndrome | Anophthalmia or severe microphthalmia with diaphragmatic hernia, pulmonary hypoplasia, and cardiac/urogenital anomalies.
+382 P2 Pediatrics | Meconium Plug Syndrome | Contrast enema shows a normal-caliber colon with long filling defect from meconium; plug may evacuate during the study.
+383 P2 Pediatrics | Meier-Gorlin Syndrome | Microtia, patellar hypoplasia/absence, and severe pre- and postnatal growth restriction.
+384 P2 Pediatrics | Melanotic Neuroectodermal Tumor of Infancy | Rapidly enlarging infant anterior maxillary mass with an expansile lytic lesion and variable spiculated/sunburst bone change on radiographs or CT.
+385 P2 Pediatrics | Melnick-Needles Syndrome | Distinctive facial appearance with slender bowed long bones, cortical irregularity, and rib/spine/pelvic abnormalities.
+386 P2 Pediatrics | Mesenchymal hamartoma of the liver | Large multicystic infant liver mass with thin septa and intervening solid stromal tissue on ultrasound/CT.
+387 P2 Pediatrics | Microcephalic osteodysplastic primordial dwarfism type II | Severe microcephaly and primordial dwarfism with characteristic skeletal changes including hypoplastic iliac wings and abnormal metaphyses.
+388 P2 Pediatrics | Miller Syndrome | Postaxial limb-ray deficiency with malar hypoplasia, micrognathia, and cup-shaped ears.
+389 P2 Pediatrics | Molybdenum Cofactor Deficiency | Neonatal seizures with MRI diffusion restriction and evolving cystic encephalomalacia involving cortex and subcortical white matter.
+390 P2 Pediatrics | Muenke Syndrome | Coronal craniosynostosis with variable hypertelorism, brachydactyly/carpal-tarsal fusion, and hearing loss; CT demonstrates the fused coronal suture.
+391 P2 Pediatrics | Multiple Sulfatase Deficiency | Coarse features, ichthyosis, skeletal dysplasia/dysostosis multiplex, and neurologic decline.
+392 P2 Pediatrics | Myhre Syndrome | Short stature with thickened skin, brachydactyly, joint stiffness, and radiographic broad short tubular bones/vertebral changes.
+393 P2 Pediatrics | Neonatal Adrenal Hemorrhage | Ultrasound shows an avascular suprarenal mass that liquefies and shrinks on serial imaging; chronic lesions may calcify.
+394 P2 Pediatrics | Neonatal mastitis | Unilateral erythematous, warm, tender neonatal breast bud; US fluid collection if abscess.
+395 P2 Pediatrics | Neonatal Small Left Colon Syndrome | Contrast enema shows a small descending/sigmoid colon with abrupt caliber transition at the splenic flexure and a normal-caliber rectum.
+396 P2 Pediatrics | Nicolaides-Baraitser Syndrome | Sparse scalp hair, prominent interphalangeal joints, broad fingertips, triangular face, and thick lower lip.
+397 P2 Pediatrics | Opsismodysplasia | Severe short-limb dwarfism with delayed ossification, small irregular epiphyses, and platyspondyly on skeletal survey.
+398 P2 Pediatrics | Pallister Hall syndrome | Postaxial polydactyly, bifid epiglottis, and hypothalamic hamartoma on MRI.
+399 P2 Pediatrics | Pallister-Killian Syndrome | Coarse facial gestalt, temporal alopecia, pigmentary mosaicism, and hypotonia; mosaic tetrasomy 12p may be missed in blood.
+400 P2 Pediatrics | Pediatric Cystic Nephroma | Renal ultrasound/CT/MRI shows a well-circumscribed multiloculated cystic renal mass with enhancing septa and no solid nodules.
+401 P2 Pediatrics | Perlman Syndrome | Fetal/neonatal overgrowth with visceromegaly, renal abnormalities/nephroblastomatosis, and characteristic facial appearance.
+402 P2 Pediatrics | Pitt-Hopkins Syndrome | Wide mouth with full lips, deep-set eyes, broad nasal bridge, and characteristic intermittent hyperventilation/apnea in a child with severe developmental delay.
+403 P2 Pediatrics | Rhabdoid Tumor of the Kidney | Infant renal mass is large and heterogeneous with necrosis/hemorrhage, often with calcifications and synchronous atypical teratoid/rhabdoid tumor.
+404 P2 Pediatrics | Roberts Syndrome | Severe symmetric tetraphocomelia or limb reduction with cleft lip/palate, microcephaly, and characteristic facial dysmorphism.
+405 P2 Pediatrics | Schinzel-Giedion Syndrome | Midface retrusion, proptosis, depressed nasal bridge, genital/renal anomalies, and a distinctive skull/vertebral radiographic pattern.
+406 P2 Pediatrics | Stüve-Wiedemann Syndrome | Bowed long bones with cortical thickening at the concavity, metaphyseal abnormalities, and recurrent fractures.
+407 P2 Pediatrics | Umbilical Granuloma | Small moist beefy-red tissue at the umbilical stump after cord separation, distinguishable from a patent urachus or omphalomesenteric duct.
+408 P2 Pediatrics | Warfarin Embryopathy | Nasal hypoplasia with stippled epiphyses/vertebrae on skeletal radiographs after first-trimester exposure.
+409 P2 Pediatrics | Wiedemann Rautenstrauch syndrome | Neonatal progeroid facies, natal teeth, sparse hair, and lipoatrophy.
+410 P2 Pediatrics | Wiedemann-Steiner Syndrome | Thick flared eyebrows, long eyelashes, downslanting narrow palpebral fissures, and hypertrichosis cubiti (“hairy elbows”).
+411 P1 Pulmonology | Airway foreign body aspiration | Unilateral expiratory air trapping/hyperinflation on chest film; foreign body seen on bronchoscopy.
+412 P1 Pulmonology | Alveolar Macrophage Pneumonia (formerly Desquamative Interstitial Pneumonia) | HRCT typically shows diffuse/basal ground-glass opacity in a smoker, sometimes with subpleural sparing and emphysema.
+413 P1 Pulmonology | Asbestos related nonmalignant thoracic disease | Basal subpleural fibrosis for asbestosis; pleural plaques, diffuse pleural thickening, and associated rounded atelectasis as distinct nonmalignant manifestations.
+414 P1 Pulmonology | Bronchial Atresia | CT shows a blind-ending bronchus with a mucocele/bronchocele and adjacent segmental hyperinflation/air trapping.
+415 P1 Pulmonology | Chronic Thromboembolic Pulmonary Hypertension | V/Q scan shows segmental mismatched perfusion defects; CTPA shows eccentric organized thrombus, webs/bands, pouch defects, mosaic perfusion, and enlarged bronchial arteries.
+416 P1 Pulmonology | Combined Pulmonary Fibrosis and Emphysema | HRCT shows upper-lobe centrilobular/paraseptal emphysema with lower-lobe subpleural fibrosis/honeycombing in the same patient.
+417 P1 Pulmonology | Constrictive Bronchiolitis | Expiratory HRCT shows patchy lobular air trapping/mosaic attenuation, sometimes with bronchiectasis and bronchial-wall thickening.
+418 P1 Pulmonology | Diffuse Idiopathic Pulmonary Neuroendocrine Cell Hyperplasia (DIPNECH) | HRCT shows diffuse mosaic attenuation/air trapping with multiple small centrilobular nodules and occasional tumorlets or carcinoids.
+419 P1 Pulmonology | Fat Embolism Syndrome | After long-bone injury, conjunctival/axillary petechiae; chest CT may show diffuse or patchy ground-glass opacity, septal thickening, and centrilobular nodules.
+420 P1 Pulmonology | Idiopathic Nonspecific Interstitial Pneumonia | HRCT shows lower-lung-predominant ground-glass opacity or fine reticulation with relative subpleural sparing; traction bronchiectasis if fibrotic.
+421 P1 Pulmonology | Mature Mediastinal Teratoma | Anterior mediastinal mass with macroscopic fat, fluid, soft tissue, and coarse calcification/teeth; fat-fluid level may be present.
+422 P1 Pulmonology | Neuroendocrine cell hyperplasia of infancy | HRCT shows geographic ground-glass opacity centered in right middle lobe and lingula with central/paramediastinal distribution and mosaic air trapping.
+423 P1 Pulmonology | Pulmonary Artery Intimal Sarcoma | CTPA shows a lobulated, expansile filling defect with vessel enlargement/wall-eclipsing; MRI shows heterogeneous enhancement and PET may be FDG avid.
+424 P1 Pulmonology | Rounded Atelectasis | Pleural-based rounded mass adjacent to thickened pleura, with converging bronchovascular structures curving into the lesion (comet-tail sign).
+425 P1 Pulmonology | Thymoma | CT shows a well-circumscribed or lobulated anterior mediastinal soft-tissue mass; pleural “drop” implants can indicate dissemination.
+426 P1 Pulmonology | Tracheobronchomalacia | Dynamic expiratory collapse of the tracheal lumen on bronchoscopy or dynamic CT.
+427 P2 Pulmonology | Amiodarone Pulmonary Toxicity | HRCT may show peripheral ground-glass opacity or consolidation; high-attenuation lung opacities and high-attenuation liver/spleen support iodine-rich drug accumulation.
+428 P2 Pulmonology | Bronchial Anthracofibrosis | Bronchoscopy shows black anthracotic pigmentation with bronchial narrowing/stenosis, often involving the right middle lobe; CT may show calcified nodes and atelectasis.
+429 P2 Pulmonology | Bronchial Mucoepidermoid Carcinoma | Central endobronchial soft-tissue nodule/mass on CT causing focal airway narrowing, atelectasis, or recurrent postobstructive infection.
+430 P2 Pulmonology | Bronchogenic Cyst | Smooth, sharply marginated water-attenuation mediastinal (often subcarinal) or intrapulmonary cyst on CT; proteinaceous contents may increase attenuation.
+431 P2 Pulmonology | Complete Tracheal Rings | Axial CT/bronchoscopy shows a circular O-shaped trachea lacking the posterior membranous wall, often with long-segment stenosis.
+432 P2 Pulmonology | Dendriform Pulmonary Ossification | Thin branching, bone-density opacities in dependent lower-lobe subpleural/interstitial lung on CT, often incidentally detected.
+433 P2 Pulmonology | Diaphragmatic Eventration | Smooth elevated intact hemidiaphragm with preserved continuity on CT/ultrasound; dynamic ultrasound can show reduced excursion.
+434 P2 Pulmonology | Genetic surfactant dysfunction | Diffuse ground glass, septal thickening, and variable cystic change in term neonates or children; label SFTPB, SFTPC, ABCA3, and NKX2-1 subtypes and do not infer genotype from CT.
+435 P2 Pulmonology | Inert metal pneumoconiosis | Dense fine pulmonary nodules after iron, tin, or barium dust exposure; keep siderosis, stannosis, and baritosis as labeled etiologic sections.
+436 P2 Pulmonology | Metastatic Pulmonary Calcification | CT shows upper-lobe-predominant centrilobular ground-glass nodules or calcified nodules in chronic renal failure/hyperparathyroidism; bone scintigraphy may show diffuse pulmonary uptake.
+437 P2 Pulmonology | Posterior Mediastinal Schwannoma | Well-circumscribed paravertebral/posterior mediastinal mass, often with smooth neural-foraminal widening or dumbbell extension on CT/MRI.
+438 P2 Pulmonology | Proximal Interruption of a Pulmonary Artery | CT angiography shows absent proximal branch pulmonary artery with distal intrapulmonary branches supplied by systemic collaterals and a small ipsilateral lung.
+439 P2 Pulmonology | Pulmonary agenesis and aplasia | Absent or rudimentary ipsilateral main bronchus with absent lung tissue and vasculature, ipsilateral volume loss, and compensatory contralateral expansion.
+440 P2 Pulmonology | Pulmonary Light-Chain Deposition Disease | CT may show multiple cysts and nodules, often peribronchovascular, with airway-wall thickening or calcification.
+441 P2 Pulmonology | Pulmonary Sclerosing Pneumocytoma | Usually a well-circumscribed, peripherally located, round/oval nodule with homogeneous enhancement; marginal pseudocapsule or overlying-vessel sign may appear.
+442 P2 Pulmonology | Pulmonary Talcosis | CT after intravenous injection of crushed tablets may show centrilobular micronodules/tree-in-bud pattern, sometimes high attenuation, with upper-lobe/costophrenic sparing.
+443 P2 Pulmonology | Pulmonary Vein Stenosis | CTA/MRA shows focal pulmonary-vein narrowing or abrupt cutoff with regional septal thickening, ground-glass edema, waxing/waning opacities, or decreased perfusion.
+444 P2 Pulmonology | Respiratory Bronchiolitis-Interstitial Lung Disease (RB-ILD) | Smoker with ill-defined upper-lobe centrilobular nodules, patchy ground-glass opacity, bronchial-wall thickening, and often emphysema on HRCT.
+445 P2 Pulmonology | Spontaneous Pneumomediastinum | Chest radiograph/CT shows mediastinal air outlining the heart, great vessels, or trachea, sometimes with continuous-diaphragm sign.
+446 P2 Pulmonology | Thoracic Splenosis | Multiple left pleural-based nodules on CT after remote splenic trauma/splenectomy; lesions enhance like splenic tissue and show uptake on heat-damaged RBC scan.
+447 P2 Pulmonology | Tracheobronchial Adenoid Cystic Carcinoma | CT shows smooth submucosal tracheal or main-bronchial wall thickening/narrowing, sometimes with longitudinal extension; bronchoscopy shows a submucosal lesion.
+448 P2 Pulmonology | Vaping-Associated Lung Injury (EVALI) | Chest CT commonly shows bilateral ground-glass opacity with subpleural/lobular sparing, sometimes consolidation or upper-lobe centrilobular nodules.
+449 P2 Pulmonology | Williams-Campbell Syndrome | Inspiratory/expiratory CT shows peripheral cystic bronchiectasis from deficient cartilaginous support in fourth- to sixth-order bronchi, with dynamic ballooning/collapse.
+450 P1 Rheumatology | Secondary hypertrophic osteoarthropathy | Digital clubbing with symmetric long bone periostosis and parallel cortical scintigraphic uptake.
+451 P2 Rheumatology | Camptodactyly arthropathy coxa vara pericarditis syndrome | Camptodactyly, noninflammatory joint swelling, and coxa vara with short femoral necks.
+452 P2 Rheumatology | COPA syndrome | Childhood diffuse lung disease with ground glass, cysts, and nodules paired with arthritis.
+453 P2 Rheumatology | Dialysis related beta 2 microglobulin amyloidosis | Periarticular bone cysts and destructive spondyloarthropathy after long term dialysis.
+454 P2 Rheumatology | Fibroblastic rheumatism | Periarticular cutaneous nodules with rapidly developing flexion contractures.
+455 P2 Rheumatology | Multicentric osteolysis nodulosis and arthropathy | Carpal and tarsal osteolysis with palmoplantar nodules and contractures.
+456 P2 Rheumatology | Pachydermodactyly | Painless lateral proximal interphalangeal soft tissue thickening without erosions.
+457 P2 Rheumatology | Palmar fasciitis and polyarthritis syndrome | Rapidly progressive woody palmar thickening with flexion contractures and polyarthritis.
+458 P2 Rheumatology | Singleton Merten syndrome | Early aortic or valve calcification, abnormal dentition, and acro osteolysis.
+459 P2 Rheumatology | Stiff skin syndrome | Indurated bound down skin with hypertrichosis and joint contractures.
+460 P2 Rheumatology | Voriconazole induced periostitis | Irregular bulky periosteal new bone, often involving ribs, clavicles, or scapulae.
+461 P1 Urology | Bladder rupture | Retrograde CT cystogram shows extraperitoneal perivesical/Retzius leak or intraperitoneal contrast outlining bowel.
+462 P1 Urology | Ectopic ureter | MR urography depicts ureter inserting distal to sphincter; continuous incontinence despite normal voiding in a girl.
+463 P1 Urology | Prostatic abscess | Fever/dysuria with rim-enhancing intraprostatic fluid collection on TRUS, CT, or MRI.
+464 P1 Urology | Renal trauma | Multiphase contrast CT grades laceration/vascular injury; delayed phase demonstrates urinary extravasation and perirenal hematoma.
+465 P1 Urology | Traumatic urethral injury | Retrograde urethrogram shows contrast extravasation at membranous urethra after pelvic fracture or bulbar urethra after straddle injury.
+466 P1 Urology | Upper-tract urothelial carcinoma | CT urography shows enhancing filling defect or urothelial thickening in renal pelvis/ureter; ureteroscopy shows papillary tumor.
+467 P1 Urology | Ureterocele | Voiding/cystographic study shows intravesical cobra-head ureterocele; duplex obstruction may produce drooping-lily sign.
+468 P2 Urology | Acute idiopathic scrotal edema | Acute scrotal wall edema/hyperemia with normal testes and epididymides; transverse Doppler “fountain” pattern.
+469 P2 Urology | Anterior urethral valves | VCUG shows dilated anterior urethra proximal to valve, sometimes with anterior urethral diverticulum.
+470 P2 Urology | Bladder calculus | Plain film may show a spiculated “jackstone” in bladder; confirm at cystoscopy.
+471 P2 Urology | Concealed (buried) penis | Normal corporal length concealed by suprapubic/scrotal skin, visible as a buried shaft; stretched length is normal.
+472 P2 Urology | Congenital bladder diverticulum (Hutch) | VCUG demonstrates paraureteral bladder outpouching near ureteral orifice, often associated with reflux.
+473 P2 Urology | Congenital megalourethra | Penis balloons during voiding; VCUG shows markedly dilated urethra without distal valve.
+474 P2 Urology | Congenital penile curvature | Persistent penile bend with orthotopic meatus, typically evident with erection; curvature documented by erection photograph.
+475 P2 Urology | Congenital renal arteriovenous malformation | Gross hematuria with serpiginous/corkscrew suburothelial vessels; angiography shows cirsoid AVM nidus.
+476 P2 Urology | Cowper syringocele | Urethrogram shows ventral bulbar channel/filling defect; MRI/US localizes dilated Cowper duct.
+477 P2 Urology | Encrusted cystitis and pyelitis | CT shows thin/mural calcified plaques coating bladder or collecting-system urothelium, often with alkaline urine.
+478 P2 Urology | Fibrous pseudotumor of the tunica vaginalis | Scrotal US shows multiple solid extratesticular tunical nodules, often T2-dark on MRI, with testis spared.
+479 P2 Urology | Idiopathic scrotal fat necrosis | Prepubertal boy with focal hyperechoic scrotal fat adjacent to normal testes, sometimes following cold exposure.
+480 P2 Urology | Median raphe cyst | Small midline ventral penile/perineal cyst along median raphe, apparent at birth or later.
+481 P2 Urology | Megacystis-megaureter syndrome | Imaging shows markedly enlarged smooth bladder with bilateral megaureters/reflux and no urethral obstruction.
+482 P2 Urology | Neonatal paraurethral (Skene) cyst | Newborn interlabial cyst displaces urethral meatus off midline; US shows paraurethral cyst.
+483 P2 Urology | Nonvenereal sclerosing lymphangitis | Firm mobile serpiginous cord encircles or lies just proximal to coronal sulcus, usually without dorsal vein thrombosis.
+484 P2 Urology | Pelvic lipomatosis | CT shows abundant pelvic fat compressing bladder into an inverted-teardrop shape, often with upper-tract obstruction.
+485 P2 Urology | Penile Mondor disease | Painful palpable dorsal penile cord; Doppler shows thrombosed superficial dorsal vein with absent flow.
+486 P2 Urology | Penoscrotal transposition | Scrotum lies cranial to penis, partially or completely; photograph defines degree of transposition.
+487 P2 Urology | Persistent Mullerian duct syndrome | Phenotypic male with uterus/tubes on pelvic imaging, often discovered during hernia/cryptorchidism surgery.
+488 P2 Urology | Pyeloureteritis cystica | Urography shows multiple small smooth round filling defects in renal pelvis/ureter from mucosal cysts.
+489 P2 Urology | Retrocaval ureter | Right ureter courses behind IVC with reverse-J/fishhook or S-shaped course on urography.
+490 P2 Urology | Sclerosing lipogranuloma (penile paraffinoma) | Deforming penile nodules, induration, ulcers, or draining sinuses after injection of paraffin/oil.
+491 P2 Urology | Segmental testicular infarction | Acute pain with wedge-shaped avascular intratesticular segment and preserved flow in remainder.
+492 P2 Urology | Testicular epidermoid cyst | Small intratesticular avascular mass with concentric onion-ring/lamellated ultrasound echoes.
+493 P2 Urology | Urethral duplication | Two urethral openings/channels demonstrated on exam and VCUG/retrograde urethrogram.
+494 P2 Urology | Webbed penis | Scrotal skin extends onto ventral shaft and erases penoscrotal angle, often apparent with erection/traction.
+495 P2 Urology | Zinner syndrome | MRI/CT triad: unilateral renal agenesis, ipsilateral seminal-vesicle cyst, and ejaculatory-duct obstruction.

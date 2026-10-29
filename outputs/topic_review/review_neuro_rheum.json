@@ -1,0 +1,1085 @@
+[
+  {
+    "uid": "D1159",
+    "section": "Neurology",
+    "proposed_id": "acute_ischemic_stroke",
+    "canonical_name": "Acute ischemic stroke",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Territorial diffusion restriction, early CT ischemic changes, and arterial occlusion on CTA.",
+    "rationale": "Core emergency with management relevant imaging.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1161",
+    "section": "Neurology",
+    "proposed_id": "aneurysmal_subarachnoid_hemorrhage",
+    "canonical_name": "Aneurysmal subarachnoid hemorrhage",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Blood in basal cisterns and sulci on CT, with a causative aneurysm on CTA or angiography.",
+    "rationale": "Distinct hemorrhagic emergency from intraparenchymal hemorrhage.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1163",
+    "section": "Neurology",
+    "proposed_id": "spinal_epidural_abscess",
+    "canonical_name": "Spinal epidural abscess",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Rim enhancing epidural collection with cord or cauda equina compression on MRI.",
+    "rationale": "Distinct imageable spinal infection requiring urgent recognition.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1165",
+    "section": "Neurology",
+    "proposed_id": "spinal_cord_infarction",
+    "canonical_name": "Spinal cord infarction",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Anterior cord diffusion restriction; sagittal pencil like signal and axial owl eyes may occur.",
+    "rationale": "Named vascular cord disease; signs are supportive rather than uniquely diagnostic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1167",
+    "section": "Neurology",
+    "proposed_id": "cauda_equina_syndrome",
+    "canonical_name": "Cauda equina syndrome",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "MRI demonstrates the compressive cause; clinical saddle sensory and sphincter findings define the emergency.",
+    "rationale": "Add emergency presentation and red flags to lumbar disc herniation and stenosis pages, with cross links to tumors and infection.",
+    "existing_parent_ids": [
+      "lumbar_disc_herniation",
+      "lumbar_spinal_stenosis"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1169",
+    "section": "Neurology",
+    "proposed_id": "guillain_barre_syndrome",
+    "canonical_name": "Guillain Barre syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Facial diplegia or flaccid weakness; smooth cauda equina root enhancement can support an atypical case.",
+    "rationale": "Core clinical syndrome; enhancement is nonspecific and MRI is not a routine confirmatory test.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://onlinelibrary.wiley.com/doi/full/10.1111/ene.16073"
+    ]
+  },
+  {
+    "uid": "D1172",
+    "section": "Neurology",
+    "proposed_id": "osmotic_demyelination_syndrome",
+    "canonical_name": "Osmotic demyelination syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Symmetric central pontine signal with peripheral sparing, sometimes with extrapontine lesions.",
+    "rationale": "Recognizable toxic metabolic MRI pattern.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1174",
+    "section": "Neurology",
+    "proposed_id": "carbon_monoxide_poisoning",
+    "canonical_name": "Carbon monoxide poisoning",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Bilateral globus pallidus injury and delayed white matter abnormalities may appear on MRI.",
+    "rationale": "Important toxic exposure with a memorable imaging differential; normal early imaging does not exclude it.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1176",
+    "section": "Neurology",
+    "proposed_id": "infratentorial_superficial_siderosis",
+    "canonical_name": "Infratentorial superficial siderosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Susceptibility blooming coating cerebellar folia, brainstem, and cranial nerves.",
+    "rationale": "Distinct distribution and chronic clinical syndrome; separate from cortical siderosis in cerebral amyloid angiopathy.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1178",
+    "section": "Neurology",
+    "proposed_id": "balo_concentric_sclerosis",
+    "canonical_name": "Balo concentric sclerosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Alternating concentric rings on T2 and diffusion imaging.",
+    "rationale": "Distinctive concentric demyelinating lesion pattern; overlap with multiple sclerosis does not mean every case is established MS.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8362356/"
+    ]
+  },
+  {
+    "uid": "D1180",
+    "section": "Neurology",
+    "proposed_id": "clippers",
+    "canonical_name": "CLIPPERS",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Numerous punctate and curvilinear enhancing foci centered on the pons and cerebellar peduncles.",
+    "rationale": "Recognizable inflammatory syndrome; label as a diagnosis requiring exclusion of mimics, especially lymphoma.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1182",
+    "section": "Neurology",
+    "proposed_id": "marchiafava_bignami_disease",
+    "canonical_name": "Marchiafava Bignami disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Corpus callosum swelling or injury with selective central layer involvement.",
+    "rationale": "Distinct alcohol or malnutrition associated callosal disease.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1184",
+    "section": "Neurology",
+    "proposed_id": "metronidazole_induced_encephalopathy",
+    "canonical_name": "Metronidazole induced encephalopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Symmetric dentate nucleus abnormalities, sometimes involving the splenium or brainstem.",
+    "rationale": "Characteristic medication associated imaging pattern.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1186",
+    "section": "Neurology",
+    "proposed_id": "neuronal_intranuclear_inclusion_disease",
+    "canonical_name": "Neuronal intranuclear inclusion disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Curvilinear DWI hyperintensity along the corticomedullary junction.",
+    "rationale": "Strong imaging clue beyond the confirmatory skin biopsy; not present in every case.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/5382941/"
+    ]
+  },
+  {
+    "uid": "D1188",
+    "section": "Neurology",
+    "proposed_id": "biotin_thiamine_responsive_basal_ganglia_disease",
+    "canonical_name": "Biotin thiamine responsive basal ganglia disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Symmetric caudate and putamen swelling or injury on MRI in acute encephalopathy.",
+    "rationale": "Treatable metabolic disorder with an important imaging trigger; genetic confirmation is needed.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK169615/"
+    ]
+  },
+  {
+    "uid": "D1190",
+    "section": "Neurology",
+    "proposed_id": "htra1_related_cerebral_small_vessel_disease",
+    "canonical_name": "HTRA1 related cerebral small vessel disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Leukoencephalopathy with lacunes; classic CARASIL adds early alopecia and spondylosis, and an arc sign can involve the pons and middle cerebellar peduncles.",
+    "rationale": "Distinct from CADASIL; use HTRA1 spectrum title and CARASIL as a searchable phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/sites/books/NBK32533/"
+    ]
+  },
+  {
+    "uid": "D1192",
+    "section": "Neurology",
+    "proposed_id": "japanese_encephalitis",
+    "canonical_name": "Japanese encephalitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bilateral thalamic lesions, sometimes involving basal ganglia and brainstem.",
+    "rationale": "Imageable neuroinfection; pattern requires epidemiologic and laboratory context.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1194",
+    "section": "Neurology",
+    "proposed_id": "listeria_rhombencephalitis",
+    "canonical_name": "Listeria rhombencephalitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Brainstem and cerebellar peduncle inflammation or microabscesses on MRI.",
+    "rationale": "Distinctive hindbrain distribution makes a useful neuroinfection topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1196",
+    "section": "Neurology",
+    "proposed_id": "acute_flaccid_myelitis",
+    "canonical_name": "Acute flaccid myelitis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Longitudinal gray matter predominant spinal cord T2 signal with acute asymmetric flaccid weakness.",
+    "rationale": "Important pediatric syndrome distinct from poliomyelitis.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1198",
+    "section": "Neurology",
+    "proposed_id": "subacute_sclerosing_panencephalitis",
+    "canonical_name": "Subacute sclerosing panencephalitis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Progressive white matter abnormalities and atrophy are nonspecific; EEG and virologic evidence establish the syndrome.",
+    "rationale": "A distinct delayed measles associated CNS disease, not an acute measles subtype; proposed MRI is nonspecific and key EEG or serologic findings are outside the clinical and radiologic image focus. Cross link from measles if expanded later.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1201",
+    "section": "Neurology",
+    "proposed_id": "kernicterus",
+    "canonical_name": "Kernicterus",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Bilateral pallidal signal abnormalities, with chronic T2 changes; early bilirubin injury can be T1 bright.",
+    "rationale": "Core neonatal toxic brain injury; state sequence and disease stage correctly.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1203",
+    "section": "Neurology",
+    "proposed_id": "germinal_matrix_and_intraventricular_hemorrhage_of_prematurity",
+    "canonical_name": "Germinal matrix and intraventricular hemorrhage of prematurity",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Caudothalamic groove hemorrhage and intraventricular blood on cranial ultrasound.",
+    "rationale": "Distinct neonatal hemorrhage pattern; include periventricular hemorrhagic infarction as an associated venous injury.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1205",
+    "section": "Neurology",
+    "proposed_id": "periventricular_leukomalacia",
+    "canonical_name": "Periventricular leukomalacia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Periventricular cysts or white matter volume loss with irregular ventricular margins.",
+    "rationale": "Classic injury of prematurity, distinct from term neonatal hypoxic ischemic encephalopathy.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1207",
+    "section": "Neurology",
+    "proposed_id": "polymicrogyria",
+    "canonical_name": "Polymicrogyria",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Excess small gyri with an irregular cortical surface and gray white junction on MRI.",
+    "rationale": "Imaging defined cortical malformation; keep regional forms together.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1209",
+    "section": "Neurology",
+    "proposed_id": "periventricular_nodular_heterotopia",
+    "canonical_name": "Periventricular nodular heterotopia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Gray matter signal nodules lining the lateral ventricles.",
+    "rationale": "Distinct migration disorder from subcortical band heterotopia.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1211",
+    "section": "Neurology",
+    "proposed_id": "ependymoma",
+    "canonical_name": "Ependymoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Intraventricular or spinal mass; posterior fossa tumors may extend through the fourth ventricular outlets.",
+    "rationale": "Major missing neurooncology topic; organize by current molecular and anatomic classification, not an assertion that every type is the same tumor.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1213",
+    "section": "Neurology",
+    "proposed_id": "oligodendroglioma",
+    "canonical_name": "Oligodendroglioma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Cortical or subcortical infiltrative mass often containing calcification.",
+    "rationale": "Important brain tumor differential; imaging cannot establish IDH mutation or 1p19q codeletion.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1215",
+    "section": "Neurology",
+    "proposed_id": "ganglioglioma",
+    "canonical_name": "Ganglioglioma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Superficial cortical tumor, often temporal, sometimes cystic with a mural nodule or calcification.",
+    "rationale": "Distinct epilepsy associated glioneuronal tumor; separate from DNET.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1215",
+    "section": "Neurology",
+    "proposed_id": "dysembryoplastic_neuroepithelial_tumor",
+    "canonical_name": "Dysembryoplastic neuroepithelial tumor",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bubbly multinodular cortical lesion with little mass effect in a patient with epilepsy.",
+    "rationale": "Separate tumor with a useful MRI pattern; do not combine with ganglioglioma.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1217",
+    "section": "Neurology",
+    "proposed_id": "neuralgic_amyotrophy",
+    "canonical_name": "Neuralgic amyotrophy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Scapular winging with patchy muscle denervation edema or atrophy on MRI.",
+    "rationale": "Recognizable clinical and imaging syndrome, distinct from entrapment neuropathy.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1219",
+    "section": "Neurology",
+    "proposed_id": "frontotemporal_dementia",
+    "canonical_name": "Frontotemporal dementia",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Frontal and anterior temporal predominant atrophy or hypometabolism.",
+    "rationale": "Major dementia syndrome with imageable regional patterns; keep phenotypes within one topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1224",
+    "section": "Neurology",
+    "proposed_id": "heroin_inhalation_associated_leukoencephalopathy",
+    "canonical_name": "Heroin inhalation associated leukoencephalopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Symmetric cerebellar and posterior cerebral white matter abnormalities.",
+    "rationale": "Characteristic exposure related distribution; preserve common chasing the dragon search term.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1226",
+    "section": "Neurology",
+    "proposed_id": "copper_deficiency_myeloneuropathy",
+    "canonical_name": "Copper deficiency myeloneuropathy",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Symmetric dorsal column cord signal may mimic vitamin B12 related subacute combined degeneration.",
+    "rationale": "Teach as an etiologic differential in the existing dorsal column syndrome page; no independent visual discriminator is supplied.",
+    "existing_parent_ids": [
+      "subacute_combined_degeneration"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1226",
+    "section": "Neurology",
+    "proposed_id": "nitrous_oxide_induced_myeloneuropathy",
+    "canonical_name": "Nitrous oxide induced myeloneuropathy",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Dorsal column inverted V signal from functional vitamin B12 inactivation.",
+    "rationale": "Add exposure specific cause and clinical teaching to existing subacute combined degeneration.",
+    "existing_parent_ids": [
+      "subacute_combined_degeneration"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1228",
+    "section": "Neurology",
+    "proposed_id": "csf1r_related_leukoencephalopathy",
+    "canonical_name": "CSF1R related leukoencephalopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Confluent white matter injury, callosal thinning, persistent diffusion abnormalities, and small CT calcifications.",
+    "rationale": "Distinct adult white matter disorder; use current spectrum name and retain ALSP as a search alias.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK100239/"
+    ]
+  },
+  {
+    "uid": "D1230",
+    "section": "Neurology",
+    "proposed_id": "nasu_hakola_disease",
+    "canonical_name": "Nasu Hakola disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Cystic bone lesions paired with frontal predominant white matter degeneration.",
+    "rationale": "Distinct combined skeletal and neurologic syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1232",
+    "section": "Neurology",
+    "proposed_id": "retinal_vasculopathy_with_cerebral_leukoencephalopathy_and_systemic_manifestations",
+    "canonical_name": "Retinal vasculopathy with cerebral leukoencephalopathy and systemic manifestations",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Retinal vascular abnormalities and enhancing white matter lesions that can resemble tumors.",
+    "rationale": "Multisystem TREX1 associated syndrome; separate from Aicardi Goutieres syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1234",
+    "section": "Neurology",
+    "proposed_id": "beta_propeller_protein_associated_neurodegeneration",
+    "canonical_name": "Beta propeller protein associated neurodegeneration",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Iron sensitive substantia nigra and pallidal signal, with a T1 bright nigral halo in later disease.",
+    "rationale": "Distinct NBIA phenotype with strong MRI teaching value.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK424403/"
+    ]
+  },
+  {
+    "uid": "D1236",
+    "section": "Neurology",
+    "proposed_id": "alpers_huttenlocher_syndrome",
+    "canonical_name": "Alpers Huttenlocher syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Posterior cortical and thalamic MRI abnormalities with refractory epilepsy and liver disease.",
+    "rationale": "Recognizable POLG related clinicoradiologic phenotype; findings are not specific alone.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1238",
+    "section": "Neurology",
+    "proposed_id": "acute_necrotizing_encephalopathy",
+    "canonical_name": "Acute necrotizing encephalopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Symmetric thalamic lesions, sometimes with concentric hemorrhagic or necrotic components.",
+    "rationale": "Distinct infection triggered encephalopathy rather than infectious encephalitis itself.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1240",
+    "section": "Neurology",
+    "proposed_id": "west_nile_neuroinvasive_disease",
+    "canonical_name": "West Nile neuroinvasive disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Deep gray, brainstem, or anterior horn abnormalities can accompany encephalitis or acute flaccid paralysis.",
+    "rationale": "Useful neuroinfectious differential; MRI may be normal and laboratory confirmation is essential.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1242",
+    "section": "Neurology",
+    "proposed_id": "enterovirus_a71_brainstem_encephalitis",
+    "canonical_name": "Enterovirus A71 brainstem encephalitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Dorsal brainstem signal with a compatible hand foot and mouth eruption.",
+    "rationale": "Distinct neuroinvasive syndrome with a recognizable posterior brainstem pattern; cross link to hand foot and mouth disease rather than equating the two.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5099286/"
+    ]
+  },
+  {
+    "uid": "D1244",
+    "section": "Neurology",
+    "proposed_id": "primary_amebic_meningoencephalitis",
+    "canonical_name": "Primary amebic meningoencephalitis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Diffuse edema and meningeal enhancement lack a reliable distinguishing imaging pattern.",
+    "rationale": "The proposal relies on organism microscopy and late nonspecific necrosis, insufficient for the current clinical and radiologic scope.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1246",
+    "section": "Neurology",
+    "proposed_id": "idiopathic_hypertrophic_pachymeningitis",
+    "canonical_name": "Idiopathic hypertrophic pachymeningitis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Focal or diffuse thickened enhancing dura on MRI.",
+    "rationale": "Thickened enhancing dura is nonspecific, and the idiopathic label is exclusionary. Prioritize etiology defined or more distinctive clinicoradiologic topics.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1248",
+    "section": "Neurology",
+    "proposed_id": "autoimmune_gfap_astrocytopathy",
+    "canonical_name": "Autoimmune GFAP astrocytopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Radial perivascular enhancement extending from the ventricles, with possible cord or meningeal involvement.",
+    "rationale": "Distinct autoimmune syndrome from genetic GFAP associated Alexander disease; imaging is supportive.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ajnr.org/content/ajnr/early/2024/06/06/ajnr.A8236.full.pdf"
+    ]
+  },
+  {
+    "uid": "D1250",
+    "section": "Neurology",
+    "proposed_id": "intravascular_large_b_cell_lymphoma",
+    "canonical_name": "Intravascular large B cell lymphoma",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Multifocal infarct like lesions of different ages or other variable brain MRI abnormalities.",
+    "rationale": "Existing Hematology topic already names the same disease; expand neurologic coverage.",
+    "existing_parent_ids": [
+      "intravascular_large_b_cell_lymphoma"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1252",
+    "section": "Neurology",
+    "proposed_id": "dyke_davidoff_masson_syndrome",
+    "canonical_name": "Dyke Davidoff Masson syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Cerebral hemiatrophy with ipsilateral calvarial thickening and sinus enlargement.",
+    "rationale": "Coherent clinicoradiologic syndrome with a memorable structural pattern.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1254",
+    "section": "Neurology",
+    "proposed_id": "col4a1_related_disorders",
+    "canonical_name": "COL4A1 related disorders",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Porencephaly, small vessel disease, and variable ocular abnormalities such as cataract.",
+    "rationale": "Distinct genetic multisystem disease spectrum; avoid separate pages for every manifestation.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1256",
+    "section": "Neurology",
+    "proposed_id": "hydranencephaly",
+    "canonical_name": "Hydranencephaly",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Near absence of cerebral hemispheres replaced by fluid, with preserved falx and variable deep structures.",
+    "rationale": "Distinct severe malformation from hydrocephalus and holoprosencephaly.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1258",
+    "section": "Neurology",
+    "proposed_id": "horizontal_gaze_palsy_with_progressive_scoliosis",
+    "canonical_name": "Horizontal gaze palsy with progressive scoliosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Split pons and butterfly shaped medulla with progressive scoliosis.",
+    "rationale": "Distinct structural brainstem and skeletal syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1260",
+    "section": "Neurology",
+    "proposed_id": "rhombencephalosynapsis",
+    "canonical_name": "Rhombencephalosynapsis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Fusion of cerebellar hemispheres across a deficient vermis.",
+    "rationale": "Imaging defined hindbrain malformation; syndromic associations belong within the topic.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1262",
+    "section": "Neurology",
+    "proposed_id": "pontocerebellar_hypoplasia",
+    "canonical_name": "Pontocerebellar hypoplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Small ventral pons and cerebellum; a dragonfly configuration occurs in some forms.",
+    "rationale": "Use a single clinicoradiologic family topic with genetic subtypes; no claim that the dragonfly pattern occurs in all forms.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1264",
+    "section": "Neurology",
+    "proposed_id": "lama2_related_muscular_dystrophy",
+    "canonical_name": "LAMA2 related muscular dystrophy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Congenital weakness or contractures with extensive characteristic white matter signal abnormalities.",
+    "rationale": "Distinct muscle and brain phenotype, not covered by Walker Warburg or Ullrich disease.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK97333/"
+    ]
+  },
+  {
+    "uid": "D1266",
+    "section": "Neurology",
+    "proposed_id": "idiopathic_spinal_cord_herniation",
+    "canonical_name": "Idiopathic spinal cord herniation",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Focal ventral cord displacement and kinking through a dural defect on MRI.",
+    "rationale": "Distinct structural cause of progressive myelopathy.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1268",
+    "section": "Neurology",
+    "proposed_id": "spinal_arachnoid_web",
+    "canonical_name": "Spinal arachnoid web",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Focal dorsal cord indentation producing a sagittal scalpel sign, sometimes with a syrinx.",
+    "rationale": "Specific structural lesion; distinguish from ventral cord herniation and arachnoid cyst.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7964642/"
+    ]
+  },
+  {
+    "uid": "D1270",
+    "section": "Neurology",
+    "proposed_id": "intracranial_epidermoid_cyst",
+    "canonical_name": "Intracranial epidermoid cyst",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Extra axial CSF like lesion with marked DWI hyperintensity.",
+    "rationale": "Distinct intracranial developmental lesion from cutaneous epidermal inclusion cyst.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1272",
+    "section": "Neurology",
+    "proposed_id": "intracranial_dermoid_cyst",
+    "canonical_name": "Intracranial dermoid cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Fat containing intracranial lesion, with disseminated fat droplets after rupture.",
+    "rationale": "Distinct developmental lesion with a strong CT and MRI anchor.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1274",
+    "section": "Neurology",
+    "proposed_id": "central_neurocytoma",
+    "canonical_name": "Central neurocytoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Bubbly intraventricular mass near the foramen of Monro and septum pellucidum.",
+    "rationale": "Useful age and location based tumor pattern.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1276",
+    "section": "Neurology",
+    "proposed_id": "choroid_plexus_papilloma",
+    "canonical_name": "Choroid plexus papilloma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Lobulated avidly enhancing intraventricular frond like mass with hydrocephalus.",
+    "rationale": "Distinct ventricular tumor from ependymoma; imaging alone does not establish benignity.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1278",
+    "section": "Neurology",
+    "proposed_id": "pleomorphic_xanthoastrocytoma",
+    "canonical_name": "Pleomorphic xanthoastrocytoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Superficial hemispheric cyst and mural nodule, sometimes with meningeal contact.",
+    "rationale": "Named cortical tumor with useful age, epilepsy, and location context.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1281",
+    "section": "Neurology",
+    "proposed_id": "spg11_related_hereditary_spastic_paraplegia",
+    "canonical_name": "SPG11 related hereditary spastic paraplegia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Thin corpus callosum and ears of the lynx white matter signal near the frontal horns.",
+    "rationale": "Distinct MRI supported spastic paraplegia; sign also occurs in SPG15 and is not uniquely diagnostic.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pubmed.ncbi.nlm.nih.gov/30606727/"
+    ]
+  },
+  {
+    "uid": "D1283",
+    "section": "Neurology",
+    "proposed_id": "becker_muscular_dystrophy",
+    "canonical_name": "Becker muscular dystrophy",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Calf pseudohypertrophy and muscle fatty replacement overlap Duchenne disease.",
+    "rationale": "Broaden existing Duchenne page to dystrophinopathies and show Becker comparison; a separate near identical visual page adds little.",
+    "existing_parent_ids": [
+      "duchenne_muscular_dystrophy"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1285",
+    "section": "Neurology",
+    "proposed_id": "dysferlinopathy",
+    "canonical_name": "Dysferlinopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Miyoshi phenotype shows prominent posterior calf wasting, with selective muscle involvement on imaging.",
+    "rationale": "Use a single DYSF spectrum topic including Miyoshi and limb girdle presentations.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1303/"
+    ]
+  },
+  {
+    "uid": "D1287",
+    "section": "Neurology",
+    "proposed_id": "x_linked_myotubular_myopathy",
+    "canonical_name": "X linked myotubular myopathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Long myopathic face, ptosis, ophthalmoparesis, and severe neonatal hypotonia.",
+    "rationale": "Visible phenotype supports a clinical atlas entry beyond its biopsy finding.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1432/"
+    ]
+  },
+  {
+    "uid": "D1289",
+    "section": "Neurology",
+    "proposed_id": "central_core_disease",
+    "canonical_name": "Central core disease",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Hypotonia is nonspecific; central cores are a muscle histology finding.",
+    "rationale": "No sufficiently distinctive clinical or radiologic anchor is supplied.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1291",
+    "section": "Neurology",
+    "proposed_id": "hereditary_neuropathy_with_liability_to_pressure_palsies",
+    "canonical_name": "Hereditary neuropathy with liability to pressure palsies",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Recurrent focal palsies have no stable distinctive photograph; tomacula require nerve histology.",
+    "rationale": "Primarily electrodiagnostic and genetic diagnosis with weak standalone visual value.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1293",
+    "section": "Neurology",
+    "proposed_id": "multifocal_motor_neuropathy",
+    "canonical_name": "Multifocal motor neuropathy",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Asymmetric hand wasting and nerve enlargement are nonspecific.",
+    "rationale": "Prioritize stronger phenotype and image based additions; diagnosis depends on electrophysiology and clinical context.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1295",
+    "section": "Neurology",
+    "proposed_id": "lafora_disease",
+    "canonical_name": "Lafora disease",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "PAS positive sweat gland inclusions are histologic.",
+    "rationale": "The proposed teaching image is pathology rather than a clinical or radiologic manifestation.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1297",
+    "section": "Neurology",
+    "proposed_id": "merrf_syndrome",
+    "canonical_name": "MERRF syndrome",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Ragged red fibers are histologic and multiple lipomas are variable and nonspecific.",
+    "rationale": "Insufficient independent clinical or radiologic anchor for current release.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1299",
+    "section": "Neurology",
+    "proposed_id": "pla2g6_associated_infantile_neuroaxonal_dystrophy",
+    "canonical_name": "PLA2G6 associated infantile neuroaxonal dystrophy",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Cerebellar atrophy alone is nonspecific; pallidal iron may appear later.",
+    "rationale": "Defer the proposed infantile phenotype until a distinct reproducible clinical and MRI image set is demonstrated.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1301",
+    "section": "Neurology",
+    "proposed_id": "familial_dysautonomia",
+    "canonical_name": "Familial dysautonomia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Smooth tongue from absent fungiform papillae and absent overflow emotional tears.",
+    "rationale": "Directly photographable diagnostic phenotype distinct from congenital insensitivity to pain with anhidrosis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK1180/"
+    ]
+  },
+  {
+    "uid": "D1425",
+    "section": "Rheumatology",
+    "proposed_id": "erosive_hand_osteoarthritis",
+    "canonical_name": "Erosive hand osteoarthritis",
+    "action": "MERGE_EXISTING",
+    "priority": "P1",
+    "visual_anchor": "Central interphalangeal erosions with gull wing or saw tooth configuration.",
+    "rationale": "Add an erosive phenotype section to existing osteoarthritis; new imaging content does not require a new disease page.",
+    "existing_parent_ids": [
+      "osteoarthritis"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1427",
+    "section": "Rheumatology",
+    "proposed_id": "secondary_hypertrophic_osteoarthropathy",
+    "canonical_name": "Secondary hypertrophic osteoarthropathy",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Digital clubbing with symmetric long bone periostosis and parallel cortical scintigraphic uptake.",
+    "rationale": "Useful acquired syndrome across multiple causes; distinct from primary pachydermoperiostosis.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1429",
+    "section": "Rheumatology",
+    "proposed_id": "neuropathic_arthropathy",
+    "canonical_name": "Neuropathic arthropathy",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Joint fragmentation, debris, disorganization, and collapse; rocker bottom foot in advanced midfoot disease.",
+    "rationale": "Coherent image defined syndrome across etiologies; keep all joints and causes together.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1432",
+    "section": "Rheumatology",
+    "proposed_id": "transient_osteoporosis_of_the_hip",
+    "canonical_name": "Transient osteoporosis of the hip",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Diffuse femoral head and neck marrow edema, later osteopenia, without the typical focal necrotic boundary.",
+    "rationale": "Important clinical and imaging differential from osteonecrosis and insufficiency fracture.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1434",
+    "section": "Rheumatology",
+    "proposed_id": "dialysis_related_beta_2_microglobulin_amyloidosis",
+    "canonical_name": "Dialysis related beta 2 microglobulin amyloidosis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Periarticular bone cysts and destructive spondyloarthropathy after long term dialysis.",
+    "rationale": "Distinct precursor protein and distribution from systemic AL amyloidosis.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1436",
+    "section": "Rheumatology",
+    "proposed_id": "palmar_fasciitis_and_polyarthritis_syndrome",
+    "canonical_name": "Palmar fasciitis and polyarthritis syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Rapidly progressive woody palmar thickening with flexion contractures and polyarthritis.",
+    "rationale": "Distinct photographable paraneoplastic syndrome; retain underlying malignancy associations in the page.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1438",
+    "section": "Rheumatology",
+    "proposed_id": "pachydermodactyly",
+    "canonical_name": "Pachydermodactyly",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Painless lateral proximal interphalangeal soft tissue thickening without erosions.",
+    "rationale": "Useful visible mimic of inflammatory arthritis.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1440",
+    "section": "Rheumatology",
+    "proposed_id": "camptodactyly_arthropathy_coxa_vara_pericarditis_syndrome",
+    "canonical_name": "Camptodactyly arthropathy coxa vara pericarditis syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Camptodactyly, noninflammatory joint swelling, and coxa vara with short femoral necks.",
+    "rationale": "Distinct PRG4 associated clinical and skeletal phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1442",
+    "section": "Rheumatology",
+    "proposed_id": "multicentric_osteolysis_nodulosis_and_arthropathy",
+    "canonical_name": "Multicentric osteolysis nodulosis and arthropathy",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Carpal and tarsal osteolysis with palmoplantar nodules and contractures.",
+    "rationale": "Canonical MMP2 related MONA topic; Torg and NAO belong here, while MMP14 Winchester syndrome is separate.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK373578/"
+    ]
+  },
+  {
+    "uid": "D1442",
+    "section": "Rheumatology",
+    "proposed_id": "mmp14_related_winchester_syndrome",
+    "canonical_name": "MMP14 related Winchester syndrome",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Progressive osteolysis and contractures overlap MONA.",
+    "rationale": "Keep separate in disease ontology; defer a second closely overlapping visual page until its own useful clinical and imaging set is demonstrated.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK373578/"
+    ]
+  },
+  {
+    "uid": "D1444",
+    "section": "Rheumatology",
+    "proposed_id": "copa_syndrome",
+    "canonical_name": "COPA syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Childhood diffuse lung disease with ground glass, cysts, and nodules paired with arthritis.",
+    "rationale": "Distinct inherited immune dysregulation syndrome; place in Immunology with rheumatology and pulmonology cross links.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pubmed.ncbi.nlm.nih.gov/36746811/"
+    ]
+  },
+  {
+    "uid": "D1446",
+    "section": "Rheumatology",
+    "proposed_id": "singleton_merten_syndrome",
+    "canonical_name": "Singleton Merten syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Early aortic or valve calcification, abnormal dentition, and acro osteolysis.",
+    "rationale": "Strong multisystem radiographic phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1448",
+    "section": "Rheumatology",
+    "proposed_id": "stiff_skin_syndrome",
+    "canonical_name": "Stiff skin syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Indurated bound down skin with hypertrichosis and joint contractures.",
+    "rationale": "Directly visible fibrosing disorder distinct from stiff person syndrome and systemic sclerosis.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1450",
+    "section": "Rheumatology",
+    "proposed_id": "fibroblastic_rheumatism",
+    "canonical_name": "Fibroblastic rheumatism",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Periarticular cutaneous nodules with rapidly developing flexion contractures.",
+    "rationale": "Recognizable clinicocutaneous syndrome; biopsy supports diagnosis.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D1452",
+    "section": "Rheumatology",
+    "proposed_id": "voriconazole_induced_periostitis",
+    "canonical_name": "Voriconazole induced periostitis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Irregular bulky periosteal new bone, often involving ribs, clavicles, or scapulae.",
+    "rationale": "Distinct medication associated radiographic phenotype from smoother secondary hypertrophic osteoarthropathy.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3888175/"
+    ]
+  }
+]

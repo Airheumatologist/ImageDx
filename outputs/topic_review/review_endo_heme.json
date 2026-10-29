@@ -1,0 +1,893 @@
+[
+  {
+    "uid": "D0518",
+    "section": "Endocrinology",
+    "proposed_id": "d0518",
+    "canonical_name": "Insulinoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Hypervascular pancreatic lesion on arterial CT/MRI or receptor PET in fasting hypoglycemia.",
+    "rationale": "Distinct functioning pancreatic tumor with a strong localization anchor.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3574879/"
+    ]
+  },
+  {
+    "uid": "D0520",
+    "section": "Endocrinology",
+    "proposed_id": "d0520",
+    "canonical_name": "VIPoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Pancreatic tail mass and liver lesions with secretory diarrhea and hypokalemia.",
+    "rationale": "Distinct hormone-secreting tumor syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4580021/"
+    ]
+  },
+  {
+    "uid": "D0522",
+    "section": "Endocrinology",
+    "proposed_id": "d0522",
+    "canonical_name": "Nelson syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Generalized hyperpigmentation after bilateral adrenalectomy with enlarging pituitary macroadenoma on MRI.",
+    "rationale": "Specific visible post-adrenalectomy syndrome.",
+    "existing_parent_ids": [
+      "nonfunctioning_pituitary_adenoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8060870/"
+    ]
+  },
+  {
+    "uid": "D0524",
+    "section": "Endocrinology",
+    "proposed_id": "d0524",
+    "canonical_name": "Pituitary apoplexy",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Sudden headache/ophthalmoplegia; MRI shows hemorrhagic or infarcted sellar mass.",
+    "rationale": "Urgent image-defined pituitary emergency.",
+    "existing_parent_ids": [
+      "nonfunctioning_pituitary_adenoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5891682/"
+    ]
+  },
+  {
+    "uid": "D0526",
+    "section": "Endocrinology",
+    "proposed_id": "d0526",
+    "canonical_name": "Rathke cleft cyst",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Midline nonenhancing sellar cyst with intracystic T2-dark waxy nodule.",
+    "rationale": "Useful imaging distinction from craniopharyngioma.",
+    "existing_parent_ids": [
+      "craniopharyngioma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10366287/"
+    ]
+  },
+  {
+    "uid": "D0528",
+    "section": "Endocrinology",
+    "proposed_id": "d0528",
+    "canonical_name": "X-linked acrogigantism",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Infantile-onset gigantism with pituitary hyperplasia.",
+    "rationale": "Existing acromegaly topic includes pituitary gigantism; etiology adds no distinct visual pattern.",
+    "existing_parent_ids": [
+      "acromegaly"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D0531",
+    "section": "Endocrinology",
+    "proposed_id": "d0531",
+    "canonical_name": "Renal osteodystrophy and secondary hyperparathyroidism",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Rugger-jersey spine, salt-and-pepper skull, and subperiosteal resorption in CKD.",
+    "rationale": "Recognizable secondary hyperparathyroid bone pattern.",
+    "existing_parent_ids": [
+      "primary_hyperparathyroidism_osteitis_fibrosa_cystica"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11541088/"
+    ]
+  },
+  {
+    "uid": "D0533",
+    "section": "Endocrinology",
+    "proposed_id": "d0533",
+    "canonical_name": "Hereditary vitamin D-resistant rickets",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Rachitic metaphyseal cupping/fraying with total alopecia.",
+    "rationale": "Alopecia distinctly anchors this rickets phenotype.",
+    "existing_parent_ids": [
+      "rickets_osteomalacia"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5483027/"
+    ]
+  },
+  {
+    "uid": "D0535",
+    "section": "Endocrinology",
+    "proposed_id": "d0535",
+    "canonical_name": "Vitamin D-dependent rickets type 1",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Rickets with cupping and fraying, hair preserved.",
+    "rationale": "Radiographs overlap existing rickets topic; enzyme subtype has no distinct visual pattern.",
+    "existing_parent_ids": [
+      "rickets_osteomalacia"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D0537",
+    "section": "Endocrinology",
+    "proposed_id": "d0537",
+    "canonical_name": "Juvenile Paget disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Childhood generalized bone expansion and long-bone deformity.",
+    "rationale": "Juvenile phenotype differs visibly from adult Paget disease.",
+    "existing_parent_ids": [
+      "paget_disease_of_bone"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4352547/"
+    ]
+  },
+  {
+    "uid": "D0539",
+    "section": "Endocrinology",
+    "proposed_id": "d0539",
+    "canonical_name": "Jansen metaphyseal chondrodysplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Short stature with metaphyseal widening, cupping/fraying, and cortical erosion.",
+    "rationale": "Distinctive metaphyseal skeletal dysplasia.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11541088/"
+    ]
+  },
+  {
+    "uid": "D0541",
+    "section": "Endocrinology",
+    "proposed_id": "kenny_caffey_syndrome",
+    "canonical_name": "Kenny-Caffey Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Kenny-Caffey: deep-set eyes, cortical thickening, and medullary stenosis on long-bone films.",
+    "rationale": "Split bundled syndromes because their skeletal patterns differ.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11793900/"
+    ]
+  },
+  {
+    "uid": "D0541",
+    "section": "Endocrinology",
+    "proposed_id": "sanjad_sakati_syndrome",
+    "canonical_name": "Sanjad-Sakati Syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Clinically recognizable growth failure with congenital hypoparathyroidism and characteristic facies: microcephaly, deep-set eyes, thin upper lip, long philtrum, and beaked nose.",
+    "rationale": "Distinct recognizable clinical phenotype; facial photographs and a cohort description support visual teaching. Do not distinguish from Kenny-Caffey by presumed absent medullary stenosis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pubmed.ncbi.nlm.nih.gov/30080992/"
+    ],
+    "evidence_status": "supported"
+  },
+  {
+    "uid": "D0544",
+    "section": "Endocrinology",
+    "proposed_id": "d0544",
+    "canonical_name": "Primary bilateral macronodular adrenal hyperplasia",
+    "action": "MERGE_EXISTING",
+    "priority": "P2",
+    "visual_anchor": "Bilateral bulky nodular adrenals with Cushing phenotype.",
+    "rationale": "Existing Cushing syndrome topic covers phenotype and adrenal imaging; this is a subtype.",
+    "existing_parent_ids": [
+      "cushing_syndrome"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D0546",
+    "section": "Endocrinology",
+    "proposed_id": "d0546",
+    "canonical_name": "P450 oxidoreductase deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Craniosynostosis, bowed femora, atypical genitalia with adrenal steroidogenic failure.",
+    "rationale": "Distinct congenital skeletal and sex-development phenotype.",
+    "existing_parent_ids": [
+      "congenital_adrenal_hyperplasia"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6449611/"
+    ]
+  },
+  {
+    "uid": "D0548",
+    "section": "Endocrinology",
+    "proposed_id": "d0548",
+    "canonical_name": "Lipoid congenital adrenal hyperplasia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "46,XY phenotypic female infant with adrenal insufficiency and enlarged lipid-laden adrenals.",
+    "rationale": "Distinct congenital adrenal and sex-development phenotype.",
+    "existing_parent_ids": [
+      "congenital_adrenal_hyperplasia"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4366759/"
+    ]
+  },
+  {
+    "uid": "D0550",
+    "section": "Endocrinology",
+    "proposed_id": "d0550",
+    "canonical_name": "17α-hydroxylase deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Hypertension, absent puberty, and undervirilization in 46,XY patient.",
+    "rationale": "Distinct clinical sex-development phenotype.",
+    "existing_parent_ids": [
+      "congenital_adrenal_hyperplasia"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6323273/"
+    ]
+  },
+  {
+    "uid": "D0552",
+    "section": "Endocrinology",
+    "proposed_id": "d0552",
+    "canonical_name": "X-linked adrenal hypoplasia congenita",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Adrenal crisis in infancy or later hypogonadism; adrenal cytomegaly is histologic.",
+    "rationale": "Primarily biochemical/genetic recognition without a distinctive visual or radiologic anchor.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0554",
+    "section": "Endocrinology",
+    "proposed_id": "d0554",
+    "canonical_name": "POMC deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Early obesity, adrenal insufficiency, and characteristic red hair.",
+    "rationale": "Photographable phenotype differentiates this from common obesity.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5838375/"
+    ]
+  },
+  {
+    "uid": "D0556",
+    "section": "Endocrinology",
+    "proposed_id": "d0556",
+    "canonical_name": "DICER1 syndrome",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Multisystem childhood tumor-predisposition syndrome with goiter, pleuropulmonary blastoma, and ovarian tumor.",
+    "rationale": "No single coherent visual anchor; component lesions have their own topics.",
+    "existing_parent_ids": [
+      "multinodular_goiter"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D0558",
+    "section": "Endocrinology",
+    "proposed_id": "d0558",
+    "canonical_name": "Ganglioneuroma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Posterior mediastinal or adrenal mass, sometimes with secretory diarrhea.",
+    "rationale": "Nonspecific mass appearance without a distinctive visual signature.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0561",
+    "section": "Endocrinology",
+    "proposed_id": "d0561",
+    "canonical_name": "Swyer syndrome",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Tall phenotypic female with streak gonads and 46,XY gonadal dysgenesis.",
+    "rationale": "No distinctive external or imaging feature beyond broad DSD phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0563",
+    "section": "Endocrinology",
+    "proposed_id": "d0563",
+    "canonical_name": "17β-hydroxysteroid dehydrogenase 3 deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "46,XY infant undervirilization with spontaneous virilization at puberty.",
+    "rationale": "Distinct longitudinal clinical phenotype separate from androgen insensitivity.",
+    "existing_parent_ids": [
+      "androgen_insensitivity_syndrome",
+      "five_alpha_reductase_deficiency"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC2880341/"
+    ]
+  },
+  {
+    "uid": "D0565",
+    "section": "Endocrinology",
+    "proposed_id": "d0565",
+    "canonical_name": "Aromatase deficiency",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Maternal virilization, virilized 46,XX infant, and later multicystic ovaries.",
+    "rationale": "Distinctive clinical and ovarian imaging phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0567",
+    "section": "Endocrinology",
+    "proposed_id": "d0567",
+    "canonical_name": "Familial male-limited precocious puberty",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Early virilization with advanced bone age and suppressed LH.",
+    "rationale": "Visual and radiographic findings overlap other precocious puberty causes.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0569",
+    "section": "Endocrinology",
+    "proposed_id": "d0569",
+    "canonical_name": "Persistent Müllerian duct syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Phenotypic male with uterus and tubes on MRI or hernia surgery.",
+    "rationale": "Specific anatomic syndrome; coordinate with duplicate Urology proposal.",
+    "existing_parent_ids": [
+      "androgen_insensitivity_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6479056/"
+    ]
+  },
+  {
+    "uid": "D0571",
+    "section": "Endocrinology",
+    "proposed_id": "d0571",
+    "canonical_name": "Ovarian hyperthecosis",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Postmenopausal virilization and bilateral ovarian stromal enlargement.",
+    "rationale": "Clinical virilization is visible, but imaging overlaps androgen-producing tumors.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0573",
+    "section": "Endocrinology",
+    "proposed_id": "d0573",
+    "canonical_name": "Van Wyk-Grumbach syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Precocious puberty with delayed bone age, multicystic ovaries, and pituitary hyperplasia in severe hypothyroidism.",
+    "rationale": "Distinct paradoxical puberty and imaging pattern.",
+    "existing_parent_ids": [
+      "congenital_hypothyroidism"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4208264/"
+    ]
+  },
+  {
+    "uid": "D0576",
+    "section": "Endocrinology",
+    "proposed_id": "d0576",
+    "canonical_name": "SHORT syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Partial lipodystrophy, Rieger anomaly, and characteristic triangular facies.",
+    "rationale": "Photographable multisystem phenotype distinct from other lipodystrophies.",
+    "existing_parent_ids": [
+      "familial_partial_lipodystrophy"
+    ],
+    "source_urls": [
+      "https://www.ncbi.nlm.nih.gov/books/NBK201365/"
+    ]
+  },
+  {
+    "uid": "D0578",
+    "section": "Endocrinology",
+    "proposed_id": "d0578",
+    "canonical_name": "MDPL syndrome",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Mandibular hypoplasia, deafness, and progeroid lipodystrophy.",
+    "rationale": "MDPL is a distinct genetic disorder from mandibuloacral dysplasia; although both have progeroid/lipodystrophy features, this proposal does not provide enough independent visual value for a separate page. Do not merge the diseases.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0580",
+    "section": "Endocrinology",
+    "proposed_id": "d0580",
+    "canonical_name": "Chanarin-Dorfman syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Congenital ichthyosis with Jordan anomaly (lipid vacuoles) in leukocytes.",
+    "rationale": "Visible skin phenotype plus diagnostic smear finding.",
+    "existing_parent_ids": [
+      "tangier_disease",
+      "sitosterolemia",
+      "familial_chylomicronemia_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6389303/"
+    ]
+  },
+  {
+    "uid": "D0582",
+    "section": "Endocrinology",
+    "proposed_id": "d0582",
+    "canonical_name": "Pallister-Hall syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Postaxial polydactyly, bifid epiglottis, and hypothalamic hamartoma on MRI.",
+    "rationale": "Distinct syndrome combines visible digit difference and airway/CNS findings.",
+    "existing_parent_ids": [
+      "hypothalamic_hamartoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7657771/"
+    ]
+  },
+  {
+    "uid": "D0584",
+    "section": "Endocrinology",
+    "proposed_id": "d0584",
+    "canonical_name": "Wiedemann-Rautenstrauch syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Neonatal progeroid facies, natal teeth, sparse hair, and lipoatrophy.",
+    "rationale": "Distinct photographable neonatal phenotype.",
+    "existing_parent_ids": [
+      "werner_syndrome",
+      "hutchinson_gilford_progeria_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5271390/"
+    ]
+  },
+  {
+    "uid": "D0969",
+    "section": "Hematology",
+    "proposed_id": "d0969",
+    "canonical_name": "Primary mediastinal large B-cell lymphoma",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Facial plethora/chest-wall collaterals with bulky anterior mediastinal mass compressing SVC.",
+    "rationale": "Recognizable mediastinal lymphoma distribution and presentation.",
+    "existing_parent_ids": [
+      "diffuse_large_b_cell_lymphoma"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D0972",
+    "section": "Hematology",
+    "proposed_id": "d0972",
+    "canonical_name": "Post-transplant lymphoproliferative disorder",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Post-transplant extranodal allograft, GI, lung, skin, or CNS lesions on PET/CT.",
+    "rationale": "Distinct post-transplant lymphoid disease with varied extranodal imaging.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10390257/"
+    ]
+  },
+  {
+    "uid": "D0975",
+    "section": "Hematology",
+    "proposed_id": "d0975",
+    "canonical_name": "Plasmablastic lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Fungating gingival/palatal mass with lytic maxillary or mandibular lesion.",
+    "rationale": "Distinct oral tumor and bone imaging pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5686983/"
+    ]
+  },
+  {
+    "uid": "D0978",
+    "section": "Hematology",
+    "proposed_id": "d0978",
+    "canonical_name": "Primary effusion lymphoma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Large pleural, pericardial, or peritoneal effusion without mass or lymphadenopathy.",
+    "rationale": "The proposed endoscopic or cross-sectional appearance is nonspecific and does not provide enough independent visual teaching value for a separate atlas entry.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0981",
+    "section": "Hematology",
+    "proposed_id": "d0981",
+    "canonical_name": "Systemic ALK-positive anaplastic large cell lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Ulcerated violaceous skin nodules with PET-avid nodal/visceral disease.",
+    "rationale": "Systemic ALK-positive lymphoma is distinct from cutaneous and implant-associated ALCL.",
+    "existing_parent_ids": [
+      "cutaneous_t_cell_lymphoma",
+      "breast_implant_associated_alcl"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D0984",
+    "section": "Hematology",
+    "proposed_id": "d0984",
+    "canonical_name": "Extranodal marginal zone (MALT) lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Gastric thickened folds, nodules, shallow ulcers, or wall thickening.",
+    "rationale": "Gastric and multisite MALT differs from existing conjunctival-only entry.",
+    "existing_parent_ids": [
+      "conjunctival_lymphoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3857860/"
+    ]
+  },
+  {
+    "uid": "D0986",
+    "section": "Hematology",
+    "proposed_id": "d0986",
+    "canonical_name": "Enteropathy-associated T-cell lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Celiac-associated jejunal thickening and aneurysmal dilatation, with ulcers or perforation.",
+    "rationale": "Distinct intestinal T-cell lymphoma pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10294174/"
+    ]
+  },
+  {
+    "uid": "D0988",
+    "section": "Hematology",
+    "proposed_id": "d0988",
+    "canonical_name": "Monomorphic epitheliotropic intestinal T-cell lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Multifocal shallow small-bowel ulcers and strictures; CT wall thickening or duodenal mass.",
+    "rationale": "Separate entity from EATL with a different imaging and clinical pattern.",
+    "existing_parent_ids": [
+      "enteropathy_associated_t_cell_lymphoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10294174/"
+    ]
+  },
+  {
+    "uid": "D0990",
+    "section": "Hematology",
+    "proposed_id": "d0990",
+    "canonical_name": "Hepatosplenic T-cell lymphoma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Homogeneous hepatosplenomegaly without focal lesions or peripheral/retroperitoneal nodes.",
+    "rationale": "The proposed endoscopic or cross-sectional appearance is nonspecific and does not provide enough independent visual teaching value for a separate atlas entry.",
+    "existing_parent_ids": [],
+    "source_urls": []
+  },
+  {
+    "uid": "D0993",
+    "section": "Hematology",
+    "proposed_id": "d0993",
+    "canonical_name": "T-cell prolymphocytic leukemia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Diffuse erythematous papules/plaques, periorbital edema, leonine facies.",
+    "rationale": "Highly visible cutaneous leukemia phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5732835/"
+    ]
+  },
+  {
+    "uid": "D0996",
+    "section": "Hematology",
+    "proposed_id": "d0996",
+    "canonical_name": "EBV-positive mucocutaneous ulcer",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Single sharply edged oral or skin ulcer without mass or systemic lymphoma.",
+    "rationale": "Distinct focal EBV ulcer presentation.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6661964/"
+    ]
+  },
+  {
+    "uid": "D0999",
+    "section": "Hematology",
+    "proposed_id": "d0999",
+    "canonical_name": "Immunoproliferative small intestinal disease (alpha heavy chain)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Proximal small bowel thickened folds, cobblestoning, villous edema, and ulcers.",
+    "rationale": "Distinctive endoscopic pattern and alpha-heavy-chain syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC3420507/"
+    ]
+  },
+  {
+    "uid": "D1002",
+    "section": "Hematology",
+    "proposed_id": "d1002",
+    "canonical_name": "Acquired hemophilia A",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Spontaneous skin, muscle, or retroperitoneal hematomas without typical hemarthroses.",
+    "rationale": "Distinct acquired factor inhibitor bleeding pattern from congenital hemophilia A.",
+    "existing_parent_ids": [
+      "hemophilia_a"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8406369/"
+    ]
+  },
+  {
+    "uid": "D1005",
+    "section": "Hematology",
+    "proposed_id": "d1005",
+    "canonical_name": "Factor XIII deficiency",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Delayed umbilical bleeding or neonatal intracranial hemorrhage despite normal PT/aPTT.",
+    "rationale": "Distinct urgent bleeding phenotype with normal screening tests.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10058358/"
+    ]
+  },
+  {
+    "uid": "D1008",
+    "section": "Hematology",
+    "proposed_id": "d1008",
+    "canonical_name": "Plasminogen deficiency type 1 (ligneous disease)",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Wood-like conjunctival membranes and gingival pseudomembranes with tooth loss.",
+    "rationale": "Directly visible ligneous disease phenotype.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7975770/"
+    ]
+  },
+  {
+    "uid": "D1011",
+    "section": "Hematology",
+    "proposed_id": "d1011",
+    "canonical_name": "Type I (monoclonal) cryoglobulinemia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Noninflammatory retiform purpura, acral necrosis, and digital/ear gangrene.",
+    "rationale": "Distinct occlusive disease from mixed cryoglobulinemic vasculitis.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9659226/"
+    ]
+  },
+  {
+    "uid": "D1014",
+    "section": "Hematology",
+    "proposed_id": "d1014",
+    "canonical_name": "TEMPI syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Facial/truncal telangiectasias plus perinephric fluid on CT/US and pulmonary shunt.",
+    "rationale": "Distinct clinical-radiologic syndrome.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC9057659/"
+    ]
+  },
+  {
+    "uid": "D1017",
+    "section": "Hematology",
+    "proposed_id": "d1017",
+    "canonical_name": "Splanchnic vein thrombosis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Portal/mesenteric/splenic venous filling defects or chronic portal cavernoma.",
+    "rationale": "Different anatomy, complications, and MPN association from lower-limb DVT.",
+    "existing_parent_ids": [
+      "deep_vein_thrombosis"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC11026984/"
+    ]
+  },
+  {
+    "uid": "D1019",
+    "section": "Hematology",
+    "proposed_id": "d1019",
+    "canonical_name": "Hemoglobin Bart’s hydrops fetalis",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Prenatal US: hydrops, scalp edema, ascites, cardiomegaly, and thick placenta.",
+    "rationale": "Distinct lethal fetal alpha-thalassemia phenotype from HbH disease.",
+    "existing_parent_ids": [
+      "hemoglobin_h_disease"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC307856/"
+    ]
+  },
+  {
+    "uid": "D1022",
+    "section": "Hematology",
+    "proposed_id": "d1022",
+    "canonical_name": "Severe congenital neutropenia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Early severe gingivitis/periodontitis, oral ulcers, and alveolar bone loss.",
+    "rationale": "Photographable oral disease and dental radiographic anchor.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5821468/"
+    ]
+  },
+  {
+    "uid": "D1025",
+    "section": "Hematology",
+    "proposed_id": "d1025",
+    "canonical_name": "Radioulnar synostosis with amegakaryocytic thrombocytopenia",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Blocked forearm rotation with bilateral proximal radioulnar synostosis and petechiae.",
+    "rationale": "Distinct congenital skeletal-hematologic association; unlike TAR.",
+    "existing_parent_ids": [
+      "tar_syndrome"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8397226/"
+    ]
+  },
+  {
+    "uid": "D1028",
+    "section": "Hematology",
+    "proposed_id": "d1028",
+    "canonical_name": "WHIM syndrome",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Extensive refractory cutaneous/plantar/anogenital warts with recurrent infections.",
+    "rationale": "Highly visible phenotype; related immunodeficiency topics lack this signature.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC7314950/"
+    ]
+  },
+  {
+    "uid": "D1031",
+    "section": "Hematology",
+    "proposed_id": "d1031",
+    "canonical_name": "Hepatic sinusoidal obstruction syndrome",
+    "action": "ADD",
+    "priority": "P1",
+    "visual_anchor": "Post-transplant Doppler: slow/reversed portal flow, gallbladder wall thickening, narrowed hepatic veins.",
+    "rationale": "Distinct post-transplant hepatic vascular injury pattern.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC10027097/"
+    ]
+  },
+  {
+    "uid": "D1034",
+    "section": "Hematology",
+    "proposed_id": "d1034",
+    "canonical_name": "Systemic chronic active EBV disease",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Hemorrhagic bullae, necrosis, and scars precisely at mosquito-bite sites.",
+    "rationale": "Specific visible pattern distinct from hydroa vacciniforme-like LPD.",
+    "existing_parent_ids": [
+      "hydroa_vacciniforme_like_lypd"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC6419500/"
+    ]
+  },
+  {
+    "uid": "D1040",
+    "section": "Hematology",
+    "proposed_id": "d1040",
+    "canonical_name": "Primary cutaneous gamma-delta T-cell lymphoma",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Ulcerated plaques and subcutaneous tumors with FDG-avid skin nodules.",
+    "rationale": "Overlaps existing subcutaneous panniculitis-like and cutaneous T-cell lymphoma records; separate visual value is not yet clear.",
+    "existing_parent_ids": [
+      "subcutaneous_panniculitis_like_t_cell_lymphoma",
+      "cutaneous_t_cell_lymphoma"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1042",
+    "section": "Hematology",
+    "proposed_id": "d1042",
+    "canonical_name": "Primary cutaneous aggressive epidermotropic CD8-positive T-cell lymphoma",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Rapid ulcerated papules, plaques, and tumors, sometimes with mucosal involvement.",
+    "rationale": "Distinct aggressive lymphoma skin phenotype.",
+    "existing_parent_ids": [
+      "cutaneous_t_cell_lymphoma"
+    ],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5120624/"
+    ]
+  },
+  {
+    "uid": "D1044",
+    "section": "Hematology",
+    "proposed_id": "d1044",
+    "canonical_name": "Indolent T-cell lymphoproliferative disorder of the gastrointestinal tract",
+    "action": "DEFER",
+    "priority": "P2",
+    "visual_anchor": "Superficial small-bowel ulcers, small polyps, and villous flattening without bulky mass.",
+    "rationale": "The proposed endoscopic or cross-sectional appearance is nonspecific and does not provide enough independent visual teaching value for a separate atlas entry.",
+    "existing_parent_ids": [
+      "enteropathy_associated_t_cell_lymphoma"
+    ],
+    "source_urls": []
+  },
+  {
+    "uid": "D1046",
+    "section": "Hematology",
+    "proposed_id": "d1046",
+    "canonical_name": "Transient abnormal myelopoiesis",
+    "action": "ADD",
+    "priority": "P2",
+    "visual_anchor": "Neonate with Down syndrome has vesiculopustules, especially at adhesive/IV sites; blood smear has blasts.",
+    "rationale": "Visible neonatal eruption with linked hematologic context.",
+    "existing_parent_ids": [],
+    "source_urls": [
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC5538213/"
+    ]
+  }
+]

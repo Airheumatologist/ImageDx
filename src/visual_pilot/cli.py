@@ -511,6 +511,7 @@ COMMANDS: dict[str, CommandFn | None] = {
     "judge": _lazy("judge"),
     "requeue-plates": _lazy("judge", "run_requeue_plates"),
     "requeue-age-vetoes": _lazy("judge", "run_requeue_age_vetoes"),
+    "requeue-gates": _lazy("judge", "run_requeue_gate_vetoes"),
     "store": _lazy("store"),
     "describe": _lazy("describe"),
     "audit-mimics": _lazy("mimic_audit"),
@@ -600,7 +601,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     shared.add_argument(
         "--skip-extract", action="store_true",
-        help="run-all: skip the final library-wide text extraction (report still runs)",
+        help="run-all: skip final text extraction for the selected topics (report still runs)",
     )
     shared.add_argument(
         "--max-runtime-seconds", type=int, default=14400,

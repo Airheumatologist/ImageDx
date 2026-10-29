@@ -1,0 +1,55 @@
+D1425 Erosive osteoarthritis
+The current osteoarthritis topic stops at Heberden and Bouchard nodes and marginal osteophytes. This phenotype needs the gull-wing, or saw-tooth, central erosion of the distal and proximal interphalangeal joints in a postmenopausal woman, with the thumb carpometacarpal joint often involved and the metacarpophalangeal joints and wrists spared. Psoriatic arthritis keeps the pencil-in-cup film. Rheumatoid arthritis keeps the marginal metacarpophalangeal erosion.
+MATCHES: 0.82 osteoarthritis (Osteoarthritis (Hand, Knee and Hip)) | 0.68 reactive_arthritis (Reactive Arthritis) | 0.67 erosive_esophagitis (Erosive esophagitis)
+
+D1427 Secondary hypertrophic osteoarthropathy (Pierre-Marie-Bamberger syndrome, hypertrophic pulmonary osteoarthropathy)
+Painful digital clubbing without thick furrowed skin, plus symmetric periosteal new bone along the radius, ulna, tibia, and fibula. The bone scan shows the tram-track, or double-stripe, sign. Lung cancer is the usual cause. Primary disease stays pachydermoperiostosis, which adds cutis verticis gyrata. Solitary fibrous tumor of the pleura only mentions the sign. Thyroid acropachy already sits inside Graves disease. Skeletal fluorosis is in Dentistry.
+MATCHES: 0.86 pachydermoperiostosis (Pachydermoperiostosis (Primary Hypertrophic Osteoarthropathy)) | 0.73 kashin_beck_disease (Kashin-Beck Disease) | 0.66 calcium_pyrophosphate_deposition_disease (Calcium Pyrophosphate Deposition Disease)
+
+D1429 Neuropathic arthropathy (Charcot joint)
+One destruction pattern from lost pain sensation. The teaching films are Lisfranc collapse with a rocker-bottom foot, and an atrophic, resorbed humeral head when the cause is syringomyelia. Diabetes, tabes, and spinal-cord injury are causes of that same pattern. Leprosy, Charcot-Marie-Tooth disease, and ALS are different diseases and do not supply these joint films. Osteonecrosis is already in Orthopedics.
+MATCHES: 0.76 psa (Psoriatic arthritis) | 0.74 enteropathic_arthritis (Enteropathic Arthritis) | 0.71 menetrier_disease (Ménétrier Disease (Hypertrophic Protein-Losing Gastropathy))
+
+D1432 Transient osteoporosis of the hip, including regional migratory osteoporosis
+Plain films later show osteopenia of the femoral head and neck. MRI shows marrow edema from the head through the intertrochanteric region and an effusion, without the serpentine necrotic line of osteonecrosis. The usual patient is a middle-aged man or a woman in the third trimester. Complex regional pain syndrome is already listed and has trophic skin changes.
+MATCHES: 0.54 osteonecrosis_of_the_jaw (Osteonecrosis of the Jaw (Medication-Related and Osteoradionecrosis)) | 0.48 d_transposition_of_the_great_arteries (D-Transposition of the Great Arteries) | 0.46 otitis_externa (Otitis Externa (Including Otomycosis))
+
+D1434 Dialysis-related amyloidosis (β2-microglobulin)
+Bilateral carpal cysts with the joint space preserved until late, femoral-neck cysts, cervical discovertebral destruction that mimics infection, and a periodontoid pseudotumor. The teaching images are musculoskeletal, so Rheumatology is the right home. Humeral cysts can also occur. Systemic AL amyloidosis already owns the shoulder-pad sign, raccoon-eye purpura, and macroglossia. Do not enter the same disease twice.
+MATCHES: 0.67 systemic_al_amyloidosis (Systemic AL (Light-Chain) Amyloidosis) | 0.64 cardiac_amyloidosis (Cardiac Amyloidosis) | 0.64 primary_cutaneous_amyloidosis (Primary Cutaneous Amyloidosis (Lichen and Macular))
+
+D1436 Palmar fasciitis and polyarthritis syndrome
+Both palms become woody, red, and contracted, usually with shoulder pain, and the films are non-erosive. Ovarian cancer is the classic association. Dupuytren contracture is in Orthopedics. Diabetic cheiroarthropathy, systemic sclerosis, and eosinophilic fasciitis are already in Rheumatology.
+MATCHES: 0.61 peutz_jeghers_syndrome (Peutz-Jeghers Syndrome) | 0.57 cardiofaciocutaneous_syndrome (Cardiofaciocutaneous Syndrome) | 0.56 antisynthetase_syndrome (Antisynthetase Syndrome)
+
+D1438 Pachydermodactyly
+Painless fusiform swelling along the sides of the proximal interphalangeal joints in an adolescent, full motion, and a radiograph that shows only soft tissue. It is the common false juvenile idiopathic arthritis.
+MATCHES: 0.76 macrodactyly (Macrodactyly) | 0.58 epidermal_inclusion_cyst (Epidermal Inclusion Cyst) | 0.58 pachydermoperiostosis (Pachydermoperiostosis (Primary Hypertrophic Osteoarthropathy))
+
+D1440 CACP syndrome (camptodactyly–arthropathy–coxa vara–pericarditis, PRG4)
+Cool large-joint swelling, camptodactyly, and pelvis films with short femoral necks, coxa vara, and acetabular cysts, without erosions. Progressive pseudorheumatoid dysplasia is already in Orthopedics. This is the other noninflammatory mimic of juvenile idiopathic arthritis.
+MATCHES: 0.88 pik3ca_related_overgrowth_spectrum (PIK3CA-Related Overgrowth Spectrum (CLOVES)) | 0.87 cardiofaciocutaneous_syndrome (Cardiofaciocutaneous Syndrome) | 0.85 alcapa_syndrome (Anomalous Left Coronary Artery from the Pulmonary Artery)
+
+D1442 Multicentric osteolysis, nodulosis, and arthropathy (MONA, Torg, Winchester, NAO; MMP2 or MMP14, one topic)
+Palmoplantar nodules and hand films in which the carpal bones disappear. Multicentric carpotarsal osteolysis is already in Nephrology and comes with kidney disease and no nodules. Gorham-Stout and Hajdu-Cheney are in Orthopedics. Juvenile hyaline fibromatosis is in Dermatology.
+MATCHES: 0.63 multicentric_carpotarsal_osteolysis_syndrome (Multicentric Carpotarsal Osteolysis Syndrome) | 0.59 kashin_beck_disease (Kashin-Beck Disease) | 0.58 pachydermoperiostosis (Pachydermoperiostosis (Primary Hypertrophic Osteoarthropathy))
+
+D1444 COPA syndrome
+Childhood chest CT with ground-glass, cysts, septal thickening, and nodules from recurrent hemorrhage, plus clubbing and arthritis. It belongs beside STING-associated vasculopathy with onset in infancy. The SAVI photographs remain the acral gangrene and nasal damage.
+MATCHES: 0.88 urofacial_syndrome (Urofacial Syndrome) | 0.88 coats_disease (Coats' Disease) | 0.88 cogan_syndrome (Cogan Syndrome)
+
+D1446 Singleton-Merten syndrome (IFIH1 or DDX58)
+Aortic and valvular calcification in a child, acro-osteolysis with wide medullary cavities, and early tooth-root resorption. Aicardi-Goutières syndrome is in Neurology and has a different picture.
+MATCHES: 0.75 netherton_syndrome (Netherton Syndrome) | 0.72 lemierre_syndrome (Lemierre syndrome) | 0.72 fibrodysplasia_ossificans_progressiva (Fibrodysplasia Ossificans Progressiva)
+
+D1448 Stiff skin syndrome (FBN1)
+Rock-hard skin of the thigh, buttock, or shoulder, often with a cobblestone surface and hypertrichosis, and contractures without Raynaud phenomenon. Systemic sclerosis is the neighbor. Morphea and scleredema are in Dermatology. Nephrogenic systemic fibrosis is in Nephrology.
+MATCHES: 0.85 stiff_person_syndrome (Stiff-Person Syndrome) | 0.78 erythema_ab_igne (Erythema Ab Igne) | 0.74 cardiac_amyloidosis (Cardiac Amyloidosis)
+
+D1450 Fibroblastic rheumatism
+Sudden periarticular nodules, rapid flexion contractures, and interphalangeal erosions. Multicentric reticulohistiocytosis is in Orthopedics and keeps the coral-bead nail-fold photograph.
+MATCHES: 0.63 sideroblastic_anemia (Sideroblastic Anemia) | 0.63 coccidioidomycosis (Coccidioidomycosis) | 0.56 cardiac_fibroma (Cardiac Fibroma (Gorlin-Goltz Syndrome))
+
+D1452 Voriconazole-induced periostitis
+Patchy, feathery, often asymmetric periosteal bone on the ribs, clavicles, scapulae, and long bones in a patient on long-term voriconazole, with a hot bone scan. It resolves when the drug is stopped. The periostosis of secondary hypertrophic osteoarthropathy is smoother and symmetric and comes with clubbing.
+MATCHES: 0.60 levamisole_vasculopathy (Levamisole-Induced Vasculopathy) | 0.60 chronic_recurrent_multifocal_osteomyelitis (Chronic Recurrent Multifocal Osteomyelitis) | 0.60 crohn_disease (Crohn's Disease)

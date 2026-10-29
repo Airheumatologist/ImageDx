@@ -217,6 +217,7 @@ def prepare_article(article: dict, vocabulary: list[dict]) -> dict | None:
     disease_keys = db.from_json(article["primary_disease_keys_json"], [])
     prompt = prompts.scoped("p4", disease_keys)
     return {
+        "scope_keys": article.get("_extract_scope"),
         "sections": sections,
         "source_text": source_text,
         "valid_keys": {v["finding_key"] for v in vocabulary},
@@ -244,9 +245,12 @@ def apply_response(
     # A re-apply (--force or a direct call over already-applied rows) must not
     # re-count proposals; a first apply — including a cache-only replay onto a
     # fresh DB — upserts them so findings_vocab matches the live run.
-    reapplied = _has_text_rows(conn, pmcid)
+    scope = ctx.get("scope_keys")
+    reapplied = _has_text_rows(conn, pmcid, scope)
     conn.execute(
-        "DELETE FROM disease_findings WHERE pmcid = ? AND source = 'text'", (pmcid,)
+        "DELETE FROM disease_findings WHERE pmcid = ? AND source = 'text'"
+        + (" AND disease_key IN (SELECT value FROM json_each(?))" if scope is not None else ""),
+        (pmcid, json.dumps(scope)) if scope is not None else (pmcid,),
     )
     seen_proposed: set[str] = set()
     for raw in assertions:
@@ -256,6 +260,9 @@ def apply_response(
             continue
         if cleaned.pop("_unverified_quote", False):
             stats["unverified_quote"] += 1
+            continue
+        if scope is not None and cleaned["disease_key"] not in scope:
+            stats["dropped_disease"] += 1
             continue
         finding_key = cleaned.get("finding_key")
         proposed = cleaned.get("proposed_finding")
@@ -287,13 +294,15 @@ def apply_response(
         stats["inserted"] += 1
 
 
-def rebuild_image_rows(conn) -> int:
-    """Rebuild source='image' disease_findings from stored panels."""
-    conn.execute("DELETE FROM disease_findings WHERE source = 'image'")
+def rebuild_image_rows(conn, disease_keys=None) -> int:
+    """Rebuild image assertions, retaining unrelated topics during scoped runs."""
+    scope_sql = " AND disease_key IN (SELECT value FROM json_each(?))" if disease_keys is not None else ""
+    params = (json.dumps(disease_keys),) if disease_keys is not None else ()
+    conn.execute("DELETE FROM disease_findings WHERE source = 'image'" + scope_sql, params)
     n = 0
     for row in conn.execute(
         "SELECT pmcid, disease_key, subtype, findings_json FROM published_panels "
-        "WHERE disease_key IS NOT NULL"
+        "WHERE disease_key IS NOT NULL" + scope_sql, params
     ):
         for finding in db.from_json(row["findings_json"], []):
             key = finding.get("finding_key") if isinstance(finding, dict) else finding
@@ -309,11 +318,12 @@ def rebuild_image_rows(conn) -> int:
     return n
 
 
-def _has_text_rows(conn, pmcid: str) -> bool:
+def _has_text_rows(conn, pmcid: str, disease_keys=None) -> bool:
+    scope_sql = " AND disease_key IN (SELECT value FROM json_each(?))" if disease_keys is not None else ""
     return (
         conn.execute(
-            "SELECT 1 FROM disease_findings WHERE pmcid = ? AND source = 'text' LIMIT 1",
-            (pmcid,),
+            "SELECT 1 FROM disease_findings WHERE pmcid = ? AND source = 'text'" + scope_sql + " LIMIT 1",
+            (pmcid, json.dumps(disease_keys)) if disease_keys is not None else (pmcid,),
         ).fetchone()
         is not None
     )
@@ -322,20 +332,36 @@ def _has_text_rows(conn, pmcid: str) -> bool:
 # ---------------------------------------------------------------------------
 # Stage entry point
 # ---------------------------------------------------------------------------
+def _requested_keys(args):
+    if (getattr(args, "diseases", None) or getattr(args, "disease", "all") != "all"
+            or getattr(args, "topics_under", None) is not None):
+        return diseases.selected_keys(args)
+    return None
+
+
 def _load_articles(conn, args) -> tuple[list[dict], int]:
     """(parsed articles to extract, best retrieval score first; count skipped)."""
-    disease = None if args.disease == "all" else args.disease
-    rows = db.rows_with_status(conn, "articles", "parsed", disease=disease)
+    scope = _requested_keys(args)
+    rows = db.rows_with_status(conn, "articles", "parsed")
     if args.pmcids:
         wanted = set(args.pmcids)
         rows = [r for r in rows if r["pmcid"] in wanted]
     articles = [dict(r) for r in rows]
+    if scope is not None:
+        wanted = set(scope)
+        articles = [a for a in articles if wanted.intersection(db.from_json(a["primary_disease_keys_json"], []))]
+        for article in articles:
+            # Restrict the prompt and vocabulary too, including shared articles.
+            article["primary_disease_keys_json"] = json.dumps([
+                key for key in db.from_json(article["primary_disease_keys_json"], []) if key in wanted
+            ])
+            article["_extract_scope"] = scope
     articles.sort(key=lambda a: -(a["retrieval_score"] or 0.0))
     if args.limit:
         articles = articles[: args.limit]
     if getattr(args, "force", False):
         return articles, 0
-    todo = [a for a in articles if not _has_text_rows(conn, a["pmcid"])]
+    todo = [a for a in articles if not _has_text_rows(conn, a["pmcid"], scope)]
     return todo, len(articles) - len(todo)
 
 
@@ -415,9 +441,14 @@ def _apply_results(conn, client, results, submitted: list, stats: dict) -> bool:
 
 def run(args) -> int:
     conn = db.init_db()
+    scope = _requested_keys(args)
     if getattr(args, "image_only", False):
+        if args.dry_run:
+            conn.close()
+            print("extract: dry-run; image rows unchanged")
+            return 0
         with conn:
-            image_rows = rebuild_image_rows(conn)
+            image_rows = rebuild_image_rows(conn, scope)
         print(f"extract: {image_rows} image rows rebuilt")
         conn.close()
         return 0
@@ -452,7 +483,7 @@ def run(args) -> int:
     if budget_hit:
         print(f"LLM budget exhausted (${client.spent_usd:.4f}); stopping cleanly. Rerun to resume.")
 
-    stats["image_rows"] = rebuild_image_rows(conn)
+    stats["image_rows"] = rebuild_image_rows(conn, scope)
     conn.commit()
     print(
         f"extract: {stats['inserted']} text rows ({stats['unverified_quote']} "
