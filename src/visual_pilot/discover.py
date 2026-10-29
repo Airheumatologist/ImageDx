@@ -789,11 +789,11 @@ FIXED_KEY = "_fixed"
 
 def article_disease_keys(hit: europepmc.Hit, disease_keys) -> list[str]:
     """Diseases among ``disease_keys`` named in the article's title or abstract."""
-    text = f"{hit.title} {hit.abstract}".lower()
+    text = f"{hit.title} {hit.abstract}"
     catalog = diseases.load_diseases()
     return [
         key for key in disease_keys
-        if any(term.lower() in text for term in disease_query_terms(catalog[key]))
+        if pair_terms.caption_matches(text, disease_query_terms(catalog[key]))
     ]
 
 

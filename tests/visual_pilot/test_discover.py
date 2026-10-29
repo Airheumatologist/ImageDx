@@ -39,6 +39,16 @@ def test_caption_matches_phrase_and_words_modes():
     assert not pair_terms.caption_matches("Schematic of signaling", ["sign"], mode="words")
 
 
+def test_caption_matches_ignore_punctuation_and_possessives():
+    name = "periodic fever, aphthous stomatitis, pharyngitis"
+    assert pair_terms.caption_matches(
+        "Periodic fever, aphthous stomatitis, pharyngitis, and cervical adenitis", [name])
+    assert pair_terms.caption_matches("periodic fever aphthous stomatitis pharyngitis", [name])
+    assert pair_terms.caption_matches("Zenker diverticulum on barium swallow", ["Zenker's diverticulum"])
+    assert pair_terms.caption_matches("Zenker's diverticulum", ["zenker diverticulum"])
+    assert not pair_terms.caption_matches("periodic fever and pharyngitis", [name])
+
+
 def test_build_query_modes():
     phrase = europepmc.build_query(["heliotrope rash"], ["dermatomyositis"])
     assert 'FIG:"heliotrope rash"' in phrase
@@ -355,6 +365,22 @@ def test_article_disease_keys_match_title_and_abstract():
     assert "sle" in keys and "psa" in keys
     assert "gout" not in keys
     assert discover.article_disease_keys(hit, ["gout"]) == []
+
+
+def test_article_disease_keys_read_spelled_out_names():
+    hit = _hit("PMC1", abstract="Periodic Fever, Aphthous Stomatitis, Pharyngitis, and "
+                                "Cervical Adenitis in an adult.")
+    assert discover.article_disease_keys(hit, ["pfapa_syndrome", "gout"]) == ["pfapa_syndrome"]
+
+
+def test_acronym_named_topics_keep_a_spelled_out_search_name():
+    # The overview and disease passes search only names without an
+    # abbreviation; these two topics have no spelled-out name in use.
+    catalog = diseases.load_diseases()
+    missing = {key for key, d in catalog.items() if not discover.overview_disease_terms(d)}
+    assert missing == {"kbg_syndrome", "vacterl_association"}
+    assert discover.overview_disease_terms(catalog["pfapa_syndrome"]) == [
+        "periodic fever, aphthous stomatitis, pharyngitis"]
 
 
 def test_name_variants_strip_parenthetical_gloss_and_fold_accents():

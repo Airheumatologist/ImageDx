@@ -1,6 +1,6 @@
 """Configuration for the Visual Findings Library pilot.
 
-OpenCode provider settings are read from the environment;
+OpenRouter provider settings are read from the environment;
 the repo-root ``.env`` is loaded at import. Pilot-specific ``VP_*`` settings
 are read here with their defaults.
 
@@ -39,86 +39,26 @@ def _env_float(name: str, default: float) -> float:
 
 
 # -----------------------------------------------------------------------------
-# Provider settings: OpenCode runs all LLM stages (P2-P6).
+# Provider settings: OpenRouter runs all LLM stages (P2-P6) through its
+# OpenAI-compatible chat completions endpoint.
 # Article discovery uses the public Europe PMC REST API (no key).
 # -----------------------------------------------------------------------------
-OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
-# OpenCode Go gateway (OpenAI-compatible chat completions). The Zen endpoint
-# (https://opencode.ai/zen/v1) refuses free-tier models outside the OpenCode app.
-OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/go/v1")
-# AnyRouter gateway (OpenAI-compatible). Models ending in ":free" stay on the
-# free route (no credits; 2400 requests/minute per key).
-ANYROUTER_API_KEY = os.getenv("ANYROUTER_API_KEY")
-ANYROUTER_BASE_URL = os.getenv("ANYROUTER_BASE_URL", "https://anyrouter.dev/api/v1")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
-
-# Credentials for each supported VP_LLM_PROVIDER value.
-_LLM_PROVIDER_CREDENTIALS = {
-    "opencode": lambda: (OPENCODE_API_KEY, OPENCODE_BASE_URL),
-    "anyrouter": lambda: (ANYROUTER_API_KEY, ANYROUTER_BASE_URL),
-}
-LLM_PROVIDERS = frozenset(_LLM_PROVIDER_CREDENTIALS)
-
-
-def llm_credentials(provider: str | None = None) -> tuple[str | None, str]:
-    """(api_key, base_url) for the given provider (default VP_LLM_PROVIDER)."""
-    name = (provider or VP_LLM_PROVIDER).strip().lower()
-    if name not in _LLM_PROVIDER_CREDENTIALS:
-        raise ValueError(f"VP_LLM_PROVIDER must be one of {sorted(LLM_PROVIDERS)}")
-    return _LLM_PROVIDER_CREDENTIALS[name]()
 
 # -----------------------------------------------------------------------------
 # Visual pilot settings (VP_*).
-# Every LLM stage runs on OpenCode Go's multimodal muse-spark-1.3-contributor
-# (Responses API, billed against Go's monthly limit). OpenCode retired
-# longcat-2.5-preview-free, and Go serves no free multimodal model.
-# deepseek-v4.1-flash also works on Go once the workspace's Privacy settings
-# allow Global regions.
+# Every LLM stage runs on qwen/qwen3.7-flash: multimodal (text + image), so it
+# also serves the P3 vision judge, with JSON mode and reasoning effort.
 # -----------------------------------------------------------------------------
-DEFAULT_MODEL = "muse-spark-1.3-contributor"
-# Models OpenCode serves only through the Responses API (/responses).
-RESPONSES_API_MODELS = frozenset(
-    m.strip() for m in os.getenv(
-        "VP_RESPONSES_API_MODELS",
-        "muse-spark-1.2-contributor,muse-spark-1.3-contributor",
-    ).split(",") if m.strip()
-)
-
-
-def uses_responses_api(model: str) -> bool:
-    return model in RESPONSES_API_MODELS
-
-
-# Chat-completions models OpenCode can route with response_format json_object
-# (step-5-preview-free cannot, so it relies on the prompt alone).
-JSON_MODE_MODELS = frozenset(
-    m.strip() for m in os.getenv(
-        "VP_JSON_MODE_MODELS",
-        "deepseek-v4.1-flash,minimax/minimax-m3.1-flash:free,"
-        "nvidia/nemotron-3.5-super-vl-120b-a12b:free",
-    ).split(",")
-    if m.strip()
-)
-
-
-def uses_json_mode(model: str) -> bool:
-    return model in JSON_MODE_MODELS
-
-
-VP_LLM_PROVIDER = os.getenv("VP_LLM_PROVIDER", "opencode").strip().lower()
+DEFAULT_MODEL = "qwen/qwen3.7-flash"
 VP_TRIAGE_MODEL = os.getenv("VP_TRIAGE_MODEL", DEFAULT_MODEL)
 VP_EXTRACT_MODEL = os.getenv("VP_EXTRACT_MODEL", DEFAULT_MODEL)
 VP_JUDGE_MODEL = os.getenv("VP_JUDGE_MODEL", DEFAULT_MODEL)
 VP_DESCRIBE_MODEL = os.getenv("VP_DESCRIBE_MODEL", VP_EXTRACT_MODEL)
 # Topic findings vocabulary (build-vocab, P6); defaults to VP_EXTRACT_MODEL.
 VP_VOCAB_MODEL = os.getenv("VP_VOCAB_MODEL", VP_EXTRACT_MODEL)
-# Where a request goes once its first try answers HTTP 429 or 402
-# (OpenCode's "Endpoint is unavailable"): VP_FALLBACK_MODEL (empty = the same
-# model) on the VP_FALLBACK_API_KEY account (empty = OPENCODE_API_KEY, the
-# same gateway). With both empty there is no switch. A fallback reply is
-# cached under the original request's key.
-VP_FALLBACK_MODEL = os.getenv("VP_FALLBACK_MODEL", "").strip()
-VP_FALLBACK_API_KEY = os.getenv("VP_FALLBACK_API_KEY", "").strip()
 VP_IMAGE_MAX_EDGE = _env_int("VP_IMAGE_MAX_EDGE", 1568)
 VP_CONCURRENCY = max(1, _env_int("VP_CONCURRENCY", 32))
 VP_LLM_TIMEOUT_SECONDS = max(1, _env_int("VP_LLM_TIMEOUT_SECONDS", 300))
@@ -128,8 +68,8 @@ VP_LLM_MAX_REQUEST_SECONDS = max(1, _env_int("VP_LLM_MAX_REQUEST_SECONDS", 600))
 # Figures per P2 caption-triage batch. Smaller batches finish sooner (each
 # figure adds reasoning output) and spread across the VP_CONCURRENCY slots.
 VP_TRIAGE_BATCH = max(1, _env_int("VP_TRIAGE_BATCH", 20))
-# Per-stage reasoning effort (low/medium/high): ``reasoning.effort`` on the
-# Responses API, ``reasoning_effort`` on chat completions. Unset
+# Per-stage reasoning effort (off/low/medium/high), sent as OpenRouter's
+# ``reasoning`` request field; off disables thinking. Unset
 # falls back to LLM_REASONING_EFFORT; empty means the model default. A set
 # effort is part of the llm_calls cache key.
 VP_TRIAGE_REASONING_EFFORT = os.getenv("VP_TRIAGE_REASONING_EFFORT", LLM_REASONING_EFFORT).strip()
@@ -254,15 +194,10 @@ VP_LLM_CACHE_ONLY = _env_int("VP_LLM_CACHE_ONLY", 0)
 # "cached_in" a cache hit (defaults to "in"), "out" is output. Override or
 # extend at runtime with
 # VP_MODEL_PRICES_JSON='{"model": {"in": x, "cached_in": y, "out": z}}'.
+# Used only when a reply carries no ``usage.cost`` (OpenRouter reports one).
 MODEL_PRICES = {
-    # OpenCode Go prices; Go usage counts against its monthly dollar limit.
-    "muse-spark-1.3-contributor": {"in": 0.10, "cached_in": 0.002, "out": 0.20},
-    # Free on AnyRouter.
-    "minimax/minimax-m3.1-flash:free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
-    "nvidia/nemotron-3.5-super-vl-120b-a12b:free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
-    # Formerly free on OpenCode (both now retired); kept for old ledger rows.
-    "step-5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
-    "longcat-2.5-preview-free": {"in": 0.0, "cached_in": 0.0, "out": 0.0},
+    # OpenRouter list price for prompts under 32k tokens (higher tiers above).
+    "qwen/qwen3.7-flash": {"in": 0.03, "cached_in": 0.006, "out": 0.13},
 }
 
 

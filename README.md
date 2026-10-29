@@ -21,7 +21,7 @@ by `build-vocab` (see [Disease catalog](#disease-catalog)).
                         Visual Findings Library pipeline
                         ================================
 
-  DISCOVERY                           LLM STAGES (OpenCode)  
+  DISCOVERY                           LLM STAGES (OpenRouter)
   +---------------------------+       P2 caption triage      (text, batched)
   | Europe PMC REST search    |       P3 figure judgment     (vision)
   |  FIG: caption field,      |       P5 display captions    (text)
@@ -451,7 +451,7 @@ turborag/
 |       |-- publication.py       # publication eligibility rules
 |       |-- source_quality.py    # article tiers (review-first ranking)
 |       |-- curation_audit.py    # reversible publication audit
-|       |-- llm.py               # OpenCode client: budget, cache, retries  
+|       |-- llm.py               # OpenRouter client: budget, cache, retries
 |       |-- prompts.py           # P2-P5 systems + JSON schemas
 |       |-- data/                # findings_vocab.json,
 |       |                        # topic_findings_vocab.json (generated)
@@ -470,18 +470,14 @@ Python 3.10+ is required (the macOS system `python3` is 3.9):
 ```bash
 uv venv --python 3.12 venv && source venv/bin/activate
 pip install -r requirements.txt
-cp env.example .env   # fill in OPENCODE_API_KEY (discovery needs no key)
+cp env.example .env   # fill in OPENROUTER_API_KEY (discovery needs no key)
 ```
 
-Every stage runs on the multimodal `muse-spark-1.3-contributor` through the
-OpenCode Go gateway (`https://opencode.ai/zen/go/v1`, Responses API, JSON
-mode). Usage counts against Go's monthly limit, and `config.MODEL_PRICES`
-records it at $0.10 in / $0.20 out per 1M tokens. OpenCode retired the free
-`longcat-2.5-preview-free`, and Go serves no free multimodal model (the free
-Zen models answer only inside the OpenCode app). `deepseek-v4.1-flash`
-(chat completions, JSON mode) works on Go when the workspace's Privacy
-settings allow Global regions; it has no entry in `config.MODEL_PRICES`, so
-the ledger records no cost for it.
+Every stage runs on the multimodal `qwen/qwen3.7-flash` through OpenRouter
+(`https://openrouter.ai/api/v1`, streamed chat completions in JSON mode). The
+ledger records the cost OpenRouter reports for each request; when a reply
+carries none, `config.MODEL_PRICES` prices it at OpenRouter's under-32k-token
+list price ($0.03 in / $0.006 cached / $0.13 out per 1M tokens).
 
 ## Usage
 
@@ -529,14 +525,10 @@ with 4 in flight). The settings that matter for a full run, all in `.env`:
 A lower reasoning effort is roughly 10× faster per call but changes
 decisions; compare against earlier decisions before lowering it for triage
 or judging. A set effort is part of the `llm_calls` cache key, so changing
-it re-asks the model. A request answered with HTTP 429 or 402 (Go's
-"Endpoint is unavailable") switches once to the fallback when one is set:
-`VP_FALLBACK_MODEL` (empty: the same model) on the `VP_FALLBACK_API_KEY`
-account (empty: `OPENCODE_API_KEY`), so a second OpenCode account can absorb
-one account's rate limits or spent Go usage. The reply is cached under the original request's
-key and recorded with the model that answered. Otherwise HTTP 429s back off
-and retry (`VP_RATE_LIMIT_RETRIES`). Both are counted in the timings report
-(`llm_429`, `llm_402`, `llm_fallback`).
+it re-asks the model. HTTP 429s back off and retry
+(`VP_RATE_LIMIT_RETRIES`); an HTTP 402 (OpenRouter credits spent) stops the
+run like an exhausted `--budget-usd`. Both are counted in the timings report
+(`llm_429`, `llm_402`).
 
 Run long jobs under `caffeinate -is` on macOS. An idle Mac sleeps mid-run,
 and because the process clock stops during sleep, request timeouts never

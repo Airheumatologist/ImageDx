@@ -155,12 +155,37 @@ def test_acronym_synonyms_match_case_sensitively():
     assert curation._term_pattern("Gout").search("gouty tophus in gout")
 
 
+def test_disease_names_match_across_punctuation():
+    pattern = curation._term_pattern("periodic fever, aphthous stomatitis, pharyngitis")
+    assert pattern.search("Periodic Fever, Aphthous Stomatitis, Pharyngitis, and Cervical Adenitis")
+    assert pattern.search("periodic fever aphthous stomatitis pharyngitis")
+    assert curation._term_pattern("Swyer-James syndrome").search("Swyer James syndrome")
+    assert curation._term_pattern("Zenker's diverticulum").search("a Zenker diverticulum")
+    assert curation._term_pattern("Zenker diverticulum").search("Zenker’s diverticulum")
+    acronym = curation._term_pattern("PFAPA")
+    assert acronym.search("Cervical Adenitis (PFAPA) Syndrome")
+    assert not acronym.search("pfapa")
+    assert not curation._term_pattern("Gout").search("goutweed")
+
+
+def test_pfapa_title_attributes_a_terse_caption():
+    title = ("Late-Onset Periodic Fever, Aphthous Stomatitis, Pharyngitis and Cervical "
+             "Adenitis (PFAPA) Syndrome: A Cue for Antimicrobial Stewardship.")
+    assert curation._diseases_in_text(title) == {"pfapa_syndrome"}
+    assert curation._diseases_in_text("Epidemiology of PFAPA in western Sweden") == {
+        "pfapa_syndrome"}
+    panel = {"disease_key": "pfapa_syndrome"}
+    caption = "Exudative pharyngitis Arrow pointing to pus spots over tonsils"
+    assert curation._attribution_reason(panel, caption, {"title": title}) is None
+
+
 def test_disease_index_matches_the_brute_force_search():
     texts = [
         "Malar rash in systemic lupus erythematosus and psoriatic arthritis.",
         "Adult-onset Still's disease with salmon-pink rash; ITP excluded.",
         "Vitiligo and lichen planus on the same patient, all panels.",
         "Tophaceous gout of the hand",
+        "Periodic fever, aphthous stomatitis, pharyngitis, and adenitis (PFAPA); Zenker diverticulum.",
     ]
     for text in texts:
         brute = {

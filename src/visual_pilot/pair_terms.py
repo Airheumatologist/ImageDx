@@ -187,15 +187,19 @@ def caption_matches(caption: str, terms: list[str], mode: str = "phrase") -> boo
     ``phrase``: a whole term appears as consecutive words. ``words``: every
     content word of a multi-word term appears somewhere in the caption
     (prefix match for words of four or more letters, like ``word*``).
+    Punctuation and a possessive "'s" are ignored on both sides, so a
+    disease name such as "Periodic fever, aphthous stomatitis, pharyngitis
+    and cervical adenitis" matches with or without its commas.
     """
-    tokens = [_singular(w) for w in _caption_norm(caption).split()]
+    tokens = [_singular(w) for w in _caption_norm(caption).split() if w != "s"]
     text = " " + " ".join(tokens) + " "
     for term in terms:
-        if " " + " ".join(_singular(w) for w in term.split()) + " " in text:
+        phrase = [_singular(w) for w in _caption_norm(term).split() if w != "s"]
+        if phrase and " " + " ".join(phrase) + " " in text:
             return True
         if mode != "words":
             continue
-        words = content_words(term)
+        words = [w for w in content_words(term) if w != "s"]
         if len(words) >= 2 and all(
             any(t.startswith(w) if len(w) >= 4 else t == w for t in tokens) for w in words
         ):

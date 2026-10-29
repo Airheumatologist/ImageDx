@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>Disease library</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=image-zoom-2">
 </head>
 <body class="topic">
   <header class="topic-header">
@@ -17,14 +17,16 @@
     <h1 id="title"></h1>
     <p id="topic-meta" class="topic-meta"></p>
   </header>
-  <div id="section-nav" class="section-nav" role="tablist" aria-label="Sections" hidden></div>
+  <nav id="section-nav" class="section-nav" aria-label="Sections" hidden></nav>
   <main id="content"></main>
   <p id="reserves-note" class="reserves-note" hidden></p>
 
   <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title" hidden>
     <section class="lb-inner">
       <div class="lb-stage">
-        <div id="lb-media"></div>
+        <div id="lb-viewport" tabindex="0" role="region" aria-label="Image viewer. Use zoom controls to magnify, then scroll or drag to pan.">
+          <div id="lb-media"></div>
+        </div>
         <button id="lb-prev" class="lb-nav lb-prev" type="button" aria-label="Previous image">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
         </button>
@@ -32,6 +34,13 @@
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
         </button>
         <span id="lb-counter" class="lb-counter"></span>
+      </div>
+      <div class="lb-toolbar" role="group" aria-label="Image zoom">
+        <button id="lb-zoom-out" type="button" aria-label="Zoom out" title="Zoom out (−)">−</button>
+        <output id="lb-zoom-level" aria-live="polite" aria-label="Zoom relative to fit">100%</output>
+        <button id="lb-zoom-in" type="button" aria-label="Zoom in" title="Zoom in (+)">+</button>
+        <button id="lb-zoom-fit" type="button" title="Fit image (0)">Fit image</button>
+        <span class="lb-zoom-hint">Zoom in to explore · drag to pan</span>
       </div>
       <div class="lb-info">
         <h2 id="lb-title"></h2>
@@ -48,6 +57,6 @@
     const DISEASE = VP.diseaseKey();
     document.getElementById("home-link").href = VP.homeUrl;
   </script>
-  <script src="app.js"></script>
+  <script src="app.js?v=image-zoom-2"></script>
 </body>
 </html>
