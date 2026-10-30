@@ -29,8 +29,10 @@ def load_manifest():
     existing = {t["topic_id"] for rows in catalog["specialties"].values() for t in rows}
     approved = json.loads((ROOT / manifest["review_source"]).read_text())
     approved_keys = {t["topic_id"] for t in approved["topics"]}
-    if len(keys) != 493 or len(set(keys)) != 493 or set(keys) != approved_keys:
-        raise ValueError("Run manifest must contain exactly the 493 approved additions.")
+    expected = approved_keys & existing
+    if len(set(keys)) != len(keys) or set(keys) != expected:
+        raise ValueError(f"Run manifest must contain exactly the {len(expected)} approved additions "
+                         "still in the catalog.")
     if not set(keys) <= existing:
         raise ValueError("Run manifest names topics missing from the main catalog.")
     if manifest["openrouter_only"] != ["open-inference"]:
