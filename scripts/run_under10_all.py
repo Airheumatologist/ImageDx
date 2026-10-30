@@ -1,18 +1,19 @@
-"""Thin-topic run: every catalog topic under 10 images, with the thin-topic levers on.
+"""Thin-topic run: every catalog topic under the image target, with the thin-topic levers on.
 
-Usage: venv/bin/python scripts/run_under10_all.py --database {main,new} [--dry-run]
+Usage: venv/bin/python scripts/run_under10_all.py --database {main,new} [--target 10]
+       [--max-rounds 4] [--tag NAME] [--dry-run]
 
 ``main`` covers the established topics in data/visual_pilot/visual_pilot.sqlite;
 ``new`` covers the 2026-10-28 additions in their isolated database and
 vocabulary. Run one process per database; both may run at the same time.
 
-Each run selects the database's topics below 10 merged (site + database)
-images, then:
+Each run selects the database's topics below the target (default 10) in merged
+(site + database) images, then:
 1. returns ``no_finding_term`` caption drops that now pass the gate
    (every pass) and resets retryable ``vision_error`` figures;
 2. re-plates ``vision_rejected`` collages with unlabeled plates allowed;
 3. finishes those figures, then runs disease-pass discovery rounds, with the
-   license-free second search tier, until every topic reaches 10, a round
+   license-free second search tier, until every topic reaches the target, a round
    finds no new article, or the round or time limit is reached.
 Library-wide text extraction is skipped, as in the earlier under-10 run.
 """
@@ -29,9 +30,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUN_DIR = ROOT / "data/visual_pilot"
 NEW_DIR = RUN_DIR / "new_topics_20261028"
-TAG = "under10_all_20261029"
-TARGET = 10
-MAX_ROUNDS = 4
 MAX_RUNTIME_SECONDS = 8 * 3600
 BATCH_SIZE = 300
 PER_PAIR = 25
@@ -42,7 +40,13 @@ parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 parser.add_argument("--database", choices=["main", "new"], required=True)
 parser.add_argument("--dry-run", action="store_true",
                     help="report the topics and requeue counts without writes, searches or LLM calls")
+parser.add_argument("--target", type=int, default=10, help="raise every selected topic to this many merged images")
+parser.add_argument("--max-rounds", type=int, default=4, help="discovery rounds per run")
+parser.add_argument("--tag", help="status/log name prefix (default under<target>_all_<today>)")
 ARGS = parser.parse_args()
+TARGET = ARGS.target
+MAX_ROUNDS = ARGS.max_rounds
+TAG = ARGS.tag or f"under{TARGET}_all_{datetime.now().strftime('%Y%m%d')}"
 
 NEW_MANIFEST = json.loads((ROOT / "data/new_topics_20261028.json").read_text())
 os.environ.update(NEW_MANIFEST["environment"])
@@ -131,11 +135,11 @@ def execute(baseline: dict[str, int]) -> int:
                 break
             current = published.merged_topic_counts(run.read_conn, topics)
             active = sorted((k for k in topics if current[k] < TARGET), key=lambda k: (current[k], k))
-            status.update(stage=f"discovery_round_{round_no}", topics_still_below_10=len(active),
+            status.update(stage=f"discovery_round_{round_no}", **{f"topics_still_below_{TARGET}": len(active)},
                           current_counts=current)
             save()
             if not active:
-                status["stop_reason"] = "all selected topics reached 10"
+                status["stop_reason"] = f"all selected topics reached {TARGET}"
                 break
             print(f"UNDER10 round={round_no} topics={len(active)} "
                   f"zero={sum(current[k] == 0 for k in active)}", flush=True)
@@ -171,7 +175,7 @@ def execute(baseline: dict[str, int]) -> int:
         after = published.merged_topic_counts(run.read_conn, topics)
         summary = {
             "topics": len(topics),
-            "below_10_before": len(topics), "below_10_after": sum(n < TARGET for n in after.values()),
+            f"below_{TARGET}_before": len(topics), f"below_{TARGET}_after": sum(n < TARGET for n in after.values()),
             "zero_before": sum(n == 0 for n in baseline.values()),
             "zero_after": sum(n == 0 for n in after.values()),
             "images_added": sum(after.values()) - sum(baseline.values()),

@@ -12,9 +12,6 @@
   "gastrointestinal_angiodysplasia": [
     "Heyde's syndrome"
   ],
-  "lowe_syndrome": [
-    "Lowe's syndrome"
-  ],
   "volkmann_ischemic_contracture": [
     "Volkmann's contracture"
   ],
@@ -28,10 +25,6 @@
   "menetrier_disease": [
     "Ménétrier's disease",
     "Menetrier's disease"
-  ],
-  "relapsing_febrile_nodular_panniculitis": [
-    "Weber-Christian disease",
-    "Weber Christian disease"
   ],
   "riedel_thyroiditis": [
     "Riedel's thyroiditis"
@@ -321,35 +314,15 @@
   "ludwigs_angina": [
     "Ludwig's angina"
   ],
-  "finnish_congenital_nephrotic_syndrome": [
-    "congenital nephrotic syndrome"
-  ],
-  "senior_loken_syndrome": [
-    "Senior-Loken syndrome"
-  ],
   "chancroid": [
     "Haemophilus ducreyi",
     "cutaneous Haemophilus ducreyi ulcer"
-  ],
-  "chalazion_hordeolum": [
-    "chalazion",
-    "hordeolum",
-    "giant chalazion",
-    "eyelid stye",
-    "recurrent chalazion"
   ],
   "lactational_mastitis_breast_abscess": [
     "breast abscess",
     "lactational breast abscess",
     "lactational mastitis",
     "puerperal breast abscess"
-  ],
-  "familial_dysbetalipoproteinemia": [
-    "type III hyperlipoproteinemia",
-    "dysbetalipoproteinemia",
-    "tuberoeruptive xanthomas",
-    "palmar crease xanthomas",
-    "xanthoma striatum palmare"
   ],
   "auricular_hematoma_perichondritis": [
     "auricular hematoma",
@@ -362,20 +335,9 @@
     "discoid dermatitis",
     "nummular dermatitis"
   ],
-  "cherry_angioma": [
-    "cherry angiomas",
-    "eruptive cherry angiomas",
-    "Campbell de Morgan spots",
-    "senile hemangiomas"
-  ],
   "chondrodermatitis_nodularis_helicis": [
     "chondrodermatitis nodularis",
     "chondrodermatitis of the ear"
-  ],
-  "traction_alopecia": [
-    "traction alopecia",
-    "fringe sign alopecia",
-    "hairstyle-related alopecia"
   ],
   "actinic_prurigo": [
     "hereditary polymorphic light eruption",
@@ -415,11 +377,6 @@
     "acute otitis externa",
     "fungal otitis externa"
   ],
-  "anal_fissure": [
-    "fissure in ano",
-    "anal fissures",
-    "sentinel pile"
-  ],
   "labial_adhesions": [
     "labial agglutination",
     "labial synechiae",
@@ -432,10 +389,6 @@
   "positional_plagiocephaly": [
     "deformational brachycephaly",
     "positional skull deformity"
-  ],
-  "omphalitis": [
-    "umbilical stump infection",
-    "neonatal omphalitis"
   ],
   "entropion_ectropion": [
     "entropion",
@@ -469,14 +422,6 @@
     "HLA-B27-positive acute anterior uveitis",
     "HLA-B27-associated uveitis"
   ],
-  "sting_associated_vasculopathy_with_onset_in_infancy": [
-    "stimulator of interferon genes-associated vasculopathy"
-  ],
-  "ipex_syndrome": [
-    "immune dysregulation, polyendocrinopathy, enteropathy",
-    "immunodysregulation polyendocrinopathy enteropathy",
-    "IPEX"
-  ],
   "rohhad_syndrome": [
     "rapid-onset obesity with hypothalamic dysfunction",
     "ROHHAD"
@@ -485,11 +430,6 @@
     "acquired immunodeficiency syndrome cholangiopathy",
     "HIV cholangiopathy",
     "HIV-associated cholangiopathy"
-  ],
-  "hyper_igm_syndrome": [
-    "hyper-immunoglobulin M syndrome",
-    "hyperimmunoglobulin M syndrome",
-    "CD40 ligand deficiency"
   ],
   "dock8_deficiency": [
     "dedicator of cytokinesis 8 deficiency",
@@ -541,59 +481,6 @@
   "swyer_james_macleod_syndrome": [
     "Swyer-James syndrome",
     "Macleod syndrome"
-  ],
-  "foxn1_deficiency_nude_scid": [
-    "FOXN1 deficiency",
-    "nude SCID",
-    "Nude/SCID"
-  ],
-  "mhc_class_i_deficiency_tap1_tap2": [
-    "MHC class I deficiency",
-    "TAP deficiency",
-    "TAP1 deficiency",
-    "TAP2 deficiency",
-    "bare lymphocyte syndrome type I",
-    "type I bare lymphocyte syndrome",
-    "type 1 bare lymphocyte syndrome"
-  ],
-  "card9_deficiency": [
-    "CARD9 deficiency"
-  ],
-  "col4a1_related_disorders": [
-    "COL4A1 mutation",
-    "COL4A1 variant",
-    "COL4A1-related disorder"
-  ],
-  "idiopathic_scrotal_fat_necrosis": [
-    "scrotal fat necrosis"
-  ],
-  "atypical_vascular_lesion_of_the_irradiated_breast": [
-    "atypical vascular lesion",
-    "atypical vascular lesions"
-  ],
-  "respiratory_bronchiolitis_interstitial_lung_disease_rb_ild": [
-    "respiratory bronchiolitis-associated interstitial lung disease",
-    "respiratory bronchiolitis interstitial lung disease"
-  ],
-  "hnf1b_related_kidney_disease": [
-    "HNF1B nephropathy",
-    "HNF1B mutation",
-    "HNF1B-associated kidney disease"
-  ],
-  "il_10_and_il_10_receptor_deficiency": [
-    "IL-10 receptor deficiency",
-    "IL10RA deficiency",
-    "IL10RB deficiency",
-    "interleukin-10 receptor deficiency"
-  ],
-  "plcg2_associated_disease_plaid_aplaid": [
-    "PLCG2-associated antibody deficiency and immune dysregulation",
-    "PLCG2 variant"
-  ],
-  "matthew_wood_syndrome": [
-    "Matthew-Wood syndrome",
-    "STRA6 deficiency",
-    "microphthalmia syndromic 9"
   ],
   "genetic_surfactant_dysfunction": [
     "surfactant protein C deficiency",

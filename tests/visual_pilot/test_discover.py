@@ -386,12 +386,11 @@ def test_acronym_named_topics_keep_a_spelled_out_search_name():
 
 def test_gene_named_topics_search_their_only_name_in_use():
     catalog = diseases.load_diseases()
-    foxn1 = discover.overview_disease_terms(catalog["foxn1_deficiency_nude_scid"])
-    assert foxn1[0] == "FOXN1 deficiency" and "nude SCID" in foxn1
-    assert not any("(" in t for t in foxn1)  # the gloss form is never a title
-    assert "CARD9 deficiency" in discover.overview_disease_terms(catalog["card9_deficiency"])
-    assert "MHC class I deficiency" in discover.overview_disease_terms(
-        catalog["mhc_class_i_deficiency_tap1_tap2"])
+    dock8 = discover.overview_disease_terms(catalog["dock8_deficiency"])
+    assert dock8[0] == "DOCK8 deficiency" and "DOCK8 immunodeficiency" in dock8
+    assert not any("(" in t for t in dock8)  # the gloss form is never a title
+    assert "GATA2 haploinsufficiency" in discover.overview_disease_terms(
+        catalog["gata2_deficiency"])
     # Bare abbreviations still go: "PsA" is also prostate-specific antigen.
     assert "PsA" not in discover.overview_disease_terms(catalog["psa"])
 

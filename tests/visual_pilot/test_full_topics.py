@@ -185,32 +185,33 @@ def test_pfapa_title_attributes_a_terse_caption():
 
 
 def test_parent_disease_and_own_manifestation_in_caption_are_not_other_diseases():
-    panel = {"disease_key": "hereditary_vitamin_d_resistant_rickets"}
-    title = "Novel Vitamin D Receptor Mutations in Hereditary Vitamin D Resistant Rickets in Chinese."
-    # "rickets" is a catalog topic of its own, but it is HVDRR's parent
+    panel = {"disease_key": "x_linked_hypophosphatemic_rickets"}
+    title = "Novel PHEX Mutations in X-linked Hypophosphatemic Rickets in Chinese."
+    # "rickets" is a catalog topic of its own, but it is XLH's parent
     # disease, not another diagnosis.
     caption = ("Antero-posterior radiograph of the patient's hand with rickets "
                "demonstrates cupping and fraying of the metaphyseal region.")
     assert curation._attribution_reason(panel, caption, {"title": title}) is None
-    assert "rickets_osteomalacia" in curation._kindred_keys("hereditary_vitamin_d_resistant_rickets")
+    assert "rickets_osteomalacia" in curation._kindred_keys("x_linked_hypophosphatemic_rickets")
     # An unrelated catalog disease in the caption still excludes the panel.
     other = curation._attribution_reason(
-        {"disease_key": "laryngeal_cleft"},
+        {"disease_key": "pfapa_syndrome"},
         "Intra-oral photograph of a bilateral cleft palate.",
-        {"title": "Laryngeal cleft: a case report"},
+        {"title": "PFAPA syndrome: a case report"},
     )
     assert other == "caption identifies another disease"
 
 
 def test_case_report_abstract_attributes_a_terse_caption():
-    panel = {"disease_key": "hereditary_vitamin_d_resistant_rickets"}
+    panel = {"disease_key": "x_linked_hypophosphatemic_rickets"}
     caption = "(A,B) Rachitic changes of the lower (A) and upper (B) extremity bones (at diagnosis)."
     case = {
-        "title": "Vitamin D-Resistant Rickets and Cinacalcet-One More Favorable Experience.",
+        # The title names no disease, so only the abstract can tie the figure to a case.
+        "title": "Burosumab Therapy and Dental Outcomes: One More Favorable Experience.",
         "publication_types_json": '["Journal Article", "Case Reports"]',
-        "source_metadata": {"abstract": "Hereditary vitamin D-resistant rickets (HVDRR) is an "
-                                        "autosomal recessive disorder. We report a girl with "
-                                        "hereditary vitamin D-resistant rickets and alopecia."},
+        "source_metadata": {"abstract": "X-linked hypophosphatemic rickets (XLH) is an "
+                                        "X-linked dominant disorder. We report a girl with "
+                                        "X-linked hypophosphatemic rickets and dental abscesses."},
     }
     assert curation._attribution_reason(panel, caption, case) is None
     # A review's abstract does not tie a figure to one patient.
@@ -218,7 +219,7 @@ def test_case_report_abstract_attributes_a_terse_caption():
     assert curation._attribution_reason(panel, caption, review) == (
         "disease association not stated in figure caption")
     # Nor does a case report whose abstract never names the disease.
-    silent = {**case, "source_metadata": {"abstract": "A girl with rickets and alopecia."}}
+    silent = {**case, "source_metadata": {"abstract": "A girl with rickets and dental abscesses."}}
     assert curation._attribution_reason(panel, caption, silent) == (
         "disease association not stated in figure caption")
 
